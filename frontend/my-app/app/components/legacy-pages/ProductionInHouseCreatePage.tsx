@@ -100,6 +100,27 @@ type StageConfig = {
   rejectedQty: number;
 };
 
+const draftStorageKey = "kaam.productionPlanDrafts.v1";
+
+function saveProductionDraft(plan: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+
+  const planNo = String(plan.planNo || plan.planId || plan.id || "");
+  if (!planNo) return;
+
+  let drafts: Array<Record<string, unknown>> = [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(draftStorageKey) || "[]");
+    drafts = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    drafts = [];
+  }
+
+  const nextDrafts = drafts.filter((draft) => String(draft.planNo || draft.planId || draft.id) !== planNo);
+  nextDrafts.unshift(plan);
+  window.localStorage.setItem(draftStorageKey, JSON.stringify(nextDrafts.slice(0, 100)));
+}
+
 export function ProductionInHouseCreatePage() {
   const router = useRouter();
 
@@ -204,6 +225,7 @@ export function ProductionInHouseCreatePage() {
   const sizeValidation = (prod: SelectedProductConfig) => {
     const totalSizes = Object.values(prod.sizes).reduce((sum, val) => sum + val, 0);
     const difference = prod.quantity - totalSizes;
+
     return {
       total: totalSizes,
       difference,
@@ -336,12 +358,13 @@ export function ProductionInHouseCreatePage() {
   };
 
   // Submit / Save Logic
-  const handleSavePlan = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProducts.length) return;
-    setIsSubmitting(true);
+  const buildPlanPayload = (status: "Draft" | "Material Check") => {
+    const now = new Date().toISOString();
+    const totalQuantity = selectedProducts.reduce((sum, product) => sum + product.quantity, 0);
+    const plannedCompletionDates = selectedProducts.map(p => p.plannedCompletionDate).filter(Boolean).sort();
+    const requiredDates = selectedProducts.map(p => p.requiredDate).filter(Boolean).sort();
 
-    const newPlan = {
+    return {
       id: planId,
       planId,
       planNo: planId,
@@ -350,21 +373,57 @@ export function ProductionInHouseCreatePage() {
       planName,
       sourceId: targetWarehouseId,
       sourceName: mockWarehouses.find(w => w.id === targetWarehouseId)?.name || "Central Warehouse",
+      productId: selectedProducts[0]?.productId || "",
+      productName: selectedProducts[0]?.productName || "In-house Production Plan",
+      variant: selectedProducts[0]?.variant || "",
+      quantity: totalQuantity,
+      totalQuantity,
+      priority: "Normal",
+      outputDestination: "Finished Goods Warehouse",
+      plannedStartDate: selectedProducts.map(p => p.plannedStartDate).filter(Boolean).sort()[0] || "",
+      plannedCompletionDate: plannedCompletionDates[plannedCompletionDates.length - 1] || "",
+      requiredDate: requiredDates[requiredDates.length - 1] || "",
+      reason: inHouseReason,
       products: selectedProducts.map(p => ({
+        lineId: `${planId}-${p.productId}`,
         productId: p.productId,
         productCode: p.productCode,
         productName: p.productName,
+        category: mockProducts.find(product => product.id === p.productId)?.category || "",
         quantity: p.quantity,
         variant: p.variant,
+        sourceName: mockWarehouses.find(w => w.id === targetWarehouseId)?.name || "Central Warehouse",
         plannedStartDate: p.plannedStartDate,
         plannedCompletionDate: p.plannedCompletionDate,
         requiredDate: p.requiredDate,
+        status,
+        priority: "Normal",
+        productImage: mockProducts.find(product => product.id === p.productId)?.productImage || "/images/products/place-holder.png",
         sizes: Object.entries(p.sizes).map(([size, quantity]) => ({ size, quantity })),
         productionNotes: p.productionNotes,
       })),
       stages: stages,
-      status: "Material Check",
+      status,
+      draftSourceUrl: "/Production/InHouse/CreateInHouse",
+      draftSourceType: "Warehouse",
+      draftSavedAt: status === "Draft" ? now : "",
+      createdAt: now,
+      lastEditedAt: now,
     };
+  };
+
+  const handleSaveDraft = () => {
+    if (!selectedProducts.length) return;
+    saveProductionDraft(buildPlanPayload("Draft"));
+    router.push("/Production/Drafts");
+  };
+
+  const handleSavePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedProducts.length) return;
+    setIsSubmitting(true);
+
+    const newPlan = buildPlanPayload("Material Check");
 
     if (typeof window !== "undefined") {
       const existingStr = localStorage.getItem("productionPlans") || "[]";
@@ -805,6 +864,15 @@ export function ProductionInHouseCreatePage() {
             disabled={isSubmitting}
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={handleSaveDraft}
+            disabled={isSubmitting || !selectedProducts.length}
+          >
+            <MaterialIcon name="draft" />
+            Save to Drafts
           </button>
           <button
             type="submit"

@@ -190,10 +190,11 @@
             const status = plan.status || "Draft";
             const productSummary = getProductSummary(plan);
             const rowDate = plan.lastEditedAt || plan.draftSavedAt || plan.plannedStartDate || plan.planDate || plan.requiredDate;
-            const primaryUrl = isLocal && plan.draftSourceUrl
-                ? plan.draftSourceUrl
-                : `/Production/Plan/Details/${encodeURIComponent(planNo)}`;
-            const primaryText = isLocal ? "Resume" : "Details";
+            const encodedPlanNo = encodeURIComponent(planNo);
+            const detailsUrl = `/Production/Plan/Details?planNo=${encodedPlanNo}`;
+            const editUrl = `/Production/Plan/Edit?planNo=${encodedPlanNo}`;
+            const primaryUrl = folderType === "drafts" ? editUrl : detailsUrl;
+            const primaryText = folderType === "drafts" ? "Resume" : "Details";
             const isSelected = selectedPlanIds.has(String(planNo));
 
             return `
@@ -226,8 +227,9 @@
 
                     <div class="folder-plan-actions">
                         <a class="btn btn-light btn-sm" href="${App.escapeHtml(primaryUrl)}">${primaryText}</a>
-                        ${!isLocal ? `
-                            <a class="btn btn-primary btn-sm" href="/Production/Plan/Edit/${encodeURIComponent(planNo)}">Edit</a>
+                        <a class="btn btn-primary btn-sm" href="${App.escapeHtml(detailsUrl)}">Details</a>
+                        ${folderType === "drafts" ? `
+                            <a class="btn btn-light btn-sm" href="${App.escapeHtml(editUrl)}">Edit</a>
                         ` : ""}
                         ${isLocal ? `
                             <button type="button"

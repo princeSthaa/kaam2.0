@@ -21,7 +21,7 @@
     document.addEventListener("DOMContentLoaded", init);
 
     function init() {
-        state.plans = App.getData("mockProductionPlans", "productionPlans", "plans");
+        state.plans = getAvailablePlans();
         state.products = App.getData("products", "mockProducts", "productData");
         state.customers = App.getData("customers", "mockCustomers", "customerData", "customerMasterData", "customerOrderCatalogData");
         state.outlets = App.getData("outlets", "mockOutlets", "outletData");
@@ -43,11 +43,26 @@
     }
 
     function loadPlan() {
-        const id = App.value("#selectedPlanId");
+        const id = getSelectedPlanId();
         state.plan = App.findById(state.plans, id) || state.plans[0] || null;
         state.planProducts = state.plan ? normalizePlanProducts(state.plan) : [];
         state.selectedProductIndex = 0;
         state.productSearch = "";
+    }
+
+    function getAvailablePlans() {
+        const basePlans = App.getData("mockProductionPlans", "productionPlans", "plans");
+
+        if (window.ProductionDraftStore && typeof window.ProductionDraftStore.mergeWithPlans === "function") {
+            return window.ProductionDraftStore.mergeWithPlans(basePlans);
+        }
+
+        return basePlans;
+    }
+
+    function getSelectedPlanId() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("planNo") || params.get("planId") || params.get("id") || App.value("#selectedPlanId");
     }
 
     function populateDropdowns() {

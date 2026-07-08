@@ -1994,6 +1994,10 @@
         align-items: start;
     }
 
+    .folder-list-header {
+        display: none;
+    }
+
     .folder-plan-date,
     .folder-plan-actions {
         grid-column: 2;
@@ -2143,20 +2147,44 @@
 
     .folder-plan-row {
         grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .folder-plan-row.local-draft {
+        padding-left: 18px;
     }
 
     .folder-plan-icon {
         display: none;
     }
 
+    .folder-plan-checkbox {
+        justify-content: start;
+    }
+
     .folder-plan-date,
-    .folder-plan-actions {
+    .folder-plan-actions,
+    .folder-plan-main {
         grid-column: 1;
     }
 
     .folder-plan-subject {
         align-items: flex-start;
         flex-direction: column;
+    }
+
+    .folder-plan-main p {
+        white-space: normal;
+    }
+
+    .folder-plan-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        width: 100%;
+    }
+
+    .folder-plan-actions .btn {
+        width: 100%;
     }
 }
 

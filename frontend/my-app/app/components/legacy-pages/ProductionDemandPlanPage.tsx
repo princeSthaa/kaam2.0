@@ -199,6 +199,48 @@ const mockOutletDemands = [
 
 type DemandKind = "customer" | "outlet";
 
+const draftStorageKey = "kaam.productionPlanDrafts.v1";
+
+function buildPlanNo(prefix: string) {
+  const now = new Date();
+  const date = [now.getFullYear(), now.getMonth() + 1, now.getDate()]
+    .map((part) => String(part).padStart(2, "0"))
+    .join("");
+  const time = [now.getHours(), now.getMinutes(), now.getSeconds()]
+    .map((part) => String(part).padStart(2, "0"))
+    .join("");
+
+  return `${prefix}-${date}-${time}`;
+}
+
+function saveProductionDraft(plan: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+
+  const planNo = String(plan.planNo || plan.planId || plan.id || "");
+  if (!planNo) return;
+
+  let drafts: Array<Record<string, unknown>> = [];
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(draftStorageKey) || "[]");
+    drafts = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    drafts = [];
+  }
+
+  const nextDrafts = drafts.filter((draft) => String(draft.planNo || draft.planId || draft.id) !== planNo);
+  nextDrafts.unshift(plan);
+  window.localStorage.setItem(draftStorageKey, JSON.stringify(nextDrafts.slice(0, 100)));
+}
+
+function normalizeSizeRows(sizes: Record<string, number> | Array<{ size: string; quantity: number }> | undefined) {
+  if (Array.isArray(sizes)) return sizes;
+  if (!sizes) return [];
+
+  return Object.entries(sizes)
+    .map(([size, quantity]) => ({ size, quantity: Number(quantity) || 0 }))
+    .filter((row) => row.quantity > 0);
+}
+
 function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -344,6 +386,64 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
       setIsSubmitting(false);
       router.push("/Production/Plan/CreateDetails");
     }, 800);
+  };
+
+  const handleSaveDraft = () => {
+    if (!basket.length || !sourceDetail) return;
+
+    const now = new Date().toISOString();
+    const planNo = buildPlanNo(kind === "customer" ? "DRAFT-CUS" : "DRAFT-OUT");
+    const products = basket.map((item: any, index) => ({
+      lineId: `${planNo}-L${index + 1}`,
+      orderNo: item.orderNo || "",
+      demandNo: item.demandNo || "",
+      productId: item.productId,
+      productCode: item.productCode || item.productId,
+      productName: item.productName,
+      category: item.category,
+      variant: item.variant,
+      quantity: item.quantity,
+      sourceName: sourceDetail.customerName || sourceDetail.name,
+      requiredDate: item.deliveryDate || item.requiredDate,
+      plannedStartDate: "",
+      plannedCompletionDate: "",
+      status: "Draft",
+      priority: item.priority || "Normal",
+      risk: ["urgent", "critical"].includes(String(item.priority || "").toLowerCase()),
+      productImage: item.productImage,
+      productionNotes: item.productionNotes,
+      sizes: normalizeSizeRows(item.sizes),
+    }));
+    const requiredDates = products.map((product) => product.requiredDate).filter(Boolean).sort();
+
+    saveProductionDraft({
+      id: planNo,
+      planId: planNo,
+      planNo,
+      planDate: now.slice(0, 10),
+      demandType: kind === "customer" ? "Customer Order" : "Outlet Replenishment",
+      sourceType: kind === "customer" ? "Customer" : "Outlet",
+      sourceId: selectedSourceId,
+      sourceName: sourceDetail.customerName || sourceDetail.name,
+      productId: products[0]?.productId || "",
+      productName: products[0]?.productName || "Production Plan",
+      variant: products[0]?.variant || "",
+      quantity: products.reduce((sum, product) => sum + Number(product.quantity || 0), 0),
+      totalQuantity: products.reduce((sum, product) => sum + Number(product.quantity || 0), 0),
+      priority: products.some((product) => ["Urgent", "Critical"].includes(String(product.priority))) ? "Urgent" : "Normal",
+      outputDestination: kind === "customer" ? "Customer Dispatch" : "Outlet Transfer",
+      requiredDate: requiredDates[0] || "",
+      status: "Draft",
+      draftSourceUrl: `${kind === "customer" ? "/Production/Customer/CreateCustomer" : "/Production/Outlet/CreateOutlet"}?${kind === "customer" ? "customerId" : "outletId"}=${selectedSourceId}`,
+      draftSourceType: kind === "customer" ? "Customer" : "Outlet",
+      draftSavedAt: now,
+      createdAt: now,
+      lastEditedAt: now,
+      products,
+      activities: [{ title: "Draft created", text: "Production plan draft saved from planning basket." }],
+    });
+
+    router.push("/Production/Drafts");
   };
 
   // Single item Material Calculation preview inside Modal
@@ -686,6 +786,15 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
           </div>
 
           <form onSubmit={handleCreatePlan} className="d-flex flex-column gap-10">
+            <button
+              type="button"
+              className="btn btn-light full-width"
+              disabled={!basket.length || isSubmitting}
+              onClick={handleSaveDraft}
+            >
+              <MaterialIcon name="draft" />
+              Save to Drafts
+            </button>
             <button
               type="button"
               className="btn btn-outline full-width"

@@ -35,6 +35,9 @@ export default defineLegacyPage({
     "src": "/js/production/production-color-palettes.js"
   },
   {
+    "src": "/js/production/production-draft-store.js"
+  },
+  {
     "src": "/js/production/production-plan-edit.js"
   }
 ],
