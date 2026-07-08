@@ -8,13 +8,25 @@ import { ScriptMount } from "./ui/ScriptMount";
 
 type LegacyScriptLoaderProps = {
   page: LegacyPageDefinition;
+  route: string;
+  skipScripts: boolean;
 };
 
 function getLegacyScriptId(page: LegacyPageDefinition, index: number) {
   return `legacy-script-${page.title}-${index}`;
 }
 
-export function LegacyScriptLoader({ page }: LegacyScriptLoaderProps) {
+export function LegacyScriptLoader({ page, skipScripts }: LegacyScriptLoaderProps) {
+  if (skipScripts) {
+    return (
+      <>
+        {sharedLegacyScripts.map((src) => (
+          <ScriptMount key={src} src={src} />
+        ))}
+      </>
+    );
+  }
+
   return (
     <>
       {sharedLegacyScripts.map((src) => (

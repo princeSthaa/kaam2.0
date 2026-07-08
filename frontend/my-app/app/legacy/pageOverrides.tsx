@@ -12,11 +12,13 @@ import { ProductionCatalogPage } from "../components/legacy-pages/ProductionCata
 import { ProductionDemandPlanPage } from "../components/legacy-pages/ProductionDemandPlanPage";
 import { ProductionFolderPage } from "../components/legacy-pages/ProductionFolderPage";
 import { ProductionInHouseCreatePage } from "../components/legacy-pages/ProductionInHouseCreatePage";
+import { ProductionInProgressVisualizationPage } from "../components/legacy-pages/ProductionInProgressVisualizationPage";
 import { ProductionPlanDetailsPage } from "../components/legacy-pages/ProductionPlanDetailsPage";
 import { ProductionPlanEditPage } from "../components/legacy-pages/ProductionPlanEditPage";
 import { ProductionOverviewPage } from "../components/legacy-pages/ProductionOverviewPage";
 import { ProductionPlansListPage } from "../components/legacy-pages/ProductionPlansListPage";
 import { ProductionStageUpdatePage } from "../components/legacy-pages/ProductionStageUpdatePage";
+import { ProductionPlanCreateDetailsPage } from "../components/legacy-pages/ProductionPlanCreateDetailsPage";
 import { WarehouseIndexPage } from "../components/legacy-pages/WarehouseIndexPage";
 import { WarehouseStockPage } from "../components/legacy-pages/WarehouseStockPage";
 import { WarehouseVisualizationPage } from "../components/legacy-pages/WarehouseVisualizationPage";
@@ -39,12 +41,13 @@ const pageOverrides: Record<string, () => ReactNode> = {
   "/Production/Outlet/Outlets": () => <ProductionCatalogPage kind="outlet" />,
   "/Production/Drafts": () => <ProductionFolderPage folder="drafts" />,
   "/Production/InHouse/CreateInHouse": () => <ProductionInHouseCreatePage />,
-  "/Production/InProgress": () => <ProductionFolderPage folder="in-progress" />,
+  "/Production/InProgress": () => <ProductionInProgressVisualizationPage />,
   "/Production/Completed": () => <ProductionFolderPage folder="completed" />,
   "/Production/Plan/Details": () => <ProductionPlanDetailsPage />,
   "/Production/Plan/Edit": () => <ProductionPlanEditPage />,
   "/Production/Plan/PlansDetails": () => <ProductionPlansListPage />,
   "/Production/Plan/StageUpdate": () => <ProductionStageUpdatePage />,
+  "/Production/Plan/CreateDetails": () => <ProductionPlanCreateDetailsPage />,
   "/Warehouse/Index": () => <WarehouseIndexPage />,
   "/Warehouse/Stock": () => <WarehouseStockPage />,
   "/Warehouse/Visualization": () => <WarehouseVisualizationPage />,
@@ -52,4 +55,19 @@ const pageOverrides: Record<string, () => ReactNode> = {
 
 export function renderPageOverride(route: string) {
   return pageOverrides[route]?.();
+}
+
+export function isRouteOverridden(route: string): boolean {
+  return route in pageOverrides;
+}
+
+export function shouldSkipLegacyScripts(route: string): boolean {
+  const skipRoutes = [
+    "/Production/Create",
+    "/Production/Customer/CreateCustomer",
+    "/Production/Outlet/CreateOutlet",
+    "/Production/InHouse/CreateInHouse",
+    "/Production/Plan/CreateDetails",
+  ];
+  return skipRoutes.includes(route);
 }

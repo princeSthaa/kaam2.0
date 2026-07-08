@@ -136,28 +136,32 @@
             const activeClass = isActive ? "active" : "";
             const paletteSummary = getProductPaletteSummary(product);
             const variantPreview = renderPalettePreviewHtml(paletteSummary, { compact: true, inline: true });
+            const image = product.productImage || getCatalogProduct(product)?.productImage || getCatalogProduct(product)?.imagePath || fallbackProductImage;
 
             return `
                 <button type="button" 
-                        class="product-editor-list-row ${activeClass}" 
+                        class="horizontal-product-card ${activeClass}" 
                         data-product-index="${index}"
                         role="option" 
                         aria-selected="${isActive}">
-                    <span class="product-editor-list-index">${index + 1}</span>
-                    <span class="product-editor-list-main">
-                        <strong>${App.escapeHtml(product.productName)}</strong>
-                        <span>${App.escapeHtml(product.productCode || product.productId || "-")}</span>
-                        <span class="product-editor-list-variant" ${variantPreview ? "hidden" : ""}>
-                            ${App.escapeHtml(paletteSummary)}
-                        </span>
-                        <span class="palette-preview-host product-editor-list-preview" ${variantPreview ? "" : "hidden"}>
-                            ${variantPreview}
-                        </span>
-                    </span>
-                    <span class="product-editor-list-side">
-                        <strong>${formatNumber(product.quantity)} pcs</strong>
-                        <em>Req ${App.formatDate(product.requiredDate)}</em>
-                    </span>
+                    <span class="card-badge">${index + 1}</span>
+                    <img src="${App.escapeHtml(image)}" alt="${App.escapeHtml(product.productName)}" onerror="this.src='${fallbackProductImage}'" />
+                    <div class="card-content">
+                        <strong class="card-title">${App.escapeHtml(product.productName)}</strong>
+                        <span class="card-subtitle">${App.escapeHtml(product.productCode || product.productId || "-")}</span>
+                        <div class="card-palette">
+                            <span class="product-editor-list-variant" ${variantPreview ? "hidden" : ""}>
+                                ${App.escapeHtml(paletteSummary)}
+                            </span>
+                            <span class="palette-preview-host product-editor-list-preview" ${variantPreview ? "" : "hidden"}>
+                                ${variantPreview}
+                            </span>
+                        </div>
+                        <div class="card-qty-row">
+                            <strong class="card-qty">${formatNumber(product.quantity)} pcs</strong>
+                            <em class="card-date">Req ${App.formatDate(product.requiredDate)}</em>
+                        </div>
+                    </div>
                 </button>
             `;
         }).join("");
@@ -198,6 +202,23 @@
         const sizeRows = getSizeColorRows(product);
         const sizeTotal = sizeRows.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
 
+        const planStages = state.plan.stages && state.plan.stages.length
+            ? state.plan.stages
+            : state.stages;
+
+        const activeStage = planStages.find(function (stage) {
+            return stage.status === "In Progress" || stage.status === "On Hold";
+        }) || planStages.find(function (stage) {
+            return stage.status === state.plan.status;
+        }) || planStages[0];
+
+        const activeStageName = activeStage ? (activeStage.stageName || activeStage.name || "Material Check") : "Material Check";
+        const activeStageWorkCenter = activeStage ? (activeStage.workCenter || activeStage.department || "Raw Material Store") : "Raw Material Store";
+        const activeStageStatus = activeStage ? (activeStage.status || "Not Started") : "Not Started";
+        const completedQty = activeStage ? (activeStage.completedQty || 0) : 0;
+        const planTotalQty = getPlanQuantity();
+        const percent = Math.min(100, Math.round((completedQty / Math.max(planTotalQty, 1)) * 100));
+
         detailHost.innerHTML = `
             <div class="product-editor-detail-head">
                 <img src="${App.escapeHtml(image)}"
@@ -233,6 +254,28 @@
                     <span>Breakdown Total</span>
                     <strong>${formatNumber(sizeTotal)} pcs</strong>
                 </div>
+            </div>
+
+            <div class="floor-progress-card mt-15 mb-15">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px;">
+                    <div>
+                        <span style="display: block; font-size: 11px; font-weight: 800; color: var(--pp-muted); margin-bottom: 2px;">CURRENT STAGE</span>
+                        <strong>${App.escapeHtml(activeStageName)}</strong>
+                        <em style="display: block; font-size: 11px; color: var(--pp-muted); font-style: normal; margin-top: 2px;">
+                            ${App.escapeHtml(activeStageWorkCenter)}
+                        </em>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="display: block; font-size: 11px; font-weight: 800; color: var(--pp-muted); margin-bottom: 2px;">STAGE STATUS</span>
+                        <span class="status-badge status-${activeStageStatus.toLowerCase().replaceAll(" ", "-")}">${App.escapeHtml(activeStageStatus)}</span>
+                    </div>
+                </div>
+                <div class="floor-progress-track">
+                    <span style="width: ${percent}%"></span>
+                </div>
+                <p class="floor-progress-text" style="margin: 8px 0 0; color: var(--pp-muted); font-size: 12px; font-weight: 800;">
+                    ${percent}% completed in this stage (${formatNumber(completedQty)} / ${formatNumber(planTotalQty)} pcs)
+                </p>
             </div>
 
             <div class="plan-product-meta-grid">
@@ -298,13 +341,18 @@
         const total = rows.reduce(function (sum, row) {
             return sum + Number(row.quantity || 0);
         }, 0);
+        const image = product.productImage || getCatalogProduct(product)?.productImage || getCatalogProduct(product)?.imagePath || fallbackProductImage;
 
         detailHost.innerHTML = `
             <div class="product-editor-detail-head">
+                <img src="${App.escapeHtml(image)}"
+                     alt="${App.escapeHtml(product.productName)}"
+                     onerror="this.src='${fallbackProductImage}'" />
+
                 <div>
                     <span>Product ${state.selectedProductIndex + 1} of ${state.planProducts.length}</span>
                     <h4>${App.escapeHtml(product.productName)}</h4>
-                    <p>${App.escapeHtml(paletteSummary)}</p>
+                    <p>${App.escapeHtml(product.productCode || product.productId || "-")} | ${App.escapeHtml(paletteSummary)}</p>
                     ${renderPalettePreviewHtml(paletteSummary, { compact: true })}
                 </div>
 

@@ -1,587 +1,1087 @@
+"use client";
+
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { ActionButton } from "../legacy-ui/ActionButton";
-import { TableShell } from "../legacy-ui/TableShell";
+import { MaterialIcon } from "../ui/MaterialIcon";
+
+// Mock Database Lists
+const mockCustomers = [
+  { id: "1", customerCode: "CUS-SCH-001", customerName: "Himalayan Public School", phone: "01-4521188", address: "Maharajgunj, Kathmandu", paymentTerms: "30 Days Credit", ordersCount: 2, totalQty: 740, earliestDelivery: "2026-07-20" },
+  { id: "2", customerCode: "CUS-RTL-001", customerName: "New Road Clothing Store", phone: "9841223344", address: "New Road, Kathmandu", paymentTerms: "COD", ordersCount: 1, totalQty: 150, earliestDelivery: "2026-07-22" },
+  { id: "3", customerCode: "CUS-PKR-001", customerName: "Pokhara Lakeside Retailers", phone: "9806112233", address: "Lakeside, Pokhara", paymentTerms: "15 Days Credit", ordersCount: 1, totalQty: 300, earliestDelivery: "2026-07-25" },
+  { id: "4", customerCode: "CUS-DIS-001", customerName: "Biratnagar Garment Distributors", phone: "021-554433", address: "Main Road, Biratnagar", paymentTerms: "45 Days Credit", ordersCount: 0, totalQty: 0, earliestDelivery: "-" },
+];
+
+const mockOutlets = [
+  { id: "1", outletCode: "OUT-NR-001", name: "New Road Outlet", location: "New Road, Kathmandu", manager: "Suman Shrestha", phone: "9801001001", demandCount: 2, totalQty: 180, earliestRequired: "2026-07-15" },
+  { id: "2", outletCode: "OUT-PKR-001", name: "Pokhara Lakeside Outlet", location: "Lakeside, Pokhara", manager: "Pratik Gurung", phone: "9803001002", demandCount: 1, totalQty: 120, earliestRequired: "2026-07-20" },
+  { id: "3", outletCode: "OUT-BTL-001", name: "Butwal Main Outlet", location: "Traffic Chowk, Butwal", manager: "Anita Poudel", phone: "9803001003", demandCount: 0, totalQty: 0, earliestRequired: "-" },
+];
+
+const mockProducts = [
+  { id: "PRD-001", productCode: "PRD-001", productName: "School Uniform Set", category: "Uniform", productImage: "/images/products/school-uniform.jpg", colors: ["White / Navy", "Elegant Palette", "Classic Blue"] },
+  { id: "PRD-002", productCode: "PRD-002", productName: "School Tracksuit Set", category: "Sports Uniform", productImage: "/images/products/tracksuit.jpg", colors: ["Grey / Royal Blue", "Red / Black", "Navy / Yellow"] },
+  { id: "PRD-003", productCode: "PRD-003", productName: "Men Casual Shirt", category: "Retail Garment", productImage: "/images/products/casual-shirt.jpg", colors: ["White", "Sky Blue", "Black"] },
+  { id: "PRD-004", productCode: "PRD-004", productName: "Corporate Polo T-Shirt", category: "Corporate Wear", productImage: "/images/products/polo-shirt.jpg", colors: ["Black", "Navy", "Charcoal"] },
+  { id: "PRD-005", productCode: "PRD-005", productName: "Hotel Staff Uniform", category: "Hospitality Uniform", productImage: "/images/products/place-holder.png", colors: ["Cream / Brown", "Black / Gold"] },
+];
+
+const mockMaterials = [
+  { id: "MAT-001", materialCode: "RM-FAB-COT-DYED", name: "Dyed Cotton Fabric", type: "Fabric", availableQty: 1800, unit: "meter", costPerUnit: 250 },
+  { id: "MAT-002", materialCode: "RM-FAB-PIQUE-DYED", name: "Dyed Pique Fabric", type: "Fabric", availableQty: 950, unit: "meter", costPerUnit: 320 },
+  { id: "MAT-003", materialCode: "RM-FAB-TRS-DYED", name: "Dyed Trouser Fabric", type: "Fabric", availableQty: 700, unit: "meter", costPerUnit: 380 },
+  { id: "MAT-004", materialCode: "RM-FAB-FLEECE-DYED", name: "Dyed Fleece Fabric", type: "Fabric", availableQty: 420, unit: "meter", costPerUnit: 450 },
+  { id: "MAT-005", materialCode: "RM-FAB-KURTA-DYED", name: "Dyed Kurta Fabric", type: "Fabric", availableQty: 600, unit: "meter", costPerUnit: 280 },
+  { id: "MAT-006", materialCode: "RM-THR-DYED", name: "Dyed Sewing Thread", type: "Thread", availableQty: 3000, unit: "tube", costPerUnit: 45 },
+  { id: "MAT-007", materialCode: "RM-FUS-COLLAR", name: "Collar Fusing", type: "Fusing", availableQty: 500, unit: "meter", costPerUnit: 60 },
+  { id: "MAT-008", materialCode: "RM-BTN-STD", name: "Buttons", type: "Accessories", availableQty: 80000, unit: "pcs", costPerUnit: 1.5 },
+  { id: "MAT-009", materialCode: "RM-ZIP-STD", name: "Zippers", type: "Accessories", availableQty: 1200, unit: "pcs", costPerUnit: 18 },
+  { id: "MAT-010", materialCode: "RM-LBL-BRAND", name: "Brand Label", type: "Labels", availableQty: 15000, unit: "pcs", costPerUnit: 3 },
+  { id: "MAT-011", materialCode: "RM-BAG-POLY", name: "Packaging Bag", type: "Packaging", availableQty: 25000, unit: "pcs", costPerUnit: 5 },
+];
+
+const mockBoms = [
+  { productId: "PRD-001", materialId: "MAT-001", qtyPerUnit: 1.8, wastagePercent: 5 },
+  { productId: "PRD-001", materialId: "MAT-006", qtyPerUnit: 0.2, wastagePercent: 2 },
+  { productId: "PRD-001", materialId: "MAT-007", qtyPerUnit: 0.15, wastagePercent: 5 },
+  { productId: "PRD-001", materialId: "MAT-008", qtyPerUnit: 8, wastagePercent: 2 },
+  { productId: "PRD-001", materialId: "MAT-010", qtyPerUnit: 1, wastagePercent: 0 },
+  { productId: "PRD-001", materialId: "MAT-011", qtyPerUnit: 1, wastagePercent: 0 },
+
+  { productId: "PRD-002", materialId: "MAT-004", qtyPerUnit: 2.2, wastagePercent: 4 },
+  { productId: "PRD-002", materialId: "MAT-006", qtyPerUnit: 0.3, wastagePercent: 2 },
+  { productId: "PRD-002", materialId: "MAT-009", qtyPerUnit: 2, wastagePercent: 2 },
+  { productId: "PRD-002", materialId: "MAT-010", qtyPerUnit: 1, wastagePercent: 0 },
+  { productId: "PRD-002", materialId: "MAT-011", qtyPerUnit: 1, wastagePercent: 0 },
+
+  { productId: "PRD-003", materialId: "MAT-001", qtyPerUnit: 1.6, wastagePercent: 4 },
+  { productId: "PRD-003", materialId: "MAT-006", qtyPerUnit: 0.15, wastagePercent: 2 },
+  { productId: "PRD-003", materialId: "MAT-007", qtyPerUnit: 0.12, wastagePercent: 5 },
+  { productId: "PRD-003", materialId: "MAT-008", qtyPerUnit: 7, wastagePercent: 2 },
+  { productId: "PRD-003", materialId: "MAT-010", qtyPerUnit: 1, wastagePercent: 0 },
+  { productId: "PRD-003", materialId: "MAT-011", qtyPerUnit: 1, wastagePercent: 0 },
+
+  { productId: "PRD-004", materialId: "MAT-002", qtyPerUnit: 1.4, wastagePercent: 4 },
+  { productId: "PRD-004", materialId: "MAT-006", qtyPerUnit: 0.15, wastagePercent: 2 },
+  { productId: "PRD-004", materialId: "MAT-008", qtyPerUnit: 3, wastagePercent: 2 },
+  { productId: "PRD-004", materialId: "MAT-010", qtyPerUnit: 1, wastagePercent: 0 },
+  { productId: "PRD-004", materialId: "MAT-011", qtyPerUnit: 1, wastagePercent: 0 },
+];
+
+const mockCustomerOrders = [
+  {
+    id: 1,
+    orderNo: "ORD-2026-001",
+    customerId: "1",
+    productId: "PRD-001",
+    productCode: "PRD-001",
+    productName: "School Uniform Set",
+    category: "School Uniform",
+    variant: "Classic Blue",
+    quantity: 500,
+    deliveryDate: "2026-07-20",
+    priority: "Urgent",
+    productImage: "/images/products/school-uniform.jpg",
+    productionNotes: "Embroidery logo on left chest.",
+    sizes: { XS: 50, S: 100, M: 200, L: 100, XL: 50, XXL: 0 }
+  },
+  {
+    id: 2,
+    orderNo: "ORD-2026-006",
+    customerId: "1",
+    productId: "PRD-002",
+    productCode: "PRD-002",
+    productName: "School Tracksuit Set",
+    category: "Sports Uniform",
+    variant: "Grey / Royal Blue",
+    quantity: 240,
+    deliveryDate: "2026-07-28",
+    priority: "Normal",
+    productImage: "/images/products/tracksuit.jpg",
+    productionNotes: "Pack size-wise bundle packing.",
+    sizes: { XS: 20, S: 60, M: 80, L: 60, XL: 20, XXL: 0 }
+  },
+  {
+    id: 3,
+    orderNo: "ORD-2026-002",
+    customerId: "2",
+    productId: "PRD-003",
+    productCode: "PRD-003",
+    productName: "Men Casual Shirt",
+    category: "Retail Garment",
+    variant: "Sky Blue",
+    quantity: 150,
+    deliveryDate: "2026-07-22",
+    priority: "Normal",
+    productImage: "/images/products/casual-shirt.jpg",
+    productionNotes: "Linen cotton fabric mix. Standard collar.",
+    sizes: { XS: 0, S: 30, M: 60, L: 40, XL: 20, XXL: 0 }
+  },
+  {
+    id: 4,
+    orderNo: "ORD-2026-003",
+    customerId: "3",
+    productId: "PRD-004",
+    productCode: "PRD-004",
+    productName: "Corporate Polo T-Shirt",
+    category: "Corporate Wear",
+    variant: "Black",
+    quantity: 300,
+    deliveryDate: "2026-07-25",
+    priority: "Seasonal",
+    productImage: "/images/products/polo-shirt.jpg",
+    productionNotes: "Double stitch on hem. Branded tag inside.",
+    sizes: { XS: 0, S: 50, M: 100, L: 100, XL: 50, XXL: 0 }
+  }
+];
+
+const mockOutletDemands = [
+  {
+    id: 101,
+    demandNo: "DEM-2026-001",
+    outletId: "1",
+    productId: "PRD-003",
+    productCode: "PRD-003",
+    productName: "Men Casual Shirt",
+    category: "Retail Garment",
+    variant: "White",
+    quantity: 100,
+    requiredDate: "2026-07-15",
+    priority: "Critical",
+    productImage: "/images/products/casual-shirt.jpg",
+    currentStock: 15,
+    reorderLevel: 50,
+    last30Sales: 120,
+    productionNotes: "Restock flagship flagship. Urgent cutting required.",
+    sizes: { XS: 10, S: 20, M: 40, L: 20, XL: 10, XXL: 0 }
+  },
+  {
+    id: 102,
+    demandNo: "DEM-2026-002",
+    outletId: "1",
+    productId: "PRD-004",
+    productCode: "PRD-004",
+    productName: "Corporate Polo T-Shirt",
+    category: "Corporate Wear",
+    variant: "Navy",
+    quantity: 80,
+    requiredDate: "2026-07-18",
+    priority: "Low Stock",
+    productImage: "/images/products/polo-shirt.jpg",
+    currentStock: 12,
+    reorderLevel: 30,
+    last30Sales: 45,
+    productionNotes: "Standard restock.",
+    sizes: { XS: 5, S: 15, M: 30, L: 20, XL: 10, XXL: 0 }
+  },
+  {
+    id: 103,
+    demandNo: "DEM-2026-003",
+    outletId: "2",
+    productId: "PRD-002",
+    productCode: "PRD-002",
+    productName: "School Tracksuit Set",
+    category: "Sports Uniform",
+    variant: "Grey / Royal Blue",
+    quantity: 120,
+    requiredDate: "2026-07-20",
+    priority: "Reorder Soon",
+    productImage: "/images/products/tracksuit.jpg",
+    currentStock: 25,
+    reorderLevel: 40,
+    last30Sales: 60,
+    productionNotes: "Pokhara store stock filling.",
+    sizes: { XS: 10, S: 30, M: 40, L: 30, XL: 10, XXL: 0 }
+  }
+];
 
 type DemandKind = "customer" | "outlet";
 
-const bulkHeaders = [
-  "Material Code",
-  "Material Name",
-  "Material Type",
-  "Required Qty",
-  "Available Qty",
-  "Shortage Qty",
-  "Unit",
-  "Status",
-];
+function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-const measurementHeaders = ["Size", "Chest", "Shoulder", "Sleeve", "Length", "Unit"];
+  // Find source ID from query parameter
+  const customerIdParam = searchParams.get("customerId");
+  const outletIdParam = searchParams.get("outletId");
+  const selectedSourceId = kind === "customer" ? customerIdParam : outletIdParam;
 
-const config = {
-  customer: {
-    pageId: "customerOrderPlanPage",
-    pageClass: "customer-order-page",
-    selectedDataAttr: { "data-selected-customer-id": "" },
-    title: "Create Customer Order Plan",
-    headerTextId: "customerOrderHeaderText",
-    headerText: "Browse ready customer orders, check materials in bulk, and add selected items to a production plan.",
-    actions: [
-      ["/Production/Customer/Customers", "Choose Customer"],
-      ["/Production/Create", "Change Demand Type"],
-      ["/Production/Plan/PlansDetails", "Back to Plans"],
-    ],
-    selectedCardId: "selectedCustomerCard",
-    selectedAvatarId: "selectedCustomerAvatar",
-    selectedTitleId: "selectedCustomerName",
-    selectedMetaId: "selectedCustomerMeta",
-    selectedEyebrow: "Selected Customer",
-    selectedTitle: "Customer",
-    selectedMeta: "Order items for the selected customer.",
-    selectedStats: [
-      ["Phone", "selectedCustomerPhone"],
-      ["Location", "selectedCustomerAddress"],
-      ["Open Orders", "selectedCustomerOrders"],
-      ["Total Qty", "selectedCustomerQty"],
-      ["Earliest Delivery", "selectedCustomerDelivery"],
-    ],
-    warningId: "customerSelectionWarning",
-    warning: "Choose a customer from the customer catalog to view only that customer's order items.",
-    formId: "productionPlanForm",
-    demandType: "Customer Order",
-    draftJsonId: "selectedDraftJson",
-    catalogEyebrow: "Customer Order Catalog",
-    catalogTitleId: "customerOrderCatalogTitle",
-    catalogTitle: "Ready Orders for Production Planning",
-    catalogText: "",
-    heroStats: [
-      ["Selected Items", "selectedItemCount"],
-      ["Total Quantity", "selectedTotalQty"],
-      ["Earliest Delivery", "selectedEarliestDelivery"],
-    ],
-    itemTitleId: "customerOrderItemsTitle",
-    itemTitle: "Customer Order Items",
-    itemTextId: "customerOrderItemsText",
-    itemText: "Click View Details to inspect size chart, measurements, and material requirements.",
-    gridId: "customerOrderCatalogGrid",
-    gridClass: "customer-order-catalog-grid",
-    gridLoading: "Loading customer orders...",
-    basketTitle: "Production Plan Basket",
-    basketText: "Selected items to convert into production plan.",
-    basketItemsId: "planBasketItems",
-    basketEmpty: "No items added yet.",
-    basketStats: [
-      ["Total Items", "basketTotalItems"],
-      ["Total Qty", "basketTotalQty"],
-      ["Earliest Delivery", "basketEarliestDelivery"],
-      ["Material Status", "basketMaterialStatus"],
-    ],
-    createButtonId: "createProductionPlanBtn",
-    checkButtonId: "checkBulkMaterialBtn",
-    clearButtonId: "clearBasketBtn",
-    bulkBodyId: "bulkMaterialBody",
-    bulkEmpty: "Add items to production plan basket, then click Check Materials in Bulk.",
-    modalId: "orderDetailModal",
-    modalTitleId: "detailProductName",
-    modalTitle: "Order Detail",
-    modalSubtitleId: "detailOrderSubtitle",
-    modalSubtitle: "View customer order, size chart, measurements, and production information.",
-    imageId: "detailProductImage",
-    topInfo: [
-      ["Customer", "detailCustomerName"],
-      ["Order No", "detailOrderNo"],
-    ],
-    badges: ["detailCustomerType", "detailPriority", "detailDeliveryBadge"],
-    itemNameId: "detailItemName",
-    infoGrid: [
-      ["Quantity", "detailQuantity"],
-      ["Delivery Date", "detailDeliveryDate"],
-      ["Color / Variant", "detailVariant", "detailVariantPalettePreview"],
-      ["Delivery Location", "detailDeliveryLocation"],
-    ],
-    noteLabel: "Production Notes",
-    noteId: "detailProductionNotes",
-    addDetailButtonId: "addDetailToPlanBtn",
-    detailSections: [
-      {
-        title: "Size Breakdown",
-        text: "Quantity required per size and color variant.",
-        bodyId: "detailSizeBreakdownBody",
-        headers: ["Size", "Palette / Variant", "Quantity"],
-        colSpan: 3,
-        empty: "No size data.",
-        className: "size-breakdown-wrapper",
-        tableClassName: "pp-table compact-table size-breakdown-table",
-      },
-      {
-        title: "Measurement Chart",
-        text: "Specification used by production team.",
-        bodyId: "detailMeasurementBody",
-        headers: measurementHeaders,
-        colSpan: 6,
-        empty: "No measurement data.",
-        tableClassName: "pp-table compact-table",
-      },
-      {
-        title: "Material Requirement Preview",
-        text: "Calculated only for this order item.",
-        bodyId: "detailMaterialBody",
-        headers: ["Material", "Required", "Available", "Shortage", "Status"],
-        colSpan: 5,
-        empty: "No material data.",
-        full: true,
-        tableClassName: "pp-table compact-table",
-      },
-    ],
-    product3dSubtitle: "Product preview for the selected customer order item.",
-    product3dDescription: "Front and back mockup image for the selected order item.",
-    product3dSecondLabel: "Customer",
-  },
-  outlet: {
-    pageId: "outletDemandPlanPage",
-    pageClass: "outlet-demand-page",
-    selectedDataAttr: { "data-selected-outlet-id": "" },
-    title: "Create Outlet Production Plan",
-    headerTextId: "outletDemandHeaderText",
-    headerText: "Browse outlet stock demand, add replenishment items to plan, and check materials in bulk.",
-    actions: [
-      ["/Production/Outlet/Outlets", "Choose Outlet"],
-      ["/Production/Create", "Change Demand Type"],
-      ["/Production/Plan/PlansDetails", "Back to Plans"],
-    ],
-    selectedCardId: "selectedOutletCard",
-    selectedAvatarId: "selectedOutletAvatar",
-    selectedTitleId: "selectedOutletName",
-    selectedMetaId: "selectedOutletMeta",
-    selectedEyebrow: "Selected Outlet",
-    selectedTitle: "Outlet",
-    selectedMeta: "Demand items for the selected outlet.",
-    selectedStats: [
-      ["Manager", "selectedOutletManager"],
-      ["Location", "selectedOutletLocation"],
-      ["Demand Items", "selectedOutletDemandCount"],
-      ["Total Qty", "selectedOutletQty"],
-      ["Earliest Required", "selectedOutletRequired"],
-    ],
-    warningId: "outletSelectionWarning",
-    warning: "Choose an outlet from the outlet catalog to view only that outlet's demand items.",
-    formId: "outletProductionPlanForm",
-    demandType: "Outlet Demand",
-    draftJsonId: "selectedOutletDraftJson",
-    catalogEyebrow: "Outlet Demand Catalog",
-    catalogTitleId: "outletDemandCatalogTitle",
-    catalogTitle: "Outlet Replenishment Planning",
-    catalogText: "Select products that need production for outlet stock replenishment. Review stock gap, sales velocity, suggested quantity, and material availability.",
-    heroStats: [
-      ["Selected Items", "outletSelectedItemCount"],
-      ["Total Suggested Qty", "outletSelectedTotalQty"],
-      ["Earliest Required", "outletSelectedEarliestDate"],
-    ],
-    itemTitleId: "outletDemandItemsTitle",
-    itemTitle: "Outlet Demand Items",
-    itemTextId: "outletDemandItemsText",
-    itemText: "Choose products that need production based on outlet stock gap and sales movement.",
-    gridId: "outletDemandCatalogGrid",
-    gridClass: "customer-order-catalog-grid outlet-demand-catalog-grid",
-    gridLoading: "Loading outlet demand...",
-    basketTitle: "Plan Basket",
-    basketText: "Review selected outlet demand items before creating the production plan.",
-    basketItemsId: "outletPlanBasketItems",
-    basketEmpty: "No outlet demand items added yet.",
-    basketStats: [
-      ["Total Items", "outletBasketTotalItems"],
-      ["Total Qty", "outletBasketTotalQty"],
-      ["Earliest Required", "outletBasketEarliestDate"],
-      ["Material Status", "outletBasketMaterialStatus"],
-    ],
-    createButtonId: "createOutletProductionPlanBtn",
-    checkButtonId: "checkOutletBulkMaterialBtn",
-    clearButtonId: "clearOutletBasketBtn",
-    bulkBodyId: "outletBulkMaterialBody",
-    bulkEmpty: "Add outlet demand items to plan basket, then click Check Materials in Bulk.",
-    modalId: "outletDetailModal",
-    modalTitleId: "outletDetailProductName",
-    modalTitle: "Outlet Demand Detail",
-    modalSubtitleId: "outletDetailSubtitle",
-    modalSubtitle: "Review outlet stock gap, size-wise demand, and material requirement.",
-    imageId: "outletDetailProductImage",
-    topInfo: [
-      ["Outlet", "outletDetailOutletName"],
-      ["Demand No", "outletDetailDemandNo"],
-    ],
-    badges: ["outletDetailStockStatus", "outletDetailVelocity", "outletDetailRequiredBadge"],
-    itemNameId: "outletDetailItemName",
-    infoGrid: [
-      ["Current Stock", "outletDetailCurrentStock"],
-      ["Reorder Level", "outletDetailReorderLevel"],
-      ["Suggested Qty", "outletDetailSuggestedQty"],
-      ["Required Date", "outletDetailRequiredDate"],
-      ["Last 30 Days Sales", "outletDetailLast30Sales"],
-      ["Outlet Location", "outletDetailLocation"],
-    ],
-    noteLabel: "Planning Notes",
-    noteId: "outletDetailNotes",
-    addDetailButtonId: "addOutletDetailToPlanBtn",
-    detailSections: [
-      {
-        title: "Size-wise Stock Gap",
-        text: "Suggested quantity per size and color variant.",
-        bodyId: "outletDetailSizeGapBody",
-        headers: ["Size", "Palette / Variant", "Current", "Reorder", "Plan Qty"],
-        colSpan: 5,
-        empty: "No size gap data.",
-        full: true,
-        className: "outlet-size-gap-wrapper",
-        tableClassName: "pp-table compact-table outlet-size-gap-table",
-      },
-      {
-        title: "Measurement Chart",
-        text: "Specification used by production team.",
-        bodyId: "outletDetailMeasurementBody",
-        headers: measurementHeaders,
-        colSpan: 6,
-        empty: "No measurement data.",
-        tableClassName: "pp-table compact-table",
-      },
-      {
-        title: "Material Requirement Preview",
-        text: "Calculated only for this outlet demand item.",
-        bodyId: "outletDetailMaterialBody",
-        headers: ["Material", "Required", "Available", "Shortage", "Status"],
-        colSpan: 5,
-        empty: "No material data.",
-        full: true,
-        tableClassName: "pp-table compact-table",
-      },
-    ],
-    product3dSubtitle: "Product preview for the selected outlet demand item.",
-    product3dDescription: "Front and back mockup image for the selected outlet demand item.",
-    product3dSecondLabel: "Outlet",
-  },
-} satisfies Record<DemandKind, Record<string, any>>;
+  // Retrieve source detail
+  const sourceDetail = useMemo<any>(() => {
+    if (!selectedSourceId) return null;
+    if (kind === "customer") {
+      return mockCustomers.find(c => c.id === selectedSourceId) || null;
+    } else {
+      return mockOutlets.find(o => o.id === selectedSourceId) || null;
+    }
+  }, [selectedSourceId, kind]);
 
-function SelectedSourceCard({ kind }: { kind: DemandKind }) {
-  const c = config[kind];
+  // Retrieve matching catalog items
+  const catalogItems = useMemo(() => {
+    if (!selectedSourceId) return [];
+    if (kind === "customer") {
+      return mockCustomerOrders.filter(o => o.customerId === selectedSourceId);
+    } else {
+      return mockOutletDemands.filter(d => d.outletId === selectedSourceId);
+    }
+  }, [selectedSourceId, kind]);
+
+  // Basket state
+  const [basket, setBasket] = useState<any[]>([]);
+
+  // Detailed Modal state
+  const [modalItem, setModalItem] = useState<any | null>(null);
+
+  // 3D Preview Modal state
+  const [show3dModal, setShow3dModal] = useState(false);
+  const [active3dSide, setActive3dSide] = useState<"front" | "back">("front");
+
+  // Material Requirement State
+  const [bulkChecked, setBulkChecked] = useState(false);
+  const [bulkMaterials, setBulkMaterials] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Toggle basket item
+  const handleAddToBasket = (item: any) => {
+    setBasket(prev => {
+      const exists = prev.some(b => b.id === item.id);
+      if (exists) {
+        return prev.filter(b => b.id !== item.id);
+      }
+      return [...prev, item];
+    });
+    setBulkChecked(false); // Reset material check
+  };
+
+  const handleRemoveFromBasket = (id: number) => {
+    setBasket(prev => prev.filter(b => b.id !== id));
+    setBulkChecked(false);
+  };
+
+  const handleClearBasket = () => {
+    setBasket([]);
+    setBulkChecked(false);
+  };
+
+  // Compute stats for basket
+  const basketStats = useMemo(() => {
+    const totalItems = basket.length;
+    const totalQty = basket.reduce((sum, item) => sum + item.quantity, 0);
+
+    const dates = basket
+      .map(item => item.deliveryDate || item.requiredDate)
+      .filter(Boolean)
+      .sort();
+    const earliestDate = dates[0] || "-";
+
+    return { totalItems, totalQty, earliestDate };
+  }, [basket]);
+
+  // Bulk material checker
+  const handleCheckBulkMaterials = () => {
+    if (!basket.length) return;
+
+    const calculated: { [key: string]: any } = {};
+
+    basket.forEach(item => {
+      const boms = mockBoms.filter(b => b.productId === item.productId);
+      boms.forEach(bom => {
+        const material = mockMaterials.find(m => m.id === bom.materialId);
+        if (!material) return;
+
+        const baseQty = item.quantity * bom.qtyPerUnit;
+        const requiredQty = baseQty + (baseQty * bom.wastagePercent) / 100;
+        const key = material.materialCode;
+
+        if (calculated[key]) {
+          calculated[key].requiredQty += requiredQty;
+        } else {
+          calculated[key] = {
+            materialCode: material.materialCode,
+            materialName: material.name,
+            materialType: material.type,
+            requiredQty,
+            availableQty: material.availableQty,
+            unit: material.unit,
+          };
+        }
+      });
+    });
+
+    const finalMaterials = Object.values(calculated).map(mat => {
+      const shortageQty = Math.max(mat.requiredQty - mat.availableQty, 0);
+      return {
+        ...mat,
+        shortageQty,
+        status: shortageQty > 0 ? "Shortage" : "Available",
+      };
+    });
+
+    setBulkMaterials(finalMaterials);
+    setBulkChecked(true);
+  };
+
+  // Submit / Create Plan Action
+  const handleCreatePlan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!basket.length) return;
+    setIsSubmitting(true);
+
+    // Save temporary basket and source detail to localStorage to pass to details config page
+    if (typeof window !== "undefined") {
+      const tempData = {
+        kind,
+        sourceDetail,
+        basket,
+        selectedSourceId,
+      };
+      localStorage.setItem("temp_plan_basket", JSON.stringify(tempData));
+    }
+
+    setTimeout(() => {
+      setIsSubmitting(false);
+      router.push("/Production/Plan/CreateDetails");
+    }, 800);
+  };
+
+  // Single item Material Calculation preview inside Modal
+  const itemMaterialPreview = useMemo(() => {
+    if (!modalItem) return [];
+    const boms = mockBoms.filter(b => b.productId === modalItem.productId);
+    return boms.map(bom => {
+      const material = mockMaterials.find(m => m.id === bom.materialId);
+      if (!material) return null;
+
+      const requiredQty = modalItem.quantity * bom.qtyPerUnit;
+      const shortageQty = Math.max(requiredQty - material.availableQty, 0);
+
+      return {
+        materialName: material.name,
+        requiredQty,
+        availableQty: material.availableQty,
+        shortageQty,
+        unit: material.unit,
+        status: shortageQty > 0 ? "Shortage" : "Available",
+      };
+    }).filter(Boolean);
+  }, [modalItem]);
+
+  // Measurement chart mock helper
+  const itemMeasurementChart = useMemo(() => {
+    if (!modalItem) return [];
+    return [
+      { size: "XS", chest: 34, shoulder: 15, sleeve: 22, length: 25, unit: "inch" },
+      { size: "S", chest: 36, shoulder: 16, sleeve: 23, length: 26, unit: "inch" },
+      { size: "M", chest: 38, shoulder: 17, sleeve: 24, length: 27, unit: "inch" },
+      { size: "L", chest: 40, shoulder: 18, sleeve: 25, length: 28, unit: "inch" },
+      { size: "XL", chest: 42, shoulder: 19, sleeve: 26, length: 29, unit: "inch" }
+    ];
+  }, [modalItem]);
+
+  if (!selectedSourceId || !sourceDetail) {
+    return (
+      <div className="pp-page">
+        <div className="alert alert-warning max-w-600 mx-auto mt-50 text-center p-30 rounded-20 shadow-sm border bg-red-soft text-danger">
+          <span style={{ fontSize: "40px", marginBottom: "16px", display: "inline-block" }}>
+            <MaterialIcon name="warning" />
+          </span>
+          <h3>No {kind === "customer" ? "Customer" : "Outlet"} Selected</h3>
+          <p className="mt-8 mb-20 text-muted">Please select a {kind === "customer" ? "customer" : "outlet"} from the catalog to start planning.</p>
+          <Link href={kind === "customer" ? "/Production/Customer/Customers" : "/Production/Outlet/Outlets"} className="btn btn-primary">
+            Go to {kind === "customer" ? "Customer" : "Outlet"} Catalog
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <section className="pp-card selected-customer-card hidden" id={c.selectedCardId}>
-      <div className="selected-customer-main">
-        <div className="selected-customer-avatar" id={c.selectedAvatarId}>{kind === "customer" ? "CU" : "OU"}</div>
+    <div className="pp-page">
+      <style>{`
+        .customer-order-card.selected {
+          border-color: #2563eb !important;
+          background-color: #f8fafc !important;
+          box-shadow: 0 14px 34px rgba(37, 99, 235, 0.16) !important;
+          transform: translateY(-2px);
+        }
+        .selected-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(37, 99, 235, 0.08);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+        .checkmark-icon {
+          background-color: #2563eb;
+          color: #ffffff;
+          border-radius: 50%;
+          width: 44px;
+          height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+          animation: popCheckmark 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popCheckmark {
+          0% { transform: scale(0); }
+          100% { transform: scale(1); }
+        }
+      `}</style>
+      <div className="pp-page-header">
         <div>
-          <span className="catalog-eyebrow">{c.selectedEyebrow}</span>
-          <h2 id={c.selectedTitleId}>{c.selectedTitle}</h2>
-          <p id={c.selectedMetaId}>{c.selectedMeta}</p>
+          <h1>Create {kind === "customer" ? "Customer Order" : "Outlet Replenishment"} Plan</h1>
+          <p>Configure garments, size matrices, and bulk materials for {sourceDetail.customerName || sourceDetail.name}.</p>
+        </div>
+        <div className="pp-header-actions">
+          <Link href={kind === "customer" ? "/Production/Customer/Customers" : "/Production/Outlet/Outlets"} className="btn btn-light">
+            <MaterialIcon name="chevron_left" />
+            Choose {kind === "customer" ? "Customer" : "Outlet"}
+          </Link>
+          <Link href="/Production/Create" className="btn btn-light">
+            Change Demand Type
+          </Link>
+          <Link href="/Production/Plan/PlansDetails" className="btn btn-primary">
+            Back to Plans
+          </Link>
         </div>
       </div>
 
-      <div className="selected-customer-stats">
-        {c.selectedStats.map(([label, id]: string[]) => (
-          <div key={id}>
-            <span>{label}</span>
-            <strong id={id}>{label.includes("Qty") || label.includes("Orders") || label.includes("Items") ? "0" : "-"}</strong>
+      {/* Selected Source Summary Card */}
+      <section className="pp-card mb-24 p-20 d-flex align-items-center justify-content-between flex-wrap gap-20">
+        <div className="d-flex align-items-center gap-16">
+          <div className="rounded-12 d-flex align-items-center justify-content-center" style={kind === "customer" ? { backgroundColor: "#eff6ff", color: "#2563eb", width: "48px", height: "48px", flexShrink: 0 } : { backgroundColor: "#f0fdf4", color: "#16a34a", width: "48px", height: "48px", flexShrink: 0 }}>
+            <MaterialIcon name={kind === "customer" ? "person" : "storefront"} />
           </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function BasketPanel({ kind }: { kind: DemandKind }) {
-  const c = config[kind];
-
-  return (
-    <aside className="plan-basket-panel">
-      <div className="plan-basket-header">
-        <div>
-          <h2>{c.basketTitle}</h2>
-          <p>{c.basketText}</p>
-        </div>
-      </div>
-
-      <div id={c.basketItemsId} className="plan-basket-items">
-        <div className="basket-empty-state">{c.basketEmpty}</div>
-      </div>
-
-      <div className="plan-basket-summary">
-        {c.basketStats.map(([label, id]: string[]) => (
-          <div key={id}>
-            <span>{label}</span>
-            <strong id={id}>{label === "Material Status" ? "Not checked" : label.includes("Date") || label.includes("Delivery") || label.includes("Required") ? "-" : "0"}</strong>
-          </div>
-        ))}
-      </div>
-
-      <div className="basket-actions">
-        <button type="submit" name="ActionType" value="Create" className="btn btn-primary full-width" id={c.createButtonId}>
-          Create Production Plan
-        </button>
-        <button type="button" className="btn btn-outline full-width" id={c.checkButtonId}>
-          Check Materials in Bulk
-        </button>
-        <button type="button" className="btn btn-danger-light full-width" id={c.clearButtonId}>
-          Clear Basket
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function DetailModal({ kind }: { kind: DemandKind }) {
-  const c = config[kind];
-
-  return (
-    <div className="pp-modal hidden" id={c.modalId}>
-      <div className="pp-modal-backdrop" data-close-modal={c.modalId} />
-      <div className="pp-modal-panel large order-detail-modal-panel">
-        <div className="pp-modal-header">
           <div>
-            <h2 id={c.modalTitleId}>{c.modalTitle}</h2>
-            <p id={c.modalSubtitleId}>{c.modalSubtitle}</p>
-          </div>
-          <button type="button" className="modal-close-btn" data-close-modal={c.modalId}>x</button>
-        </div>
-
-        <div className="pp-modal-body">
-          <div className="order-detail-layout">
-            <div className="order-detail-media">
-              <img id={c.imageId} src="/images/products/place-holder.png" alt="Product image" />
-              <div className="order-detail-thumbnail-row">
-                {c.topInfo.map(([label, id]: string[]) => (
-                  <div key={id}>
-                    <span>{label}</span>
-                    <strong id={id}>-</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="order-detail-info">
-              <div className="detail-badge-row">
-                {c.badges.map((id: string) => (
-                  <span id={id} className="priority-badge" key={id}>-</span>
-                ))}
-              </div>
-              <h3 id={c.itemNameId}>-</h3>
-              <div className="detail-info-grid">
-                {c.infoGrid.map(([label, id, paletteId]: string[]) => (
-                  <div key={id}>
-                    <span>{label}</span>
-                    <strong id={id}>-</strong>
-                    {paletteId ? <div id={paletteId} className="palette-preview-host" hidden /> : null}
-                  </div>
-                ))}
-              </div>
-              {kind === "outlet" ? (
-                <div className="detail-info-grid mt-10">
-                  <div><span>Last 7 Days Sales</span><strong id="outletDetailLast7Sales">-</strong></div>
-                  <div><span>30 Days Sales</span><strong id="outletDetailSales30Box">-</strong></div>
-                  <div><span>Avg Daily Sales</span><strong id="outletDetailAvgDailySales">-</strong></div>
-                </div>
-              ) : null}
-              <div className="detail-note-box">
-                <span>{c.noteLabel}</span>
-                <p id={c.noteId}>-</p>
-              </div>
-              <div className="detail-action-stack">
-                <button type="button" className="btn btn-outline full-width product-3d-preview-btn" id="openProduct3dPreviewBtn">
-                  <span className="material-symbols-outlined">view_in_ar</span>
-                  3D Product Preview
-                </button>
-                <button type="button" className="btn btn-primary full-width" id={c.addDetailButtonId}>
-                  Add to Production Plan
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="order-detail-tabs">
-            {c.detailSections.map((section: any) => (
-              <section className={`detail-section ${section.full ? "full-detail-section" : ""}`} key={section.bodyId}>
-                <div className="detail-section-header">
-                  <h3>{section.title}</h3>
-                  <p>{section.text}</p>
-                </div>
-                <TableShell
-                  bodyId={section.bodyId}
-                  headers={section.headers}
-                  wrapperClassName={`pp-table-wrapper ${section.className || ""}`}
-                  tableClassName={section.tableClassName}
-                >
-                  <tr>
-                    <td colSpan={section.colSpan} className="empty-cell">{section.empty}</td>
-                  </tr>
-                </TableShell>
-              </section>
-            ))}
+            <span className="text-xs text-muted font-bold d-block uppercase tracking-wider">{kind === "customer" ? "Customer Account" : "Store Outlet"}</span>
+            <strong className="fs-16">{sourceDetail.customerName || sourceDetail.name}</strong>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function Product3dModal({ kind }: { kind: DemandKind }) {
-  const c = config[kind];
-
-  return (
-    <div className="pp-modal product-3d-modal hidden" id="product3dPreviewModal">
-      <div className="pp-modal-backdrop" data-close-modal="product3dPreviewModal" />
-      <div className="pp-modal-panel large product-3d-modal-panel">
-        <div className="pp-modal-header">
-          <div>
-            <h2 id="product3dPreviewTitle">3D Product Preview</h2>
-            <p id="product3dPreviewSubtitle">{c.product3dSubtitle}</p>
-          </div>
-          <div className="product-3d-header-actions">
-            <button type="button" className="btn btn-light btn-sm" id="saveProduct3dImageBtn">
-              <span className="material-symbols-outlined">download</span>
-              Save Image
-            </button>
-            <button type="button" className="modal-close-btn" data-close-modal="product3dPreviewModal">x</button>
-          </div>
-        </div>
-
-        <div className="pp-modal-body product-3d-modal-body">
-          <div className="product-3d-layout">
-            <section className="product-3d-viewer-card">
-              <div className="product-3d-viewer-head">
-                <div className="product-3d-segmented">
-                  <button className="product-3d-view-btn active" id="product3dFrontBtn" type="button">Front</button>
-                  <button className="product-3d-view-btn" id="product3dBackBtn" type="button">Back</button>
-                </div>
-                <div className="product-3d-hint">Click Front / Back to flip the shirt</div>
-              </div>
-              <div className="product-3d-stage">
-                <div className="product-3d-view-pill" id="product3dViewPill">FRONT VIEW</div>
-                <div className="product-3d-flip-card" id="product3dFlipCard">
-                  <div className="product-3d-shirt-side product-3d-front-side">
-                    <img className="product-3d-shirt-img" id="product3dFrontImage" src="/images/mockup3dimages/whiteshirtfront.png" alt="White shirt front" />
-                  </div>
-                  <div className="product-3d-shirt-side product-3d-back-side">
-                    <img className="product-3d-shirt-img" id="product3dBackImage" src="/images/mockup3dimages/whiteshirtback.png" alt="White shirt back" />
-                  </div>
-                </div>
-              </div>
-              <div className="product-3d-thumbs" id="product3dThumbs" />
-            </section>
-
-            <aside className="product-3d-details-card">
+        <div className="selected-customer-stats m-0 flex-grow-1 justify-content-end d-flex gap-20 flex-wrap">
+          {kind === "customer" ? (
+            <>
               <div>
-                <span className="catalog-eyebrow">Mockup Preview</span>
-                <h3 id="product3dProductName">Product Preview</h3>
-                <p id="product3dDescription">{c.product3dDescription}</p>
+                <span>Phone</span>
+                <strong>{sourceDetail.phone}</strong>
               </div>
-              <div className="product-3d-option-block">
-                <div className="product-3d-option-title">Product's Default Palette</div>
-                <div className="product-3d-selection-summary">
-                  <strong id="product3dAvailablePalette">-</strong>
-                  <div id="product3dAvailablePalettePreview" className="palette-preview-host mt-5" />
-                </div>
+              <div>
+                <span>Location</span>
+                <strong>{sourceDetail.address}</strong>
               </div>
-              <div className="product-3d-option-block">
-                <div className="product-3d-option-title">Customer's Ordered Palette</div>
-                <div className="product-3d-selection-summary">
-                  <strong id="product3dCustomerPalette">-</strong>
-                  <div id="product3dCustomerPalettePreview" className="palette-preview-host mt-5" />
-                </div>
+              <div>
+                <span>Payment Terms</span>
+                <strong>{sourceDetail.paymentTerms}</strong>
               </div>
-              <div className="product-3d-option-block">
-                <div className="product-3d-option-title">Size <span id="product3dSizeLabel">M</span></div>
-                <div className="product-3d-size-row" id="product3dSizeButtons" />
+              <div>
+                <span>Open Orders</span>
+                <strong>{sourceDetail.ordersCount} items</strong>
               </div>
-              <div className="product-3d-selection-summary" id="product3dSummary">Selected: White / M / Front view</div>
-              <div className="product-3d-meta-grid">
-                <div><span>{kind === "customer" ? "Order No" : "Demand No"}</span><strong id="product3dOrderNo">-</strong></div>
-                <div><span>{c.product3dSecondLabel}</span><strong id="product3dCustomerName">-</strong></div>
-                <div><span>Quantity</span><strong id="product3dQuantity">-</strong></div>
-                <div>
-                  <span>Variant</span>
-                  <strong id="product3dVariant">-</strong>
-                  <div id="product3dVariantPalettePreview" className="palette-preview-host" hidden />
-                </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <span>Manager</span>
+                <strong>{sourceDetail.manager}</strong>
               </div>
-            </aside>
+              <div>
+                <span>Location</span>
+                <strong>{sourceDetail.location}</strong>
+              </div>
+              <div>
+                <span>Demand Items</span>
+                <strong>{sourceDetail.demandCount} items</strong>
+              </div>
+              <div>
+                <span>Suggested Qty</span>
+                <strong>{sourceDetail.totalQty.toLocaleString()} pcs</strong>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* Hero Catalog Card */}
+      <section className="pp-card catalog-hero-card mb-24">
+        <div className="catalog-hero-content">
+          <div>
+            <span className="catalog-eyebrow">{kind === "customer" ? "Customer Order Catalog" : "Outlet Replenishment Catalog"}</span>
+            <h2>Demand Items Awaiting Production</h2>
+            <p className="text-muted text-xs mt-4">Select items to convert into the plan basket. Check material capacity in bulk below.</p>
+          </div>
+          <div className="catalog-hero-stats">
+            <div>
+              <span>Selected Basket Items</span>
+              <strong>{basketStats.totalItems}</strong>
+            </div>
+            <div>
+              <span>Total Plan Qty</span>
+              <strong>{basketStats.totalQty.toLocaleString()} pcs</strong>
+            </div>
+            <div>
+              <span>Earliest Required Date</span>
+              <strong>{basketStats.earliestDate}</strong>
+            </div>
           </div>
         </div>
+      </section>
+
+      {/* Main Two-Column Split Dashboard */}
+      <div className="catalog-layout">
+        <main className="catalog-main">
+          <div className="catalog-section-header">
+            <h2>{kind === "customer" ? "Customer Orders" : "Outlet Demands"}</h2>
+            <p>Select which items to plan for the production run.</p>
+          </div>
+
+          <div className="customer-order-catalog-grid">
+            {catalogItems.length ? (
+              catalogItems.map((item: any) => {
+                const isInBasket = basket.some(b => b.id === item.id);
+                const priorityClass = item.priority === "Urgent" || item.priority === "Critical" ? "status-danger" : "status-normal";
+                return (
+                  <div className={`customer-order-card ${isInBasket ? "selected" : ""}`} key={item.id}>
+                    <div className="customer-order-image-wrap">
+                      <img src={item.productImage} alt={item.productName} style={isInBasket ? { filter: "brightness(0.7) contrast(1.1)" } : undefined} />
+                      <span className={`catalog-status-chip ${isInBasket ? "added" : ""}`}>
+                        {isInBasket ? "Added" : "Ready"}
+                      </span>
+                      {isInBasket && (
+                        <div className="selected-overlay">
+                          <span className="checkmark-icon">
+                            <MaterialIcon name="check" />
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="customer-order-card-body">
+                      <div className="catalog-card-top">
+                        <span className="customer-code">{item.orderNo || item.demandNo}</span>
+                        <span className={`priority-badge ${priorityClass}`}>{item.priority}</span>
+                      </div>
+
+                      <h3>{item.productName}</h3>
+                      <p className="catalog-customer-name">{item.variant}</p>
+
+                      <div className="catalog-meta-grid">
+                        <div>
+                          <span>Target Qty</span>
+                          <strong>{item.quantity.toLocaleString()} pcs</strong>
+                        </div>
+                        <div>
+                          <span>Required Date</span>
+                          <strong>{item.deliveryDate || item.requiredDate}</strong>
+                        </div>
+                        {kind === "outlet" && (
+                          <>
+                            <div>
+                              <span>Current Stock</span>
+                              <strong>{item.currentStock} pcs</strong>
+                            </div>
+                            <div>
+                              <span>Velocity (30D)</span>
+                              <strong>{item.last30Sales} sales</strong>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="catalog-card-actions">
+                        <button type="button" className="btn btn-light" onClick={() => setModalItem(item)}>
+                          View Details
+                        </button>
+                        <button
+                          type="button"
+                          className={`btn ${isInBasket ? "btn-light" : "btn-primary"}`}
+                          style={isInBasket ? { backgroundColor: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" } : undefined}
+                          onClick={() => handleAddToBasket(item)}
+                        >
+                          {isInBasket ? (
+                            <span className="d-flex align-items-center justify-content-center gap-4">
+                              <MaterialIcon name="check_circle" />
+                              Added
+                            </span>
+                          ) : (
+                            "Add to Plan"
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="empty-cell py-30 w-full text-center">No open items found.</div>
+            )}
+          </div>
+        </main>
+
+        {/* Sticky Plan Basket Panel */}
+        <aside className="plan-basket-panel">
+          <div className="plan-basket-header">
+            <div>
+              <h2>Plan Basket</h2>
+              <p>Items included in the current run</p>
+            </div>
+            {basket.length ? (
+              <button type="button" className="btn btn-link text-danger text-xs p-0 border-0 bg-transparent" onClick={handleClearBasket}>
+                Clear All
+              </button>
+            ) : null}
+          </div>
+
+          <div className="plan-basket-items" style={{ minHeight: "180px", maxHeight: "400px", overflowY: "auto" }}>
+            {basket.length ? (
+              basket.map((item: any) => (
+                <div className="basket-item mb-8" key={item.id}>
+                  <img src={item.productImage} alt={item.productName} />
+                  <div>
+                    <strong>{item.productName}</strong>
+                    <span>{item.orderNo || item.demandNo} | {item.quantity} pcs</span>
+                  </div>
+                  <button type="button" className="btn-link text-danger border-0 bg-transparent p-4 d-grid place-items-center" onClick={() => handleRemoveFromBasket(item.id)}>
+                    <span style={{ fontSize: "16px", display: "inline-block" }}>
+                      <MaterialIcon name="close" />
+                    </span>
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="basket-empty-state d-grid place-items-center min-h-120 text-muted fs-12 border border-dashed rounded-12 p-20">
+                <span style={{ fontSize: "32px", marginBottom: "8px", display: "inline-block" }}>
+                  <MaterialIcon name="shopping_basket" />
+                </span>
+                <span>Basket is empty. Add items from the catalog.</span>
+              </div>
+            )}
+          </div>
+
+          <div className="plan-basket-summary border-top pt-16 mt-16">
+            <div className="d-flex justify-content-between mb-8 fs-12">
+              <span>Total Items:</span>
+              <strong className="text-dark">{basketStats.totalItems}</strong>
+            </div>
+            <div className="d-flex justify-content-between mb-8 fs-12">
+              <span>Total Qty:</span>
+              <strong className="text-dark">{basketStats.totalQty.toLocaleString()} pcs</strong>
+            </div>
+            <div className="d-flex justify-content-between mb-8 fs-12">
+              <span>Earliest Date:</span>
+              <strong className="text-dark">{basketStats.earliestDate}</strong>
+            </div>
+            <div className="d-flex justify-content-between mb-16 fs-12">
+              <span>Material Checked:</span>
+              <strong className={bulkChecked ? "text-green" : "text-danger"}>
+                {bulkChecked ? "Checked OK" : "Pending Check"}
+              </strong>
+            </div>
+          </div>
+
+          <form onSubmit={handleCreatePlan} className="d-flex flex-column gap-10">
+            <button
+              type="button"
+              className="btn btn-outline full-width"
+              disabled={!basket.length}
+              onClick={handleCheckBulkMaterials}
+            >
+              <MaterialIcon name="inventory" />
+              Check Materials in Bulk
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary full-width"
+              disabled={!basket.length || isSubmitting}
+            >
+              {isSubmitting ? (
+                "Redirecting..."
+              ) : (
+                <>
+                  <MaterialIcon name="arrow_forward" />
+                  Proceed to Plan Details
+                </>
+              )}
+            </button>
+          </form>
+        </aside>
       </div>
+
+      {/* Bulk Material requirement table */}
+      <section className="pp-card bulk-material-card mt-24">
+        <div className="pp-card-header">
+          <div>
+            <h2>Bulk Material Requirement</h2>
+            <p>Calculated total material required for all basket items.</p>
+          </div>
+        </div>
+        <div className="pp-table-wrapper border rounded-12">
+          <table className="pp-table compact-table m-0">
+            <thead>
+              <tr>
+                <th>Material Code</th>
+                <th>Material Name</th>
+                <th>Type</th>
+                <th>Required Qty</th>
+                <th>Available Qty</th>
+                <th>Shortage Qty</th>
+                <th>Unit</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bulkChecked && bulkMaterials.length ? (
+                bulkMaterials.map(mat => (
+                  <tr key={mat.materialCode}>
+                    <td><code>{mat.materialCode}</code></td>
+                    <td><strong>{mat.materialName}</strong></td>
+                    <td>{mat.materialType}</td>
+                    <td>{Number(mat.requiredQty.toFixed(1))}</td>
+                    <td>{mat.availableQty}</td>
+                    <td className={mat.shortageQty > 0 ? "text-danger fw-700" : "text-green"}>
+                      {mat.shortageQty > 0 ? Number(mat.shortageQty.toFixed(1)) : "-"}
+                    </td>
+                    <td>{mat.unit}</td>
+                    <td>
+                      <span className={`status-badge ${mat.status === "Shortage" ? "status-shortage" : "status-completed"} text-xs`}>
+                        {mat.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="empty-cell py-30 text-center text-muted">
+                    {basket.length
+                      ? 'Click "Check Materials in Bulk" in the basket panel to calculate requirements.'
+                      : "Add items to basket to start checking materials."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Item Detail Modal */}
+      {modalItem && (
+        <div className="pp-modal">
+          <div className="pp-modal-backdrop" onClick={() => setModalItem(null)} />
+          <div className="pp-modal-panel large order-detail-modal-panel">
+            <div className="pp-modal-header">
+              <div>
+                <h2>{kind === "customer" ? "Order Details" : "Demand Details"}</h2>
+                <p>Inspection for {modalItem.productName} ({modalItem.orderNo || modalItem.demandNo})</p>
+              </div>
+              <button type="button" className="modal-close-btn border-0 bg-transparent" onClick={() => setModalItem(null)}>
+                <MaterialIcon name="close" />
+              </button>
+            </div>
+
+            <div className="pp-modal-body">
+              <div className="order-detail-layout">
+                {/* Visual Block */}
+                <div className="order-detail-media">
+                  <img src={modalItem.productImage} alt={modalItem.productName} />
+                  <div className="order-detail-thumbnail-row border-top pt-12 mt-12 d-flex justify-content-around">
+                    <div>
+                      <span className="text-xs text-muted d-block">Category</span>
+                      <strong>{modalItem.category}</strong>
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted d-block">Priority</span>
+                      <strong>{modalItem.priority}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Info block */}
+                <div className="order-detail-info">
+                  <h3>{modalItem.productName}</h3>
+                  <div className="detail-info-grid mt-12">
+                    <div>
+                      <span>Planned Quantity</span>
+                      <strong>{modalItem.quantity.toLocaleString()} pcs</strong>
+                    </div>
+                    <div>
+                      <span>Required Date</span>
+                      <strong>{modalItem.deliveryDate || modalItem.requiredDate}</strong>
+                    </div>
+                    <div>
+                      <span>Variant Color</span>
+                      <strong>{modalItem.variant}</strong>
+                    </div>
+                    {kind === "outlet" && (
+                      <>
+                        <div>
+                          <span>Current Stock</span>
+                          <strong>{modalItem.currentStock} pcs</strong>
+                        </div>
+                        <div>
+                          <span>Reorder Limit</span>
+                          <strong>{modalItem.reorderLevel} pcs</strong>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="detail-note-box mt-16 p-12 bg-light rounded-12">
+                    <span className="text-xs font-bold text-muted uppercase tracking-wider">Planning Notes</span>
+                    <p className="fs-12 text-dark mt-4 m-0">{modalItem.productionNotes || "No notes available."}</p>
+                  </div>
+
+                  <div className="detail-action-stack mt-20 d-flex flex-column gap-10">
+                    <button
+                      type="button"
+                      className="btn btn-outline full-width"
+                      onClick={() => {
+                        setActive3dSide("front");
+                        setShow3dModal(true);
+                      }}
+                    >
+                      <MaterialIcon name="view_in_ar" />
+                      3D Mockup Preview
+                    </button>
+                    {basket.some(b => b.id === modalItem.id) ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline full-width"
+                        style={{ backgroundColor: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" }}
+                        onClick={() => {
+                          handleAddToBasket(modalItem);
+                          setModalItem(null);
+                        }}
+                      >
+                        <MaterialIcon name="check_circle" />
+                        Remove from Plan
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-primary full-width"
+                        onClick={() => {
+                          handleAddToBasket(modalItem);
+                          setModalItem(null);
+                        }}
+                      >
+                        <MaterialIcon name="add" />
+                        Add to Production Plan
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Subtables: Sizes, Measurements, Materials */}
+              <div className="order-detail-tabs mt-24">
+                {/* Sizes Breakdown */}
+                <section className="detail-section mb-20">
+                  <div className="detail-section-header">
+                    <h3>Sizing Matrix Breakdown</h3>
+                    <p>Required distributions across standard sizes.</p>
+                  </div>
+                  <div className="pp-table-wrapper border rounded-12">
+                    <table className="pp-table compact-table m-0">
+                      <thead>
+                        <tr>
+                          <th>Size</th>
+                          <th>Variant</th>
+                          <th>Quantity</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(modalItem.sizes).map(([sz, qty]: any) => (
+                          <tr key={sz}>
+                            <td><strong>{sz}</strong></td>
+                            <td>{modalItem.variant}</td>
+                            <td>{qty} pcs</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* Measurements */}
+                <section className="detail-section mb-20">
+                  <div className="detail-section-header">
+                    <h3>Standard Measurements</h3>
+                    <p>Standard grade specs used for tailors.</p>
+                  </div>
+                  <div className="pp-table-wrapper border rounded-12">
+                    <table className="pp-table compact-table m-0">
+                      <thead>
+                        <tr>
+                          <th>Size</th>
+                          <th>Chest</th>
+                          <th>Shoulder</th>
+                          <th>Sleeve</th>
+                          <th>Length</th>
+                          <th>Unit</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {itemMeasurementChart.map(m => (
+                          <tr key={m.size}>
+                            <td><strong>{m.size}</strong></td>
+                            <td>{m.chest}</td>
+                            <td>{m.shoulder}</td>
+                            <td>{m.sleeve}</td>
+                            <td>{m.length}</td>
+                            <td>{m.unit}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+
+                {/* BOM Requirement */}
+                <section className="detail-section">
+                  <div className="detail-section-header">
+                    <h3>Raw Materials Preview</h3>
+                    <p>Standard material estimates for this item's quantities.</p>
+                  </div>
+                  <div className="pp-table-wrapper border rounded-12">
+                    <table className="pp-table compact-table m-0">
+                      <thead>
+                        <tr>
+                          <th>Material</th>
+                          <th>Required</th>
+                          <th>Available</th>
+                          <th>Shortage</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {itemMaterialPreview.map((mat: any) => (
+                          <tr key={mat.materialName}>
+                            <td><strong>{mat.materialName}</strong></td>
+                            <td>{Number(mat.requiredQty.toFixed(1))} {mat.unit}</td>
+                            <td>{mat.availableQty} {mat.unit}</td>
+                            <td className={mat.shortageQty > 0 ? "text-danger fw-700" : "text-green"}>
+                              {mat.shortageQty > 0 ? `${Number(mat.shortageQty.toFixed(1))} ${mat.unit}` : "-"}
+                            </td>
+                            <td>
+                              <span className={`status-badge ${mat.status === "Shortage" ? "status-shortage" : "status-completed"} text-xs`}>
+                                {mat.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3D Shirt Preview Modal Drawer */}
+      {show3dModal && modalItem && (
+        <div className="pp-modal product-3d-modal">
+          <div className="pp-modal-backdrop" onClick={() => setShow3dModal(false)} />
+          <div className="pp-modal-panel large product-3d-modal-panel">
+            <div className="pp-modal-header">
+              <div>
+                <h2>3D Product Mockup</h2>
+                <p>Active design visual for {modalItem.productName}</p>
+              </div>
+              <button type="button" className="modal-close-btn border-0 bg-transparent" onClick={() => setShow3dModal(false)}>
+                <MaterialIcon name="close" />
+              </button>
+            </div>
+
+            <div className="pp-modal-body product-3d-modal-body">
+              <div className="product-3d-layout">
+                {/* 3D Canvas Mock */}
+                <section className="product-3d-viewer-card">
+                  <div className="product-3d-viewer-head">
+                    <div className="product-3d-segmented">
+                      <button
+                        type="button"
+                        className={`product-3d-view-btn ${active3dSide === "front" ? "active" : ""}`}
+                        onClick={() => setActive3dSide("front")}
+                      >
+                        Front
+                      </button>
+                      <button
+                        type="button"
+                        className={`product-3d-view-btn ${active3dSide === "back" ? "active" : ""}`}
+                        onClick={() => setActive3dSide("back")}
+                      >
+                        Back
+                      </button>
+                    </div>
+                    <div className="product-3d-hint text-xs text-muted mt-8">Click buttons to flip mockup template shirt</div>
+                  </div>
+                  <div className="product-3d-stage mt-16 p-24 bg-light rounded-16 border d-grid place-items-center relative" style={{ minHeight: "320px" }}>
+                    <div className="product-3d-view-pill uppercase font-bold text-xs bg-dark text-white py-4 px-10 rounded-20 absolute" style={{ top: "12px", left: "12px" }}>
+                      {active3dSide === "front" ? "Front View" : "Back View"}
+                    </div>
+                    <img
+                      src={active3dSide === "front" ? "/images/mockup3dimages/whiteshirtfront.png" : "/images/mockup3dimages/whiteshirtback.png"}
+                      alt="3D mockup"
+                      style={{ maxHeight: "280px", objectFit: "contain" }}
+                      onError={(e) => {
+                        // Fallback image
+                        e.currentTarget.src = modalItem.productImage;
+                      }}
+                    />
+                  </div>
+                </section>
+
+                {/* Specs */}
+                <aside className="product-3d-details-card">
+                  <div>
+                    <span className="catalog-eyebrow">Interactive Mockup</span>
+                    <h3>{modalItem.productName}</h3>
+                    <p className="text-muted text-xs">{modalItem.productionNotes || "No notes."}</p>
+                  </div>
+                  <div className="product-3d-option-block mt-16">
+                    <div className="product-3d-option-title text-xs font-bold text-muted uppercase">Selected Variant Color</div>
+                    <strong className="text-dark fs-14 mt-4 d-block">{modalItem.variant}</strong>
+                  </div>
+                  <div className="product-3d-option-block mt-16">
+                    <div className="product-3d-option-title text-xs font-bold text-muted uppercase">Size split</div>
+                    <div className="d-flex gap-8 flex-wrap mt-6">
+                      {Object.keys(modalItem.sizes).map(sz => (
+                        <span key={sz} className="py-4 px-8 border rounded-8 text-xs font-bold bg-white text-dark">{sz}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="product-3d-meta-grid border-top pt-16 mt-20">
+                    <div>
+                      <span>Order Ref</span>
+                      <strong>{modalItem.orderNo || modalItem.demandNo}</strong>
+                    </div>
+                    <div>
+                      <span>Quantity</span>
+                      <strong>{modalItem.quantity.toLocaleString()} pcs</strong>
+                    </div>
+                  </div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 export function ProductionDemandPlanPage({ kind }: { kind: DemandKind }) {
-  const c = config[kind];
-
   return (
-    <>
-      <div className={`pp-page ${c.pageClass}`} id={c.pageId} {...c.selectedDataAttr}>
-        <div className="pp-page-header">
-          <div>
-            <h1>{c.title}</h1>
-            <p id={c.headerTextId}>{c.headerText}</p>
-          </div>
-          <div className="pp-header-actions">
-            {c.actions.map(([href, label]: string[]) => (
-              <ActionButton href={href} key={href}>{label}</ActionButton>
-            ))}
-          </div>
-        </div>
-
-        <SelectedSourceCard kind={kind} />
-        <div className="alert alert-warning hidden" id={c.warningId}>{c.warning}</div>
-
-        <form method="post" id={c.formId}>
-          <input name="DemandType" type="hidden" value={c.demandType} />
-          <input name="SelectedDraftJson" type="hidden" id={c.draftJsonId} />
-
-          <section className="pp-card catalog-hero-card">
-            <div className="catalog-hero-content">
-              <div>
-                <span className="catalog-eyebrow">{c.catalogEyebrow}</span>
-                <h2 id={c.catalogTitleId}>{c.catalogTitle}</h2>
-                {c.catalogText ? <p>{c.catalogText}</p> : null}
-              </div>
-              <div className="catalog-hero-stats">
-                {c.heroStats.map(([label, id]: string[]) => (
-                  <div key={id}>
-                    <span>{label}</span>
-                    <strong id={id}>{label.includes("Date") || label.includes("Delivery") || label.includes("Required") ? "-" : "0"}</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <div className="catalog-layout">
-            <main className="catalog-main">
-              <div className="catalog-section-header">
-                <div>
-                  <h2 id={c.itemTitleId}>{c.itemTitle}</h2>
-                  <p id={c.itemTextId}>{c.itemText}</p>
-                </div>
-              </div>
-              <div id={c.gridId} className={c.gridClass}>
-                <div className="empty-cell">{c.gridLoading}</div>
-              </div>
-            </main>
-            <BasketPanel kind={kind} />
-          </div>
-
-          <section className="pp-card bulk-material-card">
-            <div className="pp-card-header">
-              <div>
-                <h2>Bulk Material Requirement</h2>
-                <p>Material requirement is calculated from all selected production plan items.</p>
-              </div>
-            </div>
-            <TableShell bodyId={c.bulkBodyId} headers={bulkHeaders}>
-              <tr>
-                <td colSpan={8} className="empty-cell">{c.bulkEmpty}</td>
-              </tr>
-            </TableShell>
-          </section>
-        </form>
-      </div>
-
-      <DetailModal kind={kind} />
-      <Product3dModal kind={kind} />
-    </>
+    <Suspense fallback={<div className="pp-page text-center py-50">Loading page parameters...</div>}>
+      <ProductionDemandPlanPageContent kind={kind} />
+    </Suspense>
   );
 }

@@ -21,6 +21,7 @@ import productionPlanDetails from "./page-data/production-plan-details";
 import productionPlanEdit from "./page-data/production-plan-edit";
 import productionPlanPlansDetails from "./page-data/production-plan-plans-details";
 import productionPlanStageUpdate from "./page-data/production-plan-stage-update";
+import productionPlanCreateDetails from "./page-data/production-plan-create-details";
 import warehouseIndex from "./page-data/warehouse-index";
 import warehouseStock from "./page-data/warehouse-stock";
 import warehouseVisualization from "./page-data/warehouse-visualization";
@@ -51,6 +52,7 @@ export const pages: Record<string, LegacyPageDefinition> = {
   "/Production/Plan/Edit": productionPlanEdit,
   "/Production/Plan/PlansDetails": productionPlanPlansDetails,
   "/Production/Plan/StageUpdate": productionPlanStageUpdate,
+  "/Production/Plan/CreateDetails": productionPlanCreateDetails,
   "/Warehouse/Index": warehouseIndex,
   "/Warehouse/Stock": warehouseStock,
   "/Warehouse/Visualization": warehouseVisualization,

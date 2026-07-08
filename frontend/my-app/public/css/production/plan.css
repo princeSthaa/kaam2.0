@@ -2927,3 +2927,293 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* =========================================================
+   REACT PLANNER STYLING & RESPONSIVENESS OVERRIDES
+   ========================================================= */
+
+/* Auto-complete custom styling */
+.autocomplete-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-field-box {
+    padding-left: 14px;
+    height: 48px;
+    border-radius: 12px;
+    border: 1.5px solid #cbd5e1;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-field-box:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.autocomplete-dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 1050;
+    margin-top: 6px;
+}
+
+.autocomplete-dropdown-list .dropdown-item {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.15s ease;
+}
+
+.autocomplete-dropdown-list .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-dropdown-list .dropdown-item:hover {
+    background: #f8fafc;
+}
+
+.autocomplete-dropdown-list .dropdown-item strong {
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.autocomplete-dropdown-list .dropdown-item span {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.autocomplete-dropdown-list .dropdown-empty {
+    padding: 16px;
+    text-align: center;
+    color: #64748b;
+    font-size: 13px;
+}
+
+/* Accordion cards styling */
+.product-accordion-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.product-accordion-card .accordion-header {
+    background: #f8fafc;
+    transition: background 0.2s ease;
+}
+
+.product-accordion-card .accordion-header:hover {
+    background: #f1f5f9;
+}
+
+.count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Sizing distribution grids */
+.size-inputs-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.size-input-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.size-input-field span {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.size-input-field input {
+    width: 100%;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    height: 32px;
+}
+
+.validation-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.bg-green-soft {
+    background-color: #f0fdf4;
+}
+
+.bg-red-soft {
+    background-color: #fef2f2;
+}
+
+.text-green {
+    color: #16a34a;
+}
+
+/* Layout overrides and responsiveness */
+@media (max-width: 1024px) {
+    .catalog-layout {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .plan-basket-panel {
+        position: static !important;
+        width: 100% !important;
+        margin-top: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    .customer-order-catalog-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .size-inputs-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    
+    .detail-info-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+    
+    .order-detail-layout {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    
+    .product-3d-layout {
+        grid-template-columns: 1fr !important;
+        gap: 24px !important;
+    }
+    
+    .pp-modal-panel.large {
+        width: 95% !important;
+        margin: 10px auto !important;
+        max-height: 90vh !important;
+    }
+
+    .form-grid.two-col,
+    .form-grid.three-col {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+}
+
+/* 3D Shirt Preview Styling */
+.product-3d-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) 300px;
+    gap: 24px;
+    align-items: start;
+}
+
+.product-3d-viewer-card {
+    background: #ffffff;
+    border-radius: 16px;
+}
+
+.product-3d-viewer-head {
+    display: flex;
+    flex-direction: column;
+}
+
+.product-3d-segmented {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 4px;
+    border-radius: 10px;
+    align-self: flex-start;
+}
+
+.product-3d-view-btn {
+    border: none;
+    background: transparent;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748b;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.product-3d-view-btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.product-3d-stage {
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 16px;
+    position: relative;
+}
+
+.product-3d-details-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.product-3d-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.product-3d-meta-grid div span {
+    display: block;
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+
+.product-3d-meta-grid div strong {
+    font-size: 14px;
+    color: #0f172a;
+}

@@ -92,23 +92,52 @@ function ProductWorkspace({
   emptyText: string;
 }) {
   return (
-    <div className="product-editor-workspace mt-10">
-      <div className="product-editor-layout">
-        <aside className="product-editor-sidebar">
-          <div className="product-editor-list-meta">
-            <span>Products In Plan</span>
-            <strong id={countId}>0</strong>
-          </div>
-
-          <div id={listId} className="product-editor-list" role="listbox">
-            <div className="empty-cell">Loading plan products...</div>
-          </div>
-        </aside>
-
-        <section id={detailId} className="product-editor-detail">
-          <div className="product-editor-empty detail">{emptyText}</div>
-        </section>
+    <div className="product-horizontal-workspace mt-10">
+      <div className="product-horizontal-shelf-header">
+        <div className="shelf-header-title">
+          <span className="material-symbols-outlined icon-span">inventory_2</span>
+          <span>Products In Plan</span>
+          <strong id={countId} className="count-badge">0</strong>
+        </div>
       </div>
+
+      <div className="horizontal-product-shelf mb-20">
+        <button
+          type="button"
+          className="rack-nav-btn"
+          aria-label="Scroll left"
+          onClick={(event) => {
+            const scrollContainer = event.currentTarget.nextElementSibling;
+            if (scrollContainer) {
+              scrollContainer.scrollBy({ left: -240, behavior: "smooth" });
+            }
+          }}
+        >
+          <span className="material-symbols-outlined">chevron_left</span>
+        </button>
+        
+        <div id={listId} className="horizontal-product-scroll" role="listbox">
+          <div className="empty-cell">Loading plan products...</div>
+        </div>
+
+        <button
+          type="button"
+          className="rack-nav-btn"
+          aria-label="Scroll right"
+          onClick={(event) => {
+            const scrollContainer = event.currentTarget.previousElementSibling;
+            if (scrollContainer) {
+              scrollContainer.scrollBy({ left: 240, behavior: "smooth" });
+            }
+          }}
+        >
+          <span className="material-symbols-outlined">chevron_right</span>
+        </button>
+      </div>
+
+      <section id={detailId} className="product-horizontal-detail mt-20">
+        <div className="product-editor-empty detail">{emptyText}</div>
+      </section>
     </div>
   );
 }
