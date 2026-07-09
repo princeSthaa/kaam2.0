@@ -1,0 +1,42 @@
+[
+  {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "name": "Dyed Cotton Fabric",
+    "category": "Fabric",
+    "unitPrice": 250,
+    "createdAt": "2026-07-09T00:00:00.000Z",
+    "updatedAt": "2026-07-09T00:00:00.000Z"
+  },
+  {
+    "id": "22222222-2222-2222-2222-222222222222",
+    "name": "Dyed Pique Fabric",
+    "category": "Fabric",
+    "unitPrice": 320,
+    "createdAt": "2026-07-09T00:00:00.000Z",
+    "updatedAt": "2026-07-09T00:00:00.000Z"
+  },
+  {
+    "id": "33333333-3333-3333-3333-333333333333",
+    "name": "Dyed Trouser Fabric",
+    "category": "Fabric",
+    "unitPrice": 380,
+    "createdAt": "2026-07-09T00:00:00.000Z",
+    "updatedAt": "2026-07-09T00:00:00.000Z"
+  },
+  {
+    "id": "44444444-4444-4444-4444-444444444444",
+    "name": "Dyed Fleece Fabric",
+    "category": "Fabric",
+    "unitPrice": 450,
+    "createdAt": "2026-07-09T00:00:00.000Z",
+    "updatedAt": "2026-07-09T00:00:00.000Z"
+  },
+  {
+    "id": "55555555-5555-5555-5555-555555555555",
+    "name": "Dyed Kurta Fabric",
+    "category": "Fabric",
+    "unitPrice": 280,
+    "createdAt": "2026-07-09T00:00:00.000Z",
+    "updatedAt": "2026-07-09T00:00:00.000Z"
+  }
+]
