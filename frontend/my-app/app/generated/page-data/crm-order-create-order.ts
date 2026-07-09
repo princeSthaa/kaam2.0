@@ -14,7 +14,7 @@ export default defineLegacyPage({
     "src": "/data/shared/bom.js"
   },
   {
-    "src": "/js/crm/create-order.v3.js"
+    "src": "/js/crm/create-order.v8.js"
   }
 ],
   styles: [],
