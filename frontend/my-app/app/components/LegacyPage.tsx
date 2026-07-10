@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 import { findPage, normalizePath, pageKeyFromPath } from "../legacy/routing";
 import { AppHeader } from "./AppHeader";
@@ -14,11 +15,18 @@ export default function LegacyPage() {
   const page = findPage(pathname);
   const skipScripts = shouldSkipLegacyScripts(route);
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <>
       <AppHeader pathname={pathname} />
       <LegacyPageContent page={page} pathname={pathname} route={route} />
-      <LegacyScriptLoader page={page} route={route} skipScripts={skipScripts} />
+      {mounted && (
+        <LegacyScriptLoader page={page} route={route} skipScripts={skipScripts} />
+      )}
     </>
   );
 }

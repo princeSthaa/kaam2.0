@@ -1,10 +1,12 @@
+@import "tailwindcss";
+
 body {
   margin: 0;
   font-family: Inter, Arial, Helvetica, sans-serif;
 }
 
 .page-container.with-sidebar {
-  padding: 0;
+  padding: 72px 0 0 0;
 }
 
 .layout-wrapper {
@@ -90,6 +92,86 @@ body {
   padding: 24px;
   background-color: #f5f7fb;
   overflow-y: auto;
+}
+
+.content-area.create-details-content {
+  padding-top: 8px;
+}
+
+.content-area.inhouse-create-content {
+  padding-top: 8px;
+}
+
+/* ─── InHouse Create Page – Premium Design ───────────────────────────── */
+.inhouse-create-page {
+  width: min(100%, 1100px);
+  gap: 28px;
+  padding-bottom: 80px;
+}
+
+/* All child buttons must not override the min-height we set inline */
+.inhouse-create-page button {
+  font-family: Inter, sans-serif;
+  outline: none;
+}
+
+/* Smooth scrollbar inside fabric modal */
+div[style*="overflowY: auto"]::-webkit-scrollbar,
+div[style*="overflow-y: auto"]::-webkit-scrollbar {
+  width: 5px;
+}
+div[style*="overflowY: auto"]::-webkit-scrollbar-track,
+div[style*="overflow-y: auto"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+div[style*="overflowY: auto"]::-webkit-scrollbar-thumb,
+div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 99px;
+}
+
+/* Number input – hide spinners for size cells */
+.size-qty-input::-webkit-inner-spin-button,
+.size-qty-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.size-qty-input { -moz-appearance: textfield; }
+
+/* Animate product accordion body */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.prod-body-animated {
+  animation: fadeSlideIn 0.2s ease-out;
+}
+
+/* Responsive for inhouse page */
+@media (max-width: 900px) {
+  .inhouse-create-page {
+    padding-bottom: 120px;
+  }
+}
+
+@media (max-width: 900px) {
+  .inhouse-create-page > div:first-child {
+    flex-direction: column;
+  }
+
+  .inhouse-create-page > div:first-child > div:last-child {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .inhouse-create-page section {
+    padding: 16px;
+  }
+
+  .inhouse-create-page .grid.grid-cols-6,
+  .inhouse-create-page .grid.grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {
@@ -192,4 +274,95 @@ body {
   .warehouse-visual-page .layout-room small {
     grid-column: 1 / -1;
   }
+}
+
+/* Kaam Prefix Custom Theme */
+@theme {
+  --color-kaam-on-error-container: #93000a;
+  --color-kaam-secondary: #0051d5;
+  --color-kaam-on-surface: #0b1c30;
+  --color-kaam-tertiary-fixed: #6ffbbe;
+  --color-kaam-on-tertiary: #ffffff;
+  --color-kaam-on-primary-fixed: #131b2e;
+  --color-kaam-surface-container: #e5eeff;
+  --color-kaam-primary-fixed: #dae2fd;
+  --color-kaam-outline: #76777d;
+  --color-kaam-primary: #000000;
+  --color-kaam-primary-fixed-dim: #bec6e0;
+  --color-kaam-on-primary-container: #7c839b;
+  --color-kaam-outline-variant: #c6c6cd;
+  --color-kaam-surface-bright: #f8f9ff;
+  --color-kaam-on-primary: #ffffff;
+  --color-kaam-on-secondary: #ffffff;
+  --color-kaam-on-background: #0b1c30;
+  --color-kaam-surface-variant: #d3e4fe;
+  --color-kaam-error-container: #ffdad6;
+  --color-kaam-surface-container-highest: #d3e4fe;
+  --color-kaam-on-secondary-fixed: #00174b;
+  --color-kaam-inverse-primary: #bec6e0;
+  --color-kaam-primary-container: #131b2e;
+  --color-kaam-secondary-fixed-dim: #b4c5ff;
+  --color-kaam-on-tertiary-container: #009668;
+  --color-kaam-inverse-on-surface: #eaf1ff;
+  --color-kaam-surface-dim: #cbdbf5;
+  --color-kaam-surface-container-low: #eff4ff;
+  --color-kaam-on-tertiary-fixed-variant: #005236;
+  --color-kaam-surface-container-lowest: #ffffff;
+  --color-kaam-error: #ba1a1a;
+  --color-kaam-surface-tint: #565e74;
+  --color-kaam-on-secondary-container: #fefcff;
+  --color-kaam-on-error: #ffffff;
+  --color-kaam-secondary-container: #316bf3;
+  --color-kaam-on-surface-variant: #45464d;
+  --color-kaam-on-secondary-fixed-variant: #003ea8;
+  --color-kaam-surface: #f8f9ff;
+  --color-kaam-tertiary-container: #002113;
+  --color-kaam-surface-container-high: #dce9ff;
+  --color-kaam-tertiary: #000000;
+  --color-kaam-inverse-surface: #213145;
+  --color-kaam-background: #f8f9ff;
+  --color-kaam-tertiary-fixed-dim: #4edea3;
+  --color-kaam-on-tertiary-fixed: #002113;
+  --color-kaam-secondary-fixed: #dbe1ff;
+  --color-kaam-on-primary-fixed-variant: #3f465c;
+  --radius-kaam-DEFAULT: 0.125rem;
+  --radius-kaam-lg: 0.25rem;
+  --radius-kaam-xl: 0.5rem;
+  --radius-kaam-full: 0.75rem;
+  --spacing-kaam-gutter: 16px;
+  --spacing-kaam-column-gap: 24px;
+  --spacing-kaam-base: 4px;
+  --spacing-kaam-row-gap: 24px;
+  --spacing-kaam-container-padding: 24px;
+  --font-kaam-stats-lg: Inter, sans-serif;
+  --font-kaam-headline-lg-mobile: Inter, sans-serif;
+  --font-kaam-body-sm: Inter, sans-serif;
+  --font-kaam-body-lg: Inter, sans-serif;
+  --font-kaam-headline-md: Inter, sans-serif;
+  --font-kaam-headline-lg: Inter, sans-serif;
+  --font-kaam-label-md: JetBrains Mono, monospace;
+  --text-kaam-stats-lg: 36px;
+  --text-kaam-stats-lg--line-height: 40px;
+  --text-kaam-stats-lg--letter-spacing: -0.03em;
+  --text-kaam-stats-lg--font-weight: 700;
+  --text-kaam-headline-lg-mobile: 24px;
+  --text-kaam-headline-lg-mobile--line-height: 32px;
+  --text-kaam-headline-lg-mobile--font-weight: 600;
+  --text-kaam-body-sm: 14px;
+  --text-kaam-body-sm--line-height: 20px;
+  --text-kaam-body-sm--font-weight: 400;
+  --text-kaam-body-lg: 16px;
+  --text-kaam-body-lg--line-height: 24px;
+  --text-kaam-body-lg--font-weight: 400;
+  --text-kaam-headline-md: 20px;
+  --text-kaam-headline-md--line-height: 28px;
+  --text-kaam-headline-md--font-weight: 600;
+  --text-kaam-headline-lg: 30px;
+  --text-kaam-headline-lg--line-height: 36px;
+  --text-kaam-headline-lg--letter-spacing: -0.02em;
+  --text-kaam-headline-lg--font-weight: 600;
+  --text-kaam-label-md: 12px;
+  --text-kaam-label-md--line-height: 16px;
+  --text-kaam-label-md--letter-spacing: 0.05em;
+  --text-kaam-label-md--font-weight: 500;
 }

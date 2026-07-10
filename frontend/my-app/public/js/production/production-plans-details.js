@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const plans = (window.mockProductionPlans || window.productionPlans || window.plans || []).map(normalizePlan);
+    const plans = App.getData("mockProductionPlans", "productionPlans", "plans").map(normalizePlan);
 
     const selectedPlanNoFromRoute = document.getElementById("selectedPlanNoFromRoute")?.value || "";
     const planTableView = document.getElementById("planTableView");
@@ -211,10 +211,10 @@ document.addEventListener("DOMContentLoaded", function () {
                             <button type="button" class="btn btn-light btn-sm" data-select-plan="${escapeHtml(plan.planNo)}">
                                 Quick View
                             </button>
-                            <a class="btn btn-light btn-sm" href="/Production/Plan/Details/${encodeURIComponent(plan.planNo)}">
+                            <a class="btn btn-light btn-sm" href="/Production/Plan/Details?planNo=${encodeURIComponent(plan.planNo)}">
                                 Details
                             </a>
-                            <a class="btn btn-primary btn-sm" href="/Production/Plan/Edit/${encodeURIComponent(plan.planNo)}">
+                            <a class="btn btn-primary btn-sm" href="/Production/Plan/Edit?planNo=${encodeURIComponent(plan.planNo)}">
                                 Edit
                             </a>
                         </div>
@@ -481,11 +481,11 @@ document.addEventListener("DOMContentLoaded", function () {
         const encodedPlanNo = encodeURIComponent(planNo || "");
 
         if (viewPlanDetailsBtn) {
-            viewPlanDetailsBtn.href = encodedPlanNo ? `/Production/Plan/Details/${encodedPlanNo}` : "/Production/Plan/Details";
+            viewPlanDetailsBtn.href = encodedPlanNo ? `/Production/Plan/Details?planNo=${encodedPlanNo}` : "/Production/Plan/Details";
         }
 
         if (editPlanBtn) {
-            editPlanBtn.href = encodedPlanNo ? `/Production/Plan/Edit/${encodedPlanNo}` : "/Production/Plan/Edit";
+            editPlanBtn.href = encodedPlanNo ? `/Production/Plan/Edit?planNo=${encodedPlanNo}` : "/Production/Plan/Edit";
         }
     }
 

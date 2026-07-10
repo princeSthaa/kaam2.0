@@ -528,18 +528,43 @@
 
         strip.innerHTML = planStages.map(function (stage) {
             const status = stage.status || "Not Started";
-            const cls = status === "Completed"
-                ? "completed"
-                : status === state.plan.status || status === "In Progress"
-                    ? "active"
-                    : status === "On Hold"
-                        ? "hold"
-                        : "";
+            
+            let stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #94a3b8;">radio_button_unchecked</span>';
+            let badgeBg = "background: #f1f5f9; border: 1.5px solid #cbd5e1;";
+            let textStyle = "color: #475569;";
+            let containerBorder = "border: 1.5px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);";
+
+            if (status === "Completed") {
+                stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #15803d; font-weight: bold;">check</span>';
+                badgeBg = "background: #dcfce7; border: 1.5px solid #86efac;";
+                textStyle = "text-decoration: line-through; color: #94a3b8; font-weight: 500;";
+            } else if (status === "Active" || status === "In Progress") {
+                stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #1d4ed8; font-weight: bold; animation: spin 2s linear infinite;">sync</span>';
+                badgeBg = "background: #eff6ff; border: 1.5px solid #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15);";
+                textStyle = "color: #1e3a8a; font-weight: 700;";
+                containerBorder = "border: 1.5px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37,99,235,0.06);";
+            } else if (status === "On Hold") {
+                stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #b91c1c; font-weight: bold;">warning</span>';
+                badgeBg = "background: #fef2f2; border: 1.5px solid #fca5a5;";
+                textStyle = "color: #991b1b; font-weight: 700;";
+            }
 
             return `
-                <div class="stage-step ${cls}">
-                    <span>${App.escapeHtml(status)}</span>
-                    <strong>${App.escapeHtml(stage.stageName || stage.name)}</strong>
+                <div class="stage-step" style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; transition: all 0.2s; background: #ffffff; ${containerBorder}">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${badgeBg}">
+                        ${stepIcon}
+                    </div>
+                    <div style="min-width: 0; flex: 1; text-align: left;">
+                        <span style="display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-family: monospace; margin-bottom: 2px;">
+                            ${App.escapeHtml(status)}
+                        </span>
+                        <strong style="display: block; font-size: 13.5px; ${textStyle}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${App.escapeHtml(stage.stageName || stage.name)}
+                        </strong>
+                        <span style="display: block; font-size: 11px; color: #64748b; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            ${App.escapeHtml(stage.workCenter || stage.department || "-")}
+                        </span>
+                    </div>
                 </div>
             `;
         }).join("");
@@ -828,23 +853,85 @@
         return product.variant || "-";
     }
 
-    function renderPalettePreviewHtml(value, options) {
+    const FABRIC_COLOR_MAP = {
+        "dyed cotton (navy blue)": "#1e3a8a",
+        "dyed cotton (scarlet red)": "#b91c1c",
+        "dyed cotton (pure white)": "#f8fafc",
+        "dyed cotton (forest green)": "#14532d",
+        "pique knit (midnight black)": "#111827",
+        "pique knit (navy blue)": "#1e3a8a",
+        "pique knit (maroon)": "#7f1d1d",
+        "fleece knit (heather grey)": "#94a3b8",
+        "fleece knit (navy)": "#1e3a8a",
+        "elegant and versatile fabric brand palette": "#c9b2bb",
+        "vibrant summer collection": "#ff5733",
+        "monochrome essentials": "#ffffff",
+        "earthy tones": "#8b4513"
+    };
+
+    function getFabricColor(value) {
+        if (!value) return null;
+        const valLower = value.toLowerCase();
+
+        if (FABRIC_COLOR_MAP[valLower]) return FABRIC_COLOR_MAP[valLower];
+
+        if (valLower.includes("navy")) return "#1e3a8a";
+        if (valLower.includes("royal blue")) return "#1d4ed8";
+        if (valLower.includes("sky blue")) return "#7dd3fc";
+        if (valLower.includes("blue")) return "#2563eb";
+        if (valLower.includes("scarlet red") || valLower.includes("red")) return "#b91c1c";
+        if (valLower.includes("white")) return "#f8fafc";
+        if (valLower.includes("black")) return "#111827";
+        if (valLower.includes("charcoal")) return "#45464d";
+        if (valLower.includes("grey") || valLower.includes("gray")) return "#94a3b8";
+        if (valLower.includes("cream")) return "#fef3c7";
+        if (valLower.includes("brown")) return "#78350f";
+        if (valLower.includes("green")) return "#14532d";
+        if (valLower.includes("maroon")) return "#7f1d1d";
+
         const picker = window.ProductionPalettePicker;
-        return picker ? picker.renderPreview(value, options) : "";
+        if (picker) {
+            const colors = picker.getColors(value);
+            if (colors && colors.length > 0) return colors[0];
+        }
+
+        return null;
+    }
+
+    function renderFabricSampleHtml(color, name) {
+        const borderStyle = (color === "#ffffff" || color === "#f8fafc" || color === "#e2e8f0" || color.toLowerCase() === "#fff") ? "border: 1px solid #cbd5e1;" : "border: 1px solid rgba(0,0,0,0.15);";
+        return `
+            <span class="fabric-sample-preview" 
+                  style="background-color: ${color}; ${borderStyle} display: inline-block; width: 18px; height: 18px; border-radius: 4px; vertical-align: middle; box-shadow: 0 1px 3px rgba(0,0,0,0.15); margin-right: 6px;" 
+                  title="${App.escapeHtml(name || '')}">
+            </span>
+        `;
+    }
+
+    function renderPalettePreviewHtml(value, options) {
+        const color = getFabricColor(value);
+        if (color) {
+            return renderFabricSampleHtml(color, value);
+        }
+        return "";
     }
 
     function renderPaletteChip(value) {
-        const picker = window.ProductionPalettePicker;
-        return picker
-            ? picker.renderChip(value)
-            : `<span class="variant-chip">${App.escapeHtml(value || "-")}</span>`;
+        const color = getFabricColor(value);
+        if (color) {
+            return `
+                <span class="variant-chip" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 6px; background: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; font-weight: 500; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+                    ${renderFabricSampleHtml(color, value)}
+                    <span>${App.escapeHtml(value || "-")}</span>
+                </span>
+            `;
+        }
+        return `<span class="variant-chip">${App.escapeHtml(value || "-")}</span>`;
     }
 
     function renderProductColorChip(product, row) {
-        const picker = window.ProductionPalettePicker;
-        return picker
-            ? picker.renderProductColorChip(getEffectiveRowPalette(product, row), "")
-            : `<span class="variant-chip">${App.escapeHtml(getEffectiveRowPalette(product, row) || "-")}</span>`;
+        const value = getEffectiveRowPalette(product, row);
+        return renderPaletteChip(value);
     }
 
     function getEffectiveRowPalette(product, row) {

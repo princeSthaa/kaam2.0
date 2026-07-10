@@ -47,7 +47,6 @@ const pageOverrides: Record<string, () => ReactNode> = {
   "/Production/Plan/Edit": () => <ProductionPlanEditPage />,
   "/Production/Plan/PlansDetails": () => <ProductionPlansListPage />,
   "/Production/Plan/StageUpdate": () => <ProductionStageUpdatePage />,
-  "/Production/Plan/CreateDetails": () => <ProductionPlanCreateDetailsPage />,
   "/Warehouse/Index": () => <WarehouseIndexPage />,
   "/Warehouse/Stock": () => <WarehouseStockPage />,
   "/Warehouse/Visualization": () => <WarehouseVisualizationPage />,
@@ -67,7 +66,8 @@ export function shouldSkipLegacyScripts(route: string): boolean {
     "/Production/Customer/CreateCustomer",
     "/Production/Outlet/CreateOutlet",
     "/Production/InHouse/CreateInHouse",
-    "/Production/Plan/CreateDetails",
+    "/Production/Customer/Customers",
+    "/Production/Outlet/Outlets",
   ];
   return skipRoutes.includes(route);
 }

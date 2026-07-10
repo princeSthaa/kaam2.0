@@ -1,3 +1,6 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import { ActionButton } from "../../legacy-ui/ActionButton";
 import { TableShell } from "../../legacy-ui/TableShell";
 
@@ -143,6 +146,9 @@ function StageFormControl({ field }: { field: StageFormField }) {
 }
 
 export function ProductionStageUpdatePage() {
+  const searchParams = useSearchParams();
+  const planId = searchParams.get("planNo") || searchParams.get("planId") || searchParams.get("id") || "PP-20260529-001";
+
   return (
     <div className="pp-page">
       <div className="pp-page-header">
@@ -152,12 +158,12 @@ export function ProductionStageUpdatePage() {
         </div>
 
         <div className="pp-header-actions">
-          <ActionButton href="/Production/Plan/Details">View Details</ActionButton>
+          <ActionButton href={`/Production/Plan/Details?id=${planId}`}>View Details</ActionButton>
           <ActionButton href="/Production/Index">Back to Plans</ActionButton>
         </div>
       </div>
 
-      <input type="hidden" id="selectedPlanId" value="PP-20260529-001" />
+      <input type="hidden" id="selectedPlanId" value={planId} />
 
       <section className="pp-card">
         <div className="pp-card-header">
@@ -261,7 +267,7 @@ export function ProductionStageUpdatePage() {
             Save Stage Update
           </button>
           <ActionButton id="clearStageFormBtn">Clear Form</ActionButton>
-          <ActionButton href="/Production/Plan/Details" variant="outline">Cancel</ActionButton>
+          <ActionButton href={`/Production/Plan/Details?id=${planId}`} variant="outline">Cancel</ActionButton>
         </div>
       </form>
     </div>

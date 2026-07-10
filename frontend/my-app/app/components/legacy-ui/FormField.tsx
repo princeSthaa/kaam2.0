@@ -17,6 +17,7 @@ type FormFieldProps = {
   className?: string;
   full?: boolean;
   readOnly?: boolean;
+  required?: boolean;
 };
 
 export function FormField({
@@ -31,6 +32,7 @@ export function FormField({
   className = "form-control",
   full = false,
   readOnly = false,
+  required = false,
 }: FormFieldProps) {
   return (
     <div className="form-group" style={full ? { gridColumn: "1 / -1" } : undefined}>
@@ -38,10 +40,10 @@ export function FormField({
         {label}
       </label>
       {as === "textarea" ? (
-        <textarea id={id} name={name} className={className} rows={rows} placeholder={placeholder}></textarea>
+        <textarea id={id} name={name} className={className} rows={rows} placeholder={placeholder} required={required}></textarea>
       ) : null}
       {as === "select" ? (
-        <select id={id} name={name} className={className}>
+        <select id={id} name={name} className={className} required={required}>
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -50,7 +52,7 @@ export function FormField({
         </select>
       ) : null}
       {as === "input" ? (
-        <input id={id} name={name} type={type} className={className} placeholder={placeholder} readOnly={readOnly} />
+        <input id={id} name={name} type={type} className={className} placeholder={placeholder} readOnly={readOnly} required={required} />
       ) : null}
       <span className="text-danger"></span>
     </div>

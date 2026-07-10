@@ -1,3 +1,6 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import { ActionButton } from "../../legacy-ui/ActionButton";
 import { TableShell } from "../../legacy-ui/TableShell";
 
@@ -105,6 +108,9 @@ function SelectionModal({ kind }: { kind: "customer" | "outlet" }) {
 }
 
 export function ProductionPlanEditPage() {
+  const searchParams = useSearchParams();
+  const planId = searchParams.get("planNo") || searchParams.get("planId") || searchParams.get("id") || "PP-20260529-001";
+
   return (
     <>
       <div className="pp-page">
@@ -114,12 +120,12 @@ export function ProductionPlanEditPage() {
             <p>Edit draft production plan details before confirming production.</p>
           </div>
           <div className="pp-header-actions">
-            <ActionButton href="/Production/Plan/Details">View Details</ActionButton>
+            <ActionButton href={`/Production/Plan/Details?id=${planId}`}>View Details</ActionButton>
             <ActionButton href="/Production/Index">Back to Plans</ActionButton>
           </div>
         </div>
 
-        <input type="hidden" id="selectedPlanId" value="PP-20260529-001" />
+        <input type="hidden" id="selectedPlanId" value={planId} />
         <div id="notEditableWarning" className="alert alert-warning hidden">
           This production plan is not editable because only Draft plans can be edited.
         </div>
@@ -289,7 +295,7 @@ export function ProductionPlanEditPage() {
           <div className="pp-action-bar">
             <button type="submit" name="ActionType" value="SaveDraft" className="btn btn-primary editable-action">Save Changes</button>
             <ActionButton id="checkMaterialBottomBtn" variant="outline" className="editable-action">Check Material Availability</ActionButton>
-            <ActionButton href="/Production/Plan/Details">Cancel</ActionButton>
+            <ActionButton href={`/Production/Plan/Details?id=${planId}`}>Cancel</ActionButton>
           </div>
         </form>
       </div>

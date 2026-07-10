@@ -1,3 +1,6 @@
+"use client";
+
+import { useSearchParams } from "next/navigation";
 import { ActionButton } from "../../legacy-ui/ActionButton";
 import { TableShell } from "../../legacy-ui/TableShell";
 
@@ -28,6 +31,7 @@ const sourceFields = [
   ["Location", "sourceLocation"],
   ["Extra Info", "sourceExtra"],
 ];
+
 
 const dateFields = [
   ["Plan Date", "datePlanDate"],
@@ -151,6 +155,9 @@ function TabButton({ label, target, active }: { label: string; target: string; a
 }
 
 export function ProductionPlanDetailsPage() {
+  const searchParams = useSearchParams();
+  const planId = searchParams.get("planNo") || searchParams.get("planId") || searchParams.get("id") || "PP-20260529-001";
+
   return (
     <div className="pp-page">
       <div className="pp-page-header">
@@ -161,12 +168,12 @@ export function ProductionPlanDetailsPage() {
 
         <div className="pp-header-actions">
           <ActionButton href="/Production/Plan/PlansDetails">Back to Plans</ActionButton>
-          <ActionButton id="editPlanBtn" href="/Production/Plan/Edit" variant="primary">Edit Plan</ActionButton>
-          <ActionButton id="stageUpdateBtn" href="/Production/Plan/StageUpdate" variant="outline">Update Stage</ActionButton>
+          <ActionButton id="editPlanBtn" href={`/Production/Plan/Edit?id=${planId}`} variant="primary">Edit Plan</ActionButton>
+          <ActionButton id="stageUpdateBtn" href={`/Production/Plan/StageUpdate?id=${planId}`} variant="outline">Update Stage</ActionButton>
         </div>
       </div>
 
-      <input type="hidden" id="selectedPlanId" value="PP-20260529-001" />
+      <input type="hidden" id="selectedPlanId" value={planId} />
 
       <section className="pp-card">
         <div className="pp-card-header">
@@ -298,7 +305,7 @@ export function ProductionPlanDetailsPage() {
           </div>
 
           <div className="detail-panel mt-20">
-            <h3>Product Wise Size And Color Variants</h3>
+            <h3>Product Wise Size And Fabric Variants</h3>
             <ProductWorkspace
               countId="detailsSizeProductCount"
               listId="detailsSizeProductList"

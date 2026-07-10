@@ -97,12 +97,40 @@
     };
 
     App.getData = function (...names) {
+        let baseData = [];
         for (const name of names) {
-            if (Array.isArray(window[name])) return window[name];
-            if (window[name] && Array.isArray(window[name].items)) return window[name].items;
+            if (Array.isArray(window[name])) {
+                baseData = window[name];
+                break;
+            }
+            if (window[name] && Array.isArray(window[name].items)) {
+                baseData = window[name].items;
+                break;
+            }
         }
 
-        return [];
+        if (names.includes("mockProductionPlans") || names.includes("productionPlans") || names.includes("plans")) {
+            let localPlans = [];
+            try {
+                const stored = localStorage.getItem("productionPlans");
+                if (stored) {
+                    localPlans = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error("Failed to parse productionPlans from localStorage", e);
+            }
+            if (localPlans && localPlans.length) {
+                const merged = [...localPlans];
+                baseData.forEach(function (p) {
+                    if (!merged.some(function (lp) { return String(lp.planNo || lp.id) === String(p.planNo || p.id); })) {
+                        merged.push(p);
+                    }
+                });
+                return merged;
+            }
+        }
+
+        return baseData;
     };
 
     App.findById = function (items, id) {

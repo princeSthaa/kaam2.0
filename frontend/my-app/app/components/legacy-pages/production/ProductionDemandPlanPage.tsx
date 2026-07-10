@@ -289,21 +289,47 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
     if (kind === "customer") {
       const custOrders = liveOrders.filter(o => o.customerId === selectedSourceId);
       if (custOrders.length > 0) {
-        return custOrders.map((o, index) => ({
-          id: o.id || index + 1000,
-          orderNo: o.orderNumber,
-          customerId: o.customerId,
-          productId: "PRD-001", // Placeholder
-          productName: `Custom Order ${o.orderNumber}`,
-          category: "General",
-          variant: "Default",
-          quantity: o.totalAmount > 0 ? o.totalAmount : 100, // Placeholder
-          deliveryDate: o.dueDate,
-          priority: "Normal",
-          productImage: "/images/products/place-holder.png",
-          productionNotes: o.status,
-          sizes: { M: 50, L: 50 } // Placeholder
-        }));
+        const itemsList: any[] = [];
+        custOrders.forEach((o) => {
+          if (o.items && o.items.length > 0) {
+            o.items.forEach((item, index) => {
+              const qty = Number(item.quantity) || 10;
+              itemsList.push({
+                id: `${o.id || o.orderNumber}-${index}`,
+                orderNo: o.orderNumber,
+                customerId: o.customerId,
+                productId: "PRD-001", // Default placeholder for BOM matching
+                productName: item.productName || `Item #${index + 1}`,
+                category: "General",
+                variant: "Standard Color",
+                quantity: qty,
+                deliveryDate: o.dueDate,
+                priority: "Normal",
+                productImage: "/images/products/place-holder.png",
+                productionNotes: o.status,
+                sizes: { M: Math.floor(qty / 2), L: Math.ceil(qty / 2) }
+              });
+            });
+          } else {
+            // Fallback for orders with no items
+            itemsList.push({
+              id: o.id || o.orderNumber,
+              orderNo: o.orderNumber,
+              customerId: o.customerId,
+              productId: "PRD-001",
+              productName: `Custom Order ${o.orderNumber}`,
+              category: "General",
+              variant: "Default",
+              quantity: 10,
+              deliveryDate: o.dueDate,
+              priority: "Normal",
+              productImage: "/images/products/place-holder.png",
+              productionNotes: o.status,
+              sizes: { M: 5, L: 5 }
+            });
+          }
+        });
+        return itemsList;
       }
       return mockCustomerOrders.filter(o => o.customerId === selectedSourceId);
     } else {
