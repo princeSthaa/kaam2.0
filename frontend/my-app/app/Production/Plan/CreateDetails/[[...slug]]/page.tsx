@@ -25,7 +25,9 @@ export default function CreateDetailsPage() {
   const [tempData, setTempData] = useState<any>(null);
   const [fieldValues, setFieldValues] = useState({
     planStartDate: "2026-07-10",
+    planStartDateNp: "",
     planEndDate: "2026-07-24",
+    planEndDateNp: "",
     supervisor: "A. Sharma (Shift 1)",
     productionLine: "Line 4",
     materialWarehouse: "Hub B",
@@ -33,9 +35,9 @@ export default function CreateDetailsPage() {
   });
 
   const [stages, setStages] = useState<any[]>([
-    { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "4", date: "2026-07-10" },
-    { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", leadHours: "12", date: "2026-07-11" },
-    { id: "03", name: "Stitching", workCenter: "Line 4A", leadHours: "48", date: "2026-07-13" }
+    { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "4", date: "2026-07-10", dateNp: "" },
+    { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", leadHours: "12", date: "2026-07-11", dateNp: "" },
+    { id: "03", name: "Stitching", workCenter: "Line 4A", leadHours: "48", date: "2026-07-13", dateNp: "" }
   ]);
 
   const [availableOrders, setAvailableOrders] = useState<any[]>([]);
@@ -59,7 +61,9 @@ export default function CreateDetailsPage() {
           setFieldValues(prev => ({
             ...prev,
             planStartDate: today,
-            planEndDate: endStr
+            planStartDateNp: "",
+            planEndDate: endStr,
+            planEndDateNp: ""
           }));
         } catch (e) {
           console.error("Failed to parse temp_plan_basket from localStorage", e);
@@ -133,7 +137,9 @@ export default function CreateDetailsPage() {
     setFieldValues(prev => ({
       ...prev,
       planStartDate: today,
-      planEndDate: order.dueDate.split('T')[0]
+      planStartDateNp: "",
+      planEndDate: order.dueDate.split('T')[0],
+      planEndDateNp: ""
     }));
   };
 
@@ -167,14 +173,18 @@ export default function CreateDetailsPage() {
       sourceDetail: tempData.sourceDetail,
       kind: tempData.kind,
       plannedStartDate: fieldValues.planStartDate,
+      plannedStartDateNp: fieldValues.planStartDateNp,
       plannedCompletionDate: fieldValues.planEndDate,
+      plannedCompletionDateNp: fieldValues.planEndDateNp,
       productionNotes: fieldValues.globalNotes || "Created from CreateDetails interactive flow.",
       stages: stages.map((st, idx) => ({
         stageId: `STG-${st.id}`,
         stageName: st.name,
         workCenter: st.workCenter,
         plannedStartDate: st.date,
+        plannedStartDateNp: st.dateNp,
         plannedEndDate: st.date,
+        plannedEndDateNp: st.dateNp,
         operator: fieldValues.supervisor,
         status: "Not Started",
         completedQty: 0,
@@ -236,61 +246,22 @@ export default function CreateDetailsPage() {
     }
   };
 
+  useEffect(() => {
+    if (!tempData && !loadingOrders) {
+      // If no data and we finished trying to fetch/load, redirect
+      router.push("/Production/Create");
+    }
+  }, [tempData, loadingOrders, router]);
+
   if (!tempData) {
     return (
       <>
         <AppHeader pathname={pathname} />
         <PageShell sidebar={<Sidebar section="production" pathname={pathname} />} contentClassName="bg-slate-50">
-          <div className="max-w-4xl mx-auto p-6 lg:p-10 pt-16">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-              <div className="mb-8 text-center">
-                <span className="material-symbols-outlined text-[48px] text-kaam-primary mb-4 bg-kaam-primary/10 p-4 rounded-full">add_shopping_cart</span>
-                <h1 className="text-2xl font-bold text-slate-900">Select Demand Source</h1>
-                <p className="text-slate-500 mt-2">Select a pending CRM Order to create a new Production Plan.</p>
-              </div>
-
-              {loadingOrders ? (
-                <div className="text-center py-10">
-                  <span className="material-symbols-outlined animate-spin text-3xl text-slate-400">autorenew</span>
-                  <p className="text-slate-500 mt-3 font-medium">Loading pending orders...</p>
-                </div>
-              ) : availableOrders.length === 0 ? (
-                <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-                  <span className="material-symbols-outlined text-4xl text-slate-300">inbox</span>
-                  <p className="text-slate-500 mt-3 font-medium">No pending orders found in CRM.</p>
-                  <button onClick={() => router.push('/CRM')} className="mt-4 text-kaam-primary font-bold hover:underline">Go to CRM to create an Order</button>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {availableOrders.map(order => (
-                    <div key={order.id} 
-                         onClick={() => handleSelectOrder(order)}
-                         className="flex items-center justify-between p-5 rounded-xl border border-slate-200 hover:border-kaam-primary hover:shadow-md cursor-pointer transition-all group bg-slate-50 hover:bg-white">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-kaam-primary/10 rounded-full flex items-center justify-center">
-                          <span className="material-symbols-outlined text-kaam-primary text-xl">receipt_long</span>
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900 group-hover:text-kaam-primary transition-colors">
-                            Order {order.orderNumber}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">event</span> Due: {order.dueDate.split('T')[0]}</span>
-                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                            <span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">inventory_2</span> {order.items.reduce((s:number, i:any) => s+i.quantity, 0)} units</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">{order.status}</span>
-                        <span className="text-kaam-primary font-bold text-sm flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity transform group-hover:translate-x-0 -translate-x-2">
-                          Select <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="flex h-[80vh] items-center justify-center">
+            <div className="text-center">
+              <span className="material-symbols-outlined animate-spin text-4xl text-kaam-primary">autorenew</span>
+              <p className="text-slate-500 mt-4 font-medium">Loading plan details...</p>
             </div>
           </div>
         </PageShell>

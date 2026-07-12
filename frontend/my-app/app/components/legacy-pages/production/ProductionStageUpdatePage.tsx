@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Script from "next/script";
 import { TableShell } from "../../legacy-ui/TableShell";
+import { NepaliDatePicker } from "../../ui/NepaliDatePicker";
 
 const summaryFields = [
   ["Demand Type", "stageDemandType"],
@@ -123,6 +126,40 @@ const stageFormFields: StageFormField[] = [
   },
 ];
 
+const safelyConvertAD2BS = (adDateStr: string) => {
+  if (!adDateStr || typeof window === 'undefined' || !(window as any).NepaliFunctions) return "";
+  try {
+    const [y, m, d] = adDateStr.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    const bsObj = (window as any).NepaliFunctions.AD2BS({ year: y, month: m, day: d });
+    if (!bsObj) return "";
+    const yy = bsObj.year;
+    const mm = String(bsObj.month).padStart(2, '0');
+    const dd = String(bsObj.day).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  } catch (e) {
+    console.error(e);
+    return "";
+  }
+};
+
+const safelyConvertBS2AD = (bsDateStr: string) => {
+  if (!bsDateStr || typeof window === 'undefined' || !(window as any).NepaliFunctions) return "";
+  try {
+    const [y, m, d] = bsDateStr.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    const adObj = (window as any).NepaliFunctions.BS2AD({ year: y, month: m, day: d });
+    if (!adObj) return "";
+    const yy = adObj.year;
+    const mm = String(adObj.month).padStart(2, '0');
+    const dd = String(adObj.day).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  } catch (e) {
+    console.error(e);
+    return "";
+  }
+};
+
 function StageFormControl({ field }: { field: StageFormField }) {
   return (
     <div className="flex flex-col">
@@ -135,6 +172,42 @@ function StageFormControl({ field }: { field: StageFormField }) {
             </option>
           ))}
         </select>
+      ) : field.type === "date" ? (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[9px] text-slate-400 font-mono mb-1 block uppercase">AD</label>
+            <input
+              name={"name" in field ? field.name : undefined}
+              type="date"
+              id={field.id}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2 outline-none text-xs h-10 transition-all bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600"
+              onChange={(e) => {
+                const val = e.target.value;
+                const npInput = document.getElementById(field.id + "Np") as HTMLInputElement;
+                if (npInput) {
+                  npInput.value = safelyConvertAD2BS(val);
+                }
+              }}
+            />
+          </div>
+          <div>
+            <label className="text-[9px] text-slate-400 font-mono mb-1 block uppercase">BS</label>
+            <NepaliDatePicker
+              id={field.id + "Np"}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2 outline-none text-xs h-10 transition-all bg-white focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 px-2"
+              placeholder="YYYY-MM-DD"
+              value=""
+              onChange={(e) => {
+                const val = e.target.value;
+                const adInput = document.getElementById(field.id) as HTMLInputElement;
+                if (adInput) {
+                  adInput.value = safelyConvertBS2AD(val);
+                  adInput.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+              }}
+            />
+          </div>
+        </div>
       ) : (
         <input
           name={"name" in field ? field.name : undefined}
@@ -154,6 +227,32 @@ function StageFormControl({ field }: { field: StageFormField }) {
 export function ProductionStageUpdatePage() {
   const searchParams = useSearchParams();
   const planId = searchParams.get("planNo") || searchParams.get("planId") || searchParams.get("id") || "PP-20260529-001";
+
+  useEffect(() => {
+    let lastStart = "";
+    let lastEnd = "";
+    const interval = setInterval(() => {
+      const startEl = document.getElementById("actualStartDate") as HTMLInputElement;
+      const endEl = document.getElementById("actualEndDate") as HTMLInputElement;
+      
+      if (startEl && startEl.value !== lastStart) {
+        lastStart = startEl.value;
+        const startNpEl = document.getElementById("actualStartDateNp") as HTMLInputElement;
+        if (startNpEl) {
+          startNpEl.value = safelyConvertAD2BS(startEl.value);
+        }
+      }
+      
+      if (endEl && endEl.value !== lastEnd) {
+        lastEnd = endEl.value;
+        const endNpEl = document.getElementById("actualEndDateNp") as HTMLInputElement;
+        if (endNpEl) {
+          endNpEl.value = safelyConvertAD2BS(endEl.value);
+        }
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6 pb-24">

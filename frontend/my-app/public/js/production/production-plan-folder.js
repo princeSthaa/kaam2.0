@@ -32,15 +32,15 @@
             });
         }
 
-        if (clearDraftsBtn) {
-            clearDraftsBtn.addEventListener("click", async function () {
+        document.addEventListener("click", async function(event) {
+            const clearBtn = event.target.closest("#clearDraftsBtn");
+            if (clearBtn) {
                 if (!confirm("Clear all production drafts (local and server)?")) return;
 
                 if (window.ProductionDraftStore) {
                     window.ProductionDraftStore.clearDrafts();
                 }
 
-                // Delete from Backend API for any plan with status == "draft"
                 const draftPlans = plans.filter(p => String(p.status || "").toLowerCase() === "draft");
                 for (const plan of draftPlans) {
                     const id = plan.planNo || plan.planId || plan.id;
@@ -50,43 +50,42 @@
                         } catch (e) {
                             console.error("Failed to delete from API:", e);
                         }
+                        plans = plans.filter(p => String(p.planNo || p.planId || p.id) !== String(id));
                     }
                 }
 
                 selectedPlanIds.clear();
                 updateSelectAllState();
-                await refreshPlans();
                 render();
-            });
-        }
+                return;
+            }
 
-        if (deleteSelectedBtn) {
-            deleteSelectedBtn.addEventListener("click", async function () {
+            const deleteBtn = event.target.closest("#deleteSelectedBtn");
+            if (deleteBtn) {
                 if (!selectedPlanIds.size) return;
                 if (!confirm(`Delete ${selectedPlanIds.size} selected plan(s)?`)) return;
 
                 const ids = Array.from(selectedPlanIds);
                 
-                // Also delete from local drafts just in case
                 if (window.ProductionDraftStore) {
                     window.ProductionDraftStore.deleteDrafts(ids);
                 }
 
-                // Delete from Backend API
                 for (const id of ids) {
                     try {
                         await fetch(`http://localhost:5083/api/production-plans/${id}`, { method: "DELETE" });
                     } catch (e) {
                         console.error("Failed to delete from API:", e);
                     }
+                    plans = plans.filter(p => String(p.planNo || p.planId || p.id) !== String(id));
                 }
 
                 selectedPlanIds.clear();
                 updateSelectAllState();
-                await refreshPlans();
                 render();
-            });
-        }
+                return;
+            }
+        });
 
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener("change", function () {
@@ -105,17 +104,18 @@
     }
 
     function updateSelectAllState() {
-        if (!selectAllCheckbox) return;
+        const currentSelectAllCheckbox = document.getElementById("selectAllDrafts");
+        if (!currentSelectAllCheckbox) return;
 
         const filtered = getFilteredPlans();
         if (!filtered.length) {
-            selectAllCheckbox.checked = false;
-            selectAllCheckbox.disabled = true;
+            currentSelectAllCheckbox.checked = false;
+            currentSelectAllCheckbox.disabled = true;
             return;
         }
 
-        selectAllCheckbox.disabled = false;
-        selectAllCheckbox.checked = filtered.every(function (plan) {
+        currentSelectAllCheckbox.disabled = false;
+        currentSelectAllCheckbox.checked = filtered.every(function (plan) {
             const id = plan.planNo || plan.planId || plan.id;
             return selectedPlanIds.has(String(id));
         });
@@ -147,17 +147,20 @@
         renderPlanList(filteredPlans);
         updateSelectAllState();
 
-        if (clearDraftsBtn) {
-            clearDraftsBtn.disabled = !localDrafts.length;
+        const currentClearBtn = document.getElementById("clearDraftsBtn");
+        const currentDeleteBtn = document.getElementById("deleteSelectedBtn");
+
+        if (currentClearBtn) {
+            currentClearBtn.disabled = !localDrafts.length;
         }
 
-        if (deleteSelectedBtn) {
+        if (currentDeleteBtn) {
             if (selectedPlanIds.size > 0) {
-                deleteSelectedBtn.classList.remove("hidden");
-                deleteSelectedBtn.disabled = false;
+                currentDeleteBtn.classList.remove("hidden");
+                currentDeleteBtn.disabled = false;
             } else {
-                deleteSelectedBtn.classList.add("hidden");
-                deleteSelectedBtn.disabled = true;
+                currentDeleteBtn.classList.add("hidden");
+                currentDeleteBtn.disabled = true;
             }
         }
     }
@@ -270,6 +273,7 @@
                         <a class="btn btn-primary btn-sm" href="${App.escapeHtml(detailsUrl)}">Details</a>
                         ${folderType === "drafts" ? `
                             <a class="btn btn-light btn-sm" href="${App.escapeHtml(editUrl)}">Edit</a>
+                            <button type="button" class="btn btn-success btn-sm font-bold" data-activate-plan="${App.escapeHtml(planNo)}">Activate</button>
                         ` : ""}
                         ${isLocal ? `
                             <button type="button"
@@ -297,15 +301,60 @@
         });
 
         planList.querySelectorAll("[data-delete-draft]").forEach(function (button) {
-            button.addEventListener("click", function () {
+            button.addEventListener("click", async function () {
                 const planNo = button.getAttribute("data-delete-draft");
                 if (!planNo) return;
 
                 if (!confirm(`Delete draft ${planNo}?`)) return;
 
-                window.ProductionDraftStore.deleteDraft(planNo);
+                if (window.ProductionDraftStore) {
+                    window.ProductionDraftStore.deleteDraft(planNo);
+                }
+                
+                try {
+                    await fetch(`http://localhost:5083/api/production-plans/${planNo}`, { method: "DELETE" });
+                } catch (e) {
+                    console.error("Failed to delete from API:", e);
+                }
+
+                plans = plans.filter(p => String(p.planNo || p.planId || p.id) !== String(planNo));
                 selectedPlanIds.delete(String(planNo));
-                refreshPlans();
+                render();
+            });
+        });
+
+        planList.querySelectorAll("[data-activate-plan]").forEach(function (button) {
+            button.addEventListener("click", async function () {
+                const planNo = button.getAttribute("data-activate-plan");
+                if (!planNo) return;
+
+                if (!confirm(`Activate plan ${planNo} and release to production?`)) return;
+
+                const plan = plans.find(p => String(p.planNo || p.planId || p.id) === String(planNo));
+                if (!plan) return;
+
+                if (!plan.batchId) {
+                    plan.batchId = "BCH-" + Math.floor(10000 + Math.random() * 90000);
+                }
+                plan.status = "Active";
+
+                try {
+                    const res = await fetch(`http://localhost:5083/api/production-plans/${plan.id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(plan)
+                    });
+                    if (res.ok) {
+                        App.toast(`Plan ${planNo} successfully activated!`, "success");
+                    } else {
+                        throw new Error();
+                    }
+                } catch (e) {
+                    console.error("Failed to activate plan via API:", e);
+                    App.toast("Error saving plan status to server.", "danger");
+                }
+
+                await refreshPlans();
                 render();
             });
         });

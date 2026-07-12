@@ -3,6 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Script from "next/script";
+import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 
 /* ─── Mock Data ─────────────────────────────────────────────────── */
 const mockWarehouses = [
@@ -287,6 +289,56 @@ export function ProductionPlanEditPage() {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [activeProductId, setActiveProductId] = useState<string>("");
   const [isEditingCustomer, setIsEditingCustomer] = useState(false);
+  const [nepaliReady, setNepaliReady] = useState(false);
+
+  const safelyConvertAD2BS = (adDateStr: string) => {
+    if (!adDateStr || typeof window === 'undefined' || !(window as any).NepaliFunctions) return "";
+    try {
+      const [y, m, d] = adDateStr.split("-").map(Number);
+      if (!y || !m || !d) return "";
+      const bsObj = (window as any).NepaliFunctions.AD2BS({ year: y, month: m, day: d });
+      if (!bsObj) return "";
+      const yy = bsObj.year;
+      const mm = String(bsObj.month).padStart(2, '0');
+      const dd = String(bsObj.day).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+  };
+
+  const safelyConvertBS2AD = (bsDateStr: string) => {
+    if (!bsDateStr || typeof window === 'undefined' || !(window as any).NepaliFunctions) return "";
+    try {
+      const [y, m, d] = bsDateStr.split("-").map(Number);
+      if (!y || !m || !d) return "";
+      const adObj = (window as any).NepaliFunctions.BS2AD({ year: y, month: m, day: d });
+      if (!adObj) return "";
+      const yy = adObj.year;
+      const mm = String(adObj.month).padStart(2, '0');
+      const dd = String(adObj.day).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoading && typeof window !== 'undefined' && (window as any).NepaliFunctions) {
+      setSelectedProducts(prev => prev.map(prod => ({
+        ...prod,
+        plannedStartDateNp: safelyConvertAD2BS(prod.plannedStartDate),
+        plannedCompletionDateNp: safelyConvertAD2BS(prod.plannedCompletionDate),
+        requiredDateNp: safelyConvertAD2BS(prod.requiredDate),
+        stages: prod.stages.map((s: any) => ({
+          ...s,
+          dateNp: safelyConvertAD2BS(s.date)
+        }))
+      })));
+    }
+  }, [isLoading, nepaliReady]);
 
   useEffect(() => {
     fetch("http://localhost:5083/api/production-plans")
@@ -722,18 +774,62 @@ export function ProductionPlanEditPage() {
                           <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#64748b" }}>calendar_month</span> Production Timeline
                         </div>
                       </div>
-                      <div style={{ ...S.grid3, padding: 16 }}>
-                        <div>
-                          <label style={S.fieldLabel}>Planned Start</label>
-                          <input style={{ ...S.input, height: 38 }} type="date" value={activeProduct.plannedStartDate} onChange={e => updateProductField("plannedStartDate", e.target.value)} />
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, padding: 16 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <div>
+                            <label style={S.fieldLabel}>Planned Start (AD)</label>
+                            <input style={{ ...S.input, height: 38 }} type="date" value={activeProduct.plannedStartDate || ""} onChange={e => {
+                              const val = e.target.value;
+                              updateProductField("plannedStartDate", val);
+                              updateProductField("plannedStartDateNp", safelyConvertAD2BS(val));
+                            }} />
+                          </div>
+                          <div>
+                            <label style={S.fieldLabel}>Planned Start (BS)</label>
+                            <NepaliDatePicker style={{ ...S.input, height: 38, background: "#fff" }} value={activeProduct.plannedStartDateNp || ""} onChange={e => {
+                              const val = e.target.value;
+                              updateProductField("plannedStartDateNp", val);
+                              updateProductField("plannedStartDate", safelyConvertBS2AD(val));
+                            }} />
+                          </div>
                         </div>
-                        <div>
-                          <label style={S.fieldLabel}>Planned End</label>
-                          <input style={{ ...S.input, height: 38 }} type="date" value={activeProduct.plannedCompletionDate} onChange={e => updateProductField("plannedCompletionDate", e.target.value)} />
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <div>
+                            <label style={S.fieldLabel}>Planned End (AD)</label>
+                            <input style={{ ...S.input, height: 38 }} type="date" value={activeProduct.plannedCompletionDate || ""} onChange={e => {
+                              const val = e.target.value;
+                              updateProductField("plannedCompletionDate", val);
+                              updateProductField("plannedCompletionDateNp", safelyConvertAD2BS(val));
+                            }} />
+                          </div>
+                          <div>
+                            <label style={S.fieldLabel}>Planned End (BS)</label>
+                            <NepaliDatePicker style={{ ...S.input, height: 38, background: "#fff" }} value={activeProduct.plannedCompletionDateNp || ""} onChange={e => {
+                              const val = e.target.value;
+                              updateProductField("plannedCompletionDateNp", val);
+                              updateProductField("plannedCompletionDate", safelyConvertBS2AD(val));
+                            }} />
+                          </div>
                         </div>
-                        <div>
-                          <label style={S.fieldLabel}>Required By</label>
-                          <input style={{ ...S.input, height: 38 }} type="date" value={activeProduct.requiredDate} onChange={e => updateProductField("requiredDate", e.target.value)} />
+
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          <div>
+                            <label style={S.fieldLabel}>Required By (AD)</label>
+                            <input style={{ ...S.input, height: 38 }} type="date" value={activeProduct.requiredDate || ""} onChange={e => {
+                              const val = e.target.value;
+                              updateProductField("requiredDate", val);
+                              updateProductField("requiredDateNp", safelyConvertAD2BS(val));
+                            }} />
+                          </div>
+                          <div>
+                            <label style={S.fieldLabel}>Required By (BS)</label>
+                            <NepaliDatePicker style={{ ...S.input, height: 38, background: "#fff" }} value={activeProduct.requiredDateNp || ""} onChange={e => {
+                              const val = e.target.value;
+                              updateProductField("requiredDateNp", val);
+                              updateProductField("requiredDate", safelyConvertBS2AD(val));
+                            }} />
+                          </div>
                         </div>
                       </div>
                    </div>
@@ -803,11 +899,20 @@ export function ProductionPlanEditPage() {
                          <div key={stage.id} style={S.stageRow}>
                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#cbd5e1", cursor: "grab" }}>drag_indicator</span>
                            <div style={S.stageIndex}>{stage.id}</div>
-                           <div style={S.stageInputs}>
+                           <div style={{ ...S.stageInputs, gridTemplateColumns: "1.8fr 1.2fr 60px 1.2fr 1.2fr" }}>
                              <input style={S.stageThinInput} type="text" value={stage.name} placeholder="Stage name" onChange={e => updateStage(si, "name", e.target.value)} />
                              <input style={S.stageThinInput} type="text" value={stage.workCenter} placeholder="Work Center" onChange={e => updateStage(si, "workCenter", e.target.value)} />
                              <input style={S.stageThinInput} type="number" value={stage.leadHours} placeholder="Hours" onChange={e => updateStage(si, "leadHours", e.target.value)} />
-                             <input style={S.stageThinInput} type="date" value={stage.date} onChange={e => updateStage(si, "date", e.target.value)} />
+                             <input style={S.stageThinInput} type="date" value={stage.date || ""} onChange={e => {
+                               const val = e.target.value;
+                               updateStage(si, "date", val);
+                               updateStage(si, "dateNp", safelyConvertAD2BS(val));
+                             }} />
+                             <NepaliDatePicker style={{ ...S.stageThinInput, background: "#fff" }} value={stage.dateNp || ""} placeholder="Date (BS)" onChange={e => {
+                               const val = e.target.value;
+                               updateStage(si, "dateNp", val);
+                               updateStage(si, "date", safelyConvertBS2AD(val));
+                             }} />
                            </div>
                          </div>
                        ))}
@@ -918,6 +1023,15 @@ export function ProductionPlanEditPage() {
           </button>
         </div>
       </form>
+      <Script
+        src="https://nepalidatepicker.sajanmaharjan.com.np/v5/nepali.datepicker/js/nepali.datepicker.v5.0.6.min.js"
+        strategy="lazyOnload"
+        onLoad={() => setNepaliReady(true)}
+      />
+      <link
+        rel="stylesheet"
+        href="https://nepalidatepicker.sajanmaharjan.com.np/v5/nepali.datepicker/css/nepali.datepicker.v5.0.6.min.css"
+      />
     </div>
   );
 }

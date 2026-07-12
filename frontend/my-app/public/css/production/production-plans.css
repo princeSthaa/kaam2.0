@@ -127,6 +127,17 @@
     color: var(--pp-primary);
 }
 
+.btn-success {
+    border-color: #16a34a;
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.btn-success:hover {
+    background: #15803d;
+    border-color: #15803d;
+}
+
 .btn-light:hover,
 .btn-outline:hover {
     border-color: var(--pp-border-strong);

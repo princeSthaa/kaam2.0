@@ -58,4 +58,7 @@ public class ProductionStage
     public string Status { get; set; } = "Not Started";
     public int CompletedQty { get; set; }
     public int RejectedQty { get; set; }
+    public string ActualStartDate { get; set; } = string.Empty;
+    public string ActualEndDate { get; set; } = string.Empty;
+    public string Remarks { get; set; } = string.Empty;
 }

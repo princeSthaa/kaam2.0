@@ -14,6 +14,7 @@ export const sidebarMap: Record<string, SidebarSection> = {
     title: "Production Menu",
     links: [
       { name: "Overview", url: "/Production/Index", icon: "dashboard" },
+      { name: "Production Overview Board", url: "/Production/Overview", icon: "view_timeline" },
       { name: "Drafts", url: "/Production/Drafts", icon: "edit_note" },
       { name: "In Progress", url: "/Production/InProgress", icon: "precision_manufacturing" },
       { name: "Completed", url: "/Production/Completed", icon: "task_alt" },

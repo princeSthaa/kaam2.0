@@ -1,6 +1,21 @@
 import React, { useState } from 'react';
 import ProductRow from './ProductRow';
 
+function adToNepali(adDateStr: string): string {
+  if (!adDateStr) return "";
+  try {
+    const d = new Date(adDateStr);
+    if (isNaN(d.getTime())) return adDateStr;
+    if (typeof window !== "undefined" && (window as any).NepaliFunctions) {
+      const nf = (window as any).NepaliFunctions;
+      return nf.AD2BS(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  } catch {
+    return adDateStr;
+  }
+}
+
 export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: any) {
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
 
@@ -17,7 +32,9 @@ export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: an
           </div>
           <div>
             <div className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface font-bold">Plan: {plan.id}</div>
-            <div className="font-kaam-body-sm text-kaam-body-sm text-kaam-on-surface-variant truncate">Client: {plan.client} | Due: {plan.dueDate}</div>
+            <div className="font-kaam-body-sm text-kaam-body-sm text-kaam-on-surface-variant truncate">
+              Client: {plan.client} | Due: {plan.dueDate} {plan.dueDate && `(${adToNepali(plan.dueDate)} BS)`}
+            </div>
           </div>
         </div>
 

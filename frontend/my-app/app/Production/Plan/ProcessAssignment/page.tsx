@@ -20,13 +20,8 @@ export default function ProcessAssignmentPage() {
 
   const baseEffort = 1250;
 
-  const [assignments, setAssignments] = useState<Record<string, Team[]>>({
-    'fabric-prep': [],
-    'cutting': [],
-    'stitching': [],
-    'qc': [],
-    'packaging': []
-  });
+  const [assignments, setAssignments] = useState<Record<string, Team[]>>({});
+  const [dynamicStages, setDynamicStages] = useState<any[]>([]);
 
   const [planGuid, setPlanGuid] = useState<string>("");
   const [currentPlanObj, setCurrentPlanObj] = useState<any>(null);
@@ -40,45 +35,48 @@ export default function ProcessAssignmentPage() {
           if (currentPlan) {
             setPlanGuid(currentPlan.id);
             setCurrentPlanObj(currentPlan);
-            if (currentPlan.stages) {
-              const initialAssignments: Record<string, Team[]> = {
-                'fabric-prep': [],
-                'cutting': [],
-                'stitching': [],
-                'qc': [],
-                'packaging': []
-              };
-
-              currentPlan.stages.forEach((st: any) => {
-                if (!st.workCenter || st.workCenter === "Unassigned") return;
+            if (currentPlan.stages && currentPlan.stages.length > 0) {
+              const newAssignments: Record<string, Team[]> = {};
+              const newDynamicStages: any[] = [];
+              
+              currentPlan.stages.forEach((st: any, idx: number) => {
+                const stageId = st.stageId || `STG-${idx}`;
+                newAssignments[stageId] = [];
                 
-                const teamName = st.workCenter;
-                let capacity = 4;
-                let colorClass = 'bg-kaam-tertiary-fixed';
-                
-                if (teamName.toLowerCase().includes('cutter')) { colorClass = 'bg-kaam-secondary'; capacity = 6; }
-                else if (teamName.toLowerCase().includes('qc')) { colorClass = 'bg-kaam-error'; capacity = 2; }
-                
-                const teamObj = { name: teamName, capacity, colorClass };
-                
+                let icon = "miscellaneous_services";
                 const nameLower = (st.stageName || "").toLowerCase();
-                if (nameLower.includes("material") || nameLower.includes("prep")) {
-                  initialAssignments['fabric-prep'].push(teamObj);
-                } else if (nameLower.includes("cut")) {
-                  initialAssignments['cutting'].push(teamObj);
-                } else if (nameLower.includes("stitch")) {
-                  initialAssignments['stitching'].push(teamObj);
-                } else if (nameLower.includes("check") || nameLower.includes("qc") || nameLower.includes("quality")) {
-                  initialAssignments['qc'].push(teamObj);
-                } else if (nameLower.includes("pack")) {
-                  initialAssignments['packaging'].push(teamObj);
+                if (nameLower.includes("material") || nameLower.includes("prep")) icon = "layers";
+                else if (nameLower.includes("cut")) icon = "content_cut";
+                else if (nameLower.includes("stitch") || nameLower.includes("sew")) icon = "architecture";
+                else if (nameLower.includes("check") || nameLower.includes("qc") || nameLower.includes("quality")) icon = "verified";
+                else if (nameLower.includes("pack")) icon = "inventory";
+
+                newDynamicStages.push({
+                   id: stageId,
+                   name: st.stageName,
+                   stageId: stageId,
+                   icon: icon,
+                   originalStage: st
+                });
+
+                if (st.workCenter && st.workCenter !== "Unassigned") {
+                   const teamNames = st.workCenter.split(", ");
+                   teamNames.forEach((teamName: string) => {
+                     let capacity = 4;
+                     let colorClass = 'bg-kaam-tertiary-fixed';
+                     if (teamName.toLowerCase().includes('cutter')) { colorClass = 'bg-kaam-secondary'; capacity = 6; }
+                     else if (teamName.toLowerCase().includes('qc')) { colorClass = 'bg-kaam-error'; capacity = 2; }
+                     
+                     // Avoid duplicates
+                     if (!newAssignments[stageId].some(t => t.name === teamName)) {
+                       newAssignments[stageId].push({ name: teamName, capacity, colorClass });
+                     }
+                   });
                 }
               });
               
-              const hasAssignments = Object.values(initialAssignments).some(arr => arr.length > 0);
-              if (hasAssignments) {
-                setAssignments(initialAssignments);
-              }
+              setDynamicStages(newDynamicStages);
+              setAssignments(newAssignments);
             }
           }
         })
@@ -132,13 +130,9 @@ export default function ProcessAssignmentPage() {
   };
 
   const handleDrag = (e: React.DragEvent) => {
-    // clientY is 0 when the drag operation ends or is invalid
     if (e.clientY === 0) return;
-
     const threshold = 150; 
     const scrollSpeed = 20;
-
-    // Scroll up if near the top, down if near the bottom
     if (e.clientY < threshold) {
       window.scrollBy(0, -scrollSpeed);
     } else if (e.clientY > window.innerHeight - threshold) {
@@ -160,11 +154,12 @@ export default function ProcessAssignmentPage() {
     e.currentTarget.classList.remove('bg-kaam-surface-container-high', 'border-kaam-secondary-container');
     
     if (!draggedTeam) return;
+    if (!assignments[stageId]) return;
     if (assignments[stageId].some(t => t.name === draggedTeam.name)) return;
 
     setAssignments(prev => ({
       ...prev,
-      [stageId]: [...prev[stageId], draggedTeam]
+      [stageId]: [...(prev[stageId] || []), draggedTeam]
     }));
     setDraggedTeam(null);
   };
@@ -172,20 +167,20 @@ export default function ProcessAssignmentPage() {
   const removeTeam = (stageId: string, teamName: string) => {
     setAssignments(prev => ({
       ...prev,
-      [stageId]: prev[stageId].filter(t => t.name !== teamName)
+      [stageId]: (prev[stageId] || []).filter(t => t.name !== teamName)
     }));
   };
 
   const calculateHours = (stageId: string) => {
-    const stageTeams = assignments[stageId];
+    const stageTeams = assignments[stageId] || [];
     if (stageTeams.length === 0) return "--";
     const totalCap = stageTeams.reduce((sum, t) => sum + t.capacity, 0);
     return (baseEffort / totalCap / 10).toFixed(1) + "h";
   };
 
-  const totalStages = Object.keys(assignments).length;
+  const totalStages = dynamicStages.length;
   const assignedStages = Object.values(assignments).filter(a => a.length > 0).length;
-  const progress = Math.round((assignedStages / totalStages) * 100);
+  const progress = totalStages > 0 ? Math.round((assignedStages / totalStages) * 100) : 0;
 
   const [batchId, setBatchId] = useState("");
   
@@ -194,18 +189,12 @@ export default function ProcessAssignmentPage() {
     setBatchId(newBatchId);
     
     if (planGuid && currentPlanObj) {
-      // Map assignments back to stages
-      const updatedStages = currentPlanObj.stages.map((st: any) => {
-        const nameLower = (st.stageName || "").toLowerCase();
-        let cat = "";
-        if (nameLower.includes("material") || nameLower.includes("prep")) cat = "fabric-prep";
-        else if (nameLower.includes("cut")) cat = "cutting";
-        else if (nameLower.includes("stitch")) cat = "stitching";
-        else if (nameLower.includes("check") || nameLower.includes("qc") || nameLower.includes("quality")) cat = "qc";
-        else if (nameLower.includes("pack")) cat = "packaging";
-        
-        if (cat && assignments[cat].length > 0) {
-          st.workCenter = assignments[cat].map(t => t.name).join(", ");
+      const updatedStages = currentPlanObj.stages.map((st: any, idx: number) => {
+        const stageId = st.stageId || `STG-${idx}`;
+        if (assignments[stageId] && assignments[stageId].length > 0) {
+          st.workCenter = assignments[stageId].map(t => t.name).join(", ");
+        } else {
+          st.workCenter = "Unassigned";
         }
         return st;
       });
@@ -226,14 +215,6 @@ export default function ProcessAssignmentPage() {
       router.push(`/Production/Plan/FinalSummary?planId=${planId}&batchId=${newBatchId}`);
     }
   };
-
-  const stages = [
-    { id: 'fabric-prep', name: 'Fabric Prep', stageCode: 'Stage 01', stageId: 'FP-01', icon: 'layers' },
-    { id: 'cutting', name: 'Cutting', stageCode: 'Stage 02', stageId: 'CT-04', icon: 'content_cut' },
-    { id: 'stitching', name: 'Stitching', stageCode: 'Stage 03', stageId: 'ST-09', icon: 'architecture' },
-    { id: 'qc', name: 'Quality Check', stageCode: 'Stage 04', stageId: 'QC-02', icon: 'verified' },
-    { id: 'packaging', name: 'Packaging', stageCode: 'Stage 05', stageId: 'PK-07', icon: 'inventory' },
-  ];
 
   return (
     <>
@@ -267,7 +248,21 @@ export default function ProcessAssignmentPage() {
               <div className="flex flex-col gap-4">
                 
                 <div className="flex flex-wrap items-center gap-3">
-                  <button onClick={() => router.back()} className="flex items-center gap-2 px-4 py-2 border border-kaam-outline-variant rounded-kaam-DEFAULT text-kaam-on-surface-variant font-kaam-label-md hover:bg-kaam-surface-container-high transition-colors">
+                  <button onClick={() => {
+                    if (currentPlanObj) {
+                      const type = currentPlanObj.demandType || "";
+                      const sourceId = currentPlanObj.sourceId || "";
+                      if (type.includes("Customer")) {
+                        router.push(`/Production/Customer/CreateCustomer?customerId=${sourceId}`);
+                      } else if (type.includes("Outlet")) {
+                        router.push(`/Production/Outlet/CreateOutlet?outletId=${sourceId}`);
+                      } else {
+                        router.push(`/Production/InHouse/CreateInHouse`);
+                      }
+                    } else {
+                      router.push("/Production/Create");
+                    }
+                  }} className="flex items-center gap-2 px-4 py-2 border border-kaam-outline-variant rounded-kaam-DEFAULT text-kaam-on-surface-variant font-kaam-label-md hover:bg-kaam-surface-container-high transition-colors">
                     <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                     Back
                   </button>
@@ -279,6 +274,10 @@ export default function ProcessAssignmentPage() {
                     <span className="material-symbols-outlined text-[18px]">save</span>
                     Save to Draft
                   </button>
+                  <button onClick={finalizeAssignments} className="flex items-center gap-2 px-6 py-2 bg-kaam-primary text-white rounded-kaam-DEFAULT font-kaam-label-md hover:bg-kaam-primary/90 transition-all shadow-sm active:scale-[0.98]">
+                    <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                    Finalize Production Plan
+                  </button>
                 </div>
                 
                 <div>
@@ -288,17 +287,34 @@ export default function ProcessAssignmentPage() {
 
               </div>
 
-              <div className="bg-kaam-surface-container-high px-4 py-2 rounded-kaam-lg border border-kaam-outline-variant flex items-center gap-4">
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-kaam-on-surface-variant">Plan ID</span>
-                  <span className="font-kaam-label-md text-kaam-label-md">#{planId}</span>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-4">
+                <div className="bg-kaam-surface-container-high px-4 py-3 rounded-kaam-lg border border-kaam-outline-variant flex items-center justify-between sm:justify-start gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase font-bold text-kaam-on-surface-variant">Plan ID</span>
+                    <span className="font-kaam-label-md text-kaam-label-md">#{planId}</span>
+                  </div>
+                  <div className="w-px h-8 bg-kaam-outline-variant hidden sm:block"></div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase font-bold text-kaam-on-surface-variant">Priority</span>
+                    <span className="font-kaam-label-md text-kaam-label-md text-kaam-error flex items-center gap-1">
+                      <span className="w-2 h-2 bg-kaam-error rounded-kaam-full"></span> High
+                    </span>
+                  </div>
                 </div>
-                <div className="w-px h-8 bg-kaam-outline-variant"></div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-kaam-on-surface-variant">Priority</span>
-                  <span className="font-kaam-label-md text-kaam-label-md text-kaam-error flex items-center gap-1">
-                    <span className="w-2 h-2 bg-kaam-error rounded-kaam-full"></span> High
-                  </span>
+
+                <div className="bg-white border border-kaam-outline-variant rounded-kaam-lg px-4 py-3 shadow-sm flex items-center gap-4 min-w-[200px]">
+                  <div className="w-10 h-10 rounded-kaam-DEFAULT bg-kaam-primary-container text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <span className="material-symbols-outlined text-[20px]">pie_chart</span>
+                  </div>
+                  <div className="flex-1 flex flex-col justify-center">
+                     <div className="flex justify-between items-baseline mb-1.5">
+                       <span className="text-[10px] uppercase font-bold text-kaam-on-surface-variant tracking-wider">Utilization</span>
+                       <span className="font-kaam-label-lg font-bold text-kaam-primary">{progress}%</span>
+                     </div>
+                     <div className="w-full bg-kaam-surface-container-high h-1.5 rounded-kaam-full overflow-hidden">
+                       <div className="bg-kaam-primary h-full rounded-kaam-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                     </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -307,7 +323,7 @@ export default function ProcessAssignmentPage() {
           {/* Bento Grid of Process Boxes */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            {stages.map(stage => (
+            {dynamicStages.map(stage => (
               <div 
                 key={stage.id}
                 className="process-card bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-xl p-5 flex flex-col gap-4 shadow-sm" 
@@ -342,10 +358,10 @@ export default function ProcessAssignmentPage() {
                 <div className="flex flex-col gap-2">
                   <label className="text-[10px] text-kaam-on-surface-variant font-bold uppercase flex justify-between">
                     Assigned Teams 
-                    <span className="text-kaam-secondary">{assignments[stage.id].length} Teams</span>
+                    <span className="text-kaam-secondary">{(assignments[stage.id] || []).length} Teams</span>
                   </label>
                   <div className="min-h-[80px] border-2 border-dashed border-kaam-outline-variant rounded-kaam-lg p-2 flex flex-wrap gap-2 items-start content-start bg-kaam-surface-container-low/20 transition-all">
-                    {assignments[stage.id].length === 0 ? (
+                    {!(assignments[stage.id] || []).length ? (
                       <div className="w-full text-center py-4 text-kaam-on-surface-variant opacity-40 italic text-xs pointer-events-none">Drop team here...</div>
                     ) : (
                       assignments[stage.id].map(team => (
@@ -362,28 +378,6 @@ export default function ProcessAssignmentPage() {
               </div>
             ))}
 
-            {/* Assignment Summary (Bento Completion) */}
-            <div className="bg-kaam-primary-container text-white rounded-kaam-xl p-5 flex flex-col justify-between shadow-lg relative overflow-hidden group">
-              <div className="relative z-10">
-                <h3 className="font-kaam-headline-md text-kaam-headline-md mb-2">Total Utilization</h3>
-                <p className="text-kaam-on-primary-container text-kaam-body-sm font-kaam-body-sm mb-6">Aggregate operational readiness for Plan #{planId}.</p>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-[48px] font-kaam-stats-lg">{progress}%</span>
-                  <span className="text-kaam-on-primary-container text-sm">Target Reached</span>
-                </div>
-                <div className="w-full bg-kaam-on-primary-container/20 h-2 rounded-kaam-full mb-8">
-                  <div className="bg-kaam-tertiary-fixed h-full rounded-kaam-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
-                </div>
-              </div>
-              <button onClick={finalizeAssignments} className="relative z-10 w-full py-4 bg-white text-kaam-primary font-bold rounded-kaam-lg hover:bg-kaam-surface-container-lowest transition-all active:scale-[0.98]">
-                Finalize Production Plan
-              </button>
-              {/* Decorative element */}
-              <div className="absolute -right-10 -top-10 opacity-10 transform rotate-12 transition-transform group-hover:rotate-45 duration-700">
-                <span className="material-symbols-outlined text-[200px]">factory</span>
-              </div>
-            </div>
-            
           </div>
         </div>
 

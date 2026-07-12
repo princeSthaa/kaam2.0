@@ -1,6 +1,13 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { NepaliDatePicker } from '@/app/components/ui/NepaliDatePicker';
+
+declare global {
+  interface Window {
+    NepaliFunctions?: any;
+  }
+}
 
 export default function Dashboard({
   tempData,
@@ -13,19 +20,76 @@ export default function Dashboard({
   onCancel
 }: any) {
 
+  const safelyConvertAD2BS = (adDateStr: string) => {
+    if (!adDateStr || typeof window === 'undefined' || !window.NepaliFunctions) return "";
+    try {
+      const [y, m, d] = adDateStr.split("-").map(Number);
+      if (!y || !m || !d) return "";
+      const bsObj = window.NepaliFunctions.AD2BS({ year: y, month: m, day: d });
+      if (!bsObj) return "";
+      const yy = bsObj.year;
+      const mm = String(bsObj.month).padStart(2, '0');
+      const dd = String(bsObj.day).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+  };
+
+  const safelyConvertBS2AD = (bsDateStr: string) => {
+    if (!bsDateStr || typeof window === 'undefined' || !window.NepaliFunctions) return "";
+    try {
+      const [y, m, d] = bsDateStr.split("-").map(Number);
+      if (!y || !m || !d) return "";
+      const adObj = window.NepaliFunctions.BS2AD({ year: y, month: m, day: d });
+      if (!adObj) return "";
+      if (adObj instanceof Date) {
+         return adObj.toISOString().split("T")[0];
+      }
+      const yy = adObj.year;
+      const mm = String(adObj.month).padStart(2, '0');
+      const dd = String(adObj.day).padStart(2, '0');
+      return `${yy}-${mm}-${dd}`;
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+  };
+
   const handleFieldChange = (field: string) => (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
-    setFieldValues((currentValues: any) => ({
-      ...currentValues,
-      [field]: event.target.value,
-    }));
+    const value = event.target.value;
+    setFieldValues((currentValues: any) => {
+      const newValues = { ...currentValues, [field]: value };
+      
+      if (field === 'planStartDate') {
+        newValues.planStartDateNp = safelyConvertAD2BS(value);
+      } else if (field === 'planStartDateNp') {
+        newValues.planStartDate = safelyConvertBS2AD(value);
+      } else if (field === 'planEndDate') {
+        newValues.planEndDateNp = safelyConvertAD2BS(value);
+      } else if (field === 'planEndDateNp') {
+        newValues.planEndDate = safelyConvertBS2AD(value);
+      }
+
+      return newValues;
+    });
   };
 
   const handleStageChange = (idx: number, field: string, value: any) => {
     setStages((prev: any[]) => {
       const updated = [...prev];
-      updated[idx] = { ...updated[idx], [field]: value };
+      const stage = { ...updated[idx], [field]: value };
+      
+      if (field === 'date') {
+        stage.dateNp = safelyConvertAD2BS(value);
+      } else if (field === 'dateNp') {
+        stage.date = safelyConvertBS2AD(value);
+      }
+
+      updated[idx] = stage;
       return updated;
     });
   };
@@ -104,7 +168,7 @@ export default function Dashboard({
 
           {/*  Global Logistics & Plan Details  */}
           <div className="col-span-1 lg:col-span-2 bg-kaam-surface border border-kaam-outline-variant rounded-kaam-xl p-4 shadow-sm flex flex-col">
-            <div className="flex items-center justify-between mb-4 border-b border-kaam-outline-variant pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 border-b border-kaam-outline-variant pb-3 gap-3">
               <div className="flex items-center gap-4">
                 <h2 className="font-kaam-headline-md text-kaam-on-surface text-base">Plan Header Config</h2>
                 <span className="px-2 py-1 bg-kaam-error-container text-kaam-on-error-container font-kaam-label-md rounded-kaam-DEFAULT text-[10px] flex items-center gap-1">
@@ -112,7 +176,7 @@ export default function Dashboard({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase">Supervisor</label>
+                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase whitespace-nowrap">Supervisor</label>
                 <select 
                   className="border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1 pl-2 pr-8 focus:border-secondary focus:ring-1 focus:ring-secondary h-8"
                   value={fieldValues.supervisor}
@@ -124,7 +188,7 @@ export default function Dashboard({
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mt-2">
               <div>
                 <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase block mb-1">Assembly Line</label>
                 <select 
@@ -149,7 +213,7 @@ export default function Dashboard({
                 </select>
               </div>
               <div>
-                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase block mb-1">Start Date</label>
+                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase block mb-1">Start Date (AD)</label>
                 <input 
                   className="w-full border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1.5 focus:border-secondary focus:ring-1 focus:ring-secondary h-9 bg-kaam-surface-bright" 
                   type="date" 
@@ -158,12 +222,30 @@ export default function Dashboard({
                 />
               </div>
               <div>
-                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase block mb-1">End Date</label>
+                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase block mb-1">Start Date (BS)</label>
+                <NepaliDatePicker 
+                  className="w-full border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1.5 focus:border-secondary focus:ring-1 focus:ring-secondary h-9 bg-kaam-surface-bright px-2" 
+                  placeholder="YYYY-MM-DD"
+                  value={fieldValues.planStartDateNp || ""} 
+                  onChange={handleFieldChange("planStartDateNp")}
+                />
+              </div>
+              <div>
+                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase block mb-1">End Date (AD)</label>
                 <input 
                   className="w-full border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1.5 focus:border-secondary focus:ring-1 focus:ring-secondary h-9 bg-kaam-surface-bright" 
                   type="date" 
                   value={fieldValues.planEndDate} 
                   onChange={handleFieldChange("planEndDate")}
+                />
+              </div>
+              <div>
+                <label className="font-kaam-label-md text-kaam-on-surface-variant text-[10px] uppercase block mb-1">End Date (BS)</label>
+                <NepaliDatePicker 
+                  className="w-full border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1.5 focus:border-secondary focus:ring-1 focus:ring-secondary h-9 bg-kaam-surface-bright px-2" 
+                  placeholder="YYYY-MM-DD"
+                  value={fieldValues.planEndDateNp || ""} 
+                  onChange={handleFieldChange("planEndDateNp")}
                 />
               </div>
             </div>
@@ -172,10 +254,10 @@ export default function Dashboard({
 
         {/*  Product Basket & Configuration  */}
         <div className="mt-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-3">
             <h3 className="font-kaam-headline-md text-kaam-on-surface">Product Basket Configurations</h3>
             <div className="flex items-center gap-2">
-              <span className="font-kaam-label-md text-kaam-on-surface-variant">Apply to all products:</span>
+              <span className="font-kaam-label-md text-kaam-on-surface-variant whitespace-nowrap">Apply to all products:</span>
               <select className="border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1 focus:border-secondary focus:ring-1 focus:ring-secondary bg-kaam-surface-bright h-8">
                 <option>Standard Routing Profile</option>
                 <option>Expedited Routing</option>
@@ -192,7 +274,7 @@ export default function Dashboard({
               return (
                 <div key={item.id || basketIdx} className="bg-kaam-surface border border-kaam-outline-variant rounded-kaam-xl overflow-hidden shadow-sm group">
                   {/*  Accordion Header  */}
-                  <div className="p-4 flex items-center justify-between bg-kaam-surface border-b border-kaam-outline-variant">
+                  <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between bg-kaam-surface border-b border-kaam-outline-variant gap-4">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 bg-kaam-surface-container-highest rounded-kaam-DEFAULT overflow-hidden border border-kaam-outline-variant shrink-0">
                         <img 
@@ -206,11 +288,11 @@ export default function Dashboard({
                         <p className="font-kaam-body-sm text-kaam-on-surface-variant">SKU: {item.productCode || item.productId} • Qty: {item.quantity || totalSizes} units ({item.variant})</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 sm:ml-auto">
                       <button 
                         type="button"
                         onClick={onVerifyStock}
-                        className="px-3 py-1.5 border border-kaam-outline-variant rounded-kaam-DEFAULT text-kaam-on-surface font-kaam-label-md hover:bg-surface-variant transition-colors flex items-center gap-1 bg-kaam-surface-bright"
+                        className="w-full sm:w-auto px-3 py-1.5 border border-kaam-outline-variant rounded-kaam-DEFAULT text-kaam-on-surface font-kaam-label-md hover:bg-surface-variant transition-colors flex items-center justify-center gap-1 bg-kaam-surface-bright"
                       >
                         <span className="material-symbols-outlined text-[16px]">inventory</span>
                         Verify Stock
@@ -259,12 +341,12 @@ export default function Dashboard({
                       </div>
                       <div className="flex flex-col gap-2">
                         {stages.map((stage: any, idx: number) => (
-                          <div key={stage.id || idx} className="flex items-center gap-3 bg-kaam-surface border border-kaam-outline-variant rounded-kaam-DEFAULT p-2 hover:border-secondary transition-colors group/stage">
-                            <span className="material-symbols-outlined text-kaam-outline-variant cursor-grab active:cursor-grabbing text-[18px]">drag_indicator</span>
-                            <div className="w-6 h-6 rounded-kaam-DEFAULT bg-kaam-primary-container text-kaam-on-primary-container flex items-center justify-center font-kaam-label-md text-[10px] shrink-0">
+                          <div key={stage.id || idx} className="flex flex-col sm:flex-row sm:items-center gap-3 bg-kaam-surface border border-kaam-outline-variant rounded-kaam-DEFAULT p-3 sm:p-2 hover:border-secondary transition-colors group/stage relative">
+                            <span className="material-symbols-outlined text-kaam-outline-variant cursor-grab active:cursor-grabbing text-[18px] hidden sm:block">drag_indicator</span>
+                            <div className="w-6 h-6 rounded-kaam-DEFAULT bg-kaam-primary-container text-kaam-on-primary-container flex items-center justify-center font-kaam-label-md text-[10px] shrink-0 absolute top-3 right-10 sm:static sm:top-auto sm:right-auto">
                               {stage.id}
                             </div>
-                            <div className="grid grid-cols-4 gap-4 flex-grow items-center">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 flex-grow items-center">
                               <select 
                                 className="border-none bg-transparent font-kaam-body-sm text-kaam-on-surface focus:ring-0 p-0 text-sm font-bold"
                                 value={stage.name}
@@ -298,17 +380,29 @@ export default function Dashboard({
                                 />
                                 <span className="font-kaam-label-md text-kaam-on-surface-variant text-[10px]">hrs lead</span>
                               </div>
-                              <input 
-                                className="border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1 text-xs focus:border-secondary focus:ring-1 focus:ring-secondary h-7" 
-                                type="date" 
-                                value={stage.date} 
-                                onChange={e => handleStageChange(idx, "date", e.target.value)}
-                              />
+                              <div className="flex flex-col gap-1">
+                                <span className="font-kaam-label-md text-kaam-on-surface-variant text-[9px] uppercase">AD Date</span>
+                                <input 
+                                  className="w-full border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1 text-xs focus:border-secondary focus:ring-1 focus:ring-secondary h-7" 
+                                  type="date" 
+                                  value={stage.date} 
+                                  onChange={e => handleStageChange(idx, "date", e.target.value)}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <span className="font-kaam-label-md text-kaam-on-surface-variant text-[9px] uppercase">BS Date</span>
+                                <NepaliDatePicker 
+                                  className="w-full border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-kaam-on-surface py-1 px-2 text-xs focus:border-secondary focus:ring-1 focus:ring-secondary h-7" 
+                                  placeholder="YYYY-MM-DD"
+                                  value={stage.dateNp || ""} 
+                                  onChange={e => handleStageChange(idx, "dateNp", e.target.value)}
+                                />
+                              </div>
                             </div>
                             <button 
                               type="button"
                               onClick={() => handleDeleteStage(idx)}
-                              className="text-kaam-outline-variant hover:text-error transition-colors p-1"
+                              className="text-kaam-outline-variant hover:text-error transition-colors p-1 absolute top-2 right-2 sm:static sm:top-auto sm:right-auto"
                             >
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>

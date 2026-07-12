@@ -1,6 +1,21 @@
 import React from 'react';
 import WorkflowView from './WorkflowView';
 
+function adToNepali(adDateStr: string): string {
+  if (!adDateStr) return "";
+  try {
+    const d = new Date(adDateStr);
+    if (isNaN(d.getTime())) return adDateStr;
+    if (typeof window !== "undefined" && (window as any).NepaliFunctions) {
+      const nf = (window as any).NepaliFunctions;
+      return nf.AD2BS(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  } catch {
+    return adDateStr;
+  }
+}
+
 export default function ProductRow({ product, isExpanded, onToggle, onUpdateProduct }: any) {
   return (
     <div className="border-b border-kaam-outline-variant bg-kaam-surface-bright last:border-b-0 group">
@@ -33,7 +48,7 @@ export default function ProductRow({ product, isExpanded, onToggle, onUpdateProd
         <div className="col-span-1 lg:col-span-2 lg:text-center font-kaam-body-sm text-kaam-on-surface flex items-center lg:justify-center gap-1">
           <span className="lg:hidden text-kaam-on-surface-variant font-kaam-label-md mr-2">Required:</span>
           <span className="material-symbols-outlined text-[16px] text-kaam-error">event</span>
-          <span className="text-kaam-error font-bold">{product.requiredDate}</span>
+          <span className="text-kaam-error font-bold">{product.requiredDate} {product.requiredDate && `(${adToNepali(product.requiredDate)} BS)`}</span>
         </div>
 
         <div className="col-span-1 lg:col-span-2 flex items-center gap-2">
