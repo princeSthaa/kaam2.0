@@ -88,10 +88,6 @@ export function ProductionFolderPage({ folder }: { folder: keyof typeof folderCo
                 <MaterialIcon name="delete" />
                 Delete Selected
               </ActionButton>
-              <button type="button" className="icon-text-btn" id="clearDraftsBtn">
-                <MaterialIcon name="delete_sweep" />
-                Clear Local Drafts
-              </button>
             </div>
           ) : null}
         </div>

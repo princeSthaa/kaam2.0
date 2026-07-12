@@ -83,13 +83,13 @@
   },
   {
     "PlanId": "PP-20260712-459",
-    "BatchId": "",
+    "BatchId": "BCH-50830",
     "PlanName": "Production Plan - Ram Bahadur Thapa (PP-20260712-459)",
     "DemandType": "Customer Order",
     "SourceId": "11111111-1111-1111-1111-111111111111",
     "SourceName": "Ram Bahadur Thapa",
     "Priority": "High",
-    "Status": "Draft",
+    "Status": "Active",
     "PlannedStartDate": "2026-07-12",
     "PlannedCompletionDate": "2026-07-26",
     "Quantity": 1,
@@ -156,7 +156,7 @@
     ],
     "Id": "74f1e171-28dc-4076-b431-19d566a2f2a7",
     "CreatedAt": "2026-07-12T06:16:56.490716Z",
-    "UpdatedAt": "2026-07-12T08:12:40.2172506Z"
+    "UpdatedAt": "2026-07-12T09:45:16.8980322Z"
   },
   {
     "PlanId": "PP-20260712-417",

@@ -269,12 +269,14 @@
                     <time class="folder-plan-date">${App.escapeHtml(formatFolderDate(rowDate))}</time>
 
                     <div class="folder-plan-actions">
-                        <a class="btn btn-light btn-sm" href="${App.escapeHtml(primaryUrl)}">${primaryText}</a>
-                        <a class="btn btn-primary btn-sm" href="${App.escapeHtml(detailsUrl)}">Details</a>
                         ${folderType === "drafts" ? `
+                            <a class="btn btn-primary btn-sm" href="${App.escapeHtml(detailsUrl)}">Details</a>
                             <a class="btn btn-light btn-sm" href="${App.escapeHtml(editUrl)}">Edit</a>
                             <button type="button" class="btn btn-success btn-sm font-bold" data-activate-plan="${App.escapeHtml(planNo)}">Activate</button>
-                        ` : ""}
+                        ` : `
+                            <a class="btn btn-light btn-sm" href="${App.escapeHtml(primaryUrl)}">${primaryText}</a>
+                            <a class="btn btn-primary btn-sm" href="${App.escapeHtml(detailsUrl)}">Details</a>
+                        `}
                         ${isLocal ? `
                             <button type="button"
                                     class="icon-only-btn"
