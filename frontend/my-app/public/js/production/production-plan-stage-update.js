@@ -14,15 +14,28 @@
 
     document.addEventListener("DOMContentLoaded", init);
 
-    function init() {
-        state.plans = App.getData("mockProductionPlans", "productionPlans", "plans");
+    const fallbackProductImage = "https://images.unsplash.com/photo-1523381294911-8d3cead13475?auto=format&fit=crop&w=640&q=80";
+
+    async function init() {
         state.products = App.getData("products", "mockProducts", "productData");
         state.customers = App.getData("customers", "mockCustomers", "customerData");
         state.outlets = App.getData("outlets", "mockOutlets", "outletData");
         state.warehouses = App.getData("warehouses", "mockWarehouses", "warehouseData");
         state.stages = App.getData("productionStages", "mockProductionStages", "stages");
 
+        try {
+            const res = await fetch("http://localhost:5083/api/production-plans");
+            if(res.ok) {
+                state.plans = await res.json();
+            } else {
+                state.plans = App.getData("mockProductionPlans", "productionPlans", "plans");
+            }
+        } catch (e) {
+            state.plans = App.getData("mockProductionPlans", "productionPlans", "plans");
+        }
+
         loadPlan();
+        populateProductDropdown();
         bindEvents();
         renderPlanSummary();
         renderStageDropdown();
@@ -33,6 +46,31 @@
     function loadPlan() {
         const id = App.value("#selectedPlanId");
         state.plan = App.findById(state.plans, id) || state.plans[0] || null;
+        state.planProducts = state.plan ? normalizePlanProducts(state.plan) : [];
+    }
+
+    function populateProductDropdown() {
+        const dropdown = document.getElementById("productDropdown");
+        if (!dropdown) return;
+
+        if (!state.planProducts || !state.planProducts.length) {
+            dropdown.innerHTML = `<option value="">No Products Found</option>`;
+            return;
+        }
+
+        dropdown.innerHTML = state.planProducts.map(function (product) {
+            const id = product.productId || product.productCode;
+            const name = product.productName;
+            return `<option value="${App.escapeHtml(id)}">${App.escapeHtml(name)}</option>`;
+        }).join("");
+
+        // Add event listener to refresh stages when product is changed!
+        dropdown.addEventListener("change", function () {
+            clearForm(false);
+            renderStageDropdown();
+            renderStageProgress();
+            renderStageTable();
+        });
     }
 
     function bindEvents() {
@@ -62,9 +100,82 @@
         const form = document.getElementById("stageUpdateForm");
         if (form) {
             form.addEventListener("submit", function (event) {
+                event.preventDefault();
                 if (!validateStageForm()) {
-                    event.preventDefault();
+                    return;
                 }
+
+                // Retrieve form values
+                const productId = App.value("#productDropdown");
+                const stageId = App.value("#stageDropdown");
+                const status = App.value("#stageStatus");
+                const actualStartDate = App.value("#actualStartDate");
+                const actualEndDate = App.value("#actualEndDate");
+                const completedQty = App.number(App.value("#completedQty"));
+                const rejectedQty = App.number(App.value("#rejectedQty"));
+                const remarks = App.value("#remarks");
+
+                // Find stage and update
+                const planStages = getPlanStages();
+
+                const stage = planStages.find(function (s, index) {
+                    const id = s.stageId || s.id || `stage-${index + 1}`;
+                    return String(id) === String(stageId);
+                });
+
+                if (!stage) {
+                    App.toast("Selected stage not found.", "danger");
+                    return;
+                }
+
+                // Update stage fields
+                stage.status = status;
+                stage.actualStartDate = actualStartDate;
+                stage.actualEndDate = actualEndDate;
+                stage.completedQty = completedQty;
+                stage.rejectedQty = rejectedQty;
+                stage.remarks = remarks;
+
+                // Update product stages in plan
+                const product = state.planProducts.find(p => String(p.productId || p.productCode) === String(productId));
+                if (product) {
+                    product.stages = planStages;
+                }
+                const planProduct = state.plan.products && state.plan.products.find(p => String(p.productId || p.productCode) === String(productId));
+                if (planProduct) {
+                    planProduct.stages = planStages;
+                }
+
+                // Update overall plan status based on stages
+                const allCompleted = planStages.every(function (s) { return s.status === "Completed"; });
+                const anyRunning = planStages.some(function (s) { return s.status === "Active" || s.status === "In Progress" || s.status === "Running" || s.status === "Completed"; });
+                const anyHold = planStages.some(function (s) { return s.status === "On Hold"; });
+
+                if (allCompleted) {
+                    state.plan.status = "Completed";
+                } else if (anyHold) {
+                    state.plan.status = "On Hold";
+                } else if (anyRunning) {
+                    state.plan.status = "Running";
+                }
+
+                // Also update plan-level stages for compatibility
+                state.plan.stages = planStages;
+
+                fetch("http://localhost:5083/api/production-plans/" + state.plan.id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(state.plan)
+                }).then(function(res) {
+                    if (!res.ok) throw new Error("Failed to save progress.");
+                    App.toast("Stage progress saved successfully.", "success");
+                    window.setTimeout(function () {
+                        window.location.href = "/Production/Plan/Details?planNo=" + encodeURIComponent(state.plan.planNo || state.plan.id);
+                    }, 400);
+                }).catch(function(err) {
+                    App.toast("Error saving progress to server.", "danger");
+                    console.error(err);
+                });
             });
         }
     }
@@ -72,9 +183,12 @@
     function getPlanStages() {
         if (!state.plan) return state.stages;
 
-        return state.plan.stages && state.plan.stages.length
-            ? state.plan.stages
-            : state.stages;
+        const productId = App.value("#productDropdown");
+        const product = state.planProducts && state.planProducts.find(p => String(p.productId || p.productCode) === String(productId));
+
+        return product && product.stages && product.stages.length
+            ? product.stages
+            : (state.plan.stages && state.plan.stages.length ? state.plan.stages : state.stages);
     }
 
     function renderPlanSummary() {
@@ -84,20 +198,20 @@
             return;
         }
 
-        const product = App.findById(state.products, state.plan.productId) || {};
-        const productName = state.plan.productName || product.name || product.productName || "-";
+        const productNames = state.planProducts.map(p => p.productName).join(" • ");
+        const quantity = state.planProducts.reduce((sum, p) => sum + p.quantity, 0);
 
         App.setText("#stagePlanNo", state.plan.planNo || state.plan.planId);
         App.setValue("#planNoInput", state.plan.planNo || state.plan.planId);
-        App.setText("#stagePlanSubtitle", `${productName} • ${state.plan.demandType || "-"}`);
+        App.setText("#stagePlanSubtitle", `${productNames} • ${state.plan.demandType || "-"}`);
 
         const badge = document.getElementById("stagePlanStatusBadge");
         if (badge) badge.outerHTML = App.badge(state.plan.status);
 
         App.setText("#stageDemandType", state.plan.demandType);
         App.setText("#stageSourceName", getSourceName());
-        App.setText("#stageProductName", productName);
-        App.setText("#stageTotalQuantity", Number(state.plan.quantity || state.plan.totalQuantity || 0).toLocaleString());
+        App.setText("#stageProductName", productNames);
+        App.setText("#stageTotalQuantity", Number(quantity || state.plan.quantity || state.plan.totalQuantity || 0).toLocaleString());
         App.setText("#stagePlannedStart", App.formatDate(state.plan.plannedStartDate));
         App.setText("#stagePlannedCompletion", App.formatDate(state.plan.plannedCompletionDate));
         App.setText("#stageRequiredDate", App.formatDate(state.plan.requiredDate));
@@ -136,32 +250,83 @@
 
             return `<option value="${App.escapeHtml(id)}">${App.escapeHtml(name)}</option>`;
         }).join("");
-    }
-
-    function renderStageProgress() {
+    }    function renderStageProgress() {
         const strip = document.getElementById("stageProgressStrip");
         if (!strip) return;
 
-        const stages = getPlanStages();
+        if (!state.planProducts || state.planProducts.length === 0) {
+            strip.innerHTML = "<div class='text-slate-400 text-sm'>No products to track.</div>";
+            return;
+        }
 
-        strip.innerHTML = stages.map(function (stage) {
-            const status = stage.status || "Not Started";
+        let html = '<div style="display: flex; flex-direction: column; gap: 16px; width: 100%;">';
 
-            const cls = status === "Completed"
-                ? "completed"
-                : status === "In Progress" || status === state.plan?.status
-                    ? "active"
-                    : status === "On Hold"
-                        ? "hold"
-                        : "";
+        state.planProducts.forEach(product => {
+            const stages = (product.stages && product.stages.length) ? product.stages : (state.plan.stages || state.stages);
 
-            return `
-                <div class="stage-step ${cls}">
-                    <span>${App.escapeHtml(status)}</span>
-                    <strong>${App.escapeHtml(stage.stageName || stage.name)}</strong>
+            html += `
+                <div style="background: #f8fafc; border: 1.5px solid #f1f5f9; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.01);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="material-symbols-outlined" style="font-size: 16px; color: #64748b;">inventory_2</span>
+                        <strong style="font-size: 13px; color: #334155; font-weight: 700;">${App.escapeHtml(product.productName)}</strong>
+                        <span style="font-size: 10px; color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 2px 6px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;">${App.escapeHtml(product.productId || product.productCode)}</span>
+                    </div>
+                    <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; padding-top: 2px; padding-left: 2px; padding-right: 2px;" class="scrollbar-thin">
+            `;
+
+            html += stages.map(function (stage) {
+                const status = stage.status || "Not Started";
+                
+                let stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #94a3b8;">radio_button_unchecked</span>';
+                let badgeBg = "background: #f1f5f9; border: 1.5px solid #cbd5e1;";
+                let textStyle = "color: #475569;";
+                let containerBorder = "border: 1.5px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);";
+
+                if (status === "Completed") {
+                    stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #15803d; font-weight: bold;">check</span>';
+                    badgeBg = "background: #dcfce7; border: 1.5px solid #86efac;";
+                    textStyle = "text-decoration: line-through; color: #94a3b8; font-weight: 500;";
+                } else if (status === "Active" || status === "In Progress") {
+                    stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #1d4ed8; font-weight: bold; animation: spin 2s linear infinite;">sync</span>';
+                    badgeBg = "background: #eff6ff; border: 1.5px solid #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15);";
+                    textStyle = "color: #1e3a8a; font-weight: 700;";
+                    containerBorder = "border: 1.5px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37,99,235,0.06);";
+                } else if (status === "On Hold") {
+                    stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #b91c1c; font-weight: bold;">warning</span>';
+                    badgeBg = "background: #fef2f2; border: 1.5px solid #fca5a5;";
+                    textStyle = "color: #991b1b; font-weight: 700;";
+                }
+
+                return `
+                    <div class="stage-step flex-shrink-0" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; transition: all 0.2s; background: #ffffff; ${containerBorder}; min-width: 190px;">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${badgeBg}">
+                            ${stepIcon}
+                        </div>
+                        <div style="min-width: 0; flex: 1; text-align: left;">
+                            <span style="display: block; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-family: monospace; margin-bottom: 2px;">
+                                ${App.escapeHtml(status)}
+                            </span>
+                            <strong style="display: block; font-size: 13px; ${textStyle}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${App.escapeHtml(stage.stageName || stage.name)}
+                            </strong>
+                            <span style="display: block; font-size: 11px; color: #64748b; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${App.escapeHtml(stage.workCenter || stage.department || "-")}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            html += `
+                    </div>
                 </div>
             `;
-        }).join("");
+        });
+
+        html += '</div>';
+
+        strip.innerHTML = html;
+        strip.className = "w-full stage-progress-strip"; 
     }
 
     function renderStageTable() {
@@ -338,5 +503,51 @@
         if (showToast !== false) {
             App.toast("Stage form cleared.", "success");
         }
+    }
+
+    function normalizePlanProducts(plan) {
+        const rawProducts = Array.isArray(plan.products) && plan.products.length
+            ? plan.products
+            : [plan];
+
+        return rawProducts.map(function (product, index) {
+            const catalogProduct = getCatalogProduct(product) || {};
+
+            return {
+                lineId: product.lineId || `${plan.planNo || plan.planId || "PLAN"}-${index + 1}`,
+                productId: product.productId || plan.productId || catalogProduct.productId || catalogProduct.id || "",
+                productCode: product.productCode || product.productId || plan.productId || catalogProduct.productCode || "",
+                productName: product.productName || product.product || plan.productName || catalogProduct.productName || catalogProduct.name || "-",
+                category: product.category || plan.category || catalogProduct.category || "-",
+                variant: product.variant || product.color || plan.variant || plan.color || "-",
+                quantity: Number(product.quantity || product.qty || plan.quantity || plan.totalQuantity || 0),
+                sourceName: product.sourceName || product.source || plan.sourceName || "In-house Stock",
+                requiredDate: product.requiredDate || plan.requiredDate || "",
+                plannedStartDate: product.plannedStartDate || product.plannedStart || plan.plannedStartDate || "",
+                plannedCompletionDate: product.plannedCompletionDate || product.plannedFinish || plan.plannedCompletionDate || "",
+                status: product.status || plan.status || "Draft",
+                priority: product.priority || plan.priority || "Normal",
+                productImage: product.productImage || product.imagePath || product.image || catalogProduct.productImage || catalogProduct.imagePath || fallbackProductImage,
+                productionNotes: product.productionNotes || plan.productionNotes || "",
+                sizes: product.sizes || product.sizeBreakdown || plan.sizes || plan.sizeBreakdown || [],
+                stages: product.stages || []
+            };
+        });
+    }
+
+    function getCatalogProduct(product) {
+        const candidates = [
+            product.productId,
+            product.productCode,
+            product.id,
+            product.code
+        ].filter(Boolean).map(String);
+
+        return state.products.find(function (item) {
+            return candidates.includes(String(item.id))
+                || candidates.includes(String(item.productId))
+                || candidates.includes(String(item.productCode))
+                || candidates.includes(String(item.code));
+        });
     }
 })();

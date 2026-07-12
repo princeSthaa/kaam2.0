@@ -1,0 +1,72 @@
+[
+  {
+    "PlanId": "PP-20260712-999",
+    "BatchId": "BCH-99999",
+    "PlanName": "Summer Collection Full Plan",
+    "DemandType": "Customer Order",
+    "SourceId": "22222222-2222-2222-2222-222222222222",
+    "SourceName": "Mega Mart Outlet",
+    "Priority": "High",
+    "Status": "Cutting",
+    "PlannedStartDate": "2026-07-12",
+    "PlannedCompletionDate": "2026-07-30",
+    "Quantity": 500,
+    "EstimatedCost": 0,
+    "Supervisor": "T. Lama (Shift 1)",
+    "ProductionLine": "Line 2",
+    "MaterialWarehouse": "Hub A",
+    "ProductionNotes": "Full plan for UI testing.",
+    "Products": [
+      {
+        "LineId": "PP-20260712-999-PRD-001-V1",
+        "OrderNo": "",
+        "ProductId": "PRD-001",
+        "ProductCode": "PRD-001",
+        "ProductName": "Standard School Shirt",
+        "Category": "Garment",
+        "Variant": "White Cotton",
+        "Quantity": 200,
+        "RequiredDate": "2026-07-28T00:00:00Z",
+        "Status": "Cutting",
+        "ProductImage": null,
+        "Sizes": [
+          {
+            "Size": "M",
+            "Quantity": 100
+          },
+          {
+            "Size": "L",
+            "Quantity": 100
+          }
+        ]
+      },
+      {
+        "LineId": "PP-20260712-999-PRD-002-V1",
+        "OrderNo": "",
+        "ProductId": "PRD-002",
+        "ProductCode": "PRD-002",
+        "ProductName": "School Tracksuit Set",
+        "Category": "Garment",
+        "Variant": "Navy Blue",
+        "Quantity": 300,
+        "RequiredDate": "2026-07-30T00:00:00Z",
+        "Status": "Stitching",
+        "ProductImage": null,
+        "Sizes": [
+          {
+            "Size": "S",
+            "Quantity": 100
+          },
+          {
+            "Size": "M",
+            "Quantity": 200
+          }
+        ]
+      }
+    ],
+    "Stages": [],
+    "Id": "1ca39a38-58cd-4e45-960f-d4c27c99bec0",
+    "CreatedAt": "2026-07-12T05:08:59.4544974Z",
+    "UpdatedAt": "2026-07-12T05:08:59.4544981Z"
+  }
+]

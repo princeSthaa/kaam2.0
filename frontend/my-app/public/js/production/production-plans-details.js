@@ -1,6 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const plans = App.getData("mockProductionPlans", "productionPlans", "plans").map(normalizePlan);
-
+    let plans = [];
     const selectedPlanNoFromRoute = document.getElementById("selectedPlanNoFromRoute")?.value || "";
     const planTableView = document.getElementById("planTableView");
     const planCardView = document.getElementById("planCardView");
@@ -12,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const viewToggleButtons = document.querySelectorAll("[data-plan-view]");
     const demandTypeFilter = document.getElementById("demandTypeFilter");
     const statusFilter = document.getElementById("statusFilter");
+    const sortFilter = document.getElementById("sortFilter");
     const fromDateFilter = document.getElementById("fromDateFilter");
     const toDateFilter = document.getElementById("toDateFilter");
     const productSearch = document.getElementById("productSearch");
@@ -22,18 +22,35 @@ document.addEventListener("DOMContentLoaded", function () {
     const pageSize = 5;
 
     let activeView = "table";
-    let activePlanNo = selectedPlanNoFromRoute || plans[0]?.planNo || "";
+    let activePlanNo = selectedPlanNoFromRoute || "";
     let currentPage = 1;
     let shouldPageToActivePlan = Boolean(selectedPlanNoFromRoute);
 
-    renderPlans();
-    renderDetails();
-    attachEvents();
+    // Fetch from Backend API
+    fetch("http://localhost:5083/api/production-plans")
+        .then(res => res.json())
+        .then(data => {
+            plans = data.map(normalizePlan);
+            if (!activePlanNo && plans.length > 0) {
+                activePlanNo = plans[0].planNo;
+            }
+            renderPlans();
+            renderDetails();
+            attachEvents();
+        })
+        .catch(err => {
+            console.error("Failed to fetch production plans from API:", err);
+            plans = [];
+            renderPlans();
+            renderDetails();
+            attachEvents();
+        });
 
     function attachEvents() {
         [
             demandTypeFilter,
             statusFilter,
+            sortFilter,
             fromDateFilter,
             toDateFilter,
             productSearch,
@@ -49,6 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
             resetFiltersBtn.addEventListener("click", function () {
                 if (demandTypeFilter) demandTypeFilter.value = "";
                 if (statusFilter) statusFilter.value = "";
+                if (sortFilter) sortFilter.value = "Latest First";
                 if (fromDateFilter) fromDateFilter.value = "";
                 if (toDateFilter) toDateFilter.value = "";
                 if (productSearch) productSearch.value = "";
@@ -80,6 +98,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const demandTypeValue = demandTypeFilter ? demandTypeFilter.value : "";
         const statusValue = statusFilter ? statusFilter.value : "";
+        const sortValue = sortFilter ? sortFilter.value : "Latest First";
         const fromDateValue = fromDateFilter ? fromDateFilter.value : "";
         const toDateValue = toDateFilter ? toDateFilter.value : "";
         const productSearchText = productSearch ? productSearch.value.toLowerCase().trim() : "";
@@ -129,6 +148,23 @@ document.addEventListener("DOMContentLoaded", function () {
                     || plan.products.some(function (product) {
                         return isSameOrBefore(product.requiredDate, toDateValue);
                     });
+            });
+        }
+
+        // Apply sorting
+        if (sortValue === "Oldest First") {
+            filteredPlans.sort(function(a, b) {
+                // Parse date from planNo (e.g. PP-20260529-001) or fallback to factoryStart
+                const dateA = a.planNo.match(/\d{8}/) ? a.planNo.match(/\d{8}/)[0] : (new Date(a.factoryStart).getTime() || 0);
+                const dateB = b.planNo.match(/\d{8}/) ? b.planNo.match(/\d{8}/)[0] : (new Date(b.factoryStart).getTime() || 0);
+                return dateA > dateB ? 1 : (dateA < dateB ? -1 : 0);
+            });
+        } else {
+            // Default to Latest First
+            filteredPlans.sort(function(a, b) {
+                const dateA = a.planNo.match(/\d{8}/) ? a.planNo.match(/\d{8}/)[0] : (new Date(a.factoryStart).getTime() || 0);
+                const dateB = b.planNo.match(/\d{8}/) ? b.planNo.match(/\d{8}/)[0] : (new Date(b.factoryStart).getTime() || 0);
+                return dateA < dateB ? 1 : (dateA > dateB ? -1 : 0);
             });
         }
 

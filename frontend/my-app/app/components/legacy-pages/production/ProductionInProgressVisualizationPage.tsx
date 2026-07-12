@@ -294,13 +294,72 @@ export function ProductionInProgressVisualizationPage() {
   const [sourceFilter, setSourceFilter] = useState<(typeof sourceOptions)[number]>("All");
   const [sortBy, setSortBy] = useState("requiredDate");
   const [query, setQuery] = useState("");
-  const [selectedPlanNo, setSelectedPlanNo] = useState(inProgressPlans[0].planNo);
+  const [selectedPlanNo, setSelectedPlanNo] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
+  
+  const [inProgressPlansList, setInProgressPlansList] = useState<ProductionPlan[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  import("react").then((React) => {
+    React.useEffect(() => {
+      fetch("http://localhost:5083/api/production-plans")
+        .then((res) => res.json())
+        .then((data: any[]) => {
+          const mapped = data.filter(p => {
+             const s = (p.status || "").toLowerCase();
+             return s !== "draft" && s !== "completed" && s !== "cancelled";
+          }).map(p => ({
+             planNo: p.planId || p.PlanId || p.planNo || p.id,
+             demandType: p.demandType || p.DemandType || "Unknown",
+             sourceName: p.sourceName || p.SourceName || "Unknown",
+             productName: p.planName || p.PlanName || "Unknown",
+             variant: p.products?.[0]?.variant || p.Products?.[0]?.Variant || "Standard",
+             quantity: p.quantity || p.Quantity || 0,
+             priority: p.priority || p.Priority || "Normal",
+             outputDestination: "Unknown",
+             plannedStartDate: p.plannedStartDate || p.PlannedStartDate || new Date().toISOString(),
+             plannedCompletionDate: p.plannedCompletionDate || p.PlannedCompletionDate || new Date().toISOString(),
+             requiredDate: p.products?.[0]?.requiredDate || p.Products?.[0]?.RequiredDate || new Date().toISOString(),
+             status: p.status || p.Status || "Unknown",
+             products: (p.products || p.Products || []).map((prod: any) => ({
+                 productCode: prod.productCode || prod.ProductCode || prod.productId || prod.ProductId || "",
+                 productName: prod.productName || prod.ProductName || "Unknown Product",
+                 category: prod.category || prod.Category || "General",
+                 variant: prod.variant || prod.Variant || "Standard",
+                 quantity: prod.quantity || prod.Quantity || 0,
+                 sourceName: p.sourceName || p.SourceName || "",
+                 requiredDate: prod.requiredDate || prod.RequiredDate || new Date().toISOString(),
+                 productImage: prod.productImage || prod.ProductImage || "/images/products/place-holder.png",
+                 productionNotes: p.productionNotes || p.ProductionNotes || "",
+                 sizes: Array.isArray(prod.sizes || prod.Sizes) ? (prod.sizes || prod.Sizes) : [],
+             })),
+             stages: Array.isArray(p.stages || p.Stages) ? (p.stages || p.Stages).map((stg: any) => ({
+                 stageName: stg.stageName || stg.StageName || "",
+                 workCenter: stg.workCenter || stg.WorkCenter || "",
+                 plannedStartDate: stg.plannedStartDate || stg.PlannedStartDate || new Date().toISOString(),
+                 plannedEndDate: stg.plannedEndDate || stg.PlannedEndDate || new Date().toISOString(),
+                 status: stg.status || stg.Status || "Not Started",
+                 completedQty: stg.completedQty || stg.CompletedQty || 0,
+                 rejectedQty: stg.rejectedQty || stg.RejectedQty || 0
+             })) : []
+          }));
+          setInProgressPlansList(mapped);
+          if (mapped.length > 0) {
+             setSelectedPlanNo(mapped[0].planNo);
+          }
+          setIsLoading(false);
+        })
+        .catch(err => {
+          console.error("Failed to fetch plans", err);
+          setIsLoading(false);
+        });
+    }, []);
+  });
 
   const filteredPlans = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return inProgressPlans
+    return inProgressPlansList
       .filter((plan) => stageFilter === "All" || plan.status === stageFilter || getActiveStage(plan)?.stageName === stageFilter)
       .filter((plan) => priorityFilter === "All" || plan.priority === priorityFilter)
       .filter((plan) => sourceFilter === "All" || plan.demandType === sourceFilter)
@@ -316,13 +375,17 @@ export function ProductionInProgressVisualizationPage() {
         if (sortBy === "priority") return a.priority.localeCompare(b.priority);
         return new Date(a.requiredDate).getTime() - new Date(b.requiredDate).getTime();
       });
-  }, [priorityFilter, query, sortBy, sourceFilter, stageFilter]);
+  }, [priorityFilter, query, sortBy, sourceFilter, stageFilter, inProgressPlansList]);
 
-  const selectedPlan = filteredPlans.find((plan) => plan.planNo === selectedPlanNo) ?? filteredPlans[0] ?? inProgressPlans[0];
-  const selectedStage = getActiveStage(selectedPlan);
-  const selectedProduct = selectedPlan.products[0];
+  const selectedPlan = filteredPlans.find((plan) => plan.planNo === selectedPlanNo) ?? filteredPlans[0] ?? null;
+  const selectedStage = selectedPlan ? getActiveStage(selectedPlan) : null;
+  const selectedProduct = selectedPlan ? selectedPlan.products[0] : null;
   const totalQuantity = filteredPlans.reduce((sum, plan) => sum + plan.quantity, 0);
   const activeQuantity = filteredPlans.reduce((sum, plan) => sum + (getActiveStage(plan)?.completedQty ?? 0), 0);
+
+  if (isLoading) {
+      return <div className="p-8">Loading in progress plans...</div>;
+  }
 
   return (
     <div className="pp-page production-floor-page">
@@ -450,7 +513,7 @@ export function ProductionInProgressVisualizationPage() {
                           <button
                             type="button"
                             key={`${plan.planNo}-${product.productCode}`}
-                            className={selectedPlan.planNo === plan.planNo ? "rack-product-card selected" : "rack-product-card"}
+                            className={selectedPlan?.planNo === plan.planNo ? "rack-product-card selected" : "rack-product-card"}
                             onClick={() => {
                               setSelectedPlanNo(plan.planNo);
                               setSavedMessage("");
@@ -486,6 +549,8 @@ export function ProductionInProgressVisualizationPage() {
         </section>
 
         <aside className="floor-detail-panel" aria-label="Selected production details">
+          {selectedPlan && selectedStage && selectedProduct ? (
+            <>
           <div className="floor-detail-head">
             <div>
               <span>Selected Plan ID</span>
@@ -595,6 +660,10 @@ export function ProductionInProgressVisualizationPage() {
               </button>
             </form>
           </div>
+          </>
+          ) : (
+            <div className="p-8 text-slate-500 text-center">No active plan selected or available.</div>
+          )}
         </aside>
       </div>
     </div>

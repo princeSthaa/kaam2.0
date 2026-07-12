@@ -6,13 +6,13 @@ body {
 }
 
 .page-container.with-sidebar {
-  padding: 72px 0 0 0;
+  padding: 0 !important;
 }
 
 .layout-wrapper {
   display: flex;
   min-height: calc(100vh - 72px);
-  padding-left: 250px;
+  padding-left: 290px;
 }
 
 .sidebar {
@@ -365,4 +365,264 @@ div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
   --text-kaam-label-md--line-height: 16px;
   --text-kaam-label-md--letter-spacing: 0.05em;
   --text-kaam-label-md--font-weight: 500;
+}
+
+/* Premium Status Badges for Production Pages */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: JetBrains Mono, monospace;
+}
+.status-badge.status-completed {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.status-badge.status-in-progress, .status-badge.status-active, .status-badge.status-running {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.status-badge.status-on-hold {
+  background-color: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+.status-badge.status-draft {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.status-badge.status-not-started {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+.status-badge.status-ready {
+  background-color: #f0fdf4;
+  color: #166534;
+  border: 1px solid #dcfce7;
+}
+.status-badge.status-rejected {
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fee2e2;
+}
+
+/* Premium Table Spacing & Styles Overrides */
+.pp-table-wrapper {
+  border-radius: 12px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+}
+.pp-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  text-align: left !important;
+  font-size: 13px !important;
+}
+.pp-table th {
+  background-color: #f8fafc !important;
+  padding: 16px 24px !important;
+  font-weight: 700 !important;
+  color: #475569 !important;
+  font-family: JetBrains Mono, monospace !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.pp-table td {
+  padding: 16px 24px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  color: #334155 !important;
+}
+.pp-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+.pp-table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Product Editor Workspace Layout Spacing Overrides */
+.product-editor-workspace {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+  margin-top: 12px;
+}
+.product-editor-summary-strip {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 16px 24px !important;
+}
+.product-editor-summary-strip div {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+  background: #ffffff !important;
+}
+.product-editor-layout {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  background: #ffffff !important;
+  min-height: 580px !important;
+}
+@media (min-width: 900px) {
+  .product-editor-layout {
+    grid-template-columns: 320px 1fr !important;
+  }
+}
+.product-editor-sidebar {
+  border-bottom: 1px solid #e2e8f0 !important;
+  background: #f8fafc !important;
+  padding: 16px !important;
+}
+@media (min-width: 900px) {
+  .product-editor-sidebar {
+    border-right: 1px solid #e2e8f0 !important;
+    border-bottom: none !important;
+  }
+}
+.product-editor-search {
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  margin: 0 0 16px 0 !important;
+  padding: 0 12px !important;
+  min-height: 42px !important;
+}
+.product-editor-search input {
+  font-size: 13px !important;
+  color: #1e293b !important;
+}
+.product-editor-list-meta {
+  padding: 0 4px 8px !important;
+}
+.product-editor-list {
+  padding: 0 !important;
+  max-height: 480px !important;
+}
+.product-editor-list-row {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  background: #ffffff !important;
+  transition: all 0.2s ease !important;
+}
+.product-editor-list-row:hover,
+.product-editor-list-row.active {
+  border-color: #2563eb !important;
+  background: #eff6ff !important;
+}
+.product-editor-detail {
+  padding: 24px 32px !important;
+  background: #ffffff !important;
+}
+.product-editor-detail-head {
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding-bottom: 16px !important;
+  margin-bottom: 20px !important;
+}
+.product-editor-detail-head img {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+}
+.product-editor-metrics {
+  margin-bottom: 20px !important;
+}
+.product-editor-metrics div {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px !important;
+  padding: 12px 16px !important;
+}
+.focused-product-fields {
+  margin-bottom: 24px !important;
+}
+.product-size-editor-panel {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+}
+.product-size-editor-head {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  padding: 14px 20px !important;
+}
+.product-size-table-scroll {
+  padding: 16px 20px !important;
+  overflow-x: auto !important;
+}
+.variant-breakdown-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+}
+.variant-breakdown-table th {
+  padding: 10px 14px !important;
+  background: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  font-weight: 700 !important;
+  font-family: JetBrains Mono, monospace !important;
+  font-size: 11px !important;
+  text-transform: uppercase !important;
+}
+.variant-breakdown-table td {
+  padding: 12px 14px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+/* Timeline Stepper Spacing Overrides */
+.timeline-step {
+  padding: 20px 24px !important;
+  margin-bottom: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  background: #ffffff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.2s ease !important;
+}
+.timeline-step:hover {
+  border-color: #2563eb !important;
+  background: #f8fafc !important;
+}
+
+/* Input Fields inside Tables & dynamic grids */
+.pp-table td input.form-control,
+.pp-table td select.form-control,
+.pp-table td select,
+.pp-table td input,
+.variant-breakdown-table td input.form-control,
+.variant-breakdown-table td input,
+.editable-variant-table td input {
+  height: 40px !important;
+  padding: 8px 16px !important;
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  font-size: 13px !important;
+  width: 100% !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  color: #1e293b !important;
+}
+.pp-table td input:focus,
+.pp-table td select:focus,
+.variant-breakdown-table td input:focus,
+.editable-variant-table td input:focus {
+  border-color: #2563eb !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
 }

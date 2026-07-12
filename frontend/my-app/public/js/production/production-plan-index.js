@@ -14,8 +14,19 @@
 
     document.addEventListener("DOMContentLoaded", init);
 
-    function init() {
-        const basePlans = App.getData("mockProductionPlans", "productionPlans", "plans");
+    async function init() {
+        let basePlans = [];
+        try {
+            const res = await fetch("http://localhost:5083/api/production-plans");
+            if (res.ok) {
+                basePlans = await res.json();
+            } else {
+                basePlans = App.getData("mockProductionPlans", "productionPlans", "plans");
+            }
+        } catch (e) {
+            basePlans = App.getData("mockProductionPlans", "productionPlans", "plans");
+        }
+
         plans = window.ProductionDraftStore && typeof window.ProductionDraftStore.mergeWithPlans === "function"
             ? window.ProductionDraftStore.mergeWithPlans(basePlans)
             : basePlans;

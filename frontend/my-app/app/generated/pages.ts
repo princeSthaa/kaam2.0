@@ -4,7 +4,7 @@ import crmCustomerCreateCustomer from "./page-data/crm-customer-create-customer"
 import crmIndex from "./page-data/crm-index";
 import crmOrderCreateOrder from "./page-data/crm-order-create-order";
 import createPlan from "./page-data/create-plan";
-import error from "./page-data/error";
+import error from "./page-data/error-page";
 import home from "./page-data/home";
 import privacy from "./page-data/privacy";
 import productionCompleted from "./page-data/production-completed";

@@ -225,7 +225,7 @@ export default function SummaryReview({
               className="font-kaam-label-md text-kaam-label-md text-kaam-on-primary bg-kaam-primary px-6 py-2.5 rounded-kaam-DEFAULT hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm"
             >
               <span className="material-symbols-outlined text-[18px]">play_arrow</span>
-              Confirm &amp; Create Plan
+              Create and Assign Teams
             </button>
           </footer>
         </main>

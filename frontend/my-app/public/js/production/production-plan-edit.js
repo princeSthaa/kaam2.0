@@ -236,11 +236,57 @@
             }
         });
 
+        const addStageBtn = document.getElementById("addStageBtn");
+        if (addStageBtn) {
+            addStageBtn.addEventListener("click", function () {
+                const product = state.planProducts[state.selectedProductIndex];
+                if (!product) return;
+                
+                if (!product.stages) product.stages = [];
+                product.stages.push({
+                    id: product.stages.length + 1,
+                    stageName: "New Stage",
+                    name: "New Stage",
+                    workCenter: "Sewing",
+                    leadHours: 8,
+                    plannedStartDate: App.value("#plannedStartDate") || App.toInputDate(new Date()),
+                    status: "Not Started"
+                });
+                renderStages();
+            });
+        }
+
+        const presetSelector = document.getElementById("stagePresetSelector");
+        if (presetSelector) {
+            presetSelector.addEventListener("change", function () {
+                const product = state.planProducts[state.selectedProductIndex];
+                if (!product || !presetSelector.value) return;
+                
+                if (presetSelector.value === "standard") {
+                    product.stages = [
+                        { id: 1, stageName: "Cutting", name: "Cutting", workCenter: "Cutting", leadHours: 8, plannedStartDate: App.value("#plannedStartDate") },
+                        { id: 2, stageName: "Sewing", name: "Sewing", workCenter: "Sewing", leadHours: 24, plannedStartDate: App.value("#plannedStartDate") },
+                        { id: 3, stageName: "Finishing & QC", name: "Finishing & QC", workCenter: "Finishing", leadHours: 8, plannedStartDate: App.value("#plannedStartDate") }
+                    ];
+                } else if (presetSelector.value === "expedited") {
+                    product.stages = [
+                        { id: 1, stageName: "Express Cutting", name: "Express Cutting", workCenter: "Cutting", leadHours: 4, plannedStartDate: App.value("#plannedStartDate") },
+                        { id: 2, stageName: "Parallel Sewing", name: "Parallel Sewing", workCenter: "Sewing", leadHours: 12, plannedStartDate: App.value("#plannedStartDate") },
+                        { id: 3, stageName: "Priority Finishing", name: "Priority Finishing", workCenter: "Finishing", leadHours: 4, plannedStartDate: App.value("#plannedStartDate") },
+                        { id: 4, stageName: "Final Audit", name: "Final Audit", workCenter: "Quality Control", leadHours: 2, plannedStartDate: App.value("#plannedStartDate") }
+                    ];
+                }
+                presetSelector.value = "";
+                renderStages();
+            });
+        }
+
         const form = document.getElementById("editProductionPlanForm");
         if (form) {
             form.addEventListener("submit", function (event) {
+                event.preventDefault();
+
                 if (!isEditable()) {
-                    event.preventDefault();
                     App.toast("Only Draft plans can be edited.", "warning");
                     return;
                 }
@@ -248,8 +294,92 @@
                 refreshTotals();
 
                 if (!validateDates() || !validateSizes()) {
-                    event.preventDefault();
+                    return;
                 }
+
+                // Retrieve updated form values
+                const demandType = App.value("#demandType");
+                const customerId = App.value("#customerId");
+                const outletId = App.value("#outletId");
+                const inHouseReason = App.value("#inHouseReason");
+                const warehouseId = App.value("#warehouseDropdown");
+                const priority = App.value("#priority");
+                const outputDestination = App.value("#outputDestination");
+                const plannedStartDate = App.value("#plannedStartDate");
+                const plannedCompletionDate = App.value("#plannedCompletionDate");
+                const requiredDate = App.value("#requiredDate");
+
+                // Update our plan object
+                state.plan.demandType = demandType;
+                state.plan.priority = priority;
+                state.plan.outputDestination = outputDestination;
+                state.plan.plannedStartDate = plannedStartDate;
+                state.plan.plannedCompletionDate = plannedCompletionDate;
+                state.plan.requiredDate = requiredDate;
+
+                if (demandType === "Customer Order") {
+                    state.plan.customerId = customerId;
+                    state.plan.sourceId = customerId;
+                    const cust = App.findById(state.customers, customerId);
+                    state.plan.sourceName = cust ? (cust.customerName || cust.name) : state.plan.sourceName;
+                    delete state.plan.outletId;
+                    delete state.plan.warehouseId;
+                    delete state.plan.inHouseReason;
+                } else if (demandType === "Outlet Replenishment") {
+                    state.plan.outletId = outletId;
+                    state.plan.sourceId = outletId;
+                    const out = App.findById(state.outlets, outletId);
+                    state.plan.sourceName = out ? (out.outletName || out.name) : state.plan.sourceName;
+                    delete state.plan.customerId;
+                    delete state.plan.warehouseId;
+                    delete state.plan.inHouseReason;
+                } else {
+                    state.plan.warehouseId = warehouseId;
+                    state.plan.sourceId = warehouseId;
+                    state.plan.inHouseReason = inHouseReason;
+                    const wh = App.findById(state.warehouses, warehouseId);
+                    state.plan.sourceName = wh ? (wh.warehouseName || wh.name) : "In-house Stock";
+                    delete state.plan.customerId;
+                    delete state.plan.outletId;
+                }
+
+                // Update product list and overall quantity
+                state.plan.products = state.planProducts;
+                state.plan.quantity = getPlanQuantity();
+                state.plan.totalQuantity = getPlanQuantity();
+
+                // Add activity
+                if (!state.plan.activities) state.plan.activities = [];
+                state.plan.activities.unshift({
+                    title: "Plan Edited",
+                    text: `Production plan details were updated. Total quantity: ${getPlanQuantity()} pcs.`
+                });
+
+                // Save to local storage productionPlans
+                let localPlans = [];
+                try {
+                    const stored = localStorage.getItem("productionPlans");
+                    if (stored) localPlans = JSON.parse(stored);
+                } catch (e) {
+                    localPlans = [];
+                }
+
+                const existingIdx = localPlans.findIndex(function (p) {
+                    return String(p.planNo || p.id) === String(state.plan.planNo || state.plan.id);
+                });
+
+                if (existingIdx >= 0) {
+                    localPlans[existingIdx] = state.plan;
+                } else {
+                    localPlans.unshift(state.plan);
+                }
+
+                localStorage.setItem("productionPlans", JSON.stringify(localPlans));
+                App.toast("Changes saved successfully.", "success");
+
+                window.setTimeout(function () {
+                    window.location.href = "/Production/Plan/Details?planNo=" + encodeURIComponent(state.plan.planNo || state.plan.id);
+                }, 400);
             });
         }
     }
@@ -414,24 +544,23 @@
 
                             <div class="form-grid four-col edit-product-field-grid focused-product-fields">
                                 <div class="form-group">
-                                    <label>Variant</label>
-                                    <div class="production-palette-picker-field">
-                                        <input type="text"
-                                               class="form-control editable-field edit-product-variant"
-                                               data-product-index="${state.selectedProductIndex}"
-                                               value="${App.escapeHtml(selectedProduct.variant || "")}" />
-                                        <button type="button"
-                                                class="btn btn-light editable-action edit-product-palette-btn"
-                                                data-product-index="${state.selectedProductIndex}">
-                                            <span class="material-symbols-outlined">palette</span>
-                                            Palette
-                                        </button>
+                                    <label>Variant / Fabric</label>
+                                    <div class="product-row-palette-cell flex items-center gap-3">
+                                        <div class="product-row-palette-chip" style="transform: scale(1.5); transform-origin: left center;" title="${App.escapeHtml(selectedProduct.variant || 'Default')}">
+                                            <div class="palette-preview-host edit-product-palette-preview" data-product-index="${state.selectedProductIndex}">
+                                                ${variantPreview || `<div style="width:18px;height:18px;background:#e2e8f0;border-radius:4px;border:1px dashed #94a3b8" title="${App.escapeHtml(selectedProduct.variant || 'Default')}"></div>`}
+                                            </div>
+                                        </div>
+                                        <div class="product-row-palette-actions">
+                                            <button type="button"
+                                                    class="btn btn-light btn-sm editable-action edit-product-palette-btn"
+                                                    data-product-index="${state.selectedProductIndex}">
+                                                <span class="material-symbols-outlined">palette</span>
+                                                Change
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div class="palette-preview-host edit-product-palette-preview"
-                                         data-product-index="${state.selectedProductIndex}"
-                                         ${variantPreview ? "" : "hidden"}>
-                                        ${variantPreview}
-                                    </div>
+                                    <input type="hidden" class="edit-product-variant" data-product-index="${state.selectedProductIndex}" value="${App.escapeHtml(selectedProduct.variant || "")}" />
                                 </div>
 
                                 <div class="form-group">
@@ -711,6 +840,7 @@
         state.selectedProductIndex = productIndex;
         syncMainProductFields(product);
         renderProductLines();
+        renderStages();
     }
 
     function moveSelectedProduct(step) {
@@ -837,26 +967,32 @@
     function renderRowPaletteEditor(product, row, rowIndex) {
         const paletteValue = getEffectiveRowPalette(product, row);
         const isOverride = Boolean(row?.palette);
+        const previewHtml = renderPalettePreviewHtml(paletteValue);
 
         return `
-            <div class="product-row-palette-cell">
-                <div class="product-row-palette-chip">
-                    ${renderPaletteValueChip(paletteValue)}
+            <div class="product-row-palette-cell flex items-center gap-2">
+                <div class="product-row-palette-chip cursor-pointer" style="transform: scale(1.2); transform-origin: left center;" title="${App.escapeHtml(paletteValue || 'Default')}">
+                    <div class="palette-preview-host edit-size-palette-preview" data-product-index="${state.selectedProductIndex}" data-size-row-index="${rowIndex}">
+                        ${previewHtml || `<div style="width:18px;height:18px;background:#e2e8f0;border-radius:4px;border:1px dashed #94a3b8" title="${App.escapeHtml(paletteValue || 'Default')}"></div>`}
+                    </div>
                 </div>
 
-                <div class="product-row-palette-actions">
+                <div class="product-row-palette-actions flex items-center gap-1">
                     <button type="button"
                             class="btn btn-light btn-sm editable-action edit-size-palette-btn"
+                            style="padding: 2px 6px; font-size: 11px; display: flex; align-items: center; gap: 4px;"
                             data-product-index="${state.selectedProductIndex}"
                             data-size-row-index="${rowIndex}">
-                        <span class="material-symbols-outlined">palette</span>
-                        Palette
+                        <span class="material-symbols-outlined" style="font-size:14px;">palette</span>
+                        Change
                     </button>
                     <button type="button"
                             class="btn btn-light btn-sm editable-action edit-size-palette-clear ${isOverride ? "" : "hidden"}"
+                            style="padding: 2px 6px; font-size: 11px; display: flex; align-items: center;"
                             data-product-index="${state.selectedProductIndex}"
-                            data-size-row-index="${rowIndex}">
-                        Default
+                            data-size-row-index="${rowIndex}"
+                            title="Revert to product default">
+                        <span class="material-symbols-outlined" style="font-size:14px;">restart_alt</span>
                     </button>
                 </div>
             </div>
@@ -903,29 +1039,110 @@
     }
 
     function renderStages() {
-        const body = document.getElementById("productionStagesBody");
-        if (!body) return;
+        const container = document.getElementById("productionStagesContainer");
+        if (!container) return;
 
-        const stages = state.plan?.stages && state.plan.stages.length
-            ? state.plan.stages
-            : state.stages;
-
-        if (!stages.length) {
-            body.innerHTML = `<tr><td colspan="5" class="empty-cell">No production stages found.</td></tr>`;
+        const product = state.planProducts[state.selectedProductIndex];
+        if (!product) {
+            container.innerHTML = `<div class="text-center text-slate-400 py-6 text-sm">Select a product to view routing stages.</div>`;
             return;
         }
+        
+        let stages = product.stages || [];
+        if (!stages.length && state.plan?.stages && state.plan.stages.length) {
+            stages = JSON.parse(JSON.stringify(state.plan.stages));
+            product.stages = stages;
+        }
 
-        body.innerHTML = stages.map(function (stage) {
+        if (!stages.length) {
+            container.innerHTML = `<div class="text-center text-slate-400 py-6 text-sm">No production stages defined. Use presets or add manually.</div>`;
+            return;
+        }
+        
+        const workCenters = ["Cutting", "Sewing", "Embellishment", "Finishing", "Quality Control", "Packaging"];
+
+        container.innerHTML = stages.map(function (stage, index) {
+            const wcOptions = workCenters.map(wc => `<option value="${wc}" ${stage.workCenter === wc ? 'selected' : ''}>${wc}</option>`).join('');
+            
             return `
-                <tr>
-                    <td><strong>${App.escapeHtml(stage.stageName || stage.name)}</strong></td>
-                    <td>${App.escapeHtml(stage.workCenter || stage.department || "-")}</td>
-                    <td>${App.formatDate(stage.plannedStartDate || state.plan?.plannedStartDate)}</td>
-                    <td>${App.formatDate(stage.plannedEndDate || state.plan?.plannedCompletionDate)}</td>
-                    <td>${App.badge(stage.status || "Not Started")}</td>
-                </tr>
+                <div class="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-sm transition-all group">
+                    <span class="material-symbols-outlined text-slate-300 cursor-grab text-[16px]">drag_indicator</span>
+                    <div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[11px] font-bold text-slate-500 font-mono flex-shrink-0">${index + 1}</div>
+                    
+                    <div class="flex items-center flex-1 gap-3 overflow-x-auto min-w-0">
+                        <input type="text" class="flex-1 min-w-[120px] bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-white rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 outline-none transition-colors editable-field edit-stage-name" 
+                               data-stage-index="${index}" value="${App.escapeHtml(stage.stageName || stage.name || '')}" placeholder="Stage name" />
+                               
+                        <select class="w-32 bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-white rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 outline-none transition-colors editable-field edit-stage-wc" 
+                                data-stage-index="${index}">
+                            ${wcOptions}
+                        </select>
+                        
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <input type="number" class="w-14 text-center bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-white rounded-lg px-2 py-1 text-sm font-semibold text-slate-800 outline-none transition-colors editable-field edit-stage-lead" 
+                                   data-stage-index="${index}" value="${stage.leadHours || 0}" />
+                            <span class="text-[10px] text-slate-400 font-mono">hrs</span>
+                        </div>
+                        
+                        <input type="date" class="w-[115px] bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-600 focus:bg-white rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 outline-none transition-colors editable-field edit-stage-date" 
+                               data-stage-index="${index}" value="${App.toInputDate(stage.plannedStartDate || state.plan?.plannedStartDate)}" />
+                    </div>
+                    
+                    <button type="button" class="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors editable-action delete-stage-btn" 
+                            data-stage-index="${index}">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>
+                </div>
             `;
         }).join("");
+        
+        bindStageEvents();
+    }
+
+    function bindStageEvents() {
+        const product = state.planProducts[state.selectedProductIndex];
+        if (!product) return;
+
+        App.qsa(".edit-stage-name").forEach(function (input) {
+            input.addEventListener("change", function () {
+                const idx = Number(input.dataset.stageIndex);
+                if (product.stages[idx]) {
+                    product.stages[idx].stageName = input.value;
+                    product.stages[idx].name = input.value;
+                }
+            });
+        });
+        
+        App.qsa(".edit-stage-wc").forEach(function (input) {
+            input.addEventListener("change", function () {
+                const idx = Number(input.dataset.stageIndex);
+                if (product.stages[idx]) product.stages[idx].workCenter = input.value;
+            });
+        });
+
+        App.qsa(".edit-stage-lead").forEach(function (input) {
+            input.addEventListener("change", function () {
+                const idx = Number(input.dataset.stageIndex);
+                if (product.stages[idx]) product.stages[idx].leadHours = Number(input.value || 0);
+            });
+        });
+
+        App.qsa(".edit-stage-date").forEach(function (input) {
+            input.addEventListener("change", function () {
+                const idx = Number(input.dataset.stageIndex);
+                if (product.stages[idx]) product.stages[idx].plannedStartDate = input.value;
+            });
+        });
+
+        App.qsa(".delete-stage-btn").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const idx = Number(button.dataset.stageIndex);
+                if (product.stages && product.stages.length > idx) {
+                    product.stages.splice(idx, 1);
+                    renderStages();
+                }
+            });
+        });
     }
 
     function renderMaterialRequirements() {
@@ -1083,7 +1300,8 @@
                 priority: product.priority || plan.priority || "Normal",
                 productImage: product.productImage || product.imagePath || product.image || catalogProduct.productImage || catalogProduct.imagePath || fallbackProductImage,
                 productionNotes: product.productionNotes || plan.productionNotes || "",
-                sizes: cloneSizes(product.sizes || product.sizeBreakdown || plan.sizes || plan.sizeBreakdown || [])
+                sizes: cloneSizes(product.sizes || product.sizeBreakdown || plan.sizes || plan.sizeBreakdown || []),
+                stages: product.stages || []
             };
         });
     }

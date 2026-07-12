@@ -27,9 +27,15 @@ const statusOptions = [
   "On Hold",
 ];
 
+const sortOptions = [
+  "Latest First",
+  "Oldest First",
+];
+
 const selectFilters: SelectFilter[] = [
   { id: "demandTypeFilter", label: "Demand Type", options: demandTypeOptions },
   { id: "statusFilter", label: "Status", options: statusOptions },
+  { id: "sortFilter", label: "Sort By", options: sortOptions },
 ];
 
 const searchFilters = [

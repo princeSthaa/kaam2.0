@@ -14,13 +14,13 @@
         stages: [],
         plan: null,
         planProducts: [],
-        selectedProductIndex: 0
+        selectedProductIndex: 0,
+        selectedStageIndex: 0
     };
 
     document.addEventListener("DOMContentLoaded", init);
 
     function init() {
-        state.plans = getAvailablePlans();
         state.products = App.getData("products", "mockProducts", "productData");
         state.customers = App.getData("customers", "mockCustomers", "customerData", "customerMasterData", "customerOrderCatalogData");
         state.outlets = App.getData("outlets", "mockOutlets", "outletData");
@@ -30,12 +30,28 @@
         state.stages = App.getData("productionStages", "mockProductionStages", "stages");
 
         bindTabs();
-        loadPlan();
-        renderDetails();
+        
+        fetch("http://localhost:5083/api/production-plans")
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                state.plans = data;
+                if (window.ProductionDraftStore && typeof window.ProductionDraftStore.mergeWithPlans === "function") {
+                    state.plans = window.ProductionDraftStore.mergeWithPlans(state.plans);
+                }
+                loadPlan();
+                renderDetails();
+            })
+            .catch(function(err) {
+                console.error("Failed to fetch production plans from API:", err);
+                state.plans = [];
+                loadPlan();
+                renderDetails();
+            });
     }
 
     function bindTabs() {
-        App.qsa(".pp-tab").forEach(function (tab) {
+        const tabs = App.qsa(".pp-tab");
+        tabs.forEach(function (tab) {
             tab.addEventListener("click", function () {
                 const target = tab.getAttribute("data-tab");
 
@@ -45,30 +61,40 @@
 
                 App.qsa(".pp-tab-panel").forEach(function (panel) {
                     panel.classList.remove("active");
+                    panel.classList.add("hidden");
                 });
 
                 tab.classList.add("active");
                 const panel = document.getElementById(target);
-                if (panel) panel.classList.add("active");
+                if (panel) {
+                    panel.classList.add("active");
+                    panel.classList.remove("hidden");
+                }
             });
         });
+
+        if (tabs.length > 0) {
+            tabs[0].click();
+        }
     }
 
     function loadPlan() {
         const id = getSelectedPlanId();
         state.plan = App.findById(state.plans, id) || state.plans[0] || null;
         state.planProducts = state.plan ? normalizePlanProducts(state.plan) : [];
-    }
-
-    function getAvailablePlans() {
-        const basePlans = App.getData("mockProductionPlans", "productionPlans", "plans");
-
-        if (window.ProductionDraftStore && typeof window.ProductionDraftStore.mergeWithPlans === "function") {
-            return window.ProductionDraftStore.mergeWithPlans(basePlans);
+        
+        if (state.plan) {
+            const planStages = state.plan.stages && state.plan.stages.length
+                ? state.plan.stages
+                : state.stages;
+            const activeIdx = planStages.findIndex(function (s) { return s.status === "Active" || s.status === "In Progress"; });
+            state.selectedStageIndex = activeIdx >= 0 ? activeIdx : 0;
+        } else {
+            state.selectedStageIndex = 0;
         }
-
-        return basePlans;
     }
+
+
 
     function getSelectedPlanId() {
         const params = new URLSearchParams(window.location.search);
@@ -124,9 +150,11 @@
 
         App.setText("#detailsProductCount", state.planProducts.length);
         App.setText("#detailsSizeProductCount", state.planProducts.length);
+        App.setText("#detailsStagesProductCount", state.planProducts.length);
 
         renderProductSidebarList("detailsProductList");
         renderProductSidebarList("detailsSizeProductList");
+        renderProductSidebarList("detailsStagesProductList");
         renderActiveProductDetail();
         renderProductSizeBreakdown();
 
@@ -193,8 +221,10 @@
         state.selectedProductIndex = index;
         renderProductSidebarList("detailsProductList");
         renderProductSidebarList("detailsSizeProductList");
+        renderProductSidebarList("detailsStagesProductList");
         renderActiveProductDetail();
         renderProductSizeBreakdown();
+        renderStages();
     }
 
     function renderActiveProductDetail() {
@@ -518,72 +548,138 @@
     }
 
     function renderStages() {
-        const body = document.getElementById("detailsStagesBody");
-        const strip = document.getElementById("stageProgressStrip");
-        if (!body || !strip) return;
+        const timeline = document.getElementById("detailsStageTimeline");
+        const panel = document.getElementById("detailsStagePanel");
+        if (!timeline || !panel) return;
 
-        const planStages = state.plan.stages && state.plan.stages.length
-            ? state.plan.stages
-            : state.stages;
+        const product = state.planProducts[state.selectedProductIndex];
+        const planStages = product && product.stages && product.stages.length
+            ? product.stages
+            : (state.plan.stages && state.plan.stages.length ? state.plan.stages : state.stages);
 
-        strip.innerHTML = planStages.map(function (stage) {
+        if (!planStages || !planStages.length) {
+            timeline.innerHTML = `<div class="empty-cell">No stages found.</div>`;
+            panel.innerHTML = `<div class="empty-cell">Select a stage to view progress.</div>`;
+            return;
+        }
+
+        // Render left column: Vertical Stepper
+        let stepsHtml = '';
+        stepsHtml += `<div class="stages-timeline-line" style="position: absolute; left: 30px; top: 20px; bottom: 20px; width: 2px; background: #cbd5e1; z-index: 0;"></div>`;
+
+        planStages.forEach(function (stage, idx) {
+            const isSelected = idx === state.selectedStageIndex;
             const status = stage.status || "Not Started";
-            
-            let stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #94a3b8;">radio_button_unchecked</span>';
-            let badgeBg = "background: #f1f5f9; border: 1.5px solid #cbd5e1;";
-            let textStyle = "color: #475569;";
-            let containerBorder = "border: 1.5px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);";
+            const isCompleted = status === "Completed";
+            const isActive = status === "Active" || status === "In Progress";
+            const isOnHold = status === "On Hold";
 
-            if (status === "Completed") {
+            let stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #64748b;">radio_button_unchecked</span>';
+            let badgeBg = "background: #f1f5f9; border: 2px solid #cbd5e1;";
+            let textStyle = "color: #1e293b; font-weight: 600;";
+            let borderCls = isSelected ? "border: 1px solid #cbd5e1; background: #f1f5f9;" : "border: 1px solid transparent; background: #ffffff;";
+
+            if (isCompleted) {
                 stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #15803d; font-weight: bold;">check</span>';
-                badgeBg = "background: #dcfce7; border: 1.5px solid #86efac;";
+                badgeBg = "background: #dcfce7; border: 2px solid #86efac;";
                 textStyle = "text-decoration: line-through; color: #94a3b8; font-weight: 500;";
-            } else if (status === "Active" || status === "In Progress") {
+            } else if (isActive) {
                 stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #1d4ed8; font-weight: bold; animation: spin 2s linear infinite;">sync</span>';
-                badgeBg = "background: #eff6ff; border: 1.5px solid #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15);";
+                badgeBg = "background: #eff6ff; border: 2px solid #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15);";
                 textStyle = "color: #1e3a8a; font-weight: 700;";
-                containerBorder = "border: 1.5px solid #bfdbfe; box-shadow: 0 4px 12px rgba(37,99,235,0.06);";
-            } else if (status === "On Hold") {
+            } else if (isOnHold) {
                 stepIcon = '<span class="material-symbols-outlined" style="font-size: 14px; color: #b91c1c; font-weight: bold;">warning</span>';
-                badgeBg = "background: #fef2f2; border: 1.5px solid #fca5a5;";
+                badgeBg = "background: #fef2f2; border: 2px solid #fca5a5;";
                 textStyle = "color: #991b1b; font-weight: 700;";
             }
 
-            return `
-                <div class="stage-step" style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 12px; transition: all 0.2s; background: #ffffff; ${containerBorder}">
-                    <div style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${badgeBg}">
+            stepsHtml += `
+                <button type="button" 
+                     class="timeline-step" 
+                     data-stage-index="${idx}"
+                     style="display: flex; align-items: start; gap: 16px; padding: 12px 14px; border-radius: 12px; transition: all 0.2s ease; cursor: pointer; text-align: left; width: 100%; border: none; z-index: 1; ${borderCls}">
+                    <div class="timeline-step-badge" style="width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; ${badgeBg}">
                         ${stepIcon}
                     </div>
-                    <div style="min-width: 0; flex: 1; text-align: left;">
-                        <span style="display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; font-family: monospace; margin-bottom: 2px;">
-                            ${App.escapeHtml(status)}
-                        </span>
-                        <strong style="display: block; font-size: 13.5px; ${textStyle}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div class="timeline-step-content" style="min-width: 0; flex: 1;">
+                        <h4 style="margin: 0; font-size: 14px; ${textStyle}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             ${App.escapeHtml(stage.stageName || stage.name)}
-                        </strong>
-                        <span style="display: block; font-size: 11px; color: #64748b; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        </h4>
+                        <p style="margin: 3px 0 0; font-size: 11px; color: #64748b; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                             ${App.escapeHtml(stage.workCenter || stage.department || "-")}
-                        </span>
+                        </p>
                     </div>
-                </div>
+                </button>
             `;
-        }).join("");
+        });
 
-        body.innerHTML = planStages.map(function (stage) {
-            return `
-                <tr>
-                    <td><strong>${App.escapeHtml(stage.stageName || stage.name)}</strong></td>
-                    <td>${App.escapeHtml(stage.workCenter || stage.department || "-")}</td>
-                    <td>${App.formatDate(stage.plannedStartDate || state.plan.plannedStartDate)}</td>
-                    <td>${App.formatDate(stage.plannedEndDate || state.plan.plannedCompletionDate)}</td>
-                    <td>${App.formatDate(stage.actualStartDate)}</td>
-                    <td>${App.formatDate(stage.actualEndDate)}</td>
-                    <td>${formatNumber(stage.completedQty || 0)}</td>
-                    <td>${formatNumber(stage.rejectedQty || 0)}</td>
-                    <td>${App.badge(stage.status || "Not Started")}</td>
-                </tr>
-            `;
-        }).join("");
+        timeline.innerHTML = stepsHtml;
+
+        // Attach click handlers to steps
+        timeline.querySelectorAll(".timeline-step").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                state.selectedStageIndex = Number(btn.getAttribute("data-stage-index"));
+                renderStages();
+            });
+        });
+
+        // Render right column: Stage Details Panel
+        const currentStage = planStages[state.selectedStageIndex] || planStages[0];
+        const currentStatus = currentStage.status || "Not Started";
+        const progressPercentage = currentStatus === "Completed" ? 100 : (currentStatus === "Active" || currentStatus === "In Progress" ? 50 : 0);
+
+        panel.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px;">
+                <div>
+                    <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Selected Stage</span>
+                    <h3 style="margin: 0; font-size: 20px; font-weight: 800; color: #1e293b;">${App.escapeHtml(currentStage.stageName || currentStage.name)}</h3>
+                    <p style="margin: 4px 0 0; font-size: 13px; color: #64748b; font-weight: 500;">
+                        Work Center: <strong>${App.escapeHtml(currentStage.workCenter || currentStage.department || "-")}</strong>
+                        ${currentStage.operator ? ` | Operator: <strong>${App.escapeHtml(currentStage.operator)}</strong>` : ""}
+                    </p>
+                </div>
+                ${App.badge(currentStatus)}
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #475569;">
+                    <span>Stage Completion</span>
+                    <span>${progressPercentage}%</span>
+                </div>
+                <div style="height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; margin-bottom: 6px;">
+                    <div style="height: 100%; border-radius: 99px; background: ${currentStatus === "Completed" ? "#22c55e" : (currentStatus === "On Hold" ? "#ef4444" : "#3b82f6")}; width: ${progressPercentage}%;"></div>
+                </div>
+                <p style="margin: 0; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase;">
+                    ${formatNumber(currentStage.completedQty || 0)} units completed • ${formatNumber(currentStage.rejectedQty || 0)} rejected
+                </p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px;">
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px;">
+                    <span style="display: block; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Planned Start Date</span>
+                    <strong style="font-size: 14px; color: #334155;">${App.formatDate(currentStage.plannedStartDate || state.plan.plannedStartDate)}</strong>
+                </div>
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px;">
+                    <span style="display: block; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Planned End Date</span>
+                    <strong style="font-size: 14px; color: #334155;">${App.formatDate(currentStage.plannedEndDate || state.plan.plannedCompletionDate)}</strong>
+                </div>
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px;">
+                    <span style="display: block; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Actual Start Date</span>
+                    <strong style="font-size: 14px; color: #334155;">${App.formatDate(currentStage.actualStartDate)}</strong>
+                </div>
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px;">
+                    <span style="display: block; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Actual End Date</span>
+                    <strong style="font-size: 14px; color: #334155;">${App.formatDate(currentStage.actualEndDate)}</strong>
+                </div>
+            </div>
+
+            <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px;">
+                <span style="display: block; font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Operator Remarks</span>
+                <p style="margin: 0; font-size: 13px; color: #475569; line-height: 1.5; font-style: ${currentStage.remarks ? "normal" : "italic"};">
+                    ${App.escapeHtml(currentStage.remarks || "No remarks logged for this production stage.")}
+                </p>
+            </div>
+        `;
     }
 
     function renderSizes() {
@@ -678,7 +774,8 @@
                 priority: product.priority || plan.priority || "Normal",
                 productImage: product.productImage || product.imagePath || product.image || catalogProduct.productImage || catalogProduct.imagePath || fallbackProductImage,
                 productionNotes: product.productionNotes || plan.productionNotes || "",
-                sizes: product.sizes || product.sizeBreakdown || plan.sizes || plan.sizeBreakdown || []
+                sizes: product.sizes || product.sizeBreakdown || plan.sizes || plan.sizeBreakdown || [],
+                stages: product.stages || []
             };
         });
     }

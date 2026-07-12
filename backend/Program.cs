@@ -21,6 +21,8 @@ builder.Services.AddSingleton(new JsonRepository<Customer>("customers.json"));
 builder.Services.AddSingleton(new JsonRepository<Order>("orders.json"));
 builder.Services.AddSingleton(new JsonRepository<Product>("products.json"));
 builder.Services.AddSingleton(new JsonRepository<Fabric>("fabrics.json"));
+builder.Services.AddSingleton(new JsonRepository<WorkCenter>("workcenters.json"));
+builder.Services.AddSingleton(new JsonRepository<ProductionPlan>("production_plans.json"));
 
 var app = builder.Build();
 
@@ -116,6 +118,56 @@ app.MapGet("/api/fabrics", (JsonRepository<Fabric> repo) =>
 });
 
 app.MapDelete("/api/orders/{id:guid}", (Guid id, JsonRepository<Order> repo) =>
+{
+    return repo.Delete(id) ? Results.NoContent() : Results.NotFound();
+});
+
+// WorkCenters
+app.MapGet("/api/workcenters", (JsonRepository<WorkCenter> repo) =>
+{
+    var workcenters = repo.GetAll();
+    if (!workcenters.Any())
+    {
+        // Seed some data if empty
+        repo.Add(new WorkCenter { Name = "Cutter Auto-B", Type = "Machine" });
+        repo.Add(new WorkCenter { Name = "Line 4A", Type = "Manual Line" });
+        repo.Add(new WorkCenter { Name = "QC Station 1", Type = "QC Station" });
+        repo.Add(new WorkCenter { Name = "Finishing Station", Type = "Manual Line" });
+        workcenters = repo.GetAll();
+    }
+    return Results.Ok(workcenters);
+});
+
+app.MapPost("/api/workcenters", (WorkCenter wc, JsonRepository<WorkCenter> repo) =>
+{
+    var created = repo.Add(wc);
+    return Results.Created($"/api/workcenters/{created.Id}", created);
+});
+
+// Production Plans
+app.MapGet("/api/production-plans", (JsonRepository<ProductionPlan> repo) => Results.Ok(repo.GetAll()))
+   .WithName("GetProductionPlans").WithOpenApi();
+
+app.MapGet("/api/production-plans/{id:guid}", (Guid id, JsonRepository<ProductionPlan> repo) => 
+{
+    var plan = repo.GetById(id);
+    return plan is null ? Results.NotFound() : Results.Ok(plan);
+});
+
+app.MapPost("/api/production-plans", (ProductionPlan plan, JsonRepository<ProductionPlan> repo) =>
+{
+    var created = repo.Add(plan);
+    return Results.Created($"/api/production-plans/{created.Id}", created);
+});
+
+app.MapPut("/api/production-plans/{id:guid}", (Guid id, ProductionPlan plan, JsonRepository<ProductionPlan> repo) =>
+{
+    plan.Id = id;
+    var updated = repo.Update(plan);
+    return updated is null ? Results.NotFound() : Results.Ok(updated);
+});
+
+app.MapDelete("/api/production-plans/{id:guid}", (Guid id, JsonRepository<ProductionPlan> repo) =>
 {
     return repo.Delete(id) ? Results.NoContent() : Results.NotFound();
 });

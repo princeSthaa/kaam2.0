@@ -1,0 +1,34 @@
+[
+  {
+    "Name": "Cutter Auto-B",
+    "Type": "Machine",
+    "Status": "Available",
+    "Id": "cdc188c0-4efa-46d6-a5e6-7598e7d8c62f",
+    "CreatedAt": "2026-07-12T04:24:50.8590018Z",
+    "UpdatedAt": "2026-07-12T04:24:50.8590025Z"
+  },
+  {
+    "Name": "Line 4A",
+    "Type": "Manual Line",
+    "Status": "Available",
+    "Id": "fb7787ff-f82d-4166-9185-4cd512102a8f",
+    "CreatedAt": "2026-07-12T04:24:50.8617895Z",
+    "UpdatedAt": "2026-07-12T04:24:50.86179Z"
+  },
+  {
+    "Name": "QC Station 1",
+    "Type": "QC Station",
+    "Status": "Available",
+    "Id": "c8542ad2-0bbd-42cf-a17c-4d073babd8fe",
+    "CreatedAt": "2026-07-12T04:24:50.8631451Z",
+    "UpdatedAt": "2026-07-12T04:24:50.8631457Z"
+  },
+  {
+    "Name": "Finishing Station",
+    "Type": "Manual Line",
+    "Status": "Available",
+    "Id": "150a0fb1-2eb1-4576-b743-83beb121d65f",
+    "CreatedAt": "2026-07-12T04:24:50.8647063Z",
+    "UpdatedAt": "2026-07-12T04:24:50.8647067Z"
+  }
+]

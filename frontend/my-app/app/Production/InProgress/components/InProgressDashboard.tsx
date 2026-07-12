@@ -87,131 +87,110 @@ export default function InProgressDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
-  const [expandedPlanId, setExpandedPlanId] = useState<string | null>("PLN-202605-A1");
+  const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
-  // Load plans from localStorage + merge default mock data
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedStr = localStorage.getItem("productionPlans") || "[]";
-      let storedPlans: any[] = [];
-      try {
-        storedPlans = JSON.parse(storedStr);
-      } catch (e) {
-        storedPlans = [];
-      }
+    fetch("http://localhost:5083/api/production-plans")
+      .then((res) => res.json())
+      .then((data: any[]) => {
+        const inProgress = data.filter(p => {
+           const s = (p.status || p.Status || "").toLowerCase();
+           return s !== "draft" && s !== "completed" && s !== "cancelled";
+        });
 
-      // Convert stored standard plans to InProgress layout structure
-      const formattedStored = storedPlans.map((plan: any) => {
-        const productsList = (plan.products || []).map((prod: any) => {
-          const defaultStages = [
-            { id: "01", name: "Material Check", workCenter: "QC Station 1", status: "Completed", completedQty: prod.quantity, rejectedQty: 0 },
-            { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", status: "Active", completedQty: 0, rejectedQty: 0 },
-            { id: "03", name: "Stitching", workCenter: "Line 4A", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-            { id: "04", name: "Finishing", workCenter: "Sewing Floor", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-            { id: "05", name: "Quality Check", workCenter: "QC Table", status: "Not Started", completedQty: 0, rejectedQty: 0 }
-          ];
+        const formatted = inProgress.map((plan: any) => {
+          const productsList = (plan.products || plan.Products || []).map((prod: any) => {
+            const defaultStages = [
+              { id: "01", name: "Material Check", workCenter: "QC Station 1", status: "Completed", completedQty: prod.quantity || prod.Quantity || 0, rejectedQty: 0 },
+              { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", status: "Active", completedQty: 0, rejectedQty: 0 },
+              { id: "03", name: "Stitching", workCenter: "Line 4A", status: "Not Started", completedQty: 0, rejectedQty: 0 },
+              { id: "04", name: "Finishing", workCenter: "Sewing Floor", status: "Not Started", completedQty: 0, rejectedQty: 0 },
+              { id: "05", name: "Quality Check", workCenter: "QC Table", status: "Not Started", completedQty: 0, rejectedQty: 0 }
+            ];
 
-          // If plan has stages, use them!
-          const mappedStages = (plan.stages && plan.stages.length)
-            ? plan.stages.map((st: any, idx: number) => ({
-                id: String(idx + 1).padStart(2, "0"),
-                name: st.stageName || st.name,
-                workCenter: st.workCenter || "Workstation",
-                status: st.status || "Not Started",
-                completedQty: st.completedQty || 0,
-                rejectedQty: st.rejectedQty || 0,
-                remarks: st.remarks || ""
-              }))
-            : defaultStages;
+            const mappedStages = (plan.stages && plan.stages.length)
+              ? plan.stages.map((st: any, idx: number) => ({
+                  id: String(idx + 1).padStart(2, "0"),
+                  name: st.stageName || st.name,
+                  workCenter: st.workCenter || "Workstation",
+                  status: st.status || "Not Started",
+                  completedQty: st.completedQty || 0,
+                  rejectedQty: st.rejectedQty || 0,
+                  remarks: st.remarks || ""
+                }))
+              : defaultStages;
 
-          const activeStage = mappedStages.find((s: any) => s.status === "Active")?.name || mappedStages[0]?.name || "Material Check";
-          const completedCount = mappedStages.filter((s: any) => s.status === "Completed").length;
-          const calculatedProgress = Math.round((completedCount / mappedStages.length) * 100);
+            const activeStage = mappedStages.find((s: any) => s.status === "Active")?.name || mappedStages[0]?.name || "Material Check";
+            const completedCount = mappedStages.filter((s: any) => s.status === "Completed").length;
+            const calculatedProgress = mappedStages.length ? Math.round((completedCount / mappedStages.length) * 100) : 0;
+
+            return {
+              id: prod.lineId || `${plan.planId || plan.PlanId || plan.planNo || plan.id}-${prod.productId}`,
+              productId: prod.productId || prod.ProductId,
+              name: prod.productName || prod.ProductName || "Product Run",
+              image: prod.productImage || prod.ProductImage || "/images/products/place-holder.png",
+              source: plan.demandType || plan.DemandType || "Customer Order",
+              qty: prod.quantity || prod.Quantity || 0,
+              requiredDate: prod.requiredDate || prod.RequiredDate || plan.plannedCompletionDate || plan.PlannedCompletionDate,
+              progress: calculatedProgress,
+              stage: activeStage,
+              stages: mappedStages
+            };
+          });
+
+          const activeProdStages = productsList[0]?.stages || [];
+          const planCompletedCount = activeProdStages.filter((s: any) => s.status === "Completed").length;
+          const planCalculatedProgress = activeProdStages.length ? Math.round((planCompletedCount / activeProdStages.length) * 100) : 0;
 
           return {
-            id: prod.lineId || `${plan.planNo}-${prod.productId}`,
-            productId: prod.productId,
-            name: prod.productName || "Product Run",
-            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAlUeWpFy-wuIvTig-iJ_65-mPE5GcpTW41Rn6N576ieJzqBRCe6zolJVQ804RBUABZ-zEO4QWxDwnJtcKMR4yjUg5UIgUQbeC4oPSNuLicTSTgXIpWVWpDGah3wv3p6pl53vrbiQWTD9ThHdlwSAwPPNEpnSG64RiivjYDAFWVOoD3_-eEisIIZHR60YANe5nzgEcO0GXVtT4LAo6BH3kuaL4xOhqBgAZfbpPegz3nzVctERq-gc-XZwquZHCGN-PWNg",
-            source: plan.demandType || "Customer Order",
-            qty: prod.quantity,
-            requiredDate: prod.requiredDate || plan.plannedCompletionDate,
-            progress: calculatedProgress,
-            stage: activeStage,
-            stages: mappedStages
+            id: plan.planId || plan.PlanId || plan.planNo || plan.id,
+            planId: plan.planId || plan.PlanId || plan.planNo || plan.id,
+            client: plan.sourceName || plan.SourceName || "Internal Run",
+            priority: plan.priority || plan.Priority || "Normal",
+            status: plan.status || plan.Status || "Active",
+            progress: planCalculatedProgress,
+            dueDate: plan.plannedCompletionDate || plan.PlannedCompletionDate || new Date().toISOString(),
+            products: productsList,
+            isLocalStorage: false,
+            _originalPlan: plan // keep a reference to the original API plan
           };
         });
 
-        const activeProdStages = productsList[0]?.stages || [];
-        const planCompletedCount = activeProdStages.filter((s: any) => s.status === "Completed").length;
-        const planCalculatedProgress = activeProdStages.length ? Math.round((planCompletedCount / activeProdStages.length) * 100) : 0;
-
-        return {
-          id: plan.planNo || plan.id,
-          planId: plan.planNo || plan.id,
-          client: plan.sourceName || "Internal Run",
-          priority: plan.priority || "Normal",
-          status: plan.status || "Active",
-          progress: planCalculatedProgress,
-          dueDate: plan.plannedCompletionDate || "2026-07-24",
-          products: productsList,
-          isLocalStorage: true
-        };
-      });
-
-      // Merge stored plans + mock plans, filtering out duplicates
-      const merged = [...formattedStored];
-      DEFAULT_MOCK_PLANS.forEach((mockPlan) => {
-        if (!merged.some((p) => p.id === mockPlan.id)) {
-          merged.push(mockPlan);
-        }
-      });
-
-      setPlans(merged);
-    }
+        setPlans(formatted);
+      })
+      .catch((err) => console.error("Failed to fetch plans", err));
   }, []);
 
-  // Update a plan in local state + persist back to localStorage if it originated there
   const handleUpdatePlan = (updatedPlan: any) => {
     setPlans((prev) =>
       prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p))
     );
 
-    if (typeof window !== "undefined" && updatedPlan.isLocalStorage) {
-      const storedStr = localStorage.getItem("productionPlans") || "[]";
-      let storedPlans: any[] = [];
-      try {
-        storedPlans = JSON.parse(storedStr);
-      } catch (e) {
-        storedPlans = [];
-      }
-
-      const updatedStored = storedPlans.map((plan: any) => {
-        if (plan.planNo === updatedPlan.id || plan.id === updatedPlan.id) {
-          // Sync stages and status/progress back
-          const updatedStages = updatedPlan.products[0]?.stages.map((st: any) => ({
-            stageName: st.name,
-            workCenter: st.workCenter,
-            status: st.status,
-            completedQty: st.completedQty,
-            rejectedQty: st.rejectedQty,
-            remarks: st.remarks
-          })) || [];
-
-          const completedCount = updatedStages.filter((s: any) => s.status === "Completed").length;
-          const totalStages = updatedStages.length || 1;
-          const calculatedProgress = Math.round((completedCount / totalStages) * 100);
-
-          return {
-            ...plan,
-            status: calculatedProgress === 100 ? "Completed" : updatedPlan.status,
-            stages: updatedStages
-          };
+    // If we want to persist updates back to the API, we can PUT it here.
+    // For now, we update local React state.
+    if (updatedPlan._originalPlan) {
+        const payload = { ...updatedPlan._originalPlan };
+        // Map back stages if needed
+        if (updatedPlan.products && updatedPlan.products[0]) {
+           payload.stages = updatedPlan.products[0].stages.map((st: any) => ({
+              stageName: st.name,
+              workCenter: st.workCenter,
+              status: st.status,
+              completedQty: st.completedQty,
+              rejectedQty: st.rejectedQty,
+              remarks: st.remarks
+           }));
+           // Update status if fully complete
+           if (updatedPlan.progress === 100) {
+              payload.status = "Completed";
+           }
         }
-        return plan;
-      });
-
-      localStorage.setItem("productionPlans", JSON.stringify(updatedStored));
+        
+        fetch(`http://localhost:5083/api/production-plans/${updatedPlan.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).catch(err => console.error("Failed to update plan via API", err));
     }
   };
 

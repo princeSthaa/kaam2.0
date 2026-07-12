@@ -3021,3 +3021,45 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Responsive Drafts & Folders */
+@media (max-width: 900px) {
+  .folder-plan-row, .folder-list-header {
+      grid-template-columns: 46px 40px minmax(0, 1fr) auto;
+  }
+  .folder-plan-row.no-selection, .folder-list-header.no-selection {
+      grid-template-columns: 40px minmax(0, 1fr) auto;
+  }
+  .header-date, .folder-plan-date { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .folder-summary-strip {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 12px;
+  }
+  .folder-page-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+  }
+  .folder-search {
+      grid-template-columns: 22px 1fr;
+  }
+  .folder-actions {
+      justify-content: space-between;
+  }
+  .folder-plan-row, .folder-list-header {
+      grid-template-columns: 46px minmax(0, 1fr);
+      padding: 12px;
+      gap: 8px;
+  }
+  .folder-plan-row.no-selection, .folder-list-header.no-selection {
+      grid-template-columns: minmax(0, 1fr);
+  }
+  .header-icon, .folder-plan-icon, .header-actions, .folder-plan-actions { display: none !important; }
+  .folder-plan-row {
+      min-height: auto;
+      padding: 16px 12px;
+  }
+}
