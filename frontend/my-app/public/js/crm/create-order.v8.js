@@ -448,62 +448,84 @@ const backendFabrics = window.legacyPageModelData?.fabrics || [];
 
           // --- Fabric Modal Logic ---
           let fabricCategories = {};
+          let searchListenersAttached = false;
           function initFabricModal() {
+              const fabricsSource = window.fabrics || window.legacyPageModelData?.fabrics || backendFabrics || [];
+              fabricCategories = {};
+
               // Group fabrics by category
-              backendFabrics.forEach(f => {
+              fabricsSource.forEach(f => {
                   let cat = f.category || 'Other';
                   if (!fabricCategories[cat]) {
                       fabricCategories[cat] = [];
                   }
-                  fabricCategories[cat].push(f);
+                  fabricCategories[cat].push({
+                      id: f.id || f.fabricId,
+                      name: f.name,
+                      imageUrl: f.imageUrl || f.swatchUrl || f.imagePath || '/images/products/place-holder.png',
+                      category: cat
+                  });
               });
 
               // Init Category Modal
               const catGrid = document.getElementById("fabricCategoryGrid");
-              Object.keys(fabricCategories).forEach(cat => {
-                  const catFabrics = fabricCategories[cat];
-                  const col = document.createElement("div");
-                  col.className = "col-md-4 col-sm-6 mb-4 fabric-cat-col";
+              if (catGrid) {
+                  catGrid.innerHTML = "";
+                  Object.keys(fabricCategories).forEach(cat => {
+                      const catFabrics = fabricCategories[cat];
+                      const col = document.createElement("div");
+                      col.className = "col-md-4 col-sm-6 mb-4 fabric-cat-col";
 
-                  let imagesHtml = '';
-                  const sampleFabrics = catFabrics.slice(0, 4);
-                  sampleFabrics.forEach(sf => {
-                      imagesHtml += `<img src="${sf.imageUrl}" onerror="this.src='/images/products/place-holder.png';" style="flex: 1; height: 100px; object-fit: cover; min-width: 0;" />`;
-                  });
+                      let imagesHtml = '';
+                      const sampleFabrics = catFabrics.slice(0, 4);
+                      sampleFabrics.forEach(sf => {
+                          imagesHtml += `<img src="${sf.imageUrl}" onerror="this.src='/images/products/place-holder.png';" style="flex: 1; height: 100px; object-fit: cover; min-width: 0;" />`;
+                      });
 
-                  col.innerHTML = `
-                  <div class="border rounded" style="cursor: pointer; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
-                       onclick="openFabricModalForCategory('${cat}')"
-                       onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.1)'"
-                       onmouseout="this.style.transform='none'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'">
-                      <div class="d-flex" style="width: 100%; background: #eee;">
-                          ${imagesHtml}
+                      col.innerHTML = `
+                      <div class="border rounded" style="cursor: pointer; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);"
+                           onclick="openFabricModalForCategory('${cat}')"
+                           onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 5px 15px rgba(0,0,0,0.1)'"
+                           onmouseout="this.style.transform='none'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.05)'">
+                          <div class="d-flex" style="width: 100%; background: #eee;">
+                              ${imagesHtml}
+                          </div>
+                          <div class="p-3 text-center bg-white border-top">
+                              <strong style="font-size: 1.1em; color: #333;">${cat}</strong><br/>
+                              <small class="text-muted">${catFabrics.length} fabric options</small>
+                          </div>
                       </div>
-                      <div class="p-3 text-center bg-white border-top">
-                          <strong style="font-size: 1.1em; color: #333;">${cat}</strong><br/>
-                          <small class="text-muted">${catFabrics.length} fabric options</small>
-                      </div>
-                  </div>
-                  `;
-                  catGrid.appendChild(col);
-              });
-
-              document.getElementById("fabricCategorySearch").addEventListener("input", function () {
-                  const term = this.value.toLowerCase();
-                  document.querySelectorAll(".fabric-cat-col").forEach(col => {
-                      const text = col.innerText.toLowerCase();
-                      col.style.display = text.includes(term) ? "block" : "none";
+                      `;
+                      catGrid.appendChild(col);
                   });
-              });
+              }
 
-              document.getElementById("fabricSearch").addEventListener("input", function () {
-                  const term = this.value.toLowerCase();
-                  document.querySelectorAll(".fabric-col").forEach(col => {
-                      const text = col.innerText.toLowerCase();
-                      col.style.display = text.includes(term) ? "block" : "none";
-                  });
-              });
+              if (!searchListenersAttached) {
+                  const catSearch = document.getElementById("fabricCategorySearch");
+                  if (catSearch) {
+                      catSearch.addEventListener("input", function () {
+                          const term = this.value.toLowerCase();
+                          document.querySelectorAll(".fabric-cat-col").forEach(col => {
+                              const text = col.innerText.toLowerCase();
+                              col.style.display = text.includes(term) ? "block" : "none";
+                          });
+                      });
+                  }
+
+                  const fabSearch = document.getElementById("fabricSearch");
+                  if (fabSearch) {
+                      fabSearch.addEventListener("input", function () {
+                          const term = this.value.toLowerCase();
+                          document.querySelectorAll(".fabric-col").forEach(col => {
+                              const text = col.innerText.toLowerCase();
+                              col.style.display = text.includes(term) ? "block" : "none";
+                          });
+                      });
+                  }
+                  searchListenersAttached = true;
+              }
           }
+          window.initFabricModal = initFabricModal;
 
           function openFabricSelector(fid, tempId) {
               activeFabricCb = function (id, name, img) {

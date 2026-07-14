@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ActionButton } from "../../legacy-ui/ActionButton";
 import { PageHeader } from "../../legacy-ui/PageHeader";
 import { fetchCustomers, fetchProducts, fetchFabrics, createOrder, Customer, Product, Fabric } from "../../../../lib/api";
@@ -137,10 +137,25 @@ function CreateOrderStyles() {
 
 export function CrmCreateOrderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const customerIdParam = searchParams.get("customerId");
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
 
   useEffect(() => {
-    fetchCustomers().then(setCustomers).catch(console.error);
+    fetchCustomers().then((data) => {
+      setCustomers(data);
+      if (customerIdParam) {
+        setSelectedCustomerId(customerIdParam);
+      }
+    }).catch(console.error);
+
+    if (customerIdParam) {
+      setSelectedCustomerId(customerIdParam);
+    }
+  }, [customerIdParam]);
+
+  useEffect(() => {
 
     // Inject data into window for /js/crm/create-order.v3.js?v=13
     Promise.all([fetchProducts(), fetchFabrics()]).then(([prods, fabs]) => {
@@ -157,8 +172,8 @@ export function CrmCreateOrderPage() {
         fabricId: f.id,
         name: f.name,
         category: f.category || "Cotton",
-        imageUrl: "/images/products/place-holder.png",
-        swatchUrl: "/images/products/place-holder.png"
+        imageUrl: f.imagePath || "/images/products/place-holder.png",
+        swatchUrl: f.imagePath || "/images/products/place-holder.png"
       }));
 
       // Map mock BOMs for the legacy script to populate standard sizes
@@ -170,6 +185,11 @@ export function CrmCreateOrderPage() {
         qtyPerUnit: 1.5,
         wastagePercent: 5
       }));
+
+      // Re-initialize fabric modal after window.fabrics is populated
+      if (typeof (window as any).initFabricModal === "function") {
+        (window as any).initFabricModal();
+      }
 
       // FIX: The legacy script auto-adds the first row on DOMContentLoaded BEFORE this API call finishes.
       // We must clear that stale row and recreate it so it uses the real API data!
@@ -191,10 +211,14 @@ export function CrmCreateOrderPage() {
     const items: any[] = [];
     document.querySelectorAll(".product-config-block").forEach(block => {
       const name = block.querySelector("h5")?.textContent || "Unknown Product";
-      
+      const productImage = block.querySelector("img")?.getAttribute("src") || "";
+
       block.querySelectorAll(".size-input").forEach(input => {
         const qty = parseInt((input as HTMLInputElement).value) || 0;
         if (qty > 0) {
+          const fabricRow = input.closest(".fabric-row");
+          const fabricName = fabricRow?.querySelector("span")?.textContent || "Standard Fabric";
+
           const table = input.closest("table");
           let unitPrice = 0;
           if (table) {
@@ -205,7 +229,24 @@ export function CrmCreateOrderPage() {
                unitPrice = parseFloat(rateText.replace(/[^0-9.]/g, "")) || 0;
              }
           }
-          items.push({ productName: name, quantity: qty, unitPrice });
+          // Include size label as variant suffix
+          const sizeHeader = input.closest("td")
+            ? (() => {
+                const td = input.closest("td")!;
+                const idx = Array.from(td.parentElement!.children).indexOf(td);
+                const table = td.closest("table");
+                return table?.querySelector("thead tr")?.children[idx]?.textContent?.trim() || "";
+              })()
+            : "";
+          const variant = [fabricName, sizeHeader].filter(Boolean).join(" / ") || "Standard";
+          items.push({
+            productName: name,
+            quantity: qty,
+            unitPrice,
+            variant,
+            fabricName,
+            productImage
+          });
         }
       });
     });
@@ -233,12 +274,20 @@ export function CrmCreateOrderPage() {
       }
     }
 
+    // Compute priority: Urgent if delivery is within 14 days
+    const daysUntilDelivery = (new Date(dueDateIso).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    const priority = daysUntilDelivery <= 14 ? "Urgent" : "Normal";
+
+    const remarks = formData.get("Remarks") as string || "";
+
     const order = {
       customerId: customerId,
       orderNumber: `ORD-${Date.now()}`,
       status: "Pending",
+      priority,
       totalAmount: items.reduce((sum, i) => sum + (i.quantity * i.unitPrice), 0),
       dueDate: dueDateIso,
+      remarks,
       items: items,
     };
 
@@ -250,6 +299,7 @@ export function CrmCreateOrderPage() {
       alert(err.message || "Failed to save order");
     }
   };
+
 
   return (
     <>
@@ -270,7 +320,14 @@ export function CrmCreateOrderPage() {
                   <label htmlFor="CustomerId">
                     Select Customer <span className="text-danger">*</span>
                   </label>
-                  <select id="CustomerId" name="CustomerId" className="form-control" required>
+                  <select
+                    id="CustomerId"
+                    name="CustomerId"
+                    className="form-control"
+                    required
+                    value={selectedCustomerId}
+                    onChange={(e) => setSelectedCustomerId(e.target.value)}
+                  >
                     <option value="">-- Choose an existing customer --</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>

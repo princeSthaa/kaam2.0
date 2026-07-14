@@ -12,7 +12,7 @@ interface Team {
   colorClass: string;
 }
 
-export default function ProcessAssignmentPage() {
+function ProcessAssignmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -445,5 +445,20 @@ export default function ProcessAssignmentPage() {
         </footer>
       </PageShell>
     </>
+  );
+}
+
+export default function ProcessAssignmentPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="flex flex-col items-center gap-3 text-slate-400 animate-pulse">
+          <span className="material-symbols-outlined text-[48px]">hourglass_top</span>
+          <p className="text-sm">Loading assignment parameters…</p>
+        </div>
+      </div>
+    }>
+      <ProcessAssignmentPageContent />
+    </React.Suspense>
   );
 }

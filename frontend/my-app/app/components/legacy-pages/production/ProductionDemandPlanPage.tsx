@@ -80,7 +80,9 @@ const mockCustomerOrders = [
     productCode: "PRD-001",
     productName: "School Uniform Set",
     category: "School Uniform",
-    variant: "Classic Blue",
+    fabricCategory: "Woven",
+    fabricName: "Cotton Twill",
+    fabricImage: "/images/fabrics/cotton-twill.jpg",
     quantity: 500,
     deliveryDate: "2026-07-20",
     priority: "Urgent",
@@ -242,6 +244,24 @@ function normalizeSizeRows(sizes: Record<string, number> | Array<{ size: string;
     .filter((row) => row.quantity > 0);
 }
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr || dateStr === "-") return "-";
+  let cleanDate = dateStr.split("T")[0];
+  
+  const parts = cleanDate.split("-");
+  if (parts.length === 3) {
+    const yearFirst = parseInt(parts[0]);
+    if (yearFirst > 2050 && yearFirst < 2100) {
+      return `${cleanDate} (BS)`;
+    }
+    const yearLast = parseInt(parts[2]);
+    if (yearLast > 2050 && yearLast < 2100) {
+      return `${cleanDate} (BS)`;
+    }
+  }
+  return cleanDate;
+};
+
 function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -294,19 +314,25 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
           if (o.items && o.items.length > 0) {
             o.items.forEach((item, index) => {
               const qty = Number(item.quantity) || 10;
+              // Look up product image and ID from mockProducts by name match
+              const matchedProduct = mockProducts.find(
+                (p) => p.productName.toLowerCase() === (item.productName || "").toLowerCase()
+              );
               itemsList.push({
                 id: `${o.id || o.orderNumber}-${index}`,
                 orderNo: o.orderNumber,
                 customerId: o.customerId,
-                productId: "PRD-001", // Default placeholder for BOM matching
+                productId: matchedProduct?.id || "PRD-001",
                 productName: item.productName || `Item #${index + 1}`,
-                category: "General",
-                variant: "Standard Color",
+                category: matchedProduct?.category || "General",
+                fabricCategory: (item as any).fabricCategory || "Cotton",
+                fabricName: item.fabricName || "Standard Fabric",
+                fabricImage: (item as any).fabricImage || null,
                 quantity: qty,
                 deliveryDate: o.dueDate,
-                priority: "Normal",
-                productImage: "/images/products/place-holder.png",
-                productionNotes: o.status,
+                priority: o.priority || "Normal",
+                productImage: item.productImage || matchedProduct?.productImage || "/images/products/place-holder.png",
+                productionNotes: o.remarks || o.status || "Pending",
                 sizes: { M: Math.floor(qty / 2), L: Math.ceil(qty / 2) }
               });
             });
@@ -319,12 +345,14 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
               productId: "PRD-001",
               productName: `Custom Order ${o.orderNumber}`,
               category: "General",
-              variant: "Default",
+              fabricCategory: "Cotton",
+              fabricName: "Standard Fabric",
+              fabricImage: null,
               quantity: 10,
               deliveryDate: o.dueDate,
-              priority: "Normal",
+              priority: o.priority || "Normal",
               productImage: "/images/products/place-holder.png",
-              productionNotes: o.status,
+              productionNotes: o.remarks || o.status || "Pending",
               sizes: { M: 5, L: 5 }
             });
           }
@@ -745,7 +773,7 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
                         </div>
                         <div>
                           <span>Required Date</span>
-                          <strong>{item.deliveryDate || item.requiredDate}</strong>
+                          <strong>{formatDate(item.deliveryDate || item.requiredDate)}</strong>
                         </div>
                         {kind === "outlet" && (
                           <>
@@ -842,7 +870,7 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
             </div>
             <div className="d-flex justify-content-between mb-8 fs-12">
               <span>Earliest Date:</span>
-              <strong className="text-dark">{basketStats.earliestDate}</strong>
+              <strong className="text-dark">{formatDate(basketStats.earliestDate)}</strong>
             </div>
             <div className="d-flex justify-content-between mb-16 fs-12">
               <span>Material Checked:</span>
@@ -987,12 +1015,25 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
                     </div>
                     <div>
                       <span>Required Date</span>
-                      <strong>{modalItem.deliveryDate || modalItem.requiredDate}</strong>
+                      <strong>{formatDate(modalItem.deliveryDate || modalItem.requiredDate)}</strong>
                     </div>
                     <div>
-                      <span>Variant Color</span>
-                      <strong>{modalItem.variant}</strong>
+                      <span>Fabric Category</span>
+                      <strong>{modalItem.fabricCategory || "Cotton"}</strong>
                     </div>
+                    {(modalItem.fabricName || modalItem.fabricImage) && (
+                      <div>
+                        <span>Fabric Option</span>
+                        {modalItem.fabricImage ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                            <img src={modalItem.fabricImage} alt={modalItem.fabricName || "Fabric"} style={{ width: "24px", height: "24px", borderRadius: "4px", objectFit: "cover" }} />
+                            <strong>{modalItem.fabricName || "Standard Fabric"}</strong>
+                          </div>
+                        ) : (
+                          <strong>{modalItem.fabricName || "Standard Fabric"}</strong>
+                        )}
+                      </div>
+                    )}
                     {kind === "outlet" && (
                       <>
                         <div>
@@ -1067,7 +1108,7 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
                       <thead>
                         <tr>
                           <th>Size</th>
-                          <th>Variant</th>
+                          <th>Fabric</th>
                           <th>Quantity</th>
                         </tr>
                       </thead>
@@ -1075,7 +1116,7 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
                         {Object.entries(modalItem.sizes).map(([sz, qty]: any) => (
                           <tr key={sz}>
                             <td><strong>{sz}</strong></td>
-                            <td>{modalItem.variant}</td>
+                            <td>{modalItem.fabricName || "Standard Fabric"}</td>
                             <td>{qty} pcs</td>
                           </tr>
                         ))}
@@ -1223,8 +1264,8 @@ function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
                     <p className="text-muted text-xs">{modalItem.productionNotes || "No notes."}</p>
                   </div>
                   <div className="product-3d-option-block mt-16">
-                    <div className="product-3d-option-title text-xs font-bold text-muted uppercase">Selected Variant Color</div>
-                    <strong className="text-dark fs-14 mt-4 d-block">{modalItem.variant}</strong>
+                    <div className="product-3d-option-title text-xs font-bold text-muted uppercase">Selected Fabric</div>
+                    <strong className="text-dark fs-14 mt-4 d-block">{modalItem.fabricName || "Standard Fabric"}</strong>
                   </div>
                   <div className="product-3d-option-block mt-16">
                     <div className="product-3d-option-title text-xs font-bold text-muted uppercase">Size split</div>

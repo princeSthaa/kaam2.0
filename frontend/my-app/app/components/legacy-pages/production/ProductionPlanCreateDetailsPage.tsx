@@ -80,6 +80,7 @@ export function ProductionPlanCreateDetailsPage() {
 
   // Bulk Material Status Check
   const [materialChecked, setMaterialChecked] = useState(false);
+  const [showMaterialsModal, setShowMaterialsModal] = useState(false);
   const [materialsList, setMaterialsList] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState("");
@@ -206,9 +207,64 @@ export function ProductionPlanCreateDetailsPage() {
     const calculated: { [key: string]: any } = {};
 
     tempData.basket.forEach((item: any) => {
-      const boms = mockBoms.filter(b => b.productId === item.productId);
+      let boms = mockBoms.filter(b => b.productId === item.productId);
+      
+      // If no BOM is defined for this product, let's dynamically generate a realistic BOM!
+      if (!boms.length) {
+        // Resolve fabric name from variant (e.g., "Cotton Blend / L" -> "Cotton Blend")
+        let fabricName = "Dyed Cotton Fabric";
+        if (item.variant) {
+          const mainPart = item.variant.split("/")[0].trim();
+          if (mainPart && mainPart !== "Standard" && mainPart !== "None") {
+            fabricName = mainPart;
+          }
+        }
+        
+        // Find or create material for fabric
+        let fabricCode = `RM-FAB-${fabricName.toUpperCase().replace(/\s+/g, '-')}`;
+        let fabricMat = mockMaterials.find(m => m.materialCode === fabricCode);
+        if (!fabricMat) {
+          fabricMat = {
+            id: `MAT-DYN-${fabricName}`,
+            materialCode: fabricCode,
+            name: fabricName,
+            type: "Fabric",
+            availableQty: 1200,
+            unit: "meter"
+          };
+        }
+
+        boms = [
+          { productId: item.productId, materialId: fabricMat.id, qtyPerUnit: 1.6, wastagePercent: 5 },
+          { productId: item.productId, materialId: "MAT-006", qtyPerUnit: 0.2, wastagePercent: 2 }, // Thread
+          { productId: item.productId, materialId: "MAT-010", qtyPerUnit: 1, wastagePercent: 0 }, // Brand Label
+          { productId: item.productId, materialId: "MAT-011", qtyPerUnit: 1, wastagePercent: 0 }, // Packaging Bag
+        ];
+
+        // Add buttons if polo or shirt
+        if (item.productName.toLowerCase().includes("polo") || item.productName.toLowerCase().includes("shirt")) {
+          boms.push({ productId: item.productId, materialId: "MAT-008", qtyPerUnit: 4, wastagePercent: 2 });
+          boms.push({ productId: item.productId, materialId: "MAT-007", qtyPerUnit: 0.15, wastagePercent: 5 });
+        }
+        // Add zipper if jacket or trouser
+        if (item.productName.toLowerCase().includes("jacket") || item.productName.toLowerCase().includes("trouser") || item.productName.toLowerCase().includes("zipper")) {
+          boms.push({ productId: item.productId, materialId: "MAT-009", qtyPerUnit: 1, wastagePercent: 2 });
+        }
+      }
+
       boms.forEach(bom => {
-        const material = mockMaterials.find(m => m.id === bom.materialId);
+        let material = mockMaterials.find(m => m.id === bom.materialId);
+        if (!material && bom.materialId.startsWith("MAT-DYN-")) {
+          const fName = bom.materialId.replace("MAT-DYN-", "");
+          material = {
+            id: bom.materialId,
+            materialCode: `RM-FAB-${fName.toUpperCase().replace(/\s+/g, '-')}`,
+            name: fName,
+            type: "Fabric",
+            availableQty: 1200,
+            unit: "meter"
+          };
+        }
         if (!material) return;
 
         const baseQty = item.quantity * bom.qtyPerUnit;
@@ -241,6 +297,7 @@ export function ProductionPlanCreateDetailsPage() {
 
     setMaterialsList(finalMaterials);
     setMaterialChecked(true);
+    setShowMaterialsModal(true);
   };
 
   // Stage update handler
@@ -365,7 +422,7 @@ export function ProductionPlanCreateDetailsPage() {
       ]
     };
 
-    // Save to localStorage
+    // Save to backend API and localStorage
     if (typeof window !== "undefined") {
       const existingStr = localStorage.getItem("productionPlans") || "[]";
       let existing = [];
@@ -376,6 +433,17 @@ export function ProductionPlanCreateDetailsPage() {
       }
       existing.unshift(newPlan);
       localStorage.setItem("productionPlans", JSON.stringify(existing));
+
+      // Post plan to backend database
+      fetch("http://localhost:5083/api/production-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPlan)
+      }).then(res => {
+        if (!res.ok) console.error("Failed to save production plan to backend");
+      }).catch(err => {
+        console.error("Error posting production plan:", err);
+      });
       
       // Clean temp basket
       localStorage.removeItem("temp_plan_basket");
@@ -1026,6 +1094,160 @@ export function ProductionPlanCreateDetailsPage() {
           </aside>
         </div>
       </form>
+
+      {/* Dynamic Material Stock Verification Modal */}
+      {showMaterialsModal && (
+        <div className="pp-modal" style={{ display: "block", zIndex: 1100 }}>
+          <div className="pp-modal-backdrop" onClick={() => setShowMaterialsModal(false)} />
+          <div className="pp-modal-panel large" style={{ maxWidth: "820px", width: "95%" }}>
+            <div className="pp-modal-header" style={{ borderBottom: "1px solid #e2e8f0", paddingBottom: "16px" }}>
+              <div className="d-flex align-items-center gap-12">
+                <div>
+                  <h2 className="fs-18 m-0" style={{ fontWeight: 700, color: "#0f172a" }}>Material Stock Verification</h2>
+                  <p className="text-muted text-xs m-0">Dynamic checks against raw material warehouse balances for all plan garments.</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="modal-close-btn border-0 bg-transparent fs-20 fw-bold cursor-pointer" 
+                onClick={() => setShowMaterialsModal(false)}
+                style={{ fontSize: "24px", color: "#64748b" }}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="pp-modal-body" style={{ padding: "20px" }}>
+              {/* Stats Overview */}
+              <div className="d-flex gap-16 mb-20 flex-wrap" style={{ display: "flex", gap: "16px", marginBottom: "20px" }}>
+                <div style={{ flex: 1, minWidth: "150px", background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                  <span className="text-xs text-muted d-block" style={{ fontSize: "11px", color: "#64748b" }}>Items Checked</span>
+                  <strong className="fs-16 text-dark" style={{ fontSize: "16px", color: "#0f172a" }}>{materialsList.length} materials</strong>
+                </div>
+                <div style={{ flex: 1, minWidth: "150px", background: materialsList.some(m => m.status === "Shortage") ? "#fef2f2" : "#f0fdf4", border: "1px solid", borderColor: materialsList.some(m => m.status === "Shortage") ? "#fecaca" : "#bbf7d0", padding: "12px", borderRadius: "10px" }}>
+                  <span className="text-xs text-muted d-block" style={{ fontSize: "11px", color: "#64748b" }}>Shortages Detected</span>
+                  <strong className="fs-16" style={{ fontSize: "16px", color: materialsList.some(m => m.status === "Shortage") ? "#dc2626" : "#16a34a" }}>
+                    {materialsList.filter(m => m.status === "Shortage").length} items
+                  </strong>
+                </div>
+                <div style={{ flex: 1, minWidth: "150px", background: "#f8fafc", border: "1px solid #e2e8f0", padding: "12px", borderRadius: "10px" }}>
+                  <span className="text-xs text-muted d-block" style={{ fontSize: "11px", color: "#64748b" }}>Source Warehouse</span>
+                  <strong className="fs-14 text-dark truncate d-block" style={{ fontSize: "14px", color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={materialWarehouse}>{materialWarehouse}</strong>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="pp-table-wrapper border rounded-12 mb-20" style={{ maxHeight: "300px", overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
+                <table className="pp-table compact-table m-0" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead className="bg-light sticky-top" style={{ background: "#f8fafc", position: "sticky", top: 0, zIndex: 10 }}>
+                    <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                      <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontFamily: "monospace", textTransform: "uppercase" }}>Material</th>
+                      <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontFamily: "monospace", textTransform: "uppercase" }}>Type</th>
+                      <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontFamily: "monospace", textTransform: "uppercase" }}>Qty Required</th>
+                      <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontFamily: "monospace", textTransform: "uppercase" }}>Qty Available</th>
+                      <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontFamily: "monospace", textTransform: "uppercase" }}>Shortage</th>
+                      <th style={{ padding: "10px 16px", textAlign: "left", fontSize: "11px", fontFamily: "monospace", textTransform: "uppercase" }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materialsList.map(mat => (
+                      <tr key={mat.materialCode} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                        <td style={{ padding: "12px 16px" }}>
+                          <div>
+                            <strong style={{ color: "#1e293b", fontSize: "13px" }}>{mat.materialName}</strong>
+                            <code className="d-block text-muted text-2xs" style={{ fontSize: "10px", display: "block", color: "#64748b", marginTop: "2px" }}>{mat.materialCode}</code>
+                          </div>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span className="text-xs text-muted" style={{ fontSize: "12px", color: "#64748b" }}>{mat.materialType}</span>
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <strong style={{ color: "#0f172a" }}>{Number(mat.requiredQty.toFixed(1))}</strong> <small className="text-muted" style={{ fontSize: "11px" }}>{mat.unit}</small>
+                        </td>
+                        <td style={{ padding: "12px 16px", color: "#334155" }}>
+                          {mat.availableQty} <small className="text-muted" style={{ fontSize: "11px" }}>{mat.unit}</small>
+                        </td>
+                        <td style={{ padding: "12px 16px" }} className={mat.shortageQty > 0 ? "text-danger fw-700" : "text-green"}>
+                          {mat.shortageQty > 0 ? (
+                            <strong style={{ color: "#dc2626" }}>{Number(mat.shortageQty.toFixed(1))} {mat.unit}</strong>
+                          ) : (
+                            <span style={{ color: "#16a34a" }}>-</span>
+                          )}
+                        </td>
+                        <td style={{ padding: "12px 16px" }}>
+                          <span className={`status-badge text-xs`} style={{ padding: "4px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: "bold", background: mat.status === "Shortage" ? "#fee2e2" : "#e6f4ea", color: mat.status === "Shortage" ? "#b91c1c" : "#137333" }}>
+                            {mat.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Alert Message */}
+              {materialsList.some(m => m.status === "Shortage") ? (
+                <div className="alert alert-danger p-16 rounded-12 mb-20 d-flex gap-12" style={{ display: "flex", gap: "12px", background: "#fff5f5", border: "1px solid #ffe3e3", color: "#c92a2a", padding: "16px", borderRadius: "12px", marginBottom: "20px" }}>
+                  <span style={{ fontSize: "20px" }}>⚠️</span>
+                  <div style={{ flex: 1 }}>
+                    <strong className="fs-13" style={{ fontSize: "13px", fontWeight: 700 }}>Material shortages detected!</strong>
+                    <p className="text-xs m-0 mt-4" style={{ color: "#fa5252", fontSize: "12px", margin: 0, marginTop: "4px" }}>
+                      There is insufficient stock for {materialsList.filter(m => m.status === "Shortage").length} required raw materials. Requisitions will be auto-generated for procurement once the plan is confirmed.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="alert alert-success p-16 rounded-12 mb-20 d-flex gap-12" style={{ display: "flex", gap: "12px", background: "#ebfbee", border: "1px solid #d3f9d8", color: "#2b8a3e", padding: "16px", borderRadius: "12px", marginBottom: "20px" }}>
+                  <span style={{ fontSize: "20px" }}>✅</span>
+                  <div style={{ flex: 1 }}>
+                    <strong className="fs-13" style={{ fontSize: "13px", fontWeight: 700 }}>All materials available!</strong>
+                    <p className="text-xs m-0 mt-4" style={{ color: "#40c057", fontSize: "12px", margin: 0, marginTop: "4px" }}>
+                      Sufficient raw material balances are allocated in {materialWarehouse} for this production run.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="d-flex justify-content-end gap-12 border-top pt-16" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  onClick={() => setShowMaterialsModal(false)}
+                  style={{ borderRadius: "8px", padding: "8px 16px", cursor: "pointer" }}
+                >
+                  Close
+                </button>
+                {materialsList.some(m => m.status === "Shortage") ? (
+                  <button 
+                    type="button" 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      alert("Purchase request auto-requisitions created successfully for all shortages!");
+                      setShowMaterialsModal(false);
+                    }}
+                    style={{ borderRadius: "8px", padding: "8px 16px", cursor: "pointer", background: "#2563eb", color: "#ffffff", border: "none" }}
+                  >
+                    Auto-Order Shortages
+                  </button>
+                ) : (
+                  <button 
+                    type="button" 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      alert("Materials reserved successfully in inventory!");
+                      setShowMaterialsModal(false);
+                    }}
+                    style={{ borderRadius: "8px", padding: "8px 16px", cursor: "pointer", background: "#2563eb", color: "#ffffff", border: "none" }}
+                  >
+                    Reserve Stock
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

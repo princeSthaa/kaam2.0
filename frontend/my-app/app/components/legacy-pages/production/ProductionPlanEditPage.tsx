@@ -413,7 +413,7 @@ export function ProductionPlanEditPage() {
   }, [selectedProducts]);
 
   const estimatedCost = useMemo(() => materialsRequirements.reduce((s, r) => s + r.requiredQty * r.cost, 0), [materialsRequirements]);
-  const totalUnits = useMemo(() => selectedProducts.reduce((s, p) => s + p.variants.reduce((a, v) => a + Object.values(v.sizes).reduce((x, y) => x + y, 0), 0), 0), [selectedProducts]);
+  const totalUnits = useMemo(() => selectedProducts.reduce((s: number, p: any) => s + p.variants.reduce((a: number, v: any) => a + Object.values(v.sizes).reduce((x: number, y: any) => x + Number(y), 0), 0), 0), [selectedProducts]);
 
   // Handlers for Right-Side Editor
   const updateProductField = (field: string, value: string) => {
@@ -429,24 +429,24 @@ export function ProductionPlanEditPage() {
   };
 
   const removeVariant = (variantId: string) => {
-    setSelectedProducts(prev => prev.map(p => p.productId !== activeProductId ? p : { ...p, variants: p.variants.filter(v => v.id !== variantId) }));
+    setSelectedProducts(prev => prev.map((p: any) => p.productId !== activeProductId ? p : { ...p, variants: p.variants.filter((v: any) => v.id !== variantId) }));
   };
 
   const updateSize = (variantId: string, size: string, value: number) => {
-    setSelectedProducts(prev => prev.map(p => p.productId !== activeProductId ? p : {
-      ...p, variants: p.variants.map(v => v.id !== variantId ? v : { ...v, sizes: { ...v.sizes, [size]: Math.max(0, value) } }),
+    setSelectedProducts(prev => prev.map((p: any) => p.productId !== activeProductId ? p : {
+      ...p, variants: p.variants.map((v: any) => v.id !== variantId ? v : { ...v, sizes: { ...v.sizes, [size]: Math.max(0, value) } }),
     }));
   };
 
   const addStage = () => {
-    setSelectedProducts(prev => prev.map(p => p.productId !== activeProductId ? p : {
+    setSelectedProducts(prev => prev.map((p: any) => p.productId !== activeProductId ? p : {
       ...p, stages: p.stages.concat({ id: String(p.stages.length + 1).padStart(2, "0"), name: "Quality Check", workCenter: "QC Table", leadHours: "8", date: planDate }),
     }));
   };
   
   const updateStage = (idx: number, field: string, value: string) => {
-    setSelectedProducts(prev => prev.map(p => p.productId !== activeProductId ? p : {
-      ...p, stages: p.stages.map((s, i) => i !== idx ? s : { ...s, [field]: value }),
+    setSelectedProducts(prev => prev.map((p: any) => p.productId !== activeProductId ? p : {
+      ...p, stages: p.stages.map((s: any, i: number) => i !== idx ? s : { ...s, [field]: value }),
     }));
   };
 
@@ -744,7 +744,7 @@ export function ProductionPlanEditPage() {
                         }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: isActive ? "#1d4ed8" : "#334155" }}>{prod.productName}</div>
                       <div style={{ fontSize: 11, color: "#64748b", marginTop: 4, fontFamily: "JetBrains Mono, monospace" }}>
-                        {prod.productCode} • {prod.variants.reduce((a,v) => a + Object.values(v.sizes).reduce((x,y)=>x+y,0), 0)} pcs
+                        {prod.productCode} • {prod.variants.reduce((a: number, v: any) => a + Object.values(v.sizes).reduce((x: number, y: any) => x + Number(y), 0), 0)} pcs
                       </div>
                    </div>
                  );
@@ -764,7 +764,7 @@ export function ProductionPlanEditPage() {
                         <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a" }}>{activeProduct.productName}</div>
                         <div style={{ fontSize: 13, color: "#64748b", marginTop: 2 }}>{activeProduct.productCode}</div>
                       </div>
-                      <div style={S.badgeNeutral}>{activeProduct.variants.reduce((a,v) => a + Object.values(v.sizes).reduce((x,y)=>x+y,0), 0)} Total Pcs</div>
+                      <div style={S.badgeNeutral}>{activeProduct.variants.reduce((a: number, v: any) => a + Object.values(v.sizes).reduce((x: number, y: any) => x + Number(y), 0), 0)} Total Pcs</div>
                    </div>
 
                    {/* Production Timeline */}
@@ -845,7 +845,7 @@ export function ProductionPlanEditPage() {
                        </button>
                      </div>
                      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                        {activeProduct.variants.map((v, vi) => (
+                        {activeProduct.variants.map((v: any, vi: number) => (
                           <div key={v.id} style={S.variantCard}>
                             <div style={S.variantHeader}>
                               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -895,7 +895,7 @@ export function ProductionPlanEditPage() {
                        </div>
                      </div>
                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                       {activeProduct.stages.map((stage, si) => (
+                       {activeProduct.stages.map((stage: any, si: number) => (
                          <div key={stage.id} style={S.stageRow}>
                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#cbd5e1", cursor: "grab" }}>drag_indicator</span>
                            <div style={S.stageIndex}>{stage.id}</div>

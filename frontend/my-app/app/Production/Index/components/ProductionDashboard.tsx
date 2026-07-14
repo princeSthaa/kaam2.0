@@ -386,7 +386,7 @@ export default function ProductionDashboard() {
                   stroke="#ffffff"
                   strokeWidth={2}
                   labelLine={false}
-                  label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                  label={({ cx, cy, midAngle = 0, innerRadius, outerRadius, percent = 0, index }) => {
                     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                     const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
                     const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
