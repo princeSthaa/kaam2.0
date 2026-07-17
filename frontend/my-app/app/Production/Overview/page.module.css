@@ -1,0 +1,55 @@
+.overviewCard {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  overflow: hidden !important;
+  transition: box-shadow 180ms ease, transform 180ms ease, border-color 180ms ease !important;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.overviewCard :global(.cardContent) {
+  padding: 1.25rem 1.5rem;
+}
+
+.overviewCard:hover {
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08) !important;
+  transform: translateY(-1px) !important;
+}
+
+.overviewPanel {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  overflow: hidden !important;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.overviewKpiCard {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  overflow: hidden !important;
+  position: relative !important;
+  padding: 1.25rem 1.5rem;
+  gap: 0.75rem;
+}
+
+.overviewKpiCard:hover {
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08) !important;
+}
+
+.overviewAccentCard {
+  background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%) !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+  overflow: hidden !important;
+  padding: 1.25rem 1.5rem;
+  gap: 0.75rem;
+}

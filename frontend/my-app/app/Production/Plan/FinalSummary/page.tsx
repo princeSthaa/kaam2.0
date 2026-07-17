@@ -73,7 +73,7 @@ function FinalSummaryPageContent() {
         };
       }
 
-      const updatedPlan = { ...plan, status: firstStageName, batchId, stages: updatedStages };
+      const updatedPlan = { ...plan, status: "Planned", batchId, stages: updatedStages };
       
       fetch(`http://localhost:5083/api/production-plans/${planGuid}`, {
         method: "PUT",

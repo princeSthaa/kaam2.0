@@ -134,7 +134,7 @@
         const localDrafts = getDrafts();
         const planMap = {};
 
-        basePlans.concat(localDrafts).forEach(function (plan) {
+        localDrafts.concat(basePlans).forEach(function (plan) {
             const normalized = normalizePlan(plan);
             const key = normalized.planNo || normalized.planId || normalized.id;
             if (!key) return;

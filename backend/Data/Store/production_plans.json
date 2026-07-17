@@ -1081,5 +1081,455 @@
     "Id": "62efba15-5182-464a-8974-55bb0081d4ed",
     "CreatedAt": "2026-07-13T16:16:18.2990118Z",
     "UpdatedAt": "2026-07-13T16:16:18.2990125Z"
+  },
+  {
+    "PlanId": "PP-20260714-890",
+    "BatchId": "BCH-45431",
+    "PlanName": "Production Plan - Hari Khadka (PP-20260714-890)",
+    "DemandType": "Customer Order",
+    "SourceId": "33333333-3333-3333-3333-333333333333",
+    "SourceName": "Hari Khadka",
+    "Priority": "High",
+    "Status": "Planned",
+    "PlannedStartDate": "2026-07-14",
+    "PlannedCompletionDate": "2026-07-28",
+    "Quantity": 1,
+    "EstimatedCost": 0,
+    "Supervisor": "A. Sharma (Shift 1)",
+    "ProductionLine": "Line 4",
+    "MaterialWarehouse": "Hub B",
+    "ProductionNotes": "",
+    "Products": [
+      {
+        "LineId": "PP-20260714-890-L1",
+        "OrderNo": "ORD-1783924638216",
+        "ProductId": "PRD-001",
+        "ProductCode": "PRD-001",
+        "ProductName": "Standard School Shirt",
+        "Category": "General",
+        "Variant": "",
+        "Quantity": 1,
+        "RequiredDate": "2083-04-07T00:00:00Z",
+        "Status": "Draft",
+        "ProductImage": null,
+        "Sizes": [
+          {
+            "Size": "M",
+            "Quantity": 0
+          },
+          {
+            "Size": "L",
+            "Quantity": 1
+          }
+        ]
+      }
+    ],
+    "Stages": [
+      {
+        "StageId": "STG-01",
+        "StageName": "Material Check",
+        "WorkCenter": "QC Station 1",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-10",
+        "PlannedEndDate": "2026-07-10",
+        "Status": "In Progress",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "2026-07-14",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-02",
+        "StageName": "Cutting",
+        "WorkCenter": "Cutter Auto-B",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-11",
+        "PlannedEndDate": "2026-07-11",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-03",
+        "StageName": "Stitching",
+        "WorkCenter": "Line 4A",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-13",
+        "PlannedEndDate": "2026-07-13",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      }
+    ],
+    "Id": "3bcc872a-b417-4298-8f32-6f73d1bd2a1a",
+    "CreatedAt": "2026-07-14T07:34:47.7726075Z",
+    "UpdatedAt": "2026-07-14T09:06:37.9377557Z"
+  },
+  {
+    "PlanId": "PP-20260714-357",
+    "BatchId": "",
+    "PlanName": "Production Plan - Hari Khadka (PP-20260714-357)",
+    "DemandType": "Customer Order",
+    "SourceId": "33333333-3333-3333-3333-333333333333",
+    "SourceName": "Hari Khadka",
+    "Priority": "High",
+    "Status": "Draft",
+    "PlannedStartDate": "2026-07-14",
+    "PlannedCompletionDate": "2026-07-28",
+    "Quantity": 1,
+    "EstimatedCost": 0,
+    "Supervisor": "A. Sharma (Shift 1)",
+    "ProductionLine": "Line 4",
+    "MaterialWarehouse": "Hub B",
+    "ProductionNotes": "",
+    "Products": [
+      {
+        "LineId": "PP-20260714-357-L1",
+        "OrderNo": "ORD-1783924638216",
+        "ProductId": "PRD-001",
+        "ProductCode": "PRD-001",
+        "ProductName": "Standard School Shirt",
+        "Category": "General",
+        "Variant": "",
+        "Quantity": 1,
+        "RequiredDate": "2083-04-07T00:00:00Z",
+        "Status": "Draft",
+        "ProductImage": null,
+        "Sizes": [
+          {
+            "Size": "M",
+            "Quantity": 0
+          },
+          {
+            "Size": "L",
+            "Quantity": 1
+          }
+        ]
+      }
+    ],
+    "Stages": [
+      {
+        "StageId": "STG-01",
+        "StageName": "Material Check",
+        "WorkCenter": "QC Station 1",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-10",
+        "PlannedEndDate": "2026-07-10",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-02",
+        "StageName": "Cutting",
+        "WorkCenter": "Cutter Auto-B",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-11",
+        "PlannedEndDate": "2026-07-11",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-03",
+        "StageName": "Stitching",
+        "WorkCenter": "Line 4A",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-13",
+        "PlannedEndDate": "2026-07-13",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      }
+    ],
+    "Id": "c349695e-8a26-4cc3-ab3d-98a0c79ebd79",
+    "CreatedAt": "2026-07-14T07:39:09.5867251Z",
+    "UpdatedAt": "2026-07-14T07:39:09.5867253Z"
+  },
+  {
+    "PlanId": "PP-20260714-230",
+    "BatchId": "BCH-33977",
+    "PlanName": "Production Plan - Hari Khadka (PP-20260714-230)",
+    "DemandType": "Customer Order",
+    "SourceId": "33333333-3333-3333-3333-333333333333",
+    "SourceName": "Hari Khadka",
+    "Priority": "High",
+    "Status": "Material Check",
+    "PlannedStartDate": "2026-07-14",
+    "PlannedCompletionDate": "2026-07-28",
+    "Quantity": 1,
+    "EstimatedCost": 0,
+    "Supervisor": "A. Sharma (Shift 1)",
+    "ProductionLine": "Line 4",
+    "MaterialWarehouse": "Hub B",
+    "ProductionNotes": "",
+    "Products": [
+      {
+        "LineId": "PP-20260714-230-L1",
+        "OrderNo": "ORD-1783924638216",
+        "ProductId": "PRD-001",
+        "ProductCode": "PRD-001",
+        "ProductName": "Standard School Shirt",
+        "Category": "General",
+        "Variant": "",
+        "Quantity": 1,
+        "RequiredDate": "2083-04-07T00:00:00Z",
+        "Status": "Draft",
+        "ProductImage": null,
+        "Sizes": [
+          {
+            "Size": "M",
+            "Quantity": 0
+          },
+          {
+            "Size": "L",
+            "Quantity": 1
+          }
+        ]
+      }
+    ],
+    "Stages": [
+      {
+        "StageId": "STG-01",
+        "StageName": "Material Check",
+        "WorkCenter": "QC Station 1",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-10",
+        "PlannedEndDate": "2026-07-10",
+        "Status": "In Progress",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "2026-07-14",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-02",
+        "StageName": "Cutting",
+        "WorkCenter": "Cutter Auto-B",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-11",
+        "PlannedEndDate": "2026-07-11",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-03",
+        "StageName": "Stitching",
+        "WorkCenter": "Line 4A",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-13",
+        "PlannedEndDate": "2026-07-13",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      }
+    ],
+    "Id": "61d4e316-a8c9-4be9-9ec6-908b842b5906",
+    "CreatedAt": "2026-07-14T08:54:56.3116685Z",
+    "UpdatedAt": "2026-07-14T09:00:08.1435895Z"
+  },
+  {
+    "PlanId": "PP-20260715-286",
+    "BatchId": "BCH-45656",
+    "PlanName": "Production Plan - Ram Bahadur Thapa (PP-20260715-286)",
+    "DemandType": "Customer Order",
+    "SourceId": "11111111-1111-1111-1111-111111111111",
+    "SourceName": "Ram Bahadur Thapa",
+    "Priority": "High",
+    "Status": "Draft",
+    "PlannedStartDate": "2026-07-15",
+    "PlannedCompletionDate": "2026-07-29",
+    "Quantity": 1,
+    "EstimatedCost": 0,
+    "Supervisor": "A. Sharma (Shift 1)",
+    "ProductionLine": "Line 4",
+    "MaterialWarehouse": "Hub B",
+    "ProductionNotes": "",
+    "Products": [
+      {
+        "LineId": "PP-20260715-286-L1",
+        "OrderNo": "ORD-1783593124621",
+        "ProductId": "PRD-001",
+        "ProductCode": "PRD-001",
+        "ProductName": "Standard School Shirt",
+        "Category": "General",
+        "Variant": "",
+        "Quantity": 1,
+        "RequiredDate": "2083-04-02T00:00:00Z",
+        "Status": "Draft",
+        "ProductImage": null,
+        "Sizes": [
+          {
+            "Size": "M",
+            "Quantity": 0
+          },
+          {
+            "Size": "L",
+            "Quantity": 1
+          }
+        ]
+      }
+    ],
+    "Stages": [
+      {
+        "StageId": "STG-01",
+        "StageName": "Material Check",
+        "WorkCenter": "QC Station 1",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-10",
+        "PlannedEndDate": "2026-07-10",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-02",
+        "StageName": "Cutting",
+        "WorkCenter": "Cutter Auto-B",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-11",
+        "PlannedEndDate": "2026-07-11",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-03",
+        "StageName": "Stitching",
+        "WorkCenter": "Line 4A",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-13",
+        "PlannedEndDate": "2026-07-13",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      }
+    ],
+    "Id": "efe0cb05-036f-4501-9d55-df619f042086",
+    "CreatedAt": "2026-07-15T11:06:59.8134714Z",
+    "UpdatedAt": "2026-07-15T11:07:04.9645408Z"
+  },
+  {
+    "PlanId": "PP-20260717-436",
+    "BatchId": "BCH-89401",
+    "PlanName": "Production Plan - Hari Khadka (PP-20260717-436)",
+    "DemandType": "Customer Order",
+    "SourceId": "33333333-3333-3333-3333-333333333333",
+    "SourceName": "Hari Khadka",
+    "Priority": "High",
+    "Status": "Draft",
+    "PlannedStartDate": "2026-07-17",
+    "PlannedCompletionDate": "2026-07-31",
+    "Quantity": 1,
+    "EstimatedCost": 0,
+    "Supervisor": "A. Sharma (Shift 1)",
+    "ProductionLine": "Line 4",
+    "MaterialWarehouse": "Hub B",
+    "ProductionNotes": "",
+    "Products": [
+      {
+        "LineId": "PP-20260717-436-L1",
+        "OrderNo": "ORD-1783924638216",
+        "ProductId": "PRD-001",
+        "ProductCode": "PRD-001",
+        "ProductName": "Standard School Shirt",
+        "Category": "General",
+        "Variant": "",
+        "Quantity": 1,
+        "RequiredDate": "2083-04-07T00:00:00Z",
+        "Status": "Draft",
+        "ProductImage": null,
+        "Sizes": [
+          {
+            "Size": "M",
+            "Quantity": 0
+          },
+          {
+            "Size": "L",
+            "Quantity": 1
+          }
+        ]
+      }
+    ],
+    "Stages": [
+      {
+        "StageId": "STG-01",
+        "StageName": "Material Check",
+        "WorkCenter": "QC Station 1",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-10",
+        "PlannedEndDate": "2026-07-10",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-02",
+        "StageName": "Cutting",
+        "WorkCenter": "Cutter Auto-B",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-11",
+        "PlannedEndDate": "2026-07-11",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      },
+      {
+        "StageId": "STG-03",
+        "StageName": "Stitching",
+        "WorkCenter": "Line 4A",
+        "Operator": "A. Sharma (Shift 1)",
+        "PlannedStartDate": "2026-07-13",
+        "PlannedEndDate": "2026-07-13",
+        "Status": "Not Started",
+        "CompletedQty": 0,
+        "RejectedQty": 0,
+        "ActualStartDate": "",
+        "ActualEndDate": "",
+        "Remarks": ""
+      }
+    ],
+    "Id": "d11c06e7-9d36-48f0-915c-5266671c3cfb",
+    "CreatedAt": "2026-07-17T06:59:35.583101Z",
+    "UpdatedAt": "2026-07-17T07:00:23.0266091Z"
   }
 ]

@@ -6,6 +6,8 @@ import { Sidebar } from "@/app/components/Sidebar";
 import { PageShell } from "@/app/components/ui/PageShell";
 import { usePathname } from "next/navigation";
 import Script from 'next/script';
+import styles from './page.module.css';
+import { ProductionDashboard } from './Component/ProductionDashboard';
 
 // ─── Nepali Date Conversion Helper ───────────────────────────────────────────
 function adToNepali(adDateStr: string): string {
@@ -123,9 +125,17 @@ export default function ProductionOverviewPage() {
   // Enterprise Features States
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [visibleCount, setVisibleCount] = useState(5);
   const [isNewPlanModalOpen, setIsNewPlanModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
-  const [actionModalContent, setActionModalContent] = useState<any>({});
+  const [actionModalContent, setActionModalContent] = useState<any>({
+    kind: 'confirm',
+    title: 'Action',
+    message: '',
+    confirmLabel: 'Confirm',
+    cancelLabel: 'Cancel',
+    onConfirm: () => setIsActionModalOpen(false),
+  });
 
   useEffect(() => {
     Promise.all([
@@ -152,14 +162,16 @@ export default function ProductionOverviewPage() {
 
   const filteredPlans = useMemo(() => {
     return plans.filter(p => {
+      const productName = p.products?.[0]?.productName || p.Products?.[0]?.ProductName || '';
       const matchSearch = (p.planId || p.PlanId || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (p.sourceName || p.SourceName || '').toLowerCase().includes(searchQuery.toLowerCase());
+                          (p.sourceName || p.SourceName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          productName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchStatus = statusFilter === "All" || (p.status || p.Status) === statusFilter;
       return matchSearch && matchStatus;
     });
   }, [plans, searchQuery, statusFilter]);
 
-  const displayedPlans = useMemo(() => filteredPlans.slice(0, 50), [filteredPlans]);
+  const displayedPlans = useMemo(() => filteredPlans.slice(0, visibleCount), [filteredPlans, visibleCount]);
 
   // ─── Timeline helpers ──────────────────────────────────────────────────────
   const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
@@ -233,10 +245,45 @@ export default function ProductionOverviewPage() {
     return Array.from(seen.entries());
   }, [filteredPlans]);
 
-  const openActionModal = (title: string, message: string, onConfirm: () => void) => {
-    setActionModalContent({ title, message, onConfirm });
+  const openActionModal = (config: any) => {
+    setActionModalContent({
+      kind: 'confirm',
+      title: 'Action',
+      message: '',
+      confirmLabel: 'Confirm',
+      cancelLabel: 'Cancel',
+      onConfirm: () => setIsActionModalOpen(false),
+      ...config,
+    });
     setIsActionModalOpen(true);
   };
+
+  const actionModalFooter = actionModalContent.kind === 'details' ? (
+    <button
+      onClick={() => setIsActionModalOpen(false)}
+      className="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-700 transition-colors"
+    >
+      Close
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={() => setIsActionModalOpen(false)}
+        className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+      >
+        {actionModalContent.cancelLabel || 'Cancel'}
+      </button>
+      <button
+        onClick={() => {
+          actionModalContent.onConfirm?.();
+          setIsActionModalOpen(false);
+        }}
+        className={`px-5 py-2 text-sm font-semibold rounded-lg shadow-sm transition-colors ${actionModalContent.kind === 'danger' ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
+      >
+        {actionModalContent.confirmLabel || 'Confirm'}
+      </button>
+    </>
+  );
 
   return (
     <>
@@ -248,286 +295,48 @@ export default function ProductionOverviewPage() {
 
       <AppHeader pathname={pathname} />
       <PageShell sidebar={<Sidebar section="production" pathname={pathname} />} contentClassName="bg-slate-50/50 min-h-screen">
-        <div className="flex-1 flex flex-col max-w-[1600px] mx-auto w-full p-4 md:p-8 animate-in fade-in duration-500">
+        <div className="flex-1 flex flex-col gap-6 max-w-[1600px] mx-auto w-full p-4 md:p-8 animate-in fade-in duration-500">
 
-          {/* ─── Page Header & Top Actions ─────────────────────────────────────────────── */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 tracking-tight">Production Overview</h1>
-              <p className="text-sm text-slate-500 mt-2 font-medium flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px]">dashboard</span>
-                Master schedule, workforce allocation &amp; real-time tracking
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <button className="px-4 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all flex items-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">download</span>
-                Export Report
-              </button>
-              <button 
-                onClick={() => setIsNewPlanModalOpen(true)}
-                className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-semibold text-sm rounded-xl shadow-md shadow-indigo-200 hover:shadow-lg hover:scale-[1.02] transition-all flex items-center gap-2"
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                New Plan
-              </button>
-            </div>
+          {/* ─── New Embedded Production Dashboard ───────────────────────────────────────── */}
+          <div>
+            <ProductionDashboard />
           </div>
 
-          {/* ─── Filters & Search ───────────────────────────────────────────────── */}
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 mb-8 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6">
-            <div className="relative w-full xl:w-96 group">
-              <input 
-                type="text" 
-                placeholder="Search plans by ID or source..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-5 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
-              />
-              <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-indigo-500 transition-colors">search</span>
-            </div>
-            <div className="flex flex-wrap items-center gap-4 w-full xl:w-auto">
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider shrink-0 mr-2">Filter By Status:</div>
-              {["All", "Active", "In Progress", "On Hold"].map(status => (
-                <button 
-                  key={status}
-                  onClick={() => setStatusFilter(status)}
-                  className={`px-5 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
-                    statusFilter === status 
-                      ? 'bg-slate-800 text-white shadow-md ring-2 ring-slate-800/20 ring-offset-1' 
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-                  }`}
-                >
-                  {status}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ─── KPI Strip ───────────────────────────────────────────────── */}
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-6 mb-8">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full transition-transform group-hover:scale-110"></div>
-              <span className="font-semibold text-slate-500 uppercase tracking-wider text-xs z-10">Active Plans</span>
-              <div className="flex items-baseline gap-3 mt-5 z-10">
-                <span className="text-4xl font-bold text-slate-800 leading-none">{loading ? '…' : kpis.active}</span>
-                <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[14px]">trending_up</span> 12%
-                </span>
-              </div>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-50 rounded-full transition-transform group-hover:scale-110"></div>
-              <span className="font-semibold text-slate-500 uppercase tracking-wider text-xs z-10">Total Pipeline Units</span>
-              <div className="flex items-baseline gap-2 mt-5 z-10">
-                <span className="text-4xl font-bold text-slate-800 leading-none">{loading ? '…' : kpis.totalQty.toLocaleString()}</span>
-                <span className="text-sm font-bold text-slate-400">pcs</span>
-              </div>
-            </div>
-            <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-100 rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute -right-6 -top-6 w-24 h-24 bg-red-100/50 rounded-full transition-transform group-hover:scale-110"></div>
-              <span className="font-semibold text-red-600 uppercase tracking-wider text-xs flex items-center gap-1.5 z-10">
-                <span className="material-symbols-outlined text-[16px]">warning</span>
-                High Priority / At Risk
-              </span>
-              <div className="flex items-baseline gap-2 mt-5 z-10">
-                <span className="text-4xl font-bold text-red-600 leading-none">{loading ? '…' : kpis.highRisk}</span>
-                <span className="text-sm font-bold text-red-500">needs attention</span>
-              </div>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full transition-transform group-hover:scale-110"></div>
-              <span className="font-semibold text-slate-500 uppercase tracking-wider text-xs z-10">Avg. Completion</span>
-              <div className="mt-5 z-10 w-full">
-                <div className="flex justify-between items-baseline mb-2">
-                  <span className="text-4xl font-bold text-slate-800 leading-none">{loading ? '…' : kpis.avgProgress}%</span>
-                </div>
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                  <div className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${kpis.avgProgress}%` }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ─── Main Two-Column Layout ──────────────────────────────────── */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 md:gap-8 items-start pb-12">
-
-            {/* ─── LEFT: Gantt + Plan List ────────────────────────────── */}
-            <div className="xl:col-span-3 flex flex-col gap-8">
-
-              {/* ─── Master Timeline Gantt ─────────────────────────────── */}
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-                  <h2 className="text-lg text-slate-800 font-bold flex items-center gap-2">
-                    <span className="material-symbols-outlined text-indigo-500">view_timeline</span>
-                    Master Timeline
-                  </h2>
-                  <div className="flex p-1 bg-slate-100 rounded-lg">
-                    {[14, 30].map(d => (
-                      <button key={d} onClick={() => setViewDays(d)}
-                        className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${
-                          viewDays === d ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                        }`}>
-                        {d} Days
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {loading ? (
-                  <div className="h-64 flex items-center justify-center text-slate-400 font-medium">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mr-3"></div>
-                    Loading timeline...
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto custom-scrollbar">
-                    <div style={{ minWidth: '800px' }}>
-                      {/* Date Header */}
-                      <div className="flex border-b border-slate-100 bg-slate-50/80">
-                        <div className="w-64 shrink-0 px-6 py-3 border-r border-slate-100 text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center">
-                          Plan / Details
-                        </div>
-                        <div className="flex-grow grid" style={{ gridTemplateColumns: `repeat(${viewDays}, minmax(0, 1fr))` }}>
-                          {timelineDays.map((d, i) => {
-                            const isToday = i === 0;
-                            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                            return (
-                              <div key={i} className={`py-3 border-r border-slate-100 last:border-r-0 flex flex-col items-center justify-center min-w-[48px] ${isWeekend ? 'bg-slate-100/50' : ''}`}>
-                                <div className={`text-[10px] font-semibold ${isToday ? 'text-indigo-600' : 'text-slate-400'} uppercase mb-1`}>{d.toLocaleDateString('en-US',{weekday:'short'})}</div>
-                                <div className={`text-sm font-bold flex items-center justify-center shrink-0 w-8 h-8 rounded-full ${isToday ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-700'}`}>
-                                  {d.getDate()}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Plan Rows */}
-                      <div className="flex flex-col">
-                        {filteredPlans.length === 0 && (
-                          <div className="p-12 text-center text-slate-500 font-medium">No plans match your filters.</div>
-                        )}
-                        {displayedPlans.map((plan, idx) => {
-                          const startStr = plan.plannedStartDate || plan.PlannedStartDate;
-                          const endStr = plan.plannedCompletionDate || plan.PlannedCompletionDate;
-                          const gi = gridCols(startStr, endStr);
-                          const stages = plan.stages || plan.Stages || [];
-                          const style = getStatusStyle(plan.status || plan.Status, plan.priority || plan.Priority);
-                          const pct = planProgress(stages);
-                          const isDraft = (plan.status || '').toLowerCase() === 'draft';
-                          const isDelayed = (plan.priority || '').toLowerCase() === 'high' || plan.status === 'On Hold';
-
-                          return (
-                            <div key={plan.planId || idx} className="flex border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors group">
-                              {/* Left meta */}
-                              <div className="w-64 shrink-0 px-6 py-4 border-r border-slate-100 flex flex-col justify-center gap-1.5 relative">
-                                <div className="text-sm font-bold text-slate-800 truncate w-full pr-8 block" title={plan.planId || plan.PlanId}>
-                                  {plan.planId || plan.PlanId}
-                                </div>
-                                <div className="text-xs text-slate-500 truncate">
-                                  {plan.sourceName || plan.SourceName || 'Internal'}
-                                </div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md border ${style.badge}`}>
-                                    {plan.status || plan.Status}
-                                  </span>
-                                  {isDelayed && (
-                                    <span className="material-symbols-outlined text-red-600 font-bold text-[16px]" title="High Priority">error</span>
-                                  )}
-                                </div>
-                                
-                                {/* Dropdown Menu for row actions */}
-                                <div className="absolute right-4 top-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <DropdownMenu 
-                                    trigger={
-                                      <button className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
-                                        <span className="material-symbols-outlined text-[18px]">more_vert</span>
-                                      </button>
-                                    }
-                                    items={[
-                                      { label: 'Edit Plan', icon: 'edit', onClick: () => console.log('edit') },
-                                      { label: 'View Details', icon: 'visibility', onClick: () => setExpandedPlanId(plan.planId || plan.PlanId) },
-                                      { label: 'Put On Hold', icon: 'pause', onClick: () => openActionModal('Put On Hold', `Are you sure you want to pause plan ${plan.planId}?`, () => setIsActionModalOpen(false)) },
-                                      { label: 'Delete Plan', icon: 'delete', danger: true, onClick: () => openActionModal('Delete Plan', `Are you sure you want to delete plan ${plan.planId}? This action cannot be undone.`, () => setIsActionModalOpen(false)) }
-                                    ]}
-                                  />
-                                </div>
-                              </div>
-
-                              {/* Gantt area */}
-                              <div className="flex-grow grid relative py-3" style={{ gridTemplateColumns: `repeat(${viewDays}, minmax(0, 1fr))` }}>
-                                {/* Grid lines */}
-                                {timelineDays.map((td, i) => {
-                                  const isWknd = td.getDay()===0||td.getDay()===6;
-                                  return <div key={i} className={`border-r border-slate-200/40 last:border-r-0 h-full ${isWknd ? 'bg-slate-50/40' : ''}`}></div>;
-                                })}
-
-                                {/* Bar */}
-                                {gi && (
-                                  <div
-                                    className={`absolute top-3 bottom-3 rounded-lg overflow-hidden shadow-sm z-10 group-hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer
-                                      ${isDraft ? 'border-2 border-dashed border-slate-300 bg-slate-100' :
-                                        isDelayed ? 'border border-red-300 bg-red-50' :
-                                        'border border-indigo-200 bg-indigo-50'}`}
-                                    style={{ gridColumnStart: gi.start, gridColumnEnd: gi.start + gi.span }}
-                                    title={`${plan.planId}: ${startStr} → ${endStr}`}
-                                  >
-                                    {/* Micro stages */}
-                                    <div className="absolute inset-0 flex">
-                                      {stages.length > 0 ? stages.map((_s: any, si: number) => (
-                                        <div key={si}
-                                          style={{ width: `${100/stages.length}%` }}
-                                          className={`${STAGE_COLORS[si % STAGE_COLORS.length]} opacity-70 border-r border-white/20 h-full hover:opacity-100 transition-opacity`}
-                                        ></div>
-                                      )) : (
-                                        <div className="w-full h-full bg-indigo-400 opacity-60"></div>
-                                      )}
-                                    </div>
-
-                                    {/* Progress darken overlay */}
-                                    <div className="absolute top-0 left-0 bottom-0 bg-black/10 backdrop-contrast-75 z-10 border-r border-white/40" style={{ width: `${pct}%` }}></div>
-
-                                    {/* Label */}
-                                    <div className="absolute inset-0 flex items-center px-3 z-20">
-                                      <span className="text-[11px] font-bold text-white drop-shadow-md truncate">
-                                        {plan.products?.[0]?.productName || plan.Products?.[0]?.ProductName || 'Production'}
-                                        {stages.length > 0 && <span className="ml-2 bg-black/20 px-1.5 py-0.5 rounded backdrop-blur-sm">{pct}%</span>}
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Legend */}
-                      <div className="flex items-center gap-4 px-6 py-4 border-t border-slate-100 bg-slate-50/80 flex-wrap">
-                        {uniqueStageNames.slice(0, 6).map(([name, colorIdx]) => (
-                          <div key={name} className="flex items-center gap-2 text-xs font-medium text-slate-600">
-                            <span className={`w-3 h-3 rounded-full ${STAGE_COLORS[colorIdx % STAGE_COLORS.length]} shadow-sm`}></span>
-                            {name}
-                          </div>
-                        ))}
-                        {uniqueStageNames.length === 0 && (
-                          <span className="text-xs text-slate-500">No stage data available</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+          {/* ─── Main Content ──────────────────────────────────── */}
+          <div className="flex flex-col gap-6 md:gap-8 items-stretch pb-12 w-full">
 
               {/* ─── Active Plan Cards ──────────────────────────────────── */}
-              <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-                  <h2 className="text-lg text-slate-800 font-bold flex items-center gap-2">
-                    <span className="material-symbols-outlined text-indigo-500">list_alt</span>
-                    Active Plan Details
-                  </h2>
-                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{filteredPlans.length} active plans {filteredPlans.length > 50 && '(Showing top 50)'}</span>
+              <div className={`${styles.overviewCard} w-full`}>
+                <div className="px-7 md:px-8 py-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg text-slate-800 font-bold flex items-center gap-2">
+                      <span className="material-symbols-outlined text-indigo-500">list_alt</span>
+                      Active Plan Details
+                    </h2>
+                    <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{filteredPlans.length} active plans</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
+                    <div className="relative w-full sm:w-64">
+                      <input 
+                        type="text" 
+                        placeholder="Search plans..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-4 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                      />
+                      <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
+                    </div>
+                    <select 
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full sm:w-auto px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="Active">Active</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="On Hold">On Hold</option>
+                    </select>
+                  </div>
                 </div>
 
                 {loading ? (
@@ -551,7 +360,7 @@ export default function ProductionOverviewPage() {
                       <div key={pid || idx} className="border-b border-slate-100 last:border-b-0">
                         {/* ── Plan header row ── */}
                         <div
-                          className="flex items-center justify-between px-6 py-5 cursor-pointer hover:bg-slate-50 transition-colors group"
+                          className="flex items-center justify-between px-7 md:px-8 py-5 cursor-pointer hover:bg-slate-50 transition-colors group"
                           onClick={() => setExpandedPlanId(isExpanded ? null : pid)}
                         >
                           <div className="flex items-center gap-5">
@@ -596,15 +405,27 @@ export default function ProductionOverviewPage() {
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <DropdownMenu 
-                                trigger={
-                                  <button onClick={(e) => { e.stopPropagation(); }} className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors">
+                                <DropdownMenu 
+                                  trigger={
+                                    <button className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors pointer-events-auto">
                                     <span className="material-symbols-outlined">more_vert</span>
                                   </button>
                                 }
                                 items={[
-                                  { label: 'Edit Plan', icon: 'edit', onClick: () => console.log('edit') },
-                                  { label: 'Put On Hold', icon: 'pause', onClick: () => openActionModal('Put On Hold', `Are you sure you want to pause plan ${plan.planId}?`, () => setIsActionModalOpen(false)) },
+                                  { label: 'Edit Plan', icon: 'edit', onClick: () => openActionModal({
+                                    kind: 'edit',
+                                    title: `Edit ${plan.planId || plan.PlanId}`,
+                                    plan,
+                                    confirmLabel: 'Save Changes',
+                                    message: 'Update the production plan details below.'
+                                  }) },
+                                  { label: 'Put On Hold', icon: 'pause', onClick: () => openActionModal({
+                                    kind: 'confirm',
+                                    title: 'Put Plan On Hold',
+                                    message: `Are you sure you want to pause plan ${plan.planId || plan.PlanId}?`,
+                                    confirmLabel: 'Confirm Hold',
+                                    onConfirm: () => console.log('Plan put on hold', plan.planId || plan.PlanId)
+                                  }) },
                                 ]}
                               />
                               <button className={`p-2 rounded-lg transition-colors ${isExpanded ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'}`}>
@@ -800,7 +621,13 @@ export default function ProductionOverviewPage() {
                                   />
                                   <div className="flex justify-end mt-4">
                                     <button
-                                      onClick={() => openActionModal('Save Notes', 'Notes saved successfully.', () => setIsActionModalOpen(false))}
+                                      onClick={() => openActionModal({
+                                        kind: 'confirm',
+                                        title: 'Save Notes',
+                                        message: 'Notes saved successfully.',
+                                        confirmLabel: 'Done',
+                                        onConfirm: () => setIsActionModalOpen(false)
+                                      })}
                                       className="px-5 py-2.5 bg-slate-800 text-white font-semibold text-sm rounded-lg hover:bg-slate-700 transition-colors shadow-sm flex items-center gap-2"
                                     >
                                       <span className="material-symbols-outlined text-[18px]">save</span>
@@ -816,136 +643,20 @@ export default function ProductionOverviewPage() {
                     );
                   })
                 )}
+                {filteredPlans.length > visibleCount && (
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-center">
+                    <button 
+                      onClick={() => setVisibleCount(prev => prev + 5)}
+                      className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-semibold text-sm rounded-xl shadow-sm hover:shadow-md hover:bg-slate-50 transition-all flex items-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">expand_more</span>
+                      Load More Plans
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-
-            {/* ─── RIGHT: Work Centers + Recent Processes ──────────────── */}
-            <div className="xl:col-span-1 flex flex-col gap-8">
-
-              {/* Work Center Load */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-indigo-500">factory</span>
-                    Work Center Load
-                  </h3>
-                </div>
-                <div className="p-5 flex flex-col gap-5">
-                  {loading ? (
-                    <div className="text-slate-400 text-sm text-center py-4 font-medium">Loading...</div>
-                  ) : workCenters.length === 0 ? (
-                    <div className="text-slate-400 text-sm text-center py-4 font-medium">No work centers found.</div>
-                  ) : workCenters.map((wc, i) => {
-                    const name = wc.name || wc.Name || '';
-                    const type = wc.type || wc.Type || '';
-                    const status = wc.status || wc.Status || '';
-                    const loadPct = Math.min(95, 30 + name.length * 5);
-                    const isHigh = loadPct > 80;
-                    return (
-                      <div key={wc.id || wc.Id || i} className="flex items-center gap-4 group cursor-default">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-colors ${
-                          isHigh ? 'bg-orange-50 border border-orange-100 text-orange-500 group-hover:bg-orange-100' : 'bg-slate-50 border border-slate-100 text-slate-500 group-hover:bg-slate-100'
-                        }`}>
-                          <span className="material-symbols-outlined text-[20px]">
-                            {type === 'Machine' ? 'precision_manufacturing' : type === 'QC Station' ? 'fact_check' : 'hardware'}
-                          </span>
-                        </div>
-                        <div className="flex-grow min-w-0">
-                          <div className="flex justify-between items-center mb-1.5">
-                            <span className="text-sm font-bold text-slate-800 truncate pr-2">{name}</span>
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${isHigh ? 'bg-orange-100 text-orange-700' : 'bg-slate-100 text-slate-600'}`}>{loadPct}%</span>
-                          </div>
-                          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-                            <div className={`h-full rounded-full transition-all duration-1000 ${isHigh ? 'bg-orange-500' : 'bg-indigo-500'}`} style={{ width: `${loadPct}%` }}></div>
-                          </div>
-                          <div className={`text-[10px] font-medium mt-1.5 flex items-center gap-1 uppercase tracking-wide ${status === 'Available' ? 'text-emerald-600' : 'text-orange-500'}`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            {status} <span className="text-slate-300 normal-case tracking-normal px-1">&bull;</span> <span className="text-slate-500">{type}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Shift Allocation */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-indigo-500">groups</span>
-                    Shift Allocation
-                  </h3>
-                </div>
-                <div className="p-6 flex flex-col gap-6">
-                  {[
-                    { label: 'Shift 1 (Morning)', active: 22, total: 25, color: 'bg-indigo-500', bg: 'bg-indigo-50' },
-                    { label: 'Shift 2 (Day)',     active: 24, total: 25, color: 'bg-orange-400', bg: 'bg-orange-50' },
-                    { label: 'Shift 3 (Night)',   active: 8,  total: 15, color: 'bg-emerald-500', bg: 'bg-emerald-50' },
-                  ].map((s, i) => (
-                    <div key={i} className="group cursor-default">
-                      <div className="flex justify-between items-end mb-2">
-                        <span className="text-sm font-bold text-slate-700 group-hover:text-slate-900 transition-colors">{s.label}</span>
-                        <span className="text-xs font-semibold text-slate-500 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100">{s.active}/{s.total} Active</span>
-                      </div>
-                      <div className={`w-full h-2.5 ${s.bg} rounded-full overflow-hidden shadow-inner`}>
-                        <div className={`h-full rounded-full ${s.color} transition-all duration-1000 group-hover:opacity-80`} style={{ width: `${(s.active/s.total)*100}%` }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent Production Processes */}
-              <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-indigo-500">history</span>
-                    Recent Activity
-                  </h3>
-                </div>
-                <div className="p-4 flex flex-col gap-2 max-h-[400px] overflow-y-auto custom-scrollbar">
-                  {loading ? (
-                    <div className="text-slate-400 text-sm text-center py-4 font-medium">Loading...</div>
-                  ) : recentStages.length === 0 ? (
-                    <div className="text-slate-400 text-sm text-center py-4 font-medium">No process data.</div>
-                  ) : recentStages.map((rs, i) => {
-                    const isActive = rs.status === 'Active' || rs.status === 'In Progress';
-                    const isCompleted = rs.status === 'Completed';
-                    const isHold = rs.status === 'On Hold';
-                    return (
-                      <div key={i} className="flex items-start gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 cursor-default group">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                          isCompleted ? 'bg-emerald-100 group-hover:bg-emerald-200' : isActive ? 'bg-indigo-100 group-hover:bg-indigo-200' : isHold ? 'bg-orange-100 group-hover:bg-orange-200' : 'bg-slate-100 group-hover:bg-slate-200'
-                        }`}>
-                          <span className={`material-symbols-outlined text-[16px] ${
-                            isCompleted ? 'text-emerald-600' : isActive ? 'text-indigo-600' : isHold ? 'text-orange-600' : 'text-slate-400'
-                          }`}>
-                            {isCompleted ? 'check_circle' : isActive ? 'sync' : isHold ? 'pause_circle' : 'radio_button_unchecked'}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-bold text-slate-800 truncate mb-0.5">{rs.stageName}</div>
-                          <div className="text-xs text-slate-500 truncate flex items-center gap-1.5 mb-1.5">
-                            <span className="material-symbols-outlined text-[12px]">build</span> {rs.workCenter} 
-                            <span className="text-slate-300">&bull;</span> {rs.planNo}
-                          </div>
-                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
-                            isCompleted ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                            isActive ? 'bg-indigo-50 text-indigo-700 border-indigo-100 animate-pulse' :
-                            isHold ? 'bg-orange-50 text-orange-700 border-orange-100' :
-                            'bg-slate-50 text-slate-600 border-slate-200'
-                          }`}>{rs.status}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
             </div>
           </div>
-        </div>
       </PageShell>
       
       {/* ─── Modals ──────────────────────────────────────────────────────────── */}
@@ -1010,29 +721,79 @@ export default function ProductionOverviewPage() {
         </div>
       </Modal>
 
-      {/* Action Confirmation Modal */}
+      {/* Action Modal */}
       <Modal 
         isOpen={isActionModalOpen} 
         onClose={() => setIsActionModalOpen(false)}
         title={actionModalContent.title}
-        footer={
-          <>
-            <button 
-              onClick={() => setIsActionModalOpen(false)}
-              className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={actionModalContent.onConfirm}
-              className="px-5 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-indigo-700 transition-colors"
-            >
-              Confirm
-            </button>
-          </>
-        }
+        footer={actionModalFooter}
       >
-        <p className="text-slate-600 font-medium">{actionModalContent.message}</p>
+        {actionModalContent.kind === 'details' ? (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Plan Reference</p>
+                  <p className="mt-1 text-lg font-semibold text-slate-800">{actionModalContent.plan?.planId || actionModalContent.plan?.PlanId || 'Unknown Plan'}</p>
+                </div>
+                <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  {actionModalContent.plan?.status || actionModalContent.plan?.Status || 'Active'}
+                </span>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Source</p>
+                <p className="mt-1 font-semibold text-slate-800">{actionModalContent.plan?.sourceName || actionModalContent.plan?.SourceName || 'Internal'}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Line</p>
+                <p className="mt-1 font-semibold text-slate-800">{actionModalContent.plan?.productionLine || actionModalContent.plan?.ProductionLine || 'Main Line'}</p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Planning Window</p>
+              <p className="mt-1 font-semibold text-slate-800">
+                {actionModalContent.plan?.plannedStartDate || actionModalContent.plan?.PlannedStartDate || '—'} → {actionModalContent.plan?.plannedCompletionDate || actionModalContent.plan?.PlannedCompletionDate || '—'}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Notes</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                {actionModalContent.plan?.notes || actionModalContent.plan?.Notes || 'No additional notes were provided for this plan.'}
+              </p>
+            </div>
+          </div>
+        ) : actionModalContent.kind === 'edit' ? (
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">{actionModalContent.message}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Status</label>
+                <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                  <option>Active</option>
+                  <option>In Progress</option>
+                  <option>On Hold</option>
+                  <option>Completed</option>
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold text-slate-700">Priority</label>
+                <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                  <option>Normal</option>
+                  <option>High</option>
+                  <option>Urgent</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-slate-700">Notes</label>
+              <textarea rows={4} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200" defaultValue={actionModalContent.plan?.notes || actionModalContent.plan?.Notes || ''} />
+            </div>
+          </div>
+        ) : (
+          <p className="text-slate-600 font-medium">{actionModalContent.message}</p>
+        )}
       </Modal>
 
     </>

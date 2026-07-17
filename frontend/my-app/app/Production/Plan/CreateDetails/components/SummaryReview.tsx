@@ -291,7 +291,7 @@ export default function SummaryReview({
               className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-sm flex items-center justify-center gap-2 transition-colors active:scale-95"
             >
               <span className="material-symbols-outlined text-[18px]">check_circle</span>
-              Deploy Production Plan
+              Proceed to Assignment
             </button>
           </footer>
         </main>

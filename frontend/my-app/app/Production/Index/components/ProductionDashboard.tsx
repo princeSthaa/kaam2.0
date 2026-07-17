@@ -6,6 +6,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, ComposedChart
 } from 'recharts';
 import Link from 'next/link';
+import styles from './ProductionDashboard.module.css';
 
 // Custom Colors for vibrant theme
 const COLORS = {
@@ -174,7 +175,7 @@ export default function ProductionDashboard() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-screen p-6 font-sans">
+    <div className={styles.dashboardShell}>
       
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
@@ -197,7 +198,7 @@ export default function ProductionDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         
         {/* KPI 1 */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
+        <div className={`${styles.dashboardCard} group`}>
           <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div className="relative">
             <div className="flex justify-between items-start mb-4">
@@ -212,7 +213,7 @@ export default function ProductionDashboard() {
         </div>
 
         {/* KPI 2 */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
+        <div className={`${styles.dashboardCard} group`}>
           <div className="absolute top-0 right-0 w-24 h-24 bg-violet-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div className="relative">
             <div className="flex justify-between items-start mb-4">
@@ -227,7 +228,7 @@ export default function ProductionDashboard() {
         </div>
 
         {/* KPI 3 */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
+        <div className={`${styles.dashboardCard} group`}>
           <div className="absolute top-0 right-0 w-24 h-24 bg-amber-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div className="relative">
             <div className="flex justify-between items-start mb-4">
@@ -240,7 +241,7 @@ export default function ProductionDashboard() {
         </div>
 
         {/* KPI 4 */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
+        <div className={`${styles.dashboardCard} group`}>
           <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div className="relative">
             <div className="flex justify-between items-start mb-4">
@@ -255,7 +256,7 @@ export default function ProductionDashboard() {
         </div>
 
         {/* KPI 5 */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] relative overflow-hidden group hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300">
+        <div className={`${styles.dashboardCard} group`}>
           <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
           <div className="relative">
             <div className="flex justify-between items-start mb-4">
@@ -274,12 +275,12 @@ export default function ProductionDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Main Chart: Output vs Target */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] lg:col-span-2 flex flex-col">
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-800">Daily Output vs Target</h2>
-            <p className="text-sm text-slate-500">Units produced across all active production lines this week.</p>
+        <div className={`${styles.dashboardChartCard} lg:col-span-2`}>
+          <div className={styles.dashboardChartHeader}>
+            <h2 className={styles.dashboardChartTitle}>Daily Output vs Target</h2>
+            <p className={styles.dashboardChartSubtitle}>Units produced across all active production lines this week.</p>
           </div>
-          <div className="flex-1 min-h-[300px]">
+          <div className={styles.dashboardChartBody}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={outputData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
@@ -304,12 +305,12 @@ export default function ProductionDashboard() {
         </div>
 
         {/* Status Mix */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] flex flex-col">
-          <div className="mb-2">
-            <h2 className="text-lg font-bold text-slate-800">Status Mix</h2>
-            <p className="text-sm text-slate-500">Distribution of plans by status.</p>
+        <div className={styles.dashboardChartCard}>
+          <div className={styles.dashboardChartHeader}>
+            <h2 className={styles.dashboardChartTitle}>Status Mix</h2>
+            <p className={styles.dashboardChartSubtitle}>Distribution of plans by status.</p>
           </div>
-          <div className="flex-1 min-h-[300px] flex items-center justify-center relative">
+          <div className={styles.dashboardChartBodyCompact}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -331,20 +332,20 @@ export default function ProductionDashboard() {
               </PieChart>
             </ResponsiveContainer>
             {/* Center Text */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-12">
-              <span className="text-4xl font-bold text-slate-800">{plans.length}</span>
-              <span className="text-xs text-slate-500 uppercase tracking-widest mt-1">Total Plans</span>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-4 text-center">
+              <span className="text-3xl md:text-4xl font-bold text-slate-800 leading-tight break-words">{plans.length}</span>
+              <span className="text-[11px] md:text-xs text-slate-500 uppercase tracking-[0.2em] mt-1 leading-tight">Total Plans</span>
             </div>
           </div>
         </div>
 
         {/* Bottleneck Analysis */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] lg:col-span-2 flex flex-col">
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-slate-800">Production Bottlenecks</h2>
-            <p className="text-sm text-slate-500">WIP units currently stuck at each major production stage.</p>
+        <div className={`${styles.dashboardChartCard} lg:col-span-2`}>
+          <div className={styles.dashboardChartHeader}>
+            <h2 className={styles.dashboardChartTitle}>Production Bottlenecks</h2>
+            <p className={styles.dashboardChartSubtitle}>WIP units currently stuck at each major production stage.</p>
           </div>
-          <div className="flex-1 min-h-[300px]">
+          <div className={styles.dashboardChartBody}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={bottleneckData} layout="vertical" margin={{ top: 0, right: 30, left: 30, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={COLORS.border} />
@@ -369,12 +370,12 @@ export default function ProductionDashboard() {
         </div>
 
         {/* Demand Source */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] flex flex-col">
-          <div className="mb-2">
-            <h2 className="text-lg font-bold text-slate-800">Demand by Source</h2>
-            <p className="text-sm text-slate-500">Volume breakdown by origin.</p>
+        <div className={styles.dashboardChartCard}>
+          <div className={styles.dashboardChartHeader}>
+            <h2 className={styles.dashboardChartTitle}>Demand by Source</h2>
+            <p className={styles.dashboardChartSubtitle}>Volume breakdown by origin.</p>
           </div>
-          <div className="flex-1 min-h-[300px] flex items-center justify-center">
+          <div className={styles.dashboardChartBodyCompact}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
