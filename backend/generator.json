@@ -1,0 +1,167 @@
+{
+  "Project": {
+    "RootNamespace": "backend",
+    "DefaultAudit": true
+  },
+  "Enums": [
+    {
+      "Name": "ProductSize",
+      "Values": ["XS", "S", "M", "L", "XL", "XXL"]
+    },
+    {
+      "Name": "OrderStatus",
+      "Values": ["Pending", "Processing", "Completed", "Cancelled"]
+    },
+    {
+      "Name": "PlanStatus",
+      "Values": ["Draft", "Active", "Cutting", "Stitching", "NotStarted", "Completed"]
+    },
+    {
+      "Name": "PlanPriority",
+      "Values": ["Low", "Medium", "High"]
+    }
+  ],
+  "Entities": [
+    {
+      "Name": "Customer",
+      "Annotations": [ "Table(\"Customers\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Email", "Type": "string", "Format": "email", "Required": true },
+        { "Name": "Phone", "Type": "string", "Format": "phone", "Required": true },
+        { "Name": "Address", "Type": "string", "Required": true },
+        { "Name": "Type", "Type": "string", "Required": true }
+      ],
+      "Children": ["Order"]
+    },
+    {
+      "Name": "Order",
+      "Parent": "Customer",
+      "Annotations": [ "Table(\"Orders\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "OrderNumber", "Type": "string" },
+        { "Name": "Status", "Type": "OrderStatus" },
+        { "Name": "TotalAmount", "Type": "decimal" },
+        { "Name": "DueDate", "Type": "datetime" }
+      ],
+      "Children": ["OrderItem"]
+    },
+    {
+      "Name": "OrderItem",
+      "Parent": "Order",
+      "Annotations": [ "Table(\"OrderItems\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "Quantity", "Type": "int" },
+        { "Name": "UnitPrice", "Type": "decimal" },
+        { "Name": "Product", "Type": "Product" },
+        { "Name": "Fabric", "Type": "Fabric" }
+      ]
+    },
+    {
+      "Name": "Product",
+      
+      "Annotations": [ "Table(\"Products\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true},
+        { "Name": "ImagePath", "Type": "string", "Format": "image" },
+        { "Name": "Sizes", "Type": "ProductSize[]" }
+      ]
+    },
+    {
+      "Name": "Fabric",
+      "Annotations": [ "Table(\"Fabrics\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true},
+        { "Name": "Category", "Type": "string" },
+        { "Name": "ImagePath", "Type": "string", "Format": "image" },
+        { "Name": "UnitPrice", "Type": "decimal" }
+      ]
+    },
+    {
+      "Name": "WorkCenter",
+      "Annotations": [ "Table(\"WorkCenters\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Type", "Type": "string" },
+        { "Name": "Status", "Type": "string" }
+      ]
+    },
+    {
+      "Name": "ProductionPlan",
+      "Annotations": [ "Table(\"ProductionPlans\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "PlanId", "Type": "string", "Required": true },
+        { "Name": "BatchId", "Type": "string" },
+        { "Name": "PlanName", "Type": "string" },
+        { "Name": "DemandType", "Type": "string" },
+        { "Name": "SourceId", "Type": "string" },
+        { "Name": "SourceName", "Type": "string" },
+        { "Name": "Priority", "Type": "PlanPriority" },
+        { "Name": "Status", "Type": "PlanStatus" },
+        { "Name": "PlannedStartDate", "Type": "datetime" },
+        { "Name": "PlannedCompletionDate", "Type": "datetime" },
+        { "Name": "Quantity", "Type": "int" },
+        { "Name": "EstimatedCost", "Type": "decimal" },
+        { "Name": "Supervisor", "Type": "string" },
+        { "Name": "ProductionLine", "Type": "string" },
+        { "Name": "MaterialWarehouse", "Type": "string" },
+        { "Name": "ProductionNotes", "Type": "string" }
+      ],
+      "Children": ["ProductionPlanProduct", "ProductionPlanStage"]
+    },
+    {
+      "Name": "ProductionPlanProduct",
+      "Parent": "ProductionPlan",
+      "Annotations": [ "Table(\"ProductionPlanProducts\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "LineId", "Type": "string" },
+        { "Name": "OrderNo", "Type": "string" },
+        { "Name": "ProductId", "Type": "string" },
+        { "Name": "ProductCode", "Type": "string" },
+        { "Name": "ProductName", "Type": "string" },
+        { "Name": "Category", "Type": "string" },
+        { "Name": "Variant", "Type": "string" },
+        { "Name": "Quantity", "Type": "int" },
+        { "Name": "RequiredDate", "Type": "datetime" },
+        { "Name": "Status", "Type": "PlanStatus" },
+        { "Name": "ProductImage", "Type": "string", "Format": "image" }
+      ],
+      "Children": ["ProductionPlanProductSize"]
+    },
+    {
+      "Name": "ProductionPlanProductSize",
+      "Parent": "ProductionPlanProduct",
+      "Annotations": [ "Table(\"ProductionPlanProductSizes\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "Size", "Type": "ProductSize" },
+        { "Name": "Quantity", "Type": "int" }
+      ]
+    },
+    {
+      "Name": "ProductionPlanStage",
+      "Parent": "ProductionPlan",
+      "Annotations": [ "Table(\"ProductionPlanStages\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "string", "IsPrimaryKey": true },
+        { "Name": "StageId", "Type": "string" },
+        { "Name": "StageName", "Type": "string" },
+        { "Name": "WorkCenter", "Type": "WorkCenter" },
+        { "Name": "OperatorName", "Type": "string" },
+        { "Name": "PlannedStartDate", "Type": "datetime" },
+        { "Name": "PlannedEndDate", "Type": "datetime" },
+        { "Name": "Status", "Type": "PlanStatus" },
+        { "Name": "CompletedQty", "Type": "int" },
+        { "Name": "RejectedQty", "Type": "int" }
+      ]
+    }
+  ]
+}
