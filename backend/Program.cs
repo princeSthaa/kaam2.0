@@ -1,5 +1,7 @@
-using backend.Models;
 using backend.Data;
+using backend.Model;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,23 +10,82 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs",
         policy => policy
-            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000") // Frontend origin
+            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001") // Frontend origins
             .AllowAnyHeader()
             .AllowAnyMethod());
+});
+
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Register the JSON Repositories as Singletons so memory state is shared
-builder.Services.AddSingleton(new JsonRepository<Customer>("customers.json"));
-builder.Services.AddSingleton(new JsonRepository<Order>("orders.json"));
-builder.Services.AddSingleton(new JsonRepository<Product>("products.json"));
-builder.Services.AddSingleton(new JsonRepository<Fabric>("fabrics.json"));
-builder.Services.AddSingleton(new JsonRepository<WorkCenter>("workcenters.json"));
-builder.Services.AddSingleton(new JsonRepository<ProductionPlan>("production_plans.json"));
+// Configure EF Core SQL Server Database
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=Kaam2Db;Trusted_Connection=True;MultipleActiveResultSets=true"));
+
+// Register Services
+builder.Services.AddScoped<backend.Service.Customer.ICustomerService, backend.Service.Customer.CustomerService>();
+builder.Services.AddScoped<backend.Service.Order.IOrderService, backend.Service.Order.OrderService>();
+builder.Services.AddScoped<backend.Service.OrderItem.IOrderItemService, backend.Service.OrderItem.OrderItemService>();
+builder.Services.AddScoped<backend.Service.Product.IProductService, backend.Service.Product.ProductService>();
+builder.Services.AddScoped<backend.Service.Fabric.IFabricService, backend.Service.Fabric.FabricService>();
+builder.Services.AddScoped<backend.Service.WorkCenter.IWorkCenterService, backend.Service.WorkCenter.WorkCenterService>();
+builder.Services.AddScoped<backend.Service.ProductionPlan.IProductionPlanService, backend.Service.ProductionPlan.ProductionPlanService>();
+builder.Services.AddScoped<backend.Service.ProductionPlanProduct.IProductionPlanProductService, backend.Service.ProductionPlanProduct.ProductionPlanProductService>();
+builder.Services.AddScoped<backend.Service.ProductionPlanProductSize.IProductionPlanProductSizeService, backend.Service.ProductionPlanProductSize.ProductionPlanProductSizeService>();
+builder.Services.AddScoped<backend.Service.ProductionPlanStage.IProductionPlanStageService, backend.Service.ProductionPlanStage.ProductionPlanStageService>();
+builder.Services.AddScoped<backend.Service.Material.IMaterialService, backend.Service.Material.MaterialService>();
+builder.Services.AddScoped<backend.Service.BillOfMaterial.IBillOfMaterialService, backend.Service.BillOfMaterial.BillOfMaterialService>();
+builder.Services.AddScoped<backend.Service.Warehouse.IWarehouseService, backend.Service.Warehouse.WarehouseService>();
+builder.Services.AddScoped<backend.Service.WarehouseRoom.IWarehouseRoomService, backend.Service.WarehouseRoom.WarehouseRoomService>();
+builder.Services.AddScoped<backend.Service.WarehouseShelf.IWarehouseShelfService, backend.Service.WarehouseShelf.WarehouseShelfService>();
+builder.Services.AddScoped<backend.Service.Inventory.IInventoryService, backend.Service.Inventory.InventoryService>();
+builder.Services.AddScoped<backend.Service.Outlet.IOutletService, backend.Service.Outlet.OutletService>();
+builder.Services.AddScoped<backend.Service.OutletDemand.IOutletDemandService, backend.Service.OutletDemand.OutletDemandService>();
+builder.Services.AddScoped<backend.Service.Transaction.ITransactionService, backend.Service.Transaction.TransactionService>();
+builder.Services.AddScoped<backend.Service.ActivityLog.IActivityLogService, backend.Service.ActivityLog.ActivityLogService>();
 
 var app = builder.Build();
+
+// Seed Database
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    dbContext.Database.EnsureCreated();
+    
+    // Execute all Stored Procedure scripts from Sql directory
+    var sqlDir = Path.Combine(Directory.GetCurrentDirectory(), "Sql");
+    if (Directory.Exists(sqlDir))
+    {
+        foreach (var file in Directory.GetFiles(sqlDir, "*.sql"))
+        {
+            try
+            {
+                var sql = File.ReadAllText(file);
+                // Split by GO since EF doesn't support GO batches directly
+                var batches = sql.Split(new[] { "GO\r\n", "GO\n", "GO " }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var batch in batches)
+                {
+                    if (!string.IsNullOrWhiteSpace(batch))
+                    {
+                        dbContext.Database.ExecuteSqlRaw(batch);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing {file}: {ex.Message}");
+            }
+        }
+    }
+
+    backend.Data.DatabaseSeeder.Seed(dbContext);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -36,140 +97,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowNextJs");
 
-// --- API Endpoints ---
-
-// Customers
-app.MapGet("/api/customers", (JsonRepository<Customer> repo) => Results.Ok(repo.GetAll()))
-   .WithName("GetCustomers").WithOpenApi();
-
-app.MapGet("/api/customers/{id:guid}", (Guid id, JsonRepository<Customer> repo) => 
-{
-    var customer = repo.GetById(id);
-    return customer is null ? Results.NotFound() : Results.Ok(customer);
-});
-
-app.MapPost("/api/customers", (Customer customer, JsonRepository<Customer> repo) =>
-{
-    var created = repo.Add(customer);
-    return Results.Created($"/api/customers/{created.Id}", created);
-});
-
-app.MapPut("/api/customers/{id:guid}", (Guid id, Customer customer, JsonRepository<Customer> repo) =>
-{
-    customer.Id = id;
-    var updated = repo.Update(customer);
-    return updated is null ? Results.NotFound() : Results.Ok(updated);
-});
-
-app.MapDelete("/api/customers/{id:guid}", (Guid id, JsonRepository<Customer> repo) =>
-{
-    return repo.Delete(id) ? Results.NoContent() : Results.NotFound();
-});
-
-// Orders
-app.MapGet("/api/orders", (JsonRepository<Order> repo) => Results.Ok(repo.GetAll()))
-   .WithName("GetOrders").WithOpenApi();
-
-app.MapGet("/api/orders/{id:guid}", (Guid id, JsonRepository<Order> repo) => 
-{
-    var order = repo.GetById(id);
-    return order is null ? Results.NotFound() : Results.Ok(order);
-});
-
-app.MapPost("/api/orders", (Order order, JsonRepository<Order> repo) =>
-{
-    var created = repo.Add(order);
-    return Results.Created($"/api/orders/{created.Id}", created);
-});
-
-app.MapPut("/api/orders/{id:guid}", (Guid id, Order order, JsonRepository<Order> repo) =>
-{
-    order.Id = id;
-    var updated = repo.Update(order);
-    return updated is null ? Results.NotFound() : Results.Ok(updated);
-});
-
-app.MapGet("/api/products", (JsonRepository<Product> repo) =>
-{
-    var products = repo.GetAll();
-    if (!products.Any())
-    {
-        // Seed some data if empty
-        repo.Add(new Product { Name = "Track Suit V2", Sizes = new List<string> { "XS", "S", "M", "L", "XL" } });
-        repo.Add(new Product { Name = "School Uniform Shirt", Sizes = new List<string> { "S", "M", "L" } });
-        repo.Add(new Product { Name = "Winter Jacket", Sizes = new List<string> { "M", "L", "XL", "XXL" } });
-        products = repo.GetAll();
-    }
-    return Results.Ok(products);
-});
-
-app.MapGet("/api/fabrics", (JsonRepository<Fabric> repo) =>
-{
-    var fabrics = repo.GetAll();
-    if (!fabrics.Any())
-    {
-        // Seed some data if empty
-        repo.Add(new Fabric { Name = "Cotton Blend", Category = "Cotton" });
-        repo.Add(new Fabric { Name = "Polyester Mesh", Category = "Synthetics" });
-        repo.Add(new Fabric { Name = "Fleece", Category = "Winter" });
-        fabrics = repo.GetAll();
-    }
-    return Results.Ok(fabrics);
-});
-
-app.MapDelete("/api/orders/{id:guid}", (Guid id, JsonRepository<Order> repo) =>
-{
-    return repo.Delete(id) ? Results.NoContent() : Results.NotFound();
-});
-
-// WorkCenters
-app.MapGet("/api/workcenters", (JsonRepository<WorkCenter> repo) =>
-{
-    var workcenters = repo.GetAll();
-    if (!workcenters.Any())
-    {
-        // Seed some data if empty
-        repo.Add(new WorkCenter { Name = "Cutter Auto-B", Type = "Machine" });
-        repo.Add(new WorkCenter { Name = "Line 4A", Type = "Manual Line" });
-        repo.Add(new WorkCenter { Name = "QC Station 1", Type = "QC Station" });
-        repo.Add(new WorkCenter { Name = "Finishing Station", Type = "Manual Line" });
-        workcenters = repo.GetAll();
-    }
-    return Results.Ok(workcenters);
-});
-
-app.MapPost("/api/workcenters", (WorkCenter wc, JsonRepository<WorkCenter> repo) =>
-{
-    var created = repo.Add(wc);
-    return Results.Created($"/api/workcenters/{created.Id}", created);
-});
-
-// Production Plans
-app.MapGet("/api/production-plans", (JsonRepository<ProductionPlan> repo) => Results.Ok(repo.GetAll()))
-   .WithName("GetProductionPlans").WithOpenApi();
-
-app.MapGet("/api/production-plans/{id:guid}", (Guid id, JsonRepository<ProductionPlan> repo) => 
-{
-    var plan = repo.GetById(id);
-    return plan is null ? Results.NotFound() : Results.Ok(plan);
-});
-
-app.MapPost("/api/production-plans", (ProductionPlan plan, JsonRepository<ProductionPlan> repo) =>
-{
-    var created = repo.Add(plan);
-    return Results.Created($"/api/production-plans/{created.Id}", created);
-});
-
-app.MapPut("/api/production-plans/{id:guid}", (Guid id, ProductionPlan plan, JsonRepository<ProductionPlan> repo) =>
-{
-    plan.Id = id;
-    var updated = repo.Update(plan);
-    return updated is null ? Results.NotFound() : Results.Ok(updated);
-});
-
-app.MapDelete("/api/production-plans/{id:guid}", (Guid id, JsonRepository<ProductionPlan> repo) =>
-{
-    return repo.Delete(id) ? Results.NoContent() : Results.NotFound();
-});
+app.MapControllers();
 
 app.Run();
