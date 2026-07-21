@@ -1,0 +1,685 @@
+.warehouse-visual-page {
+    --primary: #2563eb;
+    --primary-soft: #dbeafe;
+    --green: #16a34a;
+    --green-soft: #dcfce7;
+    --amber: #f59e0b;
+    --purple: #8b5cf6;
+    --red: #ef4444;
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface-soft: #f8fafc;
+    --text: #111827;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    min-height: 100vh;
+    font-family: "Inter", sans-serif;
+    overflow-x: hidden;
+}
+
+.warehouse-visual-page .breadcrumb-line {
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.warehouse-visual-page .breadcrumb-line span {
+    margin: 0 8px;
+}
+
+.warehouse-visual-page .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.warehouse-visual-page .page-header h1 {
+    margin: 0;
+    font-size: 34px;
+    font-weight: 800;
+}
+
+.warehouse-visual-page .page-header p {
+    margin: 6px 0 0;
+    color: var(--muted);
+}
+
+.warehouse-visual-page .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.warehouse-visual-page .warehouse-select,
+.warehouse-visual-page .header-actions .btn,
+.warehouse-visual-page .selected-card .btn {
+    border-radius: 8px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-weight: 600;
+}
+
+.warehouse-visual-page .kpi-card,
+.warehouse-visual-page .panel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+}
+
+.warehouse-visual-page .row {
+    align-items: stretch;
+}
+
+.warehouse-visual-page .kpi-card {
+    padding: 18px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    min-height: 120px;
+    height: 100%;
+}
+
+.warehouse-visual-page .kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.warehouse-visual-page .kpi-icon span {
+    font-size: 24px;
+}
+
+.warehouse-visual-page .kpi-icon.blue {
+    background: var(--primary-soft);
+    color: var(--primary);
+}
+
+.warehouse-visual-page .kpi-icon.green {
+    background: var(--green-soft);
+    color: var(--green);
+}
+
+.warehouse-visual-page .kpi-icon.soft {
+    background: #f3f4f6;
+    color: #475569;
+}
+
+.warehouse-visual-page .kpi-body span {
+    display: block;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.warehouse-visual-page .kpi-body strong {
+    display: block;
+    margin-top: 2px;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.warehouse-visual-page .kpi-body small {
+    color: var(--muted);
+    display: block;
+    margin-top: 6px;
+}
+
+.warehouse-visual-page .panel-card {
+    padding: 20px;
+    height: 100%;
+    min-width: 0;
+}
+
+.warehouse-visual-page .panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.warehouse-visual-page .panel-head h2 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.warehouse-visual-page .panel-head p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.warehouse-visual-page .slim-progress,
+.warehouse-visual-page .table-progress {
+    height: 9px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #e5e7eb;
+}
+
+.warehouse-visual-page .progress-bar {
+    background: var(--primary);
+}
+
+.warehouse-visual-page .progress-bar.low {
+    background: var(--green) !important;
+}
+
+.warehouse-visual-page .progress-bar.medium {
+    background: var(--amber) !important;
+}
+
+.warehouse-visual-page .progress-bar.high {
+    background: var(--primary) !important;
+}
+
+.warehouse-visual-page .progress-bar.full {
+    background: var(--red) !important;
+}
+
+.warehouse-visual-page .layout-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+    min-height: 230px;
+}
+
+.warehouse-visual-page .layout-room {
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    padding: 16px;
+    text-align: center;
+    background: #f8fafc;
+    transition: 0.2s ease;
+    min-height: 108px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.warehouse-visual-page .layout-room:hover,
+.warehouse-visual-page .layout-room.active {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.warehouse-visual-page .layout-room strong,
+.warehouse-visual-page .layout-room em,
+.warehouse-visual-page .layout-room small,
+.warehouse-visual-page .layout-room .layout-tag {
+    display: block;
+}
+
+.warehouse-visual-page .layout-tag {
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0.8;
+    margin-bottom: 10px;
+}
+
+.warehouse-visual-page .layout-room strong {
+    font-size: 16px;
+    font-weight: 800;
+    font-style: normal;
+    margin-bottom: 8px;
+}
+
+.warehouse-visual-page .layout-room em {
+    font-size: 34px;
+    font-style: normal;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.warehouse-visual-page .layout-room small {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.warehouse-visual-page .layout-blue {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.warehouse-visual-page .layout-green {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.warehouse-visual-page .layout-amber {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.warehouse-visual-page .layout-purple {
+    background: #f5f3ff;
+    color: #7c3aed;
+}
+
+.warehouse-visual-page .receiving-strip {
+    border-radius: 8px;
+    background: #f3f4f6;
+    text-align: center;
+    padding: 10px 12px;
+    font-weight: 700;
+    color: #4b5563;
+    min-height: 42px;
+    display: grid;
+    place-items: center;
+}
+
+.warehouse-visual-page .rack-visual-wrap {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 14px;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.warehouse-visual-page .level-labels {
+    display: grid;
+    grid-template-rows: repeat(4, 1fr);
+    gap: 0;
+    padding: 14px 0;
+}
+
+.warehouse-visual-page .level-labels span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: #4b5563;
+    font-weight: 700;
+    min-height: 82px;
+}
+
+.warehouse-visual-page .rack-visual {
+    position: relative;
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 20px;
+    display: grid;
+    grid-template-rows: repeat(4, minmax(82px, 1fr));
+    gap: 0;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 390px;
+}
+
+.warehouse-visual-page .rack-frame {
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    width: 8px;
+    background: linear-gradient(180deg, #4b5563, #6b7280);
+    border-radius: 999px;
+}
+
+.warehouse-visual-page .rack-frame.left {
+    left: 12px;
+}
+
+.warehouse-visual-page .rack-frame.right {
+    right: 12px;
+}
+
+.warehouse-visual-page .rack-level {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    position: relative;
+    padding: 10px 16px;
+    border-bottom: 4px solid #6b7280;
+    align-items: center;
+    min-width: 0;
+}
+
+.warehouse-visual-page .rack-level:last-child {
+    border-bottom: 0;
+}
+
+.warehouse-visual-page .shelf-card {
+    min-height: 58px;
+    border: 0;
+    border-radius: 8px;
+    font-weight: 800;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+    transition: 0.2s ease;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.warehouse-visual-page .shelf-card:hover {
+    transform: translateY(-2px);
+}
+
+.warehouse-visual-page .shelf-card.active {
+    outline: 3px solid #1e3a8a;
+    outline-offset: 2px;
+}
+
+.warehouse-visual-page .shelf-card.shelf-low {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.warehouse-visual-page .shelf-card.shelf-medium {
+    background: #fed7aa;
+    color: #9a3412;
+}
+
+.warehouse-visual-page .shelf-card.shelf-high {
+    background: #60a5fa;
+    color: #ffffff;
+}
+
+.warehouse-visual-page .shelf-card.shelf-full {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.warehouse-visual-page .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 16px;
+}
+
+.warehouse-visual-page .legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.warehouse-visual-page .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+.warehouse-visual-page .dot.empty {
+    background: #cbd5e1;
+}
+
+.warehouse-visual-page .dot.low {
+    background: var(--green);
+}
+
+.warehouse-visual-page .dot.medium {
+    background: var(--amber);
+}
+
+.warehouse-visual-page .dot.high {
+    background: var(--primary);
+}
+
+.warehouse-visual-page .dot.full {
+    background: #1d4ed8;
+}
+
+.warehouse-visual-page .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.warehouse-visual-page .status-badge.success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.warehouse-visual-page .status-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.warehouse-visual-page .status-badge.danger {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.warehouse-visual-page .selected-card h3 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 800;
+}
+
+.warehouse-visual-page .selected-main-item {
+    margin-top: 6px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.warehouse-visual-page .selected-sub {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.warehouse-visual-page .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.warehouse-visual-page .detail-grid div {
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.warehouse-visual-page .detail-grid span {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.warehouse-visual-page .detail-grid strong {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.warehouse-visual-page .utilization-box {
+    margin-top: 16px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.warehouse-visual-page .table-actions {
+    width: 300px;
+}
+
+.warehouse-visual-page .table-actions input {
+    border-radius: 8px;
+}
+
+.warehouse-visual-page .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+}
+
+.warehouse-visual-page .warehouse-table thead th {
+    background: #f8fafc;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.warehouse-visual-page .warehouse-table tbody td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+}
+
+.warehouse-visual-page .warehouse-table {
+    min-width: 760px;
+}
+
+.warehouse-visual-page .type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.warehouse-visual-page .type-badge.raw {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.warehouse-visual-page .type-badge.finished {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.warehouse-visual-page .util-cell {
+    display: grid;
+    grid-template-columns: 1fr 42px;
+    gap: 10px;
+    align-items: center;
+    min-width: 140px;
+}
+
+.warehouse-visual-page .low-stock-list {
+    display: grid;
+    gap: 12px;
+}
+
+.warehouse-visual-page .low-stock-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.warehouse-visual-page .low-stock-item:last-child {
+    border-bottom: 0;
+}
+
+.warehouse-visual-page .low-stock-item strong,
+.warehouse-visual-page .low-stock-item span,
+.warehouse-visual-page .low-stock-item small {
+    display: block;
+}
+
+.warehouse-visual-page .low-stock-item span {
+    color: var(--text);
+    font-size: 14px;
+    margin-top: 3px;
+}
+
+.warehouse-visual-page .low-stock-item small {
+    color: var(--muted);
+    margin-top: 3px;
+}
+
+.warehouse-visual-page .low-stock-item b {
+    color: #b91c1c;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.warehouse-visual-page .low-stock-link {
+    margin-top: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    padding-left: 0;
+}
+
+@media (max-width: 1399px) {
+    .warehouse-visual-page .kpi-body strong {
+        font-size: 30px;
+    }
+}
+
+@media (max-width: 768px) {
+    .warehouse-visual-page {
+        padding: 16px;
+    }
+
+    .warehouse-visual-page .page-header,
+    .warehouse-visual-page .panel-head {
+        flex-direction: column;
+    }
+
+    .warehouse-visual-page .layout-grid,
+    .warehouse-visual-page .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .warehouse-visual-page .rack-visual-wrap {
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .warehouse-visual-page .level-labels span {
+        min-height: 70px;
+        font-size: 11px;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+    }
+
+    .warehouse-visual-page .rack-visual {
+        min-height: 340px;
+        grid-template-rows: repeat(4, minmax(70px, 1fr));
+        padding: 10px 14px;
+    }
+
+    .warehouse-visual-page .rack-level {
+        grid-template-columns: repeat(3, minmax(42px, 1fr));
+        gap: 8px;
+        padding: 8px 10px;
+    }
+
+    .warehouse-visual-page .shelf-card {
+        min-height: 46px;
+        font-size: 12px;
+    }
+
+    .warehouse-visual-page .table-actions {
+        width: 100%;
+    }
+
+    .warehouse-visual-page .warehouse-table {
+        min-width: 720px;
+    }
+}
