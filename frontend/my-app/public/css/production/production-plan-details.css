@@ -1,0 +1,304 @@
+/* Production Plan Details Bootstrap CSS */
+
+/* Summary Card Styles */
+.production-plan-details > .hero-header,
+.production-plan-details > section {
+  margin-bottom: 1.5rem;
+}
+
+.production-plan-details > .hero-header + section {
+  margin-top: 1.5rem;
+}
+
+.production-plan-details section > :last-child {
+  margin-bottom: 0;
+}
+
+.production-plan-details .lead {
+  line-height: 1.65;
+}
+
+.production-plan-details .nav-tabs .nav-link {
+  white-space: nowrap;
+}
+
+.production-plan-details .plan-date-value,
+.production-plan-details .summary-card-value {
+  line-height: 1.45;
+}
+
+.production-plan-details .plan-date-value {
+  font-size: 0.8125rem;
+}
+
+.summary-card {
+  background: linear-gradient(to bottom right, #ffffff, rgba(248, 250, 252, 0.5));
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.summary-card:hover {
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+}
+
+.summary-card-label {
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.summary-card:hover .summary-card-label {
+  color: #2563eb;
+}
+
+.summary-card-value {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.2;
+}
+
+/* Info Grid Styles */
+.info-grid {
+  background: linear-gradient(to bottom, rgba(248, 250, 252, 0.8), rgba(248, 250, 252, 0.3));
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 1.5rem;
+}
+
+.info-grid-label {
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  display: block;
+}
+
+/* Product Button Styles */
+.product-btn {
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  padding: 1rem;
+  text-align: left;
+  transition: all 0.3s ease;
+}
+
+.product-btn-unselected {
+  background: white;
+  color: #334155;
+}
+
+.product-btn-unselected:hover {
+  background: #f1f5f9;
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.product-btn-selected {
+  background: linear-gradient(to bottom right, #dbeafe, white);
+  border-color: #93c5fd;
+  box-shadow: 0 8px 16px -6px rgba(37, 99, 235, 0.2);
+  transform: translateY(-4px);
+}
+
+.product-btn-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.product-btn-icon-unselected {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.product-btn-icon-selected {
+  background: #2563eb;
+  color: white;
+  box-shadow: 0 10px 24px -6px rgba(37, 99, 235, 0.3);
+}
+
+/* Hero Header Styles */
+.hero-header {
+  background: linear-gradient(to bottom right, white, rgba(219, 234, 254, 0.5), rgba(224, 231, 255, 0.5));
+  border-color: #dbeafe !important;
+  position: relative;
+}
+
+.hero-header-bg-1 {
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.1), transparent);
+  border-radius: 50%;
+  animation: pulse-bg 6s ease-in-out infinite;
+}
+
+.hero-header-bg-2 {
+  position: absolute;
+  bottom: -80px;
+  left: -80px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.1), transparent);
+  border-radius: 50%;
+  animation: pulse-bg-2 8s ease-in-out infinite;
+}
+
+@keyframes pulse-bg {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes pulse-bg-2 {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Activity Timeline */
+.activity-timeline {
+  position: relative;
+  padding-left: 1.5rem;
+  border-left: 2px solid #e2e8f0;
+  margin-left: 0.5rem;
+}
+
+.activity-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.activity-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #2563eb;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 0 0 3px rgba(219, 234, 254, 0.5);
+  left: -1.5rem;
+  top: 0.5rem;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-badge.status-completed {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.status-badge.status-in-progress {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.status-badge.status-on-hold {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.status-badge.status-draft {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-badge.status-active {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.status-badge.status-default {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Table Styles */
+.production-plan-details .table-responsive {
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.production-plan-details .table {
+  margin-bottom: 0;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.production-plan-details .table > :not(caption) > * > * {
+  padding: 1rem 1.25rem;
+  border-bottom-color: #eef2f7;
+}
+
+.production-plan-details .table thead th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.production-plan-details .table tbody td {
+  font-size: 0.875rem;
+}
+
+.production-plan-details .table-hover > tbody > tr:hover > * {
+  --bs-table-accent-bg: #f8fafc;
+  color: #1e293b;
+}
+
+.production-plan-details .table tbody tr:last-child > * {
+  border-bottom-width: 0;
+}
+
+.production-plan-details .table .status-badge {
+  white-space: nowrap;
+}
+
+@media (max-width: 575.98px) {
+  .production-plan-details .table > :not(caption) > * > * {
+    padding: 0.875rem 1rem;
+  }
+}

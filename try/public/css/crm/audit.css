@@ -1,0 +1,66 @@
+/* CRM Financial Audit Page Specific Styles */
+.crm-audit-page .audit-filter-bar {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: end;
+}
+
+@media (max-width: 1000px) {
+    .crm-audit-page .audit-filter-bar {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+@media (max-width: 700px) {
+    .crm-audit-page .audit-filter-bar {
+        grid-template-columns: 1fr;
+    }
+}
+
+.audit-row:hover {
+    background-color: #f9fafb;
+    transition: background-color 0.2s;
+}
+
+.audit-entity-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.audit-entity-link:hover {
+    text-decoration: underline;
+}
+
+.audit-event-badge {
+    min-width: 130px;
+}
+
+.audit-changes-block table {
+    width: 100%;
+    margin-top: 10px;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.audit-changes-block th {
+    background: #f9fafb;
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+.audit-changes-block td {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+    font-size: 0.9rem;
+}
+
+/* Background utilities for modal */
+.bg-success-soft {
+    background-color: var(--success-soft) !important;
+}
+.bg-danger-soft {
+    background-color: var(--danger-soft) !important;
+}
+.bg-warning-light {
+    background-color: var(--warning-soft) !important;
+}

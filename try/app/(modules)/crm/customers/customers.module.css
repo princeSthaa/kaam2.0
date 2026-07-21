@@ -1,0 +1,9 @@
+.pp-page .card-body {
+    background: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .pp-page .pp-filter-grid[style] {
+        grid-template-columns: 1fr !important;
+    }
+}
