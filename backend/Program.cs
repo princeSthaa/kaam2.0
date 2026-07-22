@@ -106,6 +106,16 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowNextJs");
 
+var mediaPath = Path.Combine(builder.Environment.ContentRootPath, "Media");
+if (Directory.Exists(mediaPath))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(mediaPath),
+        RequestPath = "/Media"
+    });
+}
+
 app.MapControllers();
 
 app.Run();

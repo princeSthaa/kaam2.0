@@ -34,42 +34,137 @@ namespace backend.Data
                 customers = context.Customers.ToList();
             }
 
-            // Seed Products from products.json
+            // Seed Products
+            var prodImgFiles = new[] { "polo-shirt.jpg", "casual-shirt.jpg", "hotel-uniform.jpg", "school-uniform.jpg", "tracksuit.jpg" };
             if (!context.Products.Any())
             {
-                var productsJson = System.IO.File.ReadAllText("Data/Store/products.json");
-                var productsData = System.Text.Json.JsonSerializer.Deserialize<List<Product>>(productsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (productsData != null)
+                if (System.IO.File.Exists("Data/Store/products.json"))
                 {
-                    context.Products.AddRange(productsData);
+                    var productsJson = System.IO.File.ReadAllText("Data/Store/products.json");
+                    var productsData = System.Text.Json.JsonSerializer.Deserialize<List<Product>>(productsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (productsData != null) context.Products.AddRange(productsData);
                 }
+                else
+                {
+                    var prods = new List<Product>();
+                    for (int i = 1; i <= 25; i++)
+                    {
+                        var imgName = prodImgFiles[(i - 1) % prodImgFiles.Length];
+                        prods.Add(new Product
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            Name = $"Product {i}",
+                            ImagePath = $"/Media/images/products/{imgName}"
+                        });
+                    }
+                    context.Products.AddRange(prods);
+                }
+                context.SaveChanges();
             }
 
-            // Seed Fabrics from fabrics.json
+            // Ensure all existing products have valid Media/images/products paths
+            var existingProds = context.Products.ToList();
+            bool prodsUpdated = false;
+            for (int i = 0; i < existingProds.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(existingProds[i].ImagePath) || !existingProds[i].ImagePath.StartsWith("/Media/images/products/"))
+                {
+                    var imgName = prodImgFiles[i % prodImgFiles.Length];
+                    existingProds[i].ImagePath = $"/Media/images/products/{imgName}";
+                    prodsUpdated = true;
+                }
+            }
+            if (prodsUpdated) context.SaveChanges();
+
+            // Seed Fabrics
+            var fabricImgFiles = new[] { "FAB-001.jpg", "FAB-002.png", "FAB-003.png", "FAB-004.png", "FAB-005.png" };
             if (!context.Fabrics.Any())
             {
-                var fabricsJson = System.IO.File.ReadAllText("Data/Store/fabrics.json");
-                var fabricsData = System.Text.Json.JsonSerializer.Deserialize<List<Fabric>>(fabricsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (fabricsData != null)
+                if (System.IO.File.Exists("Data/Store/fabrics.json"))
                 {
-                    context.Fabrics.AddRange(fabricsData);
+                    var fabricsJson = System.IO.File.ReadAllText("Data/Store/fabrics.json");
+                    var fabricsData = System.Text.Json.JsonSerializer.Deserialize<List<Fabric>>(fabricsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (fabricsData != null) context.Fabrics.AddRange(fabricsData);
                 }
+                else
+                {
+                    var fabs = new List<Fabric>();
+                    for (int i = 1; i <= 5; i++)
+                    {
+                        var imgName = fabricImgFiles[(i - 1) % fabricImgFiles.Length];
+                        fabs.Add(new Fabric
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            Name = $"Fabric {i}",
+                            Category = "Cotton Blend",
+                            UnitPrice = 250,
+                            ImagePath = $"/Media/images/fabrics/{imgName}"
+                        });
+                    }
+                    context.Fabrics.AddRange(fabs);
+                }
+                context.SaveChanges();
+            }
+
+            // Ensure all existing fabrics have valid Media/images/fabrics paths
+            var existingFabs = context.Fabrics.ToList();
+            bool fabsUpdated = false;
+            for (int i = 0; i < existingFabs.Count; i++)
+            {
+                if (string.IsNullOrWhiteSpace(existingFabs[i].ImagePath) || !existingFabs[i].ImagePath.StartsWith("/Media/images/fabrics/"))
+                {
+                    var imgName = fabricImgFiles[i % fabricImgFiles.Length];
+                    existingFabs[i].ImagePath = $"/Media/images/fabrics/{imgName}";
+                    fabsUpdated = true;
+                }
+            }
+            if (fabsUpdated) context.SaveChanges();
+
+            // Re-seed Orders with OrderItems if OrderItems is empty
+            if (!context.OrderItems.Any() && context.Orders.Any())
+            {
+                context.Orders.RemoveRange(context.Orders);
+                context.SaveChanges();
             }
 
             // Seed Orders (25)
             if (!context.Orders.Any())
             {
+                var products = context.Products.ToList();
+                var fabrics = context.Fabrics.ToList();
                 var orders = new List<Order>();
+
                 for (int i = 1; i <= 25; i++)
                 {
+                    var orderId = Guid.NewGuid().ToString();
+                    var prod = products.Count > 0 ? products[(i - 1) % products.Count] : null;
+                    var fab = fabrics.Count > 0 ? fabrics[(i - 1) % fabrics.Count] : null;
+
+                    var orderItems = new List<OrderItem>();
+                    if (prod != null)
+                    {
+                        orderItems.Add(new OrderItem
+                        {
+                            Id = Guid.NewGuid().ToString(),
+                            OrderId = orderId,
+                            ProductId = prod.Id,
+                            Product = prod,
+                            FabricId = fab != null ? fab.Id : "",
+                            Quantity = 50 * ((i % 5) + 1),
+                            UnitPrice = 500,
+                            TotalPrice = 500 * 50 * ((i % 5) + 1)
+                        });
+                    }
+
                     orders.Add(new Order
                     {
-                        Id = Guid.NewGuid().ToString(),
+                        Id = orderId,
                         OrderNumber = $"ORD-{i:D4}",
                         Customer = customers[i - 1],
                         Status = backend.Model.Enums.OrderStatus.Pending,
                         TotalAmount = 5000 + (i * 100),
-                        DueDate = DateTime.UtcNow.AddDays(i)
+                        DueDate = DateTime.UtcNow.AddDays(i),
+                        OrderItems = orderItems
                     });
                 }
                 context.Orders.AddRange(orders);
@@ -187,30 +282,16 @@ namespace backend.Data
                 if (!context.BillOfMaterials.Any())
                 {
                     var boms = new List<BillOfMaterial>();
-                    // T-Shirt (1111...)
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "11111111-1111-1111-1111-111111111111", MaterialId = "MAT-001", QtyPerUnit = 1.2m, WastagePercent = 5 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "11111111-1111-1111-1111-111111111111", MaterialId = "MAT-002", QtyPerUnit = 0.5m, WastagePercent = 2 });
-                    
-                    // Polo Shirt (2222...)
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "22222222-2222-2222-2222-222222222222", MaterialId = "MAT-001", QtyPerUnit = 1.5m, WastagePercent = 5 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "22222222-2222-2222-2222-222222222222", MaterialId = "MAT-002", QtyPerUnit = 0.6m, WastagePercent = 2 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "22222222-2222-2222-2222-222222222222", MaterialId = "MAT-003", QtyPerUnit = 3m, WastagePercent = 0 });
-
-                    // Trousers (3333...)
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "33333333-3333-3333-3333-333333333333", MaterialId = "MAT-001", QtyPerUnit = 1.8m, WastagePercent = 5 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "33333333-3333-3333-3333-333333333333", MaterialId = "MAT-002", QtyPerUnit = 0.8m, WastagePercent = 2 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "33333333-3333-3333-3333-333333333333", MaterialId = "MAT-003", QtyPerUnit = 1m, WastagePercent = 0 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "33333333-3333-3333-3333-333333333333", MaterialId = "MAT-004", QtyPerUnit = 1m, WastagePercent = 0 });
-
-                    // Hoodie (4444...)
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "44444444-4444-4444-4444-444444444444", MaterialId = "MAT-001", QtyPerUnit = 2.0m, WastagePercent = 8 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "44444444-4444-4444-4444-444444444444", MaterialId = "MAT-002", QtyPerUnit = 1.0m, WastagePercent = 2 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "44444444-4444-4444-4444-444444444444", MaterialId = "MAT-004", QtyPerUnit = 1m, WastagePercent = 0 });
-
-                    // Kurta (5555...)
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "55555555-5555-5555-5555-555555555555", MaterialId = "MAT-001", QtyPerUnit = 2.5m, WastagePercent = 5 });
-                    boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = "55555555-5555-5555-5555-555555555555", MaterialId = "MAT-002", QtyPerUnit = 0.8m, WastagePercent = 2 });
-                    
+                    var allProds = context.Products.ToList();
+                    if (allProds.Any())
+                    {
+                        for (int i = 0; i < allProds.Count; i++)
+                        {
+                            var prodId = allProds[i].Id;
+                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = prodId, MaterialId = "MAT-001", QtyPerUnit = 1.5m, WastagePercent = 5 });
+                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = prodId, MaterialId = "MAT-002", QtyPerUnit = 0.5m, WastagePercent = 2 });
+                        }
+                    }
                     context.BillOfMaterials.AddRange(boms);
                 }
             }
