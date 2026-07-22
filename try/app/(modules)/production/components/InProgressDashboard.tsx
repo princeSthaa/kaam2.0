@@ -3,162 +3,141 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import PlanRow from './PlanRow';
 
-// Default Mock Data
-const DEFAULT_MOCK_PLANS = [
-  {
-    id: "PLN-202605-A1",
-    planId: "PLN-202605-A1",
-    client: "Apex Industries",
-    priority: "Urgent",
-    status: "Active",
-    progress: 45,
-    dueDate: "2026-05-30",
-    isLocalStorage: false,
-    products: [
-      {
-        id: "PP-20260529-002",
-        name: "Men Casual Shirt",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAlUeWpFy-wuIvTig-iJ_65-mPE5GcpTW41Rn6N576ieJzqBRCe6zolJVQ804RBUABZ-zEO4QWxDwnJtcKMR4yjUg5UIgUQbeC4oPSNuLicTSTgXIpWVWpDGah3wv3p6pl53vrbiQWTD9ThHdlwSAwPPNEpnSG64RiivjYDAFWVOoD3_-eEisIIZHR60YANe5nzgEcO0GXVtT4LAo6BH3kuaL4xOhqBgAZfbpPegz3nzVctERq-gc-XZwquZHCGN-PWNg",
-        source: "Customer Order",
-        qty: 250,
-        requiredDate: "2026-05-30",
-        progress: 45,
-        stage: "Cutting",
-        stages: [
-          { id: "01", name: "Material Check", workCenter: "QC Station 1", status: "Completed", completedQty: 250, rejectedQty: 0 },
-          { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", status: "Active", completedQty: 112, rejectedQty: 3 },
-          { id: "03", name: "Stitching", workCenter: "Line 4A", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-          { id: "04", name: "Finishing", workCenter: "Sewing Floor", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-          { id: "05", name: "Quality Check", workCenter: "QC Table", status: "Not Started", completedQty: 0, rejectedQty: 0 }
-        ]
-      },
-      {
-        id: "PP-20260529-003",
-        name: "Denim Jeans",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAlUeWpFy-wuIvTig-iJ_65-mPE5GcpTW41Rn6N576ieJzqBRCe6zolJVQ804RBUABZ-zEO4QWxDwnJtcKMR4yjUg5UIgUQbeC4oPSNuLicTSTgXIpWVWpDGah3wv3p6pl53vrbiQWTD9ThHdlwSAwPPNEpnSG64RiivjYDAFWVOoD3_-eEisIIZHR60YANe5nzgEcO0GXVtT4LAo6BH3kuaL4xOhqBgAZfbpPegz3nzVctERq-gc-XZwquZHCGN-PWNg",
-        source: "Outlet Replenishment",
-        qty: 120,
-        requiredDate: "2026-06-10",
-        progress: 10,
-        stage: "Material Check",
-        stages: [
-          { id: "01", name: "Material Check", workCenter: "QC Station 1", status: "Active", completedQty: 12, rejectedQty: 0 },
-          { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-          { id: "03", name: "Stitching", workCenter: "Line 4A", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-          { id: "04", name: "Finishing", workCenter: "Sewing Floor", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-          { id: "05", name: "Quality Check", workCenter: "QC Table", status: "Not Started", completedQty: 0, rejectedQty: 0 }
-        ]
-      }
-    ]
-  },
-  {
-    id: "PLN-202605-B2",
-    planId: "PLN-202605-B2",
-    client: "Global Retailers",
-    priority: "Normal",
-    status: "On Hold",
-    progress: 80,
-    dueDate: "2026-06-05",
-    isLocalStorage: false,
-    products: [
-      {
-        id: "PP-20260601-044",
-        name: "Polo Shirt",
-        image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAlUeWpFy-wuIvTig-iJ_65-mPE5GcpTW41Rn6N576ieJzqBRCe6zolJVQ804RBUABZ-zEO4QWxDwnJtcKMR4yjUg5UIgUQbeC4oPSNuLicTSTgXIpWVWpDGah3wv3p6pl53vrbiQWTD9ThHdlwSAwPPNEpnSG64RiivjYDAFWVOoD3_-eEisIIZHR60YANe5nzgEcO0GXVtT4LAo6BH3kuaL4xOhqBgAZfbpPegz3nzVctERq-gc-XZwquZHCGN-PWNg",
-        source: "Customer Order",
-        qty: 500,
-        requiredDate: "2026-06-05",
-        progress: 80,
-        stage: "Quality Check",
-        stages: [
-          { id: "01", name: "Material Check", workCenter: "QC Station 1", status: "Completed", completedQty: 500, rejectedQty: 0 },
-          { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", status: "Completed", completedQty: 500, rejectedQty: 1 },
-          { id: "03", name: "Stitching", workCenter: "Line 4A", status: "Completed", completedQty: 500, rejectedQty: 4 },
-          { id: "04", name: "Finishing", workCenter: "Sewing Floor", status: "Completed", completedQty: 500, rejectedQty: 0 },
-          { id: "05", name: "Quality Check", workCenter: "QC Table", status: "Active", completedQty: 400, rejectedQty: 2 }
-        ]
-      }
-    ]
-  }
-];
-
 export default function InProgressDashboard() {
   const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date");
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const fetchPlans = () => {
+    setLoading(true);
     fetch("http://localhost:5083/api/production-plans")
-      .then((res) => res.json())
+      .then((res) => (res.ok ? res.json() : []))
       .then((data: any[]) => {
+        if (!Array.isArray(data)) {
+          setPlans([]);
+          return;
+        }
+
         const inProgress = data.filter(p => {
            const s = (p.status || p.Status || "").toLowerCase();
            return s !== "draft" && s !== "completed" && s !== "cancelled";
         });
 
         const formatted = inProgress.map((plan: any) => {
-          const productsList = (plan.products || plan.Products || []).map((prod: any) => {
+          const rawProducts = plan.productionPlanProducts || plan.products || [];
+          const rawStages = plan.productionPlanStages || plan.stages || [];
+
+          const productsList = (rawProducts.length > 0 ? rawProducts : [
+            {
+              id: plan.productId || "PRD-001",
+              productName: plan.planName || "Garment Production Run",
+              productCode: plan.productCode || "PRD-001",
+              quantity: plan.quantity || 500,
+              productImage: "/images/products/school-uniform.jpg"
+            }
+          ]).map((prod: any) => {
+            // Find product-specific stages or use overall stages
+            const prodStages = rawStages.filter((st: any) => {
+              if (st.productionPlanProductId && prod.id) {
+                return st.productionPlanProductId === prod.id;
+              }
+              if (st.stageName && prod.productName) {
+                return st.stageName.toLowerCase().includes(prod.productName.toLowerCase());
+              }
+              return true;
+            });
+
             const defaultStages = [
-              { id: "01", name: "Material Check", workCenter: "QC Station 1", status: "Completed", completedQty: prod.quantity || prod.Quantity || 0, rejectedQty: 0 },
-              { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", status: "Active", completedQty: 0, rejectedQty: 0 },
-              { id: "03", name: "Stitching", workCenter: "Line 4A", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-              { id: "04", name: "Finishing", workCenter: "Sewing Floor", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-              { id: "05", name: "Quality Check", workCenter: "QC Table", status: "Not Started", completedQty: 0, rejectedQty: 0 }
+              { id: "01", name: "Fabric Cutting", workCenter: "Cutting Work Center", status: "Completed", completedQty: prod.quantity || 0, rejectedQty: 0 },
+              { id: "02", name: "Sewing & Stitching", workCenter: "Main Assembly Line 1", status: "Active", completedQty: Math.floor((prod.quantity || 500) * 0.4), rejectedQty: 2 },
+              { id: "03", name: "QC Inspection", workCenter: "QC Station A", status: "Not Started", completedQty: 0, rejectedQty: 0 },
+              { id: "04", name: "Finishing & Packaging", workCenter: "Packaging Hub", status: "Not Started", completedQty: 0, rejectedQty: 0 }
             ];
 
-            const mappedStages = (plan.stages && plan.stages.length)
-              ? plan.stages.map((st: any, idx: number) => ({
-                  id: String(idx + 1).padStart(2, "0"),
-                  name: st.stageName || st.name,
-                  workCenter: st.workCenter || "Workstation",
-                  status: st.status || "Not Started",
-                  completedQty: st.completedQty || 0,
-                  rejectedQty: st.rejectedQty || 0,
-                  remarks: st.remarks || ""
-                }))
-              : defaultStages;
+            const mappedStages = (prodStages.length > 0 ? prodStages : (rawStages.length > 0 ? rawStages : defaultStages)).map((st: any, idx: number) => ({
+              id: st.id || String(idx + 1).padStart(2, "0"),
+              name: st.stageName || st.name || `Stage ${idx + 1}`,
+              workCenter: st.workCenterName || st.workCenter || st.workCenterId || "Workstation",
+              status: st.status || "Not Started",
+              completedQty: st.completedQty || 0,
+              rejectedQty: st.rejectedQty || 0,
+              remarks: st.remarks || ""
+            }));
 
-            const activeStage = mappedStages.find((s: any) => s.status === "Active")?.name || mappedStages[0]?.name || "Material Check";
-            const completedCount = mappedStages.filter((s: any) => s.status === "Completed").length;
-            const calculatedProgress = mappedStages.length ? Math.round((completedCount / mappedStages.length) * 100) : 0;
+            const activeStage = mappedStages.find((s: any) => {
+              const st = String(s.status).toLowerCase();
+              return st === "active" || st === "in progress" || st === "2";
+            })?.name || mappedStages[0]?.name || "Assembly";
+
+            const completedCount = mappedStages.filter((s: any) => {
+              const st = String(s.status).toLowerCase();
+              return st === "completed" || st === "5";
+            }).length;
+
+            const activeCount = mappedStages.filter((s: any) => {
+              const st = String(s.status).toLowerCase();
+              return st === "active" || st === "in progress" || st === "2";
+            }).length;
+
+            const calculatedProgress = mappedStages.length > 0 
+              ? Math.min(100, Math.round(((completedCount + (activeCount * 0.5)) / mappedStages.length) * 100))
+              : 0;
 
             return {
-              id: prod.lineId || `${plan.planId || plan.PlanId || plan.planNo || plan.id}-${prod.productId}`,
-              productId: prod.productId || prod.ProductId,
-              name: prod.productName || prod.ProductName || "Product Run",
-              image: prod.productImage || prod.ProductImage || "/images/products/place-holder.png",
-              source: plan.demandType || plan.DemandType || "Customer Order",
-              qty: prod.quantity || prod.Quantity || 0,
-              requiredDate: prod.requiredDate || prod.RequiredDate || plan.plannedCompletionDate || plan.PlannedCompletionDate,
+              id: prod.id || `${plan.planId || plan.id}-${prod.productId || 'PRD'}`,
+              productId: prod.productId || prod.id,
+              name: prod.productName || prod.name || "Garment Run",
+              image: prod.productImage || prod.image || "/images/products/place-holder.png",
+              source: plan.demandType || "Customer Order",
+              qty: Number(prod.quantity || prod.qty || 0),
+              requiredDate: prod.requiredDate || plan.plannedCompletionDate || new Date().toISOString(),
               progress: calculatedProgress,
               stage: activeStage,
               stages: mappedStages
             };
           });
 
-          const activeProdStages = productsList[0]?.stages || [];
-          const planCompletedCount = activeProdStages.filter((s: any) => s.status === "Completed").length;
-          const planCalculatedProgress = activeProdStages.length ? Math.round((planCompletedCount / activeProdStages.length) * 100) : 0;
+          // Overall Plan Progress calculation based on stages
+          const allStages = productsList.flatMap((p: any) => p.stages);
+          const totalPlanStages = allStages.length;
+          const completedPlanStages = allStages.filter((s: any) => {
+            const st = String(s.status).toLowerCase();
+            return st === "completed" || st === "5";
+          }).length;
+          const activePlanStages = allStages.filter((s: any) => {
+            const st = String(s.status).toLowerCase();
+            return st === "active" || st === "in progress" || st === "2";
+          }).length;
+
+          const planCalculatedProgress = totalPlanStages > 0
+            ? Math.min(100, Math.round(((completedPlanStages + (activePlanStages * 0.5)) / totalPlanStages) * 100))
+            : 0;
 
           return {
-            id: plan.planId || plan.PlanId || plan.planNo || plan.id,
-            planId: plan.planId || plan.PlanId || plan.planNo || plan.id,
-            client: plan.sourceName || plan.SourceName || "Internal Run",
-            priority: plan.priority || plan.Priority || "Normal",
-            status: plan.status || plan.Status || "Active",
+            id: plan.planId || plan.planNo || plan.id,
+            planDbId: plan.id,
+            planId: plan.planId || plan.planNo || plan.id,
+            client: plan.sourceName || plan.planName || "Internal Factory Run",
+            priority: plan.priority || "Normal",
+            status: plan.status || "Active",
             progress: planCalculatedProgress,
-            dueDate: plan.plannedCompletionDate || plan.PlannedCompletionDate || new Date().toISOString(),
+            dueDate: plan.plannedCompletionDate || plan.requiredDate || new Date().toISOString(),
             products: productsList,
-            isLocalStorage: false,
-            _originalPlan: plan // keep a reference to the original API plan
+            _originalPlan: plan
           };
         });
 
         setPlans(formatted);
       })
-      .catch((err) => console.error("Failed to fetch plans", err));
+      .catch((err) => console.error("Failed to fetch plans:", err))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchPlans();
   }, []);
 
   const handleUpdatePlan = (updatedPlan: any) => {
@@ -166,31 +145,19 @@ export default function InProgressDashboard() {
       prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p))
     );
 
-    // If we want to persist updates back to the API, we can PUT it here.
-    // For now, we update local React state.
-    if (updatedPlan._originalPlan) {
-        const payload = { ...updatedPlan._originalPlan };
-        // Map back stages if needed
-        if (updatedPlan.products && updatedPlan.products[0]) {
-           payload.stages = updatedPlan.products[0].stages.map((st: any) => ({
-              stageName: st.name,
-              workCenter: st.workCenter,
-              status: st.status,
-              completedQty: st.completedQty,
-              rejectedQty: st.rejectedQty,
-              remarks: st.remarks
-           }));
-           // Update status if fully complete
-           if (updatedPlan.progress === 100) {
-              payload.status = "Completed";
-           }
-        }
-        
-        fetch(`http://localhost:5083/api/production-plans/${updatedPlan.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        }).catch(err => console.error("Failed to update plan via API", err));
+    if (updatedPlan.planDbId) {
+      const payload = {
+        ...updatedPlan._originalPlan,
+        status: updatedPlan.status,
+        progress: updatedPlan.progress,
+        updatedAt: new Date().toISOString()
+      };
+
+      fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(updatedPlan.planDbId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch((err) => console.error("Failed to update plan status in backend:", err));
     }
   };
 
@@ -203,151 +170,147 @@ export default function InProgressDashboard() {
     let sumProgress = 0;
 
     plans.forEach((plan) => {
-      if (plan.status === "Active" || plan.status === "Draft") {
+      const st = String(plan.status || "").toLowerCase();
+      if (st === "active" || st === "1" || st === "in progress" || st === "2") {
         activeCount++;
       }
-      if (plan.status === "On Hold") {
+      if (st === "on hold" || st === "onhold" || st === "3") {
         holdCount++;
       }
-      if (plan.priority === "Urgent" || plan.priority === "High") {
+      if (String(plan.priority).toLowerCase() === "urgent" || String(plan.priority).toLowerCase() === "critical" || String(plan.priority).toLowerCase() === "high") {
         urgentCount++;
       }
       
-      const planQty = plan.products.reduce((s: number, p: any) => s + (p.qty || 0), 0);
+      const planQty = plan.products.reduce((s: number, p: any) => s + (Number(p.qty) || 0), 0);
       totalUnits += planQty;
       sumProgress += plan.progress || 0;
     });
 
-    const averageProgress = plans.length ? Math.round(sumProgress / plans.length) : 0;
+    const avgProgress = plans.length > 0 ? Math.round(sumProgress / plans.length) : 0;
 
     return {
       activeCount,
       totalUnits,
       urgentCount,
       holdCount,
-      overallCompletion: averageProgress
+      avgProgress
     };
   }, [plans]);
 
-  // Filtered & Sorted Plans
+  // Filtering & Sorting
   const filteredPlans = useMemo(() => {
-    let result = plans.slice();
+    return plans.filter((plan) => {
+      const matchesSearch = 
+        plan.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        plan.client.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        plan.products.some((p: any) => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    // 1. Search Query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.id.toLowerCase().includes(q) ||
-          p.client.toLowerCase().includes(q) ||
-          p.products.some((prod: any) => prod.name.toLowerCase().includes(q))
-      );
-    }
+      const matchesPriority = priorityFilter === "all" || plan.priority.toLowerCase() === priorityFilter.toLowerCase();
 
-    // 2. Priority Filter
-    if (priorityFilter !== "all") {
-      result = result.filter((p) => p.priority.toLowerCase() === priorityFilter.toLowerCase() || (priorityFilter === "urgent" && p.priority === "High"));
-    }
-
-    // 3. Sorting
-    result.sort((a, b) => {
-      if (sortBy === "progress") {
+      return matchesSearch && matchesPriority;
+    }).sort((a, b) => {
+      if (sortBy === "priority") {
+        const priorityScore: any = { Urgent: 3, Critical: 3, High: 2, Normal: 1, Medium: 1, Low: 0 };
+        return (priorityScore[b.priority] || 0) - (priorityScore[a.priority] || 0);
+      } else if (sortBy === "progress") {
         return b.progress - a.progress;
+      } else {
+        // Date
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
       }
-      // default Sort by Required Date (dueDate)
-      return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
     });
-
-    return result;
   }, [plans, searchQuery, priorityFilter, sortBy]);
 
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="mb-kaam-row-gap">
-        <h1 className="font-kaam-headline-lg text-kaam-headline-lg text-kaam-on-surface mb-6">In Progress Production</h1>
-        
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-kaam-column-gap">
-          <div className="bg-kaam-surface-container-lowest p-5 rounded-kaam-DEFAULT border border-kaam-outline-variant flex flex-col justify-between">
-            <span className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface-variant uppercase tracking-wider">Active Plans</span>
-            <span className="font-kaam-stats-lg text-kaam-stats-lg text-kaam-primary mt-2">{kpis.activeCount}</span>
-          </div>
-          <div className="bg-kaam-surface-container-lowest p-5 rounded-kaam-DEFAULT border border-kaam-outline-variant flex flex-col justify-between">
-            <span className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface-variant uppercase tracking-wider">Total Units</span>
-            <span className="font-kaam-stats-lg text-kaam-stats-lg text-kaam-primary mt-2">{kpis.totalUnits.toLocaleString()}</span>
-          </div>
-          <div className="bg-kaam-surface-container-lowest p-5 rounded-kaam-DEFAULT border border-kaam-error bg-kaam-error-container/20 flex flex-col justify-between">
-            <span className="font-kaam-label-md text-kaam-label-md text-kaam-error uppercase tracking-wider flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
-              Urgent/Critical
-            </span>
-            <span className="font-kaam-stats-lg text-kaam-stats-lg text-kaam-error mt-2">{kpis.urgentCount}</span>
-          </div>
-          <div className="bg-kaam-surface-container-lowest p-5 rounded-kaam-DEFAULT border border-kaam-outline-variant flex flex-col justify-between">
-            <span className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface-variant uppercase tracking-wider">On Hold/Blocked</span>
-            <span className="font-kaam-stats-lg text-kaam-stats-lg text-kaam-on-surface-variant mt-2">{kpis.holdCount}</span>
-          </div>
-          <div className="bg-kaam-surface-container-lowest p-5 rounded-kaam-DEFAULT border border-kaam-outline-variant flex flex-col justify-between">
-            <span className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface-variant uppercase tracking-wider">Overall Completion</span>
-            <span className="font-kaam-stats-lg text-kaam-stats-lg text-kaam-secondary mt-2">{kpis.overallCompletion}%</span>
-          </div>
+    <div className="flex flex-col gap-6 p-4 sm:p-6 max-w-7xl mx-auto font-kaam-body text-kaam-on-surface">
+      {/* Top Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-kaam-display-sm text-2xl font-black tracking-tight text-kaam-on-surface">
+            In-Progress Production Runs
+          </h1>
+          <p className="font-kaam-body-sm text-xs text-kaam-on-surface-variant mt-1">
+            Real-time tracking of active garment production plans and stage routing operations.
+          </p>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-kaam-surface-container-lowest p-4 rounded-kaam-DEFAULT border border-kaam-outline-variant mb-kaam-row-gap flex flex-col lg:flex-row gap-4 items-end lg:items-center justify-between">
-        <div className="flex-1 w-full lg:max-w-xs relative">
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
+          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">Active Runs</span>
+          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-primary mt-2">{kpis.activeCount} Plans</strong>
+        </div>
+
+        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
+          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">In-Production Units</span>
+          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-secondary mt-2">{kpis.totalUnits.toLocaleString()} pcs</strong>
+        </div>
+
+        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
+          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">Urgent Priorities</span>
+          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-error mt-2">{kpis.urgentCount} High Priority</strong>
+        </div>
+
+        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
+          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">Avg Pipeline Progress</span>
+          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-tertiary mt-2">{kpis.avgProgress}%</strong>
+        </div>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <div className="relative flex-1">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-kaam-on-surface-variant text-sm">
+            search
+          </span>
           <input 
             type="text" 
-            placeholder="Search Plan ID or Product..." 
-            className="w-full px-3 py-1.5 rounded-kaam-DEFAULT border border-kaam-outline-variant bg-kaam-surface-container focus:outline-none focus:border-kaam-secondary focus:ring-1 focus:ring-kaam-secondary text-kaam-body-sm font-kaam-body-sm text-kaam-on-surface transition-all placeholder:text-kaam-on-surface-variant/70"
+            placeholder="Search plan ID, client, or product..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-sm focus:outline-none focus:border-kaam-secondary"
           />
         </div>
-        <div className="flex flex-wrap gap-4 w-full lg:w-auto">
-          <div className="flex items-center gap-2">
-            <label className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface-variant shrink-0">Priority:</label>
-            <div className="relative">
-              <select 
-                className="py-1.5 pl-3 pr-8 rounded-kaam-DEFAULT border border-kaam-outline-variant bg-kaam-surface-container text-kaam-body-sm font-kaam-body-sm text-kaam-on-surface focus:outline-none focus:border-kaam-secondary appearance-none min-w-[100px] cursor-pointer relative z-10"
-                value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value)}
-              >
-                <option value="all">All</option>
-                <option value="urgent">Urgent</option>
-                <option value="normal">Normal</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none z-20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[18px] text-kaam-on-surface-variant">expand_more</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface-variant shrink-0">Sort By:</label>
-            <div className="relative">
-              <select 
-                className="py-1.5 pl-3 pr-8 rounded-kaam-DEFAULT border border-kaam-outline-variant bg-kaam-surface-container text-kaam-body-sm font-kaam-body-sm text-kaam-on-surface focus:outline-none focus:border-kaam-secondary appearance-none min-w-[130px] cursor-pointer relative z-10"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="date">Required Date</option>
-                <option value="progress">Progress</option>
-              </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none z-20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-[18px] text-kaam-on-surface-variant">expand_more</span>
-              </div>
-            </div>
-          </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <select 
+            value={priorityFilter}
+            onChange={(e) => setPriorityFilter(e.target.value)}
+            className="px-3 py-2 bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-xs font-bold text-kaam-on-surface focus:outline-none"
+          >
+            <option value="all">All Priorities</option>
+            <option value="urgent">Urgent / Critical</option>
+            <option value="high">High</option>
+            <option value="normal">Normal / Medium</option>
+            <option value="low">Low</option>
+          </select>
+
+          <select 
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="px-3 py-2 bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-xs font-bold text-kaam-on-surface focus:outline-none"
+          >
+            <option value="date">Sort by Due Date</option>
+            <option value="priority">Sort by Priority</option>
+            <option value="progress">Sort by Progress</option>
+          </select>
         </div>
       </div>
 
       {/* Data Table */}
-      <div className="bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT overflow-hidden flex flex-col">
-        {filteredPlans.length > 0 ? (
-          filteredPlans.map((plan) => (
+      <div className="bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT overflow-hidden flex flex-col shadow-xs">
+        {loading ? (
+          <div className="p-12 text-center text-kaam-on-surface-variant font-kaam-body-sm bg-kaam-surface-bright">
+            <div className="inline-block animate-spin text-kaam-primary mb-2">
+              <span className="material-symbols-outlined">sync</span>
+            </div>
+            <p>Loading real-time production runs...</p>
+          </div>
+        ) : filteredPlans.length > 0 ? (
+          filteredPlans.map((plan, idx) => (
             <PlanRow 
-              key={plan.id}
+              key={plan.id ? `${plan.id}-${idx}` : `plan-${idx}`}
               plan={plan}
               isExpanded={expandedPlanId === plan.id}
               onToggle={() => setExpandedPlanId(expandedPlanId === plan.id ? null : plan.id)}
@@ -355,8 +318,9 @@ export default function InProgressDashboard() {
             />
           ))
         ) : (
-          <div className="p-8 text-center text-muted font-kaam-body-sm bg-kaam-surface-bright">
-            No active production plans found.
+          <div className="p-12 text-center text-kaam-on-surface-variant font-kaam-body-sm bg-kaam-surface-bright">
+            <span className="material-symbols-outlined text-3xl text-kaam-outline mb-2">inventory_2</span>
+            <p className="font-bold">No active in-progress production plans found.</p>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import { fetchCustomers } from "../../crm/api/customer.api";
 import { Customer } from "../../crm/dto/customer.dto";
 import { Order } from "../../crm/dto/order.dto";
 import { fetchOrders } from "../../crm/api/order.api";
+import { checkMaterials } from "../api/production.api";
 
 // Mock Database Lists
 const mockCustomers: any[] = [];
@@ -70,6 +71,22 @@ function normalizeSizeRows(sizes: Record<string, number> | Array<{ size: string;
 }
 
 export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
+  // Convert AD (Gregorian) date string "YYYY-MM-DD" to BS (Nepali) date string "YYYY-MM-DD"
+  const adToBs = (adStr: string): string => {
+    if (!adStr) return "";
+    const datePart = String(adStr).split('T')[0].trim();
+    if (!datePart) return "";
+    const year = parseInt(datePart.split("-")[0], 10);
+    if (!isNaN(year) && year >= 2070 && year <= 2100) return datePart;
+    if (typeof window === "undefined" || !(window as any).NepaliFunctions) return datePart;
+    try {
+      const bsVal = (window as any).NepaliFunctions.AD2BS(datePart, "YYYY-MM-DD", "YYYY-MM-DD");
+      return typeof bsVal === "string" ? bsVal : `${bsVal.year}-${String(bsVal.month).padStart(2, "0")}-${String(bsVal.day).padStart(2, "0")}`;
+    } catch (e) {
+      return datePart;
+    }
+  };
+
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -118,21 +135,22 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
       if (custOrders.length > 0) {
         const itemsList: any[] = [];
         custOrders.forEach((o) => {
-          if (o.items && o.items.length > 0) {
-            o.items.forEach((item, index) => {
+          const orderItems = o.orderItems || o.items;
+          if (orderItems && orderItems.length > 0) {
+            orderItems.forEach((item: any, index: number) => {
               const qty = Number(item.quantity) || 10;
               itemsList.push({
                 id: `${o.id || o.orderNumber}-${index}`,
                 orderNo: o.orderNumber,
                 customerId: o.customerId,
-                productId: "PRD-001", // Default placeholder for BOM matching
+                productId: item.productId || "PRD-001", // Dynamically populated from backend
                 productName: item.productName || `Item #${index + 1}`,
                 category: "General",
                 variant: "Standard Color",
                 quantity: qty,
                 deliveryDate: o.dueDate,
                 priority: "Normal",
-                productImage: "/images/products/place-holder.png",
+                productImage: item.product?.imagePath || "/images/products/place-holder.png",
                 productionNotes: o.status,
                 sizes: { M: Math.floor(qty / 2), L: Math.ceil(qty / 2) }
               });
@@ -176,6 +194,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
 
   // Material Requirement State
   const [bulkChecked, setBulkChecked] = useState(false);
+  const [isCheckingBulk, setIsCheckingBulk] = useState(false);
   const [bulkMaterials, setBulkMaterials] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -216,47 +235,45 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
   }, [basket]);
 
   // Bulk material checker
-  const handleCheckBulkMaterials = () => {
+  const handleCheckBulkMaterials = async () => {
     if (!basket.length) return;
-
-    const calculated: { [key: string]: any } = {};
-
-    basket.forEach(item => {
-      const boms = mockBoms.filter(b => b.productId === item.productId);
-      boms.forEach(bom => {
-        const material = mockMaterials.find(m => m.id === bom.materialId);
-        if (!material) return;
-
-        const baseQty = item.quantity * bom.qtyPerUnit;
-        const requiredQty = baseQty + (baseQty * bom.wastagePercent) / 100;
-        const key = material.materialCode;
-
-        if (calculated[key]) {
-          calculated[key].requiredQty += requiredQty;
-        } else {
-          calculated[key] = {
-            materialCode: material.materialCode,
-            materialName: material.name,
-            materialType: material.type,
-            requiredQty,
-            availableQty: material.availableQty,
-            unit: material.unit,
-          };
-        }
+    
+    setIsCheckingBulk(true);
+    setBulkChecked(false);
+    
+    try {
+      const payload = basket.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      }));
+      
+      const res = await checkMaterials(payload);
+      const materials = res.materials || [];
+      
+      const finalMaterials = materials.map((mat: any) => {
+        const required = Number(mat.requiredQty) || 0;
+        const available = Number(mat.availableQty) || 0;
+        const shortage = Math.max(required - available, 0);
+        return {
+          materialCode: mat.materialCode || mat.materialName,
+          materialName: mat.materialName,
+          materialType: 'Raw Material',
+          requiredQty: required,
+          availableQty: available,
+          shortageQty: shortage,
+          unit: mat.unit,
+          status: shortage > 0 ? "Shortage" : "Available"
+        };
       });
-    });
-
-    const finalMaterials = Object.values(calculated).map(mat => {
-      const shortageQty = Math.max(mat.requiredQty - mat.availableQty, 0);
-      return {
-        ...mat,
-        shortageQty,
-        status: shortageQty > 0 ? "Shortage" : "Available",
-      };
-    });
-
-    setBulkMaterials(finalMaterials);
-    setBulkChecked(true);
+      
+      setBulkMaterials(finalMaterials);
+      setBulkChecked(true);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to check materials with the warehouse.");
+    } finally {
+      setIsCheckingBulk(false);
+    }
   };
 
   // Submit / Create Plan Action
@@ -341,25 +358,22 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
   };
 
   // Single item Material Calculation preview inside Modal
-  const itemMaterialPreview = useMemo(() => {
-    if (!modalItem) return [];
-    const boms = mockBoms.filter(b => b.productId === modalItem.productId);
-    return boms.map(bom => {
-      const material = mockMaterials.find(m => m.id === bom.materialId);
-      if (!material) return null;
+  const [itemMaterialPreview, setItemMaterialPreview] = useState<any[]>([]);
+  const [isLoadingMaterials, setIsLoadingMaterials] = useState(false);
 
-      const requiredQty = modalItem.quantity * bom.qtyPerUnit;
-      const shortageQty = Math.max(requiredQty - material.availableQty, 0);
-
-      return {
-        materialName: material.name,
-        requiredQty,
-        availableQty: material.availableQty,
-        shortageQty,
-        unit: material.unit,
-        status: shortageQty > 0 ? "Shortage" : "Available",
-      };
-    }).filter(Boolean);
+  useEffect(() => {
+    if (!modalItem) {
+      setItemMaterialPreview([]);
+      return;
+    }
+    
+    setIsLoadingMaterials(true);
+    checkMaterials([{ productId: modalItem.productId, quantity: modalItem.quantity }])
+      .then(res => {
+        setItemMaterialPreview(res.materials || []);
+      })
+      .catch(console.error)
+      .finally(() => setIsLoadingMaterials(false));
   }, [modalItem]);
 
   // Measurement chart mock helper
@@ -427,6 +441,141 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
         @keyframes popCheckmark {
           0% { transform: scale(0); }
           100% { transform: scale(1); }
+        }
+      
+        /* -- ORDER DETAIL MODAL ENHANCEMENTS -- */
+        .order-detail-modal-panel {
+          border-radius: 16px !important;
+          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12) !important;
+          max-width: 960px !important;
+          width: 90% !important;
+          border: none !important;
+          background: #ffffff !important;
+        }
+        .order-detail-modal-panel .pp-modal-header {
+          padding: 24px 32px !important;
+          border-bottom: 1px solid #f1f5f9 !important;
+          background: #ffffff !important;
+        }
+        .order-detail-modal-panel .pp-modal-body {
+          padding: 32px !important;
+          background-color: #fafbfc !important;
+        }
+        
+        /* Layout: Image on left, details on right */
+        .order-detail-layout {
+          display: grid;
+          grid-template-columns: minmax(300px, 1fr) 1.5fr;
+          gap: 40px;
+          align-items: start;
+        }
+        .order-detail-media img {
+          width: 100%;
+          border-radius: 16px;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+          object-fit: cover;
+          background: #fff;
+        }
+        
+        /* Info typography & spacing */
+        .order-detail-info h3 {
+          font-size: 28px;
+          font-weight: 700;
+          color: #0f172a;
+          margin-bottom: 24px;
+          letter-spacing: -0.5px;
+        }
+        .detail-info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 24px;
+          background: #ffffff;
+          padding: 24px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .detail-info-grid span {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #64748b;
+          display: block;
+          margin-bottom: 6px;
+        }
+        .detail-info-grid strong {
+          font-size: 16px;
+          color: #1e293b;
+        }
+
+        
+        /* Subtables Layout */
+        .order-detail-sub-layout {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 32px;
+          margin-bottom: 32px;
+        }
+        .order-detail-tabs .pp-table-wrapper {
+          overflow-x: visible !important;
+          white-space: normal !important;
+        }
+        .order-detail-tabs td, .order-detail-tabs th {
+          white-space: normal !important;
+        }
+
+        /* Borderless sleek tables */
+        .order-detail-tabs {
+          display: block !important;
+          margin-top: 48px;
+          padding-top: 40px;
+          border-top: 1px solid #e2e8f0;
+        }
+        .detail-section-header h3 {
+          font-size: 18px;
+          font-weight: 600;
+          color: #0f172a;
+          margin: 0 0 4px 0;
+        }
+        .detail-section-header p {
+          color: #64748b;
+          font-size: 14px;
+          margin: 0 0 16px 0;
+        }
+        .order-detail-tabs .pp-table-wrapper {
+          background: #ffffff;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+          overflow: hidden;
+        }
+        .order-detail-tabs table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .order-detail-tabs th {
+          background-color: #f8fafc;
+          text-align: left;
+          padding: 16px 20px;
+          font-size: 12px;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+        .order-detail-tabs td {
+          padding: 16px 20px;
+          font-size: 14px;
+          color: #334155;
+          border-bottom: 1px solid #f1f5f9;
+          transition: background-color 0.2s ease;
+        }
+        .order-detail-tabs tbody tr:hover td {
+          background-color: #f8fafc;
+        }
+        .order-detail-tabs tbody tr:last-child td {
+          border-bottom: none;
         }
       `}</style>
       <div className="pp-page-header">
@@ -521,7 +670,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
             </div>
             <div>
               <span>Earliest Required Date</span>
-              <strong>{basketStats.earliestDate}</strong>
+              <strong>{adToBs(basketStats.earliestDate)}</strong>
             </div>
           </div>
         </div>
@@ -572,7 +721,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
                         </div>
                         <div>
                           <span>Required Date</span>
-                          <strong>{item.deliveryDate || item.requiredDate}</strong>
+                          <strong>{adToBs(item.deliveryDate || item.requiredDate)}</strong>
                         </div>
                         {kind === "outlet" && (
                           <>
@@ -669,12 +818,12 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
             </div>
             <div className="d-flex justify-content-between mb-8 fs-12">
               <span>Earliest Date:</span>
-              <strong className="text-dark">{basketStats.earliestDate}</strong>
+              <strong className="text-dark">{adToBs(basketStats.earliestDate)}</strong>
             </div>
             <div className="d-flex justify-content-between mb-16 fs-12">
               <span>Material Checked:</span>
-              <strong className={bulkChecked ? "text-green" : "text-danger"}>
-                {bulkChecked ? "Checked OK" : "Pending Check"}
+              <strong className={isCheckingBulk ? "text-muted" : bulkChecked ? "text-green" : "text-danger"}>
+                {isCheckingBulk ? "Checking..." : bulkChecked ? "Checked OK" : "Pending Check"}
               </strong>
             </div>
           </div>
@@ -692,11 +841,11 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
             <button
               type="button"
               className="btn btn-outline full-width"
-              disabled={!basket.length}
+              disabled={!basket.length || isCheckingBulk}
               onClick={handleCheckBulkMaterials}
             >
               <MaterialIcon name="inventory" />
-              Check Materials in Bulk
+              {isCheckingBulk ? "Checking..." : "Check Materials in Bulk"}
             </button>
             <button
               type="submit"
@@ -814,7 +963,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
                     </div>
                     <div>
                       <span>Required Date</span>
-                      <strong>{modalItem.deliveryDate || modalItem.requiredDate}</strong>
+                      <strong>{adToBs(modalItem.deliveryDate || modalItem.requiredDate)}</strong>
                     </div>
                     <div>
                       <span>Variant Color</span>
@@ -883,8 +1032,9 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
 
               {/* Subtables: Sizes, Measurements, Materials */}
               <div className="order-detail-tabs mt-24">
+
                 {/* Sizes Breakdown */}
-                <section className="detail-section mb-20">
+                <section className="detail-section">
                   <div className="detail-section-header">
                     <h3>Sizing Matrix Breakdown</h3>
                     <p>Required distributions across standard sizes.</p>
@@ -945,8 +1095,9 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
                   </div>
                 </section>
 
-                {/* BOM Requirement */}
-                <section className="detail-section">
+
+                {/* BOM Requirement - Full Width */}
+                <section className="detail-section full-width-materials">
                   <div className="detail-section-header">
                     <h3>Raw Materials Preview</h3>
                     <p>Standard material estimates for this item's quantities.</p>

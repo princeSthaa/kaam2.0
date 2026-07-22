@@ -1,5 +1,8 @@
-export interface OrderItem {
-  productName: string;
+﻿export interface OrderItem {
+  id?: string;
+  productId?: string;
+  product?: any;
+  productName?: string;
   quantity: number;
   unitPrice: number;
 }
@@ -11,7 +14,8 @@ export interface Order {
   status: string;
   totalAmount: number;
   dueDate: string;
-  items: OrderItem[];
+  orderItems?: OrderItem[];
+  items?: OrderItem[];
   createdAt?: string;
   updatedAt?: string;
 }

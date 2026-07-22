@@ -7,17 +7,36 @@ using backend.Model.Enums;
 using backend.Service.ProductionPlan;
 using Microsoft.AspNetCore.Mvc;
 
+using backend.Data;
+using Microsoft.EntityFrameworkCore;
+
 namespace backend.Controller.ProductionPlan
 {
     [ApiController]
-    [Route("api/production-plan")]
+    [Route("api/production-plans")]
     public class ProductionPlanController : ControllerBase
     {
         private readonly IProductionPlanService _ProductionPlanService;
+        private readonly AppDbContext _context;
 
-        public ProductionPlanController(IProductionPlanService ProductionPlanService)
+        public ProductionPlanController(IProductionPlanService ProductionPlanService, AppDbContext context)
         {
             _ProductionPlanService = ProductionPlanService;
+            _context = context;
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var plan = await _context.ProductionPlans
+                .Include(p => p.ProductionPlanProducts)
+                    .ThenInclude(p => p.ProductionPlanProductSizes)
+                .Include(p => p.ProductionPlanStages)
+                .FirstOrDefaultAsync(p => p.Id == id || p.PlanId == id);
+
+            if (plan == null) return NotFound($"ProductionPlan with ID {id} not found.");
+
+            return Ok(plan);
         }
 
         // <crudgen:actions>
@@ -131,6 +150,30 @@ namespace backend.Controller.ProductionPlan
 
             return NoContent();
         }
+
+        [HttpPost("{id}/activate")]
+        public async Task<IActionResult> Activate(string id)
+        {
+            var activated = await _ProductionPlanService.ActivateAsync(id);
+            if (!activated)
+            {
+                return NotFound($"ProductionPlan with ID {id} not found.");
+            }
+            return Ok(new { message = "Plan activated successfully" });
+        }
+        
+        [HttpPost("check-materials")]
+        public async Task<IActionResult> CheckMaterials([FromBody] MaterialCheckRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _ProductionPlanService.CheckMaterialsAsync(request);
+            return Ok(result);
+        }
+
         // </crudgen:actions>
     }
 }

@@ -1,34 +1,156 @@
 [
   {
-    "Name": "Cutter Auto-B",
-    "Type": "Machine",
-    "Status": "Available",
+    "Id": "wc-001",
+    "Name": "Line 1 - Automated Cutting",
+    "Type": "Cutting",
+    "ProductionLine": "Sewing Line 1",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-002",
+    "Name": "Line 1 - Main Sewing Floor A",
+    "Type": "Sewing",
+    "ProductionLine": "Sewing Line 1",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-003",
+    "Name": "Line 1 - Assembly & Stitching",
+    "Type": "Assembly",
+    "ProductionLine": "Sewing Line 1",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-004",
+    "Name": "Line 1 - QC & Steam Finishing",
+    "Type": "Finishing",
+    "ProductionLine": "Sewing Line 1",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-005",
+    "Name": "Line 2 - Heavy Fabric Cutting",
+    "Type": "Cutting",
+    "ProductionLine": "Sewing Line 2",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-006",
+    "Name": "Line 2 - Main Sewing Floor B",
+    "Type": "Sewing",
+    "ProductionLine": "Sewing Line 2",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-007",
+    "Name": "Line 2 - Zipper & Pocket Assembly",
+    "Type": "Assembly",
+    "ProductionLine": "Sewing Line 2",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-008",
+    "Name": "Line 2 - QC & Final Packing",
+    "Type": "Finishing",
+    "ProductionLine": "Sewing Line 2",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-009",
+    "Name": "Sports Line - Sublimation & Pattern Cut",
+    "Type": "Cutting",
+    "ProductionLine": "Sports Uniform Line",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-010",
+    "Name": "Sports Line - Elastic & Overlock Sewing",
+    "Type": "Sewing",
+    "ProductionLine": "Sports Uniform Line",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-011",
+    "Name": "Sports Line - Logo & Number Assembly",
+    "Type": "Assembly",
+    "ProductionLine": "Sports Uniform Line",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-012",
+    "Name": "Sports Line - Quality Inspection & Tagging",
+    "Type": "Finishing",
+    "ProductionLine": "Sports Uniform Line",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-013",
+    "Name": "Jacket Line - Leather/Fleece Precision Cut",
+    "Type": "Cutting",
+    "ProductionLine": "Jacket Section",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-014",
+    "Name": "Jacket Line - Padding & Lining Stitching",
+    "Type": "Sewing",
+    "ProductionLine": "Jacket Section",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-015",
+    "Name": "Jacket Line - Heavy Zip & Hardware Assembly",
+    "Type": "Assembly",
+    "ProductionLine": "Jacket Section",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-016",
+    "Name": "Jacket Line - Thermal Press & Quality Audit",
+    "Type": "Finishing",
+    "ProductionLine": "Jacket Section",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-017",
+    "Name": "Subcontract - External Cutting Workshop",
+    "Type": "Cutting",
+    "ProductionLine": "External Workshop",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-018",
+    "Name": "Subcontract - Outer Workshop Stitching",
+    "Type": "Sewing",
+    "ProductionLine": "External Workshop",
+    "Status": "Available"
+  },
+  {
+    "Id": "wc-019",
+    "Name": "Subcontract - Assembly & Packing Station",
+    "Type": "Assembly",
+    "ProductionLine": "External Workshop",
+    "Status": "Available"
+  },
+  {
     "Id": "cdc188c0-4efa-46d6-a5e6-7598e7d8c62f",
-    "CreatedAt": "2026-07-12T04:24:50.8590018Z",
-    "UpdatedAt": "2026-07-12T04:24:50.8590025Z"
+    "Name": "Cutter Auto-B",
+    "Type": "Cutting",
+    "ProductionLine": "General",
+    "Status": "Available"
   },
   {
-    "Name": "Line 4A",
-    "Type": "Manual Line",
-    "Status": "Available",
-    "Id": "fb7787ff-f82d-4166-9185-4cd512102a8f",
-    "CreatedAt": "2026-07-12T04:24:50.8617895Z",
-    "UpdatedAt": "2026-07-12T04:24:50.86179Z"
-  },
-  {
+    "Id": "c8542ad2-0bbd-42cf-a17c-4d073babd8fe",
     "Name": "QC Station 1",
     "Type": "QC Station",
-    "Status": "Available",
-    "Id": "c8542ad2-0bbd-42cf-a17c-4d073babd8fe",
-    "CreatedAt": "2026-07-12T04:24:50.8631451Z",
-    "UpdatedAt": "2026-07-12T04:24:50.8631457Z"
+    "ProductionLine": "General",
+    "Status": "Available"
   },
   {
-    "Name": "Finishing Station",
-    "Type": "Manual Line",
-    "Status": "Available",
     "Id": "150a0fb1-2eb1-4576-b743-83beb121d65f",
-    "CreatedAt": "2026-07-12T04:24:50.8647063Z",
-    "UpdatedAt": "2026-07-12T04:24:50.8647067Z"
+    "Name": "Finishing Station",
+    "Type": "Finishing",
+    "ProductionLine": "General",
+    "Status": "Available"
   }
 ]

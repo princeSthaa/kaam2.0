@@ -208,7 +208,7 @@
       "Properties": [
         {
           "Name": "Id",
-          "Type": "string",
+          "Type": "Guid",
           "IsPrimaryKey": true
         },
         {

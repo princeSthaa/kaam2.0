@@ -57,6 +57,15 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     dbContext.Database.EnsureCreated();
+    try
+    {
+        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('WorkCenters') AND name = 'ProductionLine') ALTER TABLE WorkCenters ADD ProductionLine NVARCHAR(MAX) NULL;");
+        dbContext.Database.ExecuteSqlRaw("UPDATE WorkCenters SET ProductionLine = '' WHERE ProductionLine IS NULL;");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Migration note: {ex.Message}");
+    }
     
     // Execute all Stored Procedure scripts from Sql directory
     var sqlDir = Path.Combine(Directory.GetCurrentDirectory(), "Sql");

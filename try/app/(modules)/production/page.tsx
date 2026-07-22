@@ -42,7 +42,7 @@ export default function ProductionOverviewDashboardPage() {
     fetch("http://localhost:5083/api/production-plans")
       .then((res) => res.json())
       .then((data) => {
-        setPlans(data);
+        setPlans(data.value || data || []);
         setIsLoading(false);
       })
       .catch((err) => {

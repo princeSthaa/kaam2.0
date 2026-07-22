@@ -5,7 +5,8 @@ const API_BASE_URL = 'http://localhost:5083/api';
 export async function fetchOrders(): Promise<Order[]> {
   const res = await fetch(`${API_BASE_URL}/order`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch orders');
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : (null as any);
 }
 
 export async function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order> {
@@ -19,7 +20,8 @@ export async function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'updat
     console.error("API Error Response:", errorText);
     throw new Error(`Failed to create order: ${res.status} - ${errorText}`);
   }
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : (null as any);
 }
 
 export async function updateOrder(id: string, order: Partial<Order>): Promise<Order> {
@@ -29,7 +31,8 @@ export async function updateOrder(id: string, order: Partial<Order>): Promise<Or
     body: JSON.stringify(order),
   });
   if (!res.ok) throw new Error('Failed to update order');
-  return res.json();
+  const text = await res.text();
+  return text ? JSON.parse(text) : (null as any);
 }
 
 export async function deleteOrder(id: string): Promise<void> {

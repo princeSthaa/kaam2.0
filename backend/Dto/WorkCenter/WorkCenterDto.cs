@@ -37,6 +37,8 @@ namespace backend.Dto.WorkCenter
 
         public string Status { get; set; } = string.Empty;
 
+        public string? ProductionLine { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "CreatedAt is required.")]
         public DateTime CreatedAt { get; set; }
 
