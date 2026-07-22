@@ -11,12 +11,21 @@ export function formatNepaliDate(dateVal: any): string {
   if (dateStr.includes("T")) dateStr = dateStr.split("T")[0];
   if (dateStr.includes(" ")) dateStr = dateStr.split(" ")[0];
 
-  if (dateStr.startsWith("208") || dateStr.startsWith("207") || dateStr.startsWith("209")) {
+  // Handle C# DateTime.MinValue (0001-01-01) or uninitialized dates
+  if (dateStr.startsWith("0001") || dateStr.startsWith("0000") || dateStr === "1970-01-01") {
+    return "N/A";
+  }
+
+  // Already BS date (2070-2100)
+  const firstYear = parseInt(dateStr.split("-")[0], 10);
+  if (!isNaN(firstYear) && firstYear >= 2070 && firstYear <= 2100) {
     return dateStr.includes("BS") ? dateStr : `${dateStr} BS`;
   }
 
   const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return `${dateStr} BS`;
+  if (isNaN(d.getTime()) || d.getFullYear() < 2000) {
+    return dateStr.includes("BS") ? dateStr : `${dateStr} BS`;
+  }
 
   const adYear = d.getFullYear();
   const adMonth = d.getMonth();

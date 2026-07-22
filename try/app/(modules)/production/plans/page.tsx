@@ -319,9 +319,11 @@ export default function ProductionPlansListPage() {
                           <Link href={`/production/plans/${encodeURIComponent(planNo)}`} className="ppl-btn ppl-btn-sm ppl-btn-outline">
                             View
                           </Link>
-                          <Link href={`/production/plans/new?id=${encodeURIComponent(planNo)}`} className="ppl-btn ppl-btn-sm ppl-btn-outline">
-                            Edit
-                          </Link>
+                          {!(String(p.status || "").toLowerCase() === "completed" || String(p.status || "") === "5") && (
+                            <Link href={`/production/plans/${encodeURIComponent(planNo)}/edit`} className="ppl-btn ppl-btn-sm ppl-btn-outline">
+                              Edit
+                            </Link>
+                          )}
                         </div>
                       </td>
                     </tr>

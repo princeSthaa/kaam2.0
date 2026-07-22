@@ -373,24 +373,38 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
       Promise.all([
         fetchCustomers(),
         fetchOrders(),
-        fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).catch(() => [])
-      ]).then(([custs, ords, plans]) => {
+        fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => [])
+      ]).then(([custs, ords, plans, planProducts]) => {
         const plannedOrderNos = new Set<string>();
+        const plannedSourceIds = new Set<string>();
+
         (plans || []).forEach((p: any) => {
+          if (p.sourceId) plannedSourceIds.add(String(p.sourceId));
           const prods = p.productionPlanProducts || p.products || [];
-          prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+          prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
         });
+
+        (planProducts || []).forEach((pp: any) => {
+          if (pp.orderNo) plannedOrderNos.add(String(pp.orderNo));
+        });
+
         if (typeof window !== "undefined") {
           try {
             const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
             drafts.forEach((d: any) => {
-              (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+              if (d.sourceId) plannedSourceIds.add(String(d.sourceId));
+              (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
             });
           } catch {}
         }
 
         const combined = custs.map(c => {
-          const cOrders = ords.filter(o => o.customerId === c.id && !plannedOrderNos.has(o.orderNumber));
+          if (plannedSourceIds.has(String(c.id))) {
+            return { ...c, orderCount: 0, totalQty: 0, orders: [], highestPriority: "Normal" };
+          }
+
+          const cOrders = ords.filter(o => o.customerId === c.id && !plannedOrderNos.has(String(o.orderNumber)));
           const mappedOrders: any[] = [];
           
           cOrders.forEach(o => {
@@ -410,17 +424,18 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
             }
           });
 
+          const uniqueOrderCount = new Set(mappedOrders.map(o => o.orderNo)).size;
           const totalQty = mappedOrders.reduce((sum, item) => sum + (item.quantity || 0), 0);
           const highestPriority = mappedOrders.some(item => item.priority === "Urgent") ? "Urgent" : "Normal";
 
           return {
             ...c,
-            orderCount: cOrders.length,
-            totalQty: totalQty || cOrders.length,
+            orderCount: uniqueOrderCount,
+            totalQty: totalQty,
             orders: mappedOrders,
             highestPriority,
           };
-        }).filter(c => c.orderCount > 0);
+        }).filter(c => c.orders.length > 0);
         
         setCustomers(combined);
         setLoading(false);
@@ -567,18 +582,18 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
   // Compute KPI values
   const getStatValue = (id: string) => {
     if (kind === "customer") {
-      if (id === "customerCatalogTotalCustomers") return customers.length;
-      if (id === "customerCatalogTotalOrders") return customers.reduce((sum, c) => sum + c.orderCount, 0);
-      if (id === "customerCatalogTotalQty") return customers.reduce((sum, c) => sum + c.totalQty, 0).toLocaleString();
+      if (id === "customerCatalogTotalCustomers") return filteredCustomers.length;
+      if (id === "customerCatalogTotalOrders") return filteredCustomers.reduce((sum, c) => sum + c.orderCount, 0);
+      if (id === "customerCatalogTotalQty") return filteredCustomers.reduce((sum, c) => sum + c.totalQty, 0).toLocaleString();
       if (id === "customerCatalogUrgentCount") {
-        return customers.reduce((sum, c) => sum + c.orders.filter(o => o.priority === "Urgent").length, 0);
+        return filteredCustomers.reduce((sum, c) => sum + c.orders.filter(o => o.priority === "Urgent").length, 0);
       }
     } else {
-      if (id === "outletCatalogTotalOutlets") return outlets.length;
-      if (id === "outletCatalogTotalDemand") return outlets.reduce((sum, o) => sum + o.demandCount, 0);
-      if (id === "outletCatalogTotalQty") return outlets.reduce((sum, o) => sum + o.totalQty, 0).toLocaleString();
+      if (id === "outletCatalogTotalOutlets") return filteredOutlets.length;
+      if (id === "outletCatalogTotalDemand") return filteredOutlets.reduce((sum, o) => sum + o.demandCount, 0);
+      if (id === "outletCatalogTotalQty") return filteredOutlets.reduce((sum, o) => sum + o.totalQty, 0).toLocaleString();
       if (id === "outletCatalogCriticalCount") {
-        return outlets.reduce((sum, o) => sum + o.demands.filter((d: any) => d.stockStatus === "Critical").length, 0);
+        return filteredOutlets.reduce((sum, o) => sum + o.demands.filter((d: any) => d.stockStatus === "Critical").length, 0);
       }
     }
     return 0;

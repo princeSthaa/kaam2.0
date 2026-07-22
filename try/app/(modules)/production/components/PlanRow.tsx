@@ -102,13 +102,15 @@ export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: an
                 >
                   <span className="material-symbols-outlined text-[16px]">visibility</span> View Details
                 </Link>
-                <Link
-                  href={`/production/plans/new?id=${encodeURIComponent(plan.id)}`}
-                  className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                  onClick={() => setIsDropdownOpen(false)}
-                >
-                  <span className="material-symbols-outlined text-[16px]">edit</span> Edit Plan
-                </Link>
+                {!(String(plan.status || "").toLowerCase() === "completed" || String(plan.status || "") === "5") && (
+                  <Link
+                    href={`/production/plans/${encodeURIComponent(plan.planNo || plan.planId || plan.id)}/edit`}
+                    className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit</span> Edit Plan
+                  </Link>
+                )}
                 <button
                   type="button"
                   onClick={(e) => handleStatusChange(plan.status === 'On Hold' ? 'Active' : 'On Hold', e)}
