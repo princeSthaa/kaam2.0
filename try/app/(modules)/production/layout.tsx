@@ -1,6 +1,6 @@
 import { Sidebar } from "@/app/components/layout/Sidebar";
 import { productionNavigation } from "./navigation";
-import "./plans/production-plans.css";
+import "./styles/production-plans.css";
 
 export default function ProductionLayout({
   children,

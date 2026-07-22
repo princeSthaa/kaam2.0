@@ -95,12 +95,14 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
   const [liveCustomers, setLiveCustomers] = useState<Customer[]>([]);
   const [liveOrders, setLiveOrders] = useState<Order[]>([]);
   const [existingPlans, setExistingPlans] = useState<any[]>([]);
+  const [existingPlanProducts, setExistingPlanProducts] = useState<any[]>([]);
 
   useEffect(() => {
     if (kind === "customer") {
       fetchCustomers().then(setLiveCustomers).catch(console.error);
       fetchOrders().then(setLiveOrders).catch(console.error);
       fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).then(setExistingPlans).catch(console.error);
+      fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).then(setExistingPlanProducts).catch(console.error);
     }
   }, [kind]);
 
@@ -131,21 +133,33 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
     if (!selectedSourceId) return [];
 
     const plannedOrderNos = new Set<string>();
+    const plannedSourceIds = new Set<string>();
+
     existingPlans.forEach((p: any) => {
+      if (p.sourceId) plannedSourceIds.add(String(p.sourceId));
       const prods = p.productionPlanProducts || p.products || [];
-      prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+      prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
     });
+
+    existingPlanProducts.forEach((pp: any) => {
+      if (pp.orderNo) plannedOrderNos.add(String(pp.orderNo));
+    });
+
     if (typeof window !== "undefined") {
       try {
         const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
         drafts.forEach((d: any) => {
-          (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+          if (d.sourceId) plannedSourceIds.add(String(d.sourceId));
+          (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
         });
       } catch {}
     }
 
     if (kind === "customer") {
-      const custOrders = liveOrders.filter(o => o.customerId === selectedSourceId && !plannedOrderNos.has(o.orderNumber));
+      if (plannedSourceIds.has(String(selectedSourceId))) {
+        return [];
+      }
+      const custOrders = liveOrders.filter(o => o.customerId === selectedSourceId && !plannedOrderNos.has(String(o.orderNumber)));
       if (custOrders.length > 0) {
         const itemsList: any[] = [];
         custOrders.forEach((o) => {
@@ -292,7 +306,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
 
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push("/production/plans/new");
+      router.push("/production/plans/CreateCustomerPlan");
     }, 800);
   };
 
@@ -826,15 +840,6 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
           </div>
 
           <form onSubmit={handleCreatePlan} className="d-flex flex-column gap-10">
-            <button
-              type="button"
-              className="btn btn-light full-width"
-              disabled={!basket.length || isSubmitting}
-              onClick={handleSaveDraft}
-            >
-              <MaterialIcon name="draft" />
-              Save to Drafts
-            </button>
             <button
               type="button"
               className="btn btn-outline full-width"
