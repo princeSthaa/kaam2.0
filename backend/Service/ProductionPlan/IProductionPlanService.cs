@@ -45,6 +45,10 @@ namespace backend.Service.ProductionPlan
 
         Task<bool> DeleteAsync(string id);
 
+        Task<bool> ActivateAsync(string id);
+
+        Task<MaterialCheckResponseDto> CheckMaterialsAsync(MaterialCheckRequestDto request);
+
         // </crudgen:method-signatures>
     }
 }

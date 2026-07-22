@@ -36,30 +36,75 @@ namespace backend.Service.Order
             string? customerId = null
         )
         {
-            return await _context.Database
-                .SqlQuery<OrderDto>($@"
-                    EXEC sp_GetOrders
+            var query = _context.Orders
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .AsQueryable();
 
-                        @Id = {id},
-                        @OrderNumber = {orderNumber},
-                        @Status = {status},
-                        @TotalAmount = {totalAmount},
-                        @DueDate = {dueDate},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
-                        @CustomerId = {customerId}
-                ")
-                .ToListAsync();
+            if (!string.IsNullOrEmpty(id)) query = query.Where(q => q.Id == id);
+            if (!string.IsNullOrEmpty(orderNumber)) query = query.Where(q => q.OrderNumber == orderNumber);
+            if (status.HasValue) query = query.Where(q => q.Status == status.Value);
+            if (totalAmount.HasValue) query = query.Where(q => q.TotalAmount == totalAmount.Value);
+            if (dueDate.HasValue) query = query.Where(q => q.DueDate == dueDate.Value);
+            if (createdAt.HasValue) query = query.Where(q => q.CreatedAt == createdAt.Value);
+            if (!string.IsNullOrEmpty(createdBy)) query = query.Where(q => q.CreatedBy == createdBy);
+            if (updatedAt.HasValue) query = query.Where(q => q.UpdatedAt == updatedAt.Value);
+            if (!string.IsNullOrEmpty(updatedBy)) query = query.Where(q => q.UpdatedBy == updatedBy);
+            if (!string.IsNullOrEmpty(customerId)) query = query.Where(q => q.CustomerId == customerId);
+
+            var orders = await query.ToListAsync();
+
+            return orders.Select(o => new OrderDto
+            {
+                Id = o.Id,
+                OrderNumber = o.OrderNumber,
+                Status = o.Status,
+                TotalAmount = o.TotalAmount,
+                DueDate = o.DueDate,
+                CreatedAt = o.CreatedAt,
+                CreatedBy = o.CreatedBy,
+                UpdatedAt = o.UpdatedAt,
+                UpdatedBy = o.UpdatedBy,
+                CustomerId = o.CustomerId,
+                OrderItems = o.OrderItems.Select(oi => new backend.Dto.OrderItem.OrderItemDto
+                {
+                    Id = oi.Id,
+                    Quantity = oi.Quantity,
+                    UnitPrice = oi.UnitPrice,
+                    ProductId = oi.ProductId,
+                    FabricId = oi.FabricId,
+                    TotalPrice = oi.TotalPrice,
+                    Discount = oi.Discount,
+                    CreatedAt = oi.CreatedAt,
+                    CreatedBy = oi.CreatedBy,
+                    UpdatedAt = oi.UpdatedAt,
+                    UpdatedBy = oi.UpdatedBy,
+                    OrderId = oi.OrderId,
+                    Product = oi.Product != null ? new backend.Dto.Product.ProductDto
+                    {
+                        Id = oi.Product.Id,
+                        Name = oi.Product.Name,
+                        ImagePath = oi.Product.ImagePath,
+                        CreatedAt = oi.Product.CreatedAt,
+                        CreatedBy = oi.Product.CreatedBy,
+                        UpdatedAt = oi.Product.UpdatedAt,
+                        UpdatedBy = oi.Product.UpdatedBy
+                    } : null
+                }).ToList()
+            }).ToList();
         }
+
 
         public async Task<bool> CreateAsync(OrderDto orderDto)
         {
 
+            if (string.IsNullOrEmpty(orderDto.Id)) {
+                orderDto.Id = Guid.NewGuid().ToString();
+            }
+
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertOrder
-
+                    @Id = {orderDto.Id},
                     @OrderNumber = {orderDto.OrderNumber},
                     @Status = {orderDto.Status},
                     @TotalAmount = {orderDto.TotalAmount},
@@ -70,6 +115,29 @@ namespace backend.Service.Order
                     @UpdatedBy = {orderDto.UpdatedBy},
                     @CustomerId = {orderDto.CustomerId}
             ");
+
+            if (orderDto.OrderItems != null)
+            {
+                foreach (var item in orderDto.OrderItems)
+                {
+                    item.Id = Guid.NewGuid().ToString();
+                    await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                        EXEC sp_InsertOrderItem
+                            @Id = {item.Id},
+                            @Quantity = {item.Quantity},
+                            @UnitPrice = {item.UnitPrice},
+                            @ProductId = {item.ProductId},
+                            @FabricId = {item.FabricId},
+                            @TotalPrice = {item.TotalPrice},
+                            @Discount = {item.Discount},
+                            @CreatedAt = {item.CreatedAt},
+                            @CreatedBy = {item.CreatedBy},
+                            @UpdatedAt = {item.UpdatedAt},
+                            @UpdatedBy = {item.UpdatedBy},
+                            @OrderId = {orderDto.Id}
+                    ");
+                }
+            }
 
             return true;
         }

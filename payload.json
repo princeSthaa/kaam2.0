@@ -1,0 +1,37 @@
+﻿{
+    "planNo":  "PLN-1234",
+    "createdAt":  "2026-07-21T00:00:00Z",
+    "planId":  "PLN-1234",
+    "plannedCompletionDate":  "2026-07-21T00:00:00Z",
+    "productionPlanProducts":  [
+                                   {
+                                       "quantity":  10,
+                                       "productId":  "PRD-1",
+                                       "productionPlanProductSizes":  [
+                                                                          {
+                                                                              "quantity":  10,
+                                                                              "productionPlanProductId":  "PLN-1234-PRD-1",
+                                                                              "size":  "M",
+                                                                              "createdAt":  "2026-07-21T00:00:00Z"
+                                                                          }
+                                                                      ],
+                                       "productionPlanId":  "PLN-1234",
+                                       "createdAt":  "2026-07-21T00:00:00Z"
+                                   }
+                               ],
+    "productionPlanStages":  [
+                                 {
+                                     "createdAt":  "2026-07-21T00:00:00Z",
+                                     "productionPlanId":  "PLN-1234",
+                                     "plannedEndDate":  "2026-07-21T00:00:00Z",
+                                     "workCenterId":  "39075791-40e7-4beb-a886-1b44df33a25c",
+                                     "plannedStartDate":  "2026-07-21T00:00:00Z",
+                                     "operatorName":  "John",
+                                     "stageName":  "Cutting"
+                                 }
+                             ],
+    "demandType":  "Customer Order",
+    "plannedStartDate":  "2026-07-21T00:00:00Z",
+    "status":  1,
+    "priority":  1
+}

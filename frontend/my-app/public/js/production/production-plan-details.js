@@ -722,18 +722,18 @@
         const timeline = document.getElementById("activityTimeline");
         if (!timeline) return;
 
-        const activities = state.plan.activities || [
+        const activities = (state.plan.activities && state.plan.activities.length) ? state.plan.activities : [
             {
                 title: "Plan created",
-                text: `${state.plan.planNo || state.plan.planId} was created as a mock production plan.`
+                text: `${state.plan.planNo || state.plan.planId || "Production plan"} was created.`
             },
             {
-                title: "Material requirement calculated",
-                text: "BOM and material master data were used for material preview."
+                title: "Status: " + (state.plan.status || "Draft"),
+                text: "Current status of the production plan."
             },
             {
-                title: "Stage plan generated",
-                text: "Default garment production stages were loaded for this plan."
+                title: "Material requirements",
+                text: "Calculated based on BOM and product quantities."
             }
         ];
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import Script from "next/script";
 
 const summaryFields = [
   ["Demand Type", "summaryDemandType"],
@@ -121,6 +122,7 @@ export function ProductionPlanDetailsPage() {
 
   return (
     <div className="max-w-7xl mx-auto flex flex-col gap-6 pb-24">
+      <Script src="https://nepalidatepicker.sajanmaharjan.com.np/v5/nepali.datepicker/js/nepali.datepicker.v5.0.6.min.js" strategy="lazyOnload" />
       {/* Hero Header Section */}
       <div className="bg-white border border-slate-200 p-4 sm:p-6 lg:p-8 rounded-3xl shadow-sm relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-blue-500/5 blur-xl pointer-events-none"></div>
@@ -316,7 +318,7 @@ export function ProductionPlanDetailsPage() {
           <div className="flex flex-col gap-4">
             <div className="border-b border-slate-50 pb-3">
               <h3 className="font-bold text-slate-800 text-base">Activity Log</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Mock activity timeline for this production plan.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Track status changes, assignments, and production progress events.</p>
             </div>
 
             <div className="activity-timeline relative pl-6 border-l border-slate-100 ml-3 flex flex-col gap-6 py-4" id="activityTimeline">

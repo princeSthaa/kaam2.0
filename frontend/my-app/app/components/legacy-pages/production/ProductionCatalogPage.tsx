@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ActionButton } from "../../legacy-ui/ActionButton";
 import { TableShell } from "../../legacy-ui/TableShell";
-import { fetchCustomers, fetchOrders, Customer } from "../../../../lib/api";
+import { fetchCustomers, fetchOrders, fetchProductionPlans, Customer } from "../../../../lib/api";
 
 type CatalogKind = "customer" | "outlet";
 
@@ -257,25 +257,91 @@ function CatalogModal({
             ))}
           </div>
 
-          <div className="customer-detail-action-row mb-4">
-            <ActionButton href={createPlanHref} variant="primary" className="w-100">
-              Create Plan
-            </ActionButton>
-          </div>
+          {kind === "customer" ? (
+            <div className="unplanned-summary-container mb-4 p-3 rounded-12" style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}>
+              <h4 className="fs-14 font-bold mb-3 d-flex align-items-center gap-2 text-primary" style={{ margin: 0 }}>
+                <span style={{ display: "inline-block", verticalAlign: "middle" }}>📋</span>
+                Unplanned Orders (Left to Process)
+              </h4>
+              
+              {item.orders?.filter((o: any) => !o.planStatus || o.planStatus === "No Plan").length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
+                  {item.orders?.filter((o: any) => !o.planStatus || o.planStatus === "No Plan").map((order: any) => (
+                    <div key={order.id} style={{ display: "flex", gap: "12px", alignItems: "center", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #f1f5f9" }}>
+                      <img 
+                        src={order.productImage || "/images/products/place-holder.png"} 
+                        style={{ width: "48px", height: "48px", borderRadius: "6px", objectFit: "cover", border: "1px solid #e2e8f0" }}
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/images/products/place-holder.png"; }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                          <strong className="fs-13" style={{ color: "#1e293b" }}>{order.productName}</strong>
+                          <span className="text-xs text-muted font-bold" style={{ fontSize: "11px" }}>{order.orderNo}</span>
+                        </div>
+                        <div className="d-flex justify-content-between text-xs text-muted mt-1" style={{ fontSize: "11px", display: "flex", justifyContent: "space-between" }}>
+                          <span>Variant: {order.variant}</span>
+                          <span>Qty: <strong>{order.quantity} pcs</strong></span>
+                        </div>
+                        <div className="text-xs text-muted mt-1" style={{ fontSize: "11px" }}>
+                          Delivery Date: <strong>{new Date(order.deliveryDate).toLocaleDateString("en-US", { day: '2-digit', month: 'short', year: 'numeric' })}</strong>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="mt-2">
+                    <ActionButton href={createPlanHref} variant="primary" className="w-100">
+                      Create Production Plan &rarr;
+                    </ActionButton>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-3 text-muted fs-13" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
+                  <span style={{ fontSize: "20px" }}>✅</span>
+                  All orders for this customer have active production plans.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="customer-detail-action-row mb-4">
+              <ActionButton href={createPlanHref} variant="primary" className="w-100">
+                Create Plan
+              </ActionButton>
+            </div>
+          )}
 
           <div className="customer-detail-products mb-4" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <h4 className="fs-14 font-bold mb-1" style={{ margin: 0 }}>Open Items Summary</h4>
             {kind === "customer" ? (
               item.orders?.map((order: any) => (
-                <article className="customer-detail-product-ref" key={order.id} style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <article className="customer-detail-product-ref" key={order.id} style={{ display: "flex", gap: "12px", alignItems: "center", justifyContent: "space-between", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #f1f5f9" }}>
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                    <img 
+                      src={order.productImage || "/images/products/place-holder.png"} 
+                      style={{ width: "32px", height: "32px", borderRadius: "4px", objectFit: "cover" }} 
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/images/products/place-holder.png"; }}
+                    />
+                    <div>
+                      <strong className="fs-13" style={{ color: "#1e293b" }}>{order.productName}</strong>
+                      <span className="d-block text-muted text-xs" style={{ fontSize: "11px", display: "block" }}>{order.orderNo} | {order.quantity} pcs | {order.variant}</span>
+                    </div>
+                  </div>
                   <div>
-                    <strong>{order.productName}</strong>
-                    <span className="d-block text-muted text-xs">{order.orderNo} | {order.quantity} pcs | {order.variant}</span>
+                    {order.planStatus && order.planStatus !== "No Plan" ? (
+                      <span className="badge" style={{ background: "#e0f2fe", color: "#0369a1", fontSize: "11px", padding: "4px 8px", borderRadius: "4px", fontWeight: "bold" }}>
+                        Plan: {order.planStatus}
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", fontSize: "11px", padding: "4px 8px", borderRadius: "4px", fontWeight: "bold" }}>
+                        Unplanned
+                      </span>
+                    )}
                   </div>
                 </article>
               ))
             ) : (
               item.demands?.map((demand: any) => (
-                <article className="customer-detail-product-ref" key={demand.id} style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <article className="customer-detail-product-ref" key={demand.id} style={{ display: "flex", gap: "12px", alignItems: "center", background: "#fff", padding: "10px", borderRadius: "8px", border: "1px solid #f1f5f9" }}>
                   <div>
                     <strong>{demand.productName}</strong>
                     <span className="d-block text-muted text-xs">{demand.demandNo} | {demand.suggestedQty} pcs | {demand.variant}</span>
@@ -286,7 +352,7 @@ function CatalogModal({
           </div>
 
           <TableShell
-            headers={config.tableHeaders}
+            headers={kind === "customer" ? [...config.tableHeaders, "Plan Status"] : config.tableHeaders}
             tableClassName="pp-table compact-table customer-detail-orders-table"
           >
             {kind === "customer" ? (
@@ -303,11 +369,18 @@ function CatalogModal({
                         {order.priority}
                       </span>
                     </td>
+                    <td>
+                      {order.planStatus && order.planStatus !== "No Plan" ? (
+                        <span className="badge" style={{ background: "#e0f2fe", color: "#0369a1", fontSize: "11px", padding: "3px 6px", borderRadius: "4px", fontWeight: "bold" }}>{order.planStatus}</span>
+                      ) : (
+                        <span className="text-muted text-xs" style={{ fontSize: "11px" }}>Unplanned</span>
+                      )}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={config.tableColSpan} className="empty-cell">{config.emptyTableText}</td>
+                  <td colSpan={config.tableColSpan + 1} className="empty-cell">{config.emptyTableText}</td>
                 </tr>
               )
             ) : (
@@ -368,22 +441,45 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
   useEffect(() => {
     if (kind === "customer") {
       setLoading(true);
-      Promise.all([fetchCustomers(), fetchOrders()]).then(([custs, ords]) => {
+      Promise.all([fetchCustomers(), fetchOrders(), fetchProductionPlans()]).then(([custs, ords, plans]) => {
         const combined = custs.map(c => {
           const cOrders = ords.filter(o => o.customerId === c.id);
           const mappedOrders: any[] = [];
           
-          cOrders.forEach(o => {
+          cOrders.forEach((o, oIdx) => {
             if (o.items) {
-              o.items.forEach(item => {
+              o.items.forEach((item, itemIdx) => {
+                // Find matching plan product status
+                let planStatus = "No Plan";
+                let planId = "";
+                const matchedPlan = plans.find(plan => 
+                  plan.products?.some((p: any) => 
+                    p.orderNo === o.orderNumber && 
+                    p.productName.toLowerCase() === item.productName.toLowerCase() &&
+                    (!item.variant || p.variant.toLowerCase() === item.variant.toLowerCase())
+                  )
+                );
+                
+                if (matchedPlan) {
+                  const planProd = matchedPlan.products.find((p: any) => 
+                    p.orderNo === o.orderNumber && 
+                    p.productName.toLowerCase() === item.productName.toLowerCase()
+                  );
+                  planStatus = planProd?.status || matchedPlan.status || "Active";
+                  planId = matchedPlan.planId || matchedPlan.id;
+                }
+
                 mappedOrders.push({
-                  id: `${o.id}-${item.productName}-${item.quantity}`,
+                  id: `${o.id || 'order'}-${oIdx}-${itemIdx}-${item.productName}-${item.quantity}`,
                   orderNo: o.orderNumber,
                   productName: item.productName,
-                  variant: (item as any).variant || "Standard Color",
+                  variant: item.variant || "Standard",
                   quantity: item.quantity,
                   deliveryDate: o.dueDate,
-                  priority: (o as any).priority || "Normal",
+                  priority: o.priority || "Normal",
+                  planStatus,
+                  planId,
+                  productImage: item.productImage
                 });
               });
             }

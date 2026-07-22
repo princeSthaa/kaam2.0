@@ -1,0 +1,112 @@
+.createMain {
+  width: min(100%, 1240px);
+  margin: 0 auto;
+  padding: 32px;
+  color: #1e293b;
+}
+
+.createHeader {
+  max-width: 760px;
+  margin-bottom: 32px;
+}
+
+.createBackLink,
+.createCardCta,
+.draftResumeLink,
+.recentDraftsHeader,
+.createPointItem {
+  display: flex;
+  align-items: center;
+}
+
+.createBackLink {
+  width: fit-content;
+  gap: 6px;
+  margin-bottom: 16px;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.createTitle {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(28px, 3vw, 36px);
+  letter-spacing: -0.03em;
+}
+
+.createSubtitle {
+  margin: 10px 0 0;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+.createGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.createCard,
+.recentDraftsCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.createCard {
+  position: relative;
+  display: flex;
+  min-height: 330px;
+  flex-direction: column;
+  padding: 24px;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.createCard:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 14px 30px rgba(37, 99, 235, 0.13);
+  transform: translateY(-3px);
+}
+
+.createIconWrapper {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  margin-bottom: 20px;
+  border-radius: 16px;
+}
+
+.createCardTitle { margin: 0; color: #0f172a; font-size: 19px; }
+.createCardText { margin: 10px 0 18px; color: #64748b; font-size: 14px; line-height: 1.55; }
+.createPointsList { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.createPointItem { gap: 8px; color: #475569; font-size: 13px; line-height: 1.35; }
+.createPointItem :global(.material-symbols-outlined) { color: #10b981; font-size: 17px; }
+
+.createCardCta {
+  gap: 7px;
+  margin-top: auto;
+  padding-top: 22px;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.recentDraftsSection { margin-top: 28px; }
+.recentDraftsCard { overflow: hidden; }
+.recentDraftsHeader { gap: 10px; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; }
+.recentDraftsTitle { margin: 0; color: #0f172a; font-size: 18px; }
+.draftsTableWrapper { overflow-x: auto; }
+.draftsTable { width: 100%; border-collapse: collapse; font-size: 14px; }
+.draftsTable th, .draftsTable td { padding: 15px 24px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+.draftsTable th { color: #64748b; background: #f8fafc; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+.draftsTable tr:last-child td { border-bottom: 0; }
+.draftResumeLink { justify-content: flex-end; gap: 5px; color: #2563eb; font-weight: 600; text-decoration: none; }
+
+@media (max-width: 960px) { .createGrid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .createMain { padding: 20px; } .draftsTable th, .draftsTable td { padding: 14px; } }

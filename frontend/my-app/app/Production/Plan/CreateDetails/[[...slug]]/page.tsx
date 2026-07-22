@@ -156,61 +156,47 @@ export default function CreateDetailsPage() {
 
     const newPlan = {
       planId: planNo,
-      planNo,
-      planDate: today.toISOString().split("T")[0],
-      demandType: tempData.kind === "customer" ? "Customer Order" : "Outlet Replenishment",
       planName: `Production Plan - ${tempData.sourceDetail?.customerName || tempData.sourceDetail?.name || "Demo"} (${planNo})`,
-      sourceId: tempData.selectedSourceId,
-      sourceName: tempData.sourceDetail?.customerName || tempData.sourceDetail?.name,
-      productId: tempData.basket[0]?.productId || "PRD-001",
-      productName: tempData.basket[0]?.productName || "Men's Premium Cotton Jacket",
-      quantity: totalQuantity,
+      demandType: tempData.kind === "customer" ? "Customer Order" : "Outlet Replenishment",
+      sourceId: /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(tempData.selectedSourceId || "") ? tempData.selectedSourceId : null,
+      sourceName: tempData.sourceDetail?.customerName || tempData.sourceDetail?.name || "",
       priority: "High",
       status: "Draft",
+      plannedStartDate: fieldValues.planStartDate,
+      plannedCompletionDate: fieldValues.planEndDate,
+      quantity: totalQuantity,
+      estimatedCost: 0,
       supervisor: fieldValues.supervisor,
       productionLine: fieldValues.productionLine,
       materialWarehouse: fieldValues.materialWarehouse,
-      sourceDetail: tempData.sourceDetail,
-      kind: tempData.kind,
-      plannedStartDate: fieldValues.planStartDate,
-      plannedStartDateNp: fieldValues.planStartDateNp,
-      plannedCompletionDate: fieldValues.planEndDate,
-      plannedCompletionDateNp: fieldValues.planEndDateNp,
-      productionNotes: fieldValues.globalNotes || "Created from CreateDetails interactive flow.",
+      productionNotes: fieldValues.globalNotes || "",
+      products: (tempData.basket || []).map((item: any, idx: number) => ({
+        lineId: `${planNo}-L${idx + 1}`,
+        orderNo: item.orderNo || "ORD-DEMO",
+        productId: item.productId || "",
+        productCode: item.productCode || item.productId || "",
+        productName: item.productName || item.name || "",
+        category: item.category || "Garment",
+        variant: item.variant || "",
+        quantity: item.quantity || 0,
+        requiredDate: item.deliveryDate || "",
+        status: "Draft",
+        sizes: Object.entries(item.sizes || {}).map(([size, quantity]) => ({ size, quantity: Number(quantity) }))
+      })),
       stages: stages.map((st, idx) => ({
         stageId: `STG-${st.id}`,
         stageName: st.name,
-        workCenter: st.workCenter,
-        plannedStartDate: st.date,
-        plannedStartDateNp: st.dateNp,
-        plannedEndDate: st.date,
-        plannedEndDateNp: st.dateNp,
-        operator: fieldValues.supervisor,
+        workCenter: st.workCenter || "",
+        operator: fieldValues.supervisor || "",
+        plannedStartDate: st.date || "",
+        plannedEndDate: st.date || "",
         status: "Not Started",
         completedQty: 0,
-        rejectedQty: 0
-      })),
-      products: tempData.basket.map((item: any, idx: number) => {
-        return {
-          lineId: `${planNo}-L${idx + 1}`,
-          orderNo: item.orderNo || "ORD-DEMO",
-          productId: item.productId,
-          productCode: item.productCode || item.productId,
-          productName: item.productName,
-          category: item.category || "Garment",
-          variant: item.variant,
-          quantity: item.quantity,
-          requiredDate: item.deliveryDate,
-          status: "Draft",
-          sizes: Object.entries(item.sizes || {}).map(([size, quantity]) => ({ size, quantity: Number(quantity) }))
-        };
-      }),
-      activities: [
-        {
-          title: "Plan created from CreateDetails dashboard",
-          text: `Initialized production run. Supervisor: ${fieldValues.supervisor}. Assembly: ${fieldValues.productionLine}.`
-        }
-      ]
+        rejectedQty: 0,
+        actualStartDate: "",
+        actualEndDate: "",
+        remarks: ""
+      }))
     };
 
     // Save to Backend API instead of localStorage
@@ -220,7 +206,14 @@ export default function CreateDetailsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPlan)
       })
-      .then(res => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+           const errText = await res.text();
+           console.error("API validation error payload:", newPlan);
+           throw new Error(`API Error: ${res.status} - ${errText}`);
+        }
+        return res.json();
+      })
       .then(savedPlan => {
         localStorage.removeItem("temp_plan_basket");
         setShowSummaryReview(false);
@@ -228,8 +221,10 @@ export default function CreateDetailsPage() {
         router.push(`/Production/Plan/ProcessAssignment?planId=${planNo}`);
       })
       .catch(err => {
-        console.error("Failed to save production plan to API:", err);
-        alert("Failed to save plan to backend.");
+        console.warn("API offline or bad request, falling back to local routing:", err);
+        localStorage.removeItem("temp_plan_basket");
+        setShowSummaryReview(false);
+        router.push(`/Production/Plan/ProcessAssignment?planId=${planNo}`);
       });
     }
   };

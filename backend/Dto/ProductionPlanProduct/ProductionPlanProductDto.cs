@@ -70,7 +70,7 @@ namespace backend.Dto.ProductionPlanProduct
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string ProductionPlanId { get; set; }
+        public string? ProductionPlanId { get; set; } = string.Empty;
         [NotMapped]
         public ProductionPlanDto? ProductionPlan { get; set; }
 

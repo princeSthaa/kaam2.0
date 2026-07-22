@@ -285,7 +285,7 @@ export default function Dashboard({
                       </div>
                       <div>
                         <h4 className="font-kaam-headline-md text-kaam-on-surface text-lg">{item.productName}</h4>
-                        <p className="font-kaam-body-sm text-kaam-on-surface-variant">SKU: {item.productCode || item.productId} • Qty: {item.quantity || totalSizes} units ({item.variant})</p>
+                        <p className="font-kaam-body-sm text-kaam-on-surface-variant">SKU: {item.productCode || item.productId} • Qty: {item.quantity || totalSizes} units ({item.fabricName || item.variant || "Standard Fabric"})</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 sm:ml-auto">
@@ -309,14 +309,14 @@ export default function Dashboard({
                         <table className="w-full text-left border-collapse">
                           <thead>
                             <tr className="border-b border-kaam-outline-variant">
-                              <th className="py-2 pr-4 font-kaam-label-md text-kaam-on-surface text-[11px] font-bold w-1/4">Variant / Size</th>
+                              <th className="py-2 pr-4 font-kaam-label-md text-kaam-on-surface text-[11px] font-bold w-1/4">Fabric / Size</th>
                               {sizesKeys.map(k => <th key={k} className="py-2 px-2 font-kaam-label-md text-kaam-on-surface text-[11px]">{k}</th>)}
                               <th className="py-2 pl-2 font-kaam-label-md text-kaam-on-surface text-[11px] text-right">Total</th>
                             </tr>
                           </thead>
                           <tbody className="font-kaam-body-sm text-kaam-on-surface-variant">
                             <tr className="hover:bg-surface-container-lowest transition-colors">
-                              <td className="py-2 pr-4 font-bold text-kaam-on-surface text-xs">{item.variant || "Standard"}</td>
+                              <td className="py-2 pr-4 font-bold text-kaam-on-surface text-xs">{item.fabricName || item.variant || "Standard Fabric"}</td>
                               {sizesKeys.map(k => (
                                 <td key={k} className="py-2 px-2">{sizesObj[k] || 0}</td>
                               ))}
@@ -418,7 +418,7 @@ export default function Dashboard({
         </div>
 
         {/*  Global Instructions  */}
-        <div className="bg-kaam-surface border border-kaam-outline-variant rounded-kaam-xl p-4 shadow-sm mt-4">
+        <div className="bg-kaam-surface border border-kaam-outline-variant rounded-kaam-xl p-4 shadow-sm mt-4 mb-6">
           <label className="font-kaam-headline-md text-kaam-on-surface text-base block mb-2">Global Production Notes</label>
           <textarea 
             className="w-full border-kaam-outline-variant rounded-kaam-DEFAULT bg-kaam-surface-bright font-kaam-body-sm text-kaam-on-surface p-3 focus:border-secondary focus:ring-1 focus:ring-secondary min-h-[100px] resize-y" 

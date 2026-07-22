@@ -109,15 +109,72 @@ document.addEventListener("DOMContentLoaded", function() {
         editModal.show();
     }
 
+    let currentCustomers = [];
+
+    function loadCustomers() {
+        Promise.all([
+            fetch("http://localhost:5083/api/customers").then(res => res.ok ? res.json() : []),
+            fetch("http://localhost:5083/api/orders").then(res => res.ok ? res.json() : [])
+        ])
+        .then(([apiCusts, apiOrders]) => {
+            const mappedApiCusts = apiCusts.map(c => {
+                const cOrders = apiOrders.filter(o => o.customerId === c.id);
+                return {
+                    id: c.id,
+                    name: c.name,
+                    phone: c.phone || "-",
+                    email: c.email || "-",
+                    location: c.address || "-",
+                    type: c.company ? "Wholesale" : "Retail",
+                    orders: cOrders.length,
+                    lastOrderDate: cOrders.length > 0 ? new Date(cOrders[cOrders.length - 1].dueDate).toLocaleDateString("en-US", { day: '2-digit', month: 'short', year: 'numeric' }) : "-",
+                    regDate: c.createdAt ? new Date(c.createdAt).toLocaleDateString("en-US", { day: '2-digit', month: 'short', year: 'numeric' }) : "-",
+                    status: "Active"
+                };
+            });
+            
+            const combined = [...mappedApiCusts];
+            mockCustomers.forEach(mc => {
+                if (!combined.some(c => c.name.toLowerCase() === mc.name.toLowerCase() || c.id === mc.id)) {
+                    combined.push(mc);
+                }
+            });
+            
+            currentCustomers = combined;
+            renderTable(currentCustomers);
+        })
+        .catch(err => {
+            console.error("Error loading API customers:", err);
+            currentCustomers = mockCustomers;
+            renderTable(currentCustomers);
+        });
+    }
+
     const saveCustomerBtn = document.getElementById('saveCustomerBtn');
     if (saveCustomerBtn) {
         saveCustomerBtn.addEventListener('click', function() {
             const customerId = document.getElementById('editCustomerId').value;
             const newStatus = document.getElementById('editCustomerStatus').value;
 
-            const customer = mockCustomers.find(c => c.id === customerId);
+            const customer = currentCustomers.find(c => c.id === customerId);
             if (customer) {
                 customer.status = newStatus;
+
+                // Persist status change to API customer if it is a Guid
+                const isGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customerId);
+                if (isGuid) {
+                    fetch(`http://localhost:5083/api/customers/${customerId}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            name: customer.name,
+                            phone: customer.phone,
+                            email: customer.email,
+                            address: customer.location,
+                            company: customer.type === "Wholesale" ? "Wholesale" : ""
+                        })
+                    }).catch(console.error);
+                }
 
                 // Hide modal
                 const editModalEl = document.getElementById('editCustomerModal');
@@ -137,7 +194,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const searchVal = customerSearch ? customerSearch.value.toLowerCase() : "";
         const locationVal = locationSearch ? locationSearch.value.toLowerCase() : "";
 
-        const filteredData = mockCustomers.filter(customer => {
+        const filteredData = currentCustomers.filter(customer => {
             // Dropdown filters
             if (typeVal && customer.type !== typeVal) return false;
             if (statusVal && customer.status !== statusVal) return false;
@@ -177,5 +234,5 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // 7. Initial Render
-    renderTable(mockCustomers);
+    loadCustomers();
 });

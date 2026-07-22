@@ -50,11 +50,25 @@
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return value;
 
-        return date.toLocaleDateString("en-GB", {
+        const adStr = date.toLocaleDateString("en-GB", {
             year: "numeric",
             month: "short",
             day: "2-digit"
         });
+
+        if (typeof window !== "undefined" && window.NepaliFunctions) {
+            try {
+                const y = date.getFullYear();
+                const m = date.getMonth() + 1;
+                const d = date.getDate();
+                const bsObj = window.NepaliFunctions.AD2BS({ year: y, month: m, day: d });
+                if (bsObj) {
+                    return `${adStr} (${bsObj.year}-${String(bsObj.month).padStart(2, "0")}-${String(bsObj.day).padStart(2, "0")} BS)`;
+                }
+            } catch(e) {}
+        }
+        
+        return adStr;
     };
 
     App.toInputDate = function (value) {

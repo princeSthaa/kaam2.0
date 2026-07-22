@@ -27,6 +27,7 @@ namespace backend.Service.WorkCenter
             string? name = null,
             string? type = null,
             string? status = null,
+            string? productionLine = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
@@ -41,6 +42,7 @@ namespace backend.Service.WorkCenter
                         @Name = {name},
                         @Type = {type},
                         @Status = {status},
+                        @ProductionLine = {productionLine},
                         @CreatedAt = {createdAt},
                         @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
@@ -55,9 +57,11 @@ namespace backend.Service.WorkCenter
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertWorkCenter
 
+                    @Id = {workCenterDto.Id},
                     @Name = {workCenterDto.Name},
                     @Type = {workCenterDto.Type},
                     @Status = {workCenterDto.Status},
+                    @ProductionLine = {workCenterDto.ProductionLine},
                     @CreatedAt = {workCenterDto.CreatedAt},
                     @CreatedBy = {workCenterDto.CreatedBy},
                     @UpdatedAt = {workCenterDto.UpdatedAt},

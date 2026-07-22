@@ -57,8 +57,15 @@ function initializeDatePickers(inputs) {
     inputs.forEach(function(input) {
         if (!input.id) input.id = 'ndp-' + Math.random().toString(36).substr(2, 9);
 
-        // Turn on the calendar UI for EVERY page
-        input.nepaliDatePicker(datePickerOptions);
+        // Turn on the calendar UI for EVERY page, but wait for library to load
+        const initPicker = () => {
+            if (typeof input.nepaliDatePicker === 'function') {
+                input.nepaliDatePicker(datePickerOptions);
+            } else {
+                setTimeout(initPicker, 50);
+            }
+        };
+        initPicker();
 
         // 5. IF WE ARE ON THE CREATE ORDER PAGE -> ATTACH THE TRAP
         if (isCreateOrderPage) {

@@ -8,6 +8,7 @@ import { fetchCustomers } from "../../api/customer.api";
 import { Customer } from "../../dto/customer.dto";
 import { createOrder } from "../../api/order.api";
 import { fetchProducts, fetchFabrics, Product, Fabric } from "../../api/catalog.api";
+import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 
 type StepControlProps = {
   children: React.ReactNode;
@@ -130,6 +131,14 @@ function CreateOrderStyles() {
           .dropdown-menu.show { display: block !important; }
           .fabric-modal-body { max-height: 500px; overflow-y: auto; }
           .delivery-type-panel { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
+          .delivery-type-panel { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
+          .product-select-dropdown { width: 100%; position: relative; }
+          .product-select-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left; height: auto; padding: 8px 12px; background: #fff; border: 1px solid #ced4da; border-radius: 6px; }
+          .product-select-menu { position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 300px; overflow-y: auto; background: #fff; border: 1px solid #ced4da; border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+          .product-select-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f1f1f1; background: #fff; border-left: 0; border-right: 0; border-top: 0; width: 100%; text-align: left; transition: background 0.2s; }
+          .product-select-item:hover { background: #f8f9fa; }
+          .product-select-item:last-child { border-bottom: none; }
+          .fabric-cat-col:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
           @media (max-width: 700px) {
             .step-indicator { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
             .product-row, .delivery-date-row { align-items: stretch; flex-direction: column; }
@@ -140,53 +149,355 @@ function CreateOrderStyles() {
   );
 }
 
+function FabricModalReact({ 
+  isOpen, 
+  onClose, 
+  onSelect, 
+  fabrics 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onSelect: (fabricId: string) => void; 
+  fabrics: Fabric[] 
+}) {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+
+  // Reset state when opened/closed
+  useEffect(() => {
+    if (!isOpen) {
+      setSelectedCategory(null);
+      setSearch("");
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const categories = Array.from(new Set(fabrics.map(f => f.category || "Other")));
+
+  const handleCategoryClick = (cat: string) => {
+    setSelectedCategory(cat);
+    setSearch("");
+  };
+
+  const handleBack = () => {
+    setSelectedCategory(null);
+    setSearch("");
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop fade show"></div>
+      <div className="modal fade show" style={{ display: "block" }} tabIndex={-1} aria-modal="true" role="dialog">
+        <div className="modal-dialog modal-lg">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">
+                {selectedCategory ? `Select Fabric - ${selectedCategory}` : "Select Fabric Category"}
+              </h5>
+              <button type="button" className="btn-close" onClick={onClose}></button>
+            </div>
+            <div className="modal-body fabric-modal-body" style={{ maxHeight: "500px", overflowY: "auto" }}>
+              {!selectedCategory ? (
+                <>
+                  <input 
+                    type="text" 
+                    className="form-control mb-3" 
+                    placeholder="Search categories..." 
+                    value={search} 
+                    onChange={e => setSearch(e.target.value)} 
+                  />
+                  <div className="row">
+                    {categories.filter(c => c.toLowerCase().includes(search.toLowerCase())).map(cat => {
+                      const catFabrics = fabrics.filter(f => (f.category || "Other") === cat);
+                      return (
+                        <div key={cat} className="col-md-4 col-sm-6 mb-4">
+                          <div 
+                            className="border rounded fabric-cat-col text-center bg-white shadow-sm" 
+                            style={{ cursor: "pointer", transition: "transform 0.2s", overflow: "hidden" }}
+                            onClick={() => handleCategoryClick(cat)}
+                          >
+                            <div className="d-flex" style={{ width: "100%", background: "#eee" }}>
+                              {catFabrics.slice(0, 4).map(f => (
+                                <img key={f.id} src={f.imagePath || "/images/products/denim.jpg"} alt={f.name} style={{ flex: 1, height: "100px", objectFit: "cover", minWidth: 0 }} />
+                              ))}
+                            </div>
+                            <div className="p-3 border-top">
+                              <strong style={{ fontSize: "1.1em", color: "#333" }}>{cat}</strong><br/>
+                              <small className="text-muted">{catFabrics.length} fabric options</small>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="d-flex mb-3 gap-2 align-items-center">
+                    <button type="button" className="btn btn-sm btn-outline-secondary" onClick={handleBack}>
+                      &larr; Back
+                    </button>
+                    <input 
+                      type="text" 
+                      className="form-control" 
+                      placeholder="Search fabrics..." 
+                      value={search} 
+                      onChange={e => setSearch(e.target.value)} 
+                    />
+                  </div>
+                  <div className="row">
+                    {fabrics
+                      .filter(f => (f.category || "Other") === selectedCategory)
+                      .filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
+                      .map(f => (
+                        <div key={f.id} className="col-md-4 col-sm-6 mb-3">
+                          <div 
+                            className="fabric-item bg-white shadow-sm" 
+                            onClick={() => {
+                              onSelect(f.id);
+                              onClose();
+                            }}
+                          >
+                            <img src={f.imagePath || "/images/products/denim.jpg"} alt={f.name} />
+                            <strong>{f.name}</strong><br/>
+                            <small className="text-muted">{f.id}</small>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ProductSelect({ 
+  value, 
+  onChange, 
+  products 
+}: { 
+  value: string; 
+  onChange: (val: string) => void; 
+  products: any[] 
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedProduct = products.find(p => p.productId === value);
+
+  return (
+    <div className="product-select-dropdown">
+      <button 
+        type="button" 
+        className="product-select-btn"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {selectedProduct ? (
+          <div className="d-flex align-items-center gap-2">
+            <img src={selectedProduct.imagePath} alt={selectedProduct.name} style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '4px' }} />
+            <span>{selectedProduct.name}</span>
+          </div>
+        ) : (
+          <span className="text-muted">-- Select Product --</span>
+        )}
+        <span className="text-muted">&#9662;</span>
+      </button>
+
+      {isOpen && (
+        <div className="product-select-menu">
+          {products.map(p => (
+            <button 
+              key={p.productId} 
+              type="button" 
+              className="product-select-item"
+              onClick={() => { onChange(p.productId); setIsOpen(false); }}
+            >
+              <img src={p.imagePath} alt={p.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+              <span>{p.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CrmCreateOrderPage() {
   const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [productsData, setProductsData] = useState<any[]>([]);
+  const [fabricsData, setFabricsData] = useState<Fabric[]>([]);
+  
+  type ProductRowData = {
+    id: string;
+    productId: string;
+    fabrics: { id: string; fabricId: string }[];
+  };
+  const [selectedProductRows, setSelectedProductRows] = useState<ProductRowData[]>([]);
+  
+  const [deliveryType, setDeliveryType] = useState("Single");
+  const [globalDeliveryDate, setGlobalDeliveryDate] = useState("");
+  const [showBom, setShowBom] = useState(false);
+  const [fabricModalState, setFabricModalState] = useState<{isOpen: boolean, rowId?: string, fabricRowId?: string}>({ isOpen: false });
+
+  const [bomData, setBomData] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [calculatedBoms, setCalculatedBoms] = useState<any[]>([]);
+
+  const sizeMultipliers: Record<string, number> = { "XS": 0.8, "S": 0.9, "M": 1.0, "L": 1.1, "XL": 1.2, "XXL": 1.3 };
+
+  const recalculateBom = () => {
+    let aggregatedMaterials: Record<string, { materialId: string, name: string, unit: string, required: number }> = {};
+    let hasValue = false;
+
+    document.querySelectorAll('.product-config-block').forEach(pBlock => {
+      const prodId = pBlock.getAttribute('data-productid');
+      if (!prodId) return;
+
+      const fabricRows = pBlock.querySelectorAll('.fabric-row');
+      fabricRows.forEach(fBlock => {
+        const fabricName = fBlock.querySelector('.fabric-name-display')?.textContent || "";
+        
+        let sizeCounts: Record<string, number> = {};
+        fBlock.querySelectorAll('.size-input').forEach(input => {
+          const size = input.getAttribute('data-size');
+          const val = (input as HTMLInputElement).value.replace(/[^0-9]/g, '');
+          (input as HTMLInputElement).value = val;
+          const qty = parseInt(val) || 0;
+          if (size && qty > 0) {
+            sizeCounts[size] = (sizeCounts[size] || 0) + qty;
+            hasValue = true;
+          }
+        });
+
+        if (Object.keys(sizeCounts).length > 0 && bomData.length > 0 && materials.length > 0) {
+          let boms = bomData.filter(b => b.productId === prodId);
+          boms.forEach(bom => {
+            let mat = materials.find(m => m.id === bom.materialId);
+            if (mat) {
+              let matName = mat.name;
+              let isColorSpecific = (mat.type === "Fabric" || mat.type === "Thread" || mat.type === "Accessory");
+              if (isColorSpecific && matName.includes("Dyed") && fabricName && fabricName !== "No fabric selected") {
+                matName = matName.replace("Dyed", fabricName);
+              }
+
+              let totalReq = 0;
+              for (let size in sizeCounts) {
+                let multiplier = sizeMultipliers[size] || 1.0;
+                let count = sizeCounts[size];
+                let req = count * bom.qtyPerUnit * multiplier;
+                req = req + (req * ((bom.wastagePercent || 0) / 100));
+                totalReq += req;
+              }
+
+              let key = matName;
+              if (!aggregatedMaterials[key]) {
+                aggregatedMaterials[key] = {
+                  materialId: mat.id,
+                  name: matName,
+                  unit: mat.unit || mat.unitOfMeasure || "unit",
+                  required: 0
+                };
+              }
+              aggregatedMaterials[key].required += totalReq;
+            }
+          });
+        }
+      });
+    });
+
+    setCalculatedBoms(Object.values(aggregatedMaterials));
+    setShowBom(hasValue);
+  };
+
+  const addProductRow = () => {
+    setSelectedProductRows([...selectedProductRows, { 
+      id: Date.now().toString(), 
+      productId: "",
+      fabrics: [{ id: Date.now().toString() + "_f", fabricId: "" }]
+    }]);
+  };
+  const removeProductRow = (id: string) => {
+    setSelectedProductRows(selectedProductRows.filter(r => r.id !== id));
+  };
+  const updateProductRow = (id: string, productId: string) => {
+    setSelectedProductRows(selectedProductRows.map(r => r.id === id ? { ...r, productId } : r));
+  };
+
+  const addFabricToRow = (rowId: string) => {
+    setSelectedProductRows(selectedProductRows.map(r => {
+      if (r.id === rowId) {
+        return { ...r, fabrics: [...r.fabrics, { id: Date.now().toString() + "_f", fabricId: "" }] };
+      }
+      return r;
+    }));
+  };
+
+  const removeFabricFromRow = (rowId: string, fabricId: string) => {
+    setSelectedProductRows(selectedProductRows.map(r => {
+      if (r.id === rowId) {
+        return { ...r, fabrics: r.fabrics.filter(f => f.id !== fabricId) };
+      }
+      return r;
+    }));
+  };
+
+  const updateFabricForRow = (rowId: string, fabricId: string, newFabricVal: string) => {
+    setSelectedProductRows(selectedProductRows.map(r => {
+      if (r.id === rowId) {
+        return {
+          ...r,
+          fabrics: r.fabrics.map(f => f.id === fabricId ? { ...f, fabricId: newFabricVal } : f)
+        };
+      }
+      return r;
+    }));
+  };
 
   useEffect(() => {
     fetchCustomers().then(setCustomers).catch(console.error);
 
-    // Inject data into window for /js/crm/create-order.v3.js?v=13
-    Promise.all([fetchProducts(), fetchFabrics()]).then(([prods, fabs]) => {
-      // Map API Products to legacy expected shape
-      (window as any).products = prods.map(p => ({
+    (window as any).goToStep = (step: number) => {
+      document.querySelectorAll(".wizard-step").forEach((el) => el.classList.remove("active"));
+      const stepEl = document.getElementById(`step-${step}`);
+      if (stepEl) stepEl.classList.add("active");
+
+      document.querySelectorAll(".step-bullet").forEach((el) => el.classList.remove("active"));
+      const indicatorEl = document.getElementById(`indicator-${step}`);
+      if (indicatorEl) indicatorEl.classList.add("active");
+    };
+
+    Promise.all([
+      fetchProducts(), 
+      fetchFabrics(),
+      fetch("http://localhost:5083/api/bill-of-material").then(r => r.json()).catch(() => ({ value: [] })),
+      fetch("http://localhost:5083/api/material").then(r => r.json()).catch(() => ({ value: [] }))
+    ]).then(([prods, fabs, bomsRes, matsRes]) => {
+      const mappedProds = prods.map(p => ({
         productId: p.id,
         name: p.name,
         imagePath: p.imagePath || "/images/products/place-holder.png",
-        sizes: p.sizes || []
+        sizes: p.sizes?.length ? p.sizes : ["XS", "S", "M", "L", "XL", "XXL"]
       }));
-
-      // Map API Fabrics to legacy expected shape
-      (window as any).fabrics = fabs.map(f => ({
-        fabricId: f.id,
-        name: f.name,
-        category: f.category || "Cotton",
-        imageUrl: "/images/products/place-holder.png",
-        swatchUrl: "/images/products/place-holder.png"
-      }));
-
-      // Map mock BOMs for the legacy script to populate standard sizes
-      (window as any).bomData = prods.map(p => ({
-        productId: p.id,
-        materialId: "MAT-001",
-        materialName: "Primary Fabric",
-        sizes: ["S", "M", "L", "XL"],
-        qtyPerUnit: 1.5,
-        wastagePercent: 5
-      }));
-
-      // FIX: The legacy script auto-adds the first row on DOMContentLoaded BEFORE this API call finishes.
-      // We must clear that stale row and recreate it so it uses the real API data!
-      const container = document.getElementById("selectedProductsRows");
-      if (container) {
-        container.innerHTML = ""; // Wipe the old row
-        if (typeof (window as any).addProductRow === "function") {
-          (window as any).addProductRow(); // Add a fresh row with real API data
-        }
-      }
+      setProductsData(mappedProds);
+      setFabricsData(fabs);
+      setBomData(bomsRes.value || bomsRes || []);
+      setMaterials(matsRes.value || matsRes || []);
+      setSelectedProductRows([{ 
+        id: Date.now().toString(), 
+        productId: "",
+        fabrics: [{ id: Date.now().toString() + "_f", fabricId: "" }]
+      }]);
     }).catch(console.error);
   }, []);
+
+  // Recalculate BOM when base data changes
+  useEffect(() => {
+    recalculateBom();
+  }, [bomData, materials]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -195,11 +506,18 @@ export default function CrmCreateOrderPage() {
     // Harvest products from the legacy DOM
     const items: any[] = [];
     document.querySelectorAll(".product-config-block").forEach(block => {
+      const prodId = block.getAttribute('data-productid') || "";
       const name = block.querySelector("h5")?.textContent || "Unknown Product";
+      const productImage = block.querySelector("img")?.getAttribute("src") || "";
       
       block.querySelectorAll(".size-input").forEach(input => {
         const qty = parseInt((input as HTMLInputElement).value) || 0;
         if (qty > 0) {
+          const fabricRow = input.closest(".fabric-row");
+          const fabricNameText = fabricRow?.querySelector(".fabric-name-display")?.textContent || "Standard Fabric";
+          const fabricName = fabricNameText === "No fabric selected" ? "Standard Fabric" : fabricNameText;
+          const fabricId = fabricRow?.getAttribute("data-fabricid") || "";
+
           const table = input.closest("table");
           let unitPrice = 0;
           if (table) {
@@ -210,7 +528,32 @@ export default function CrmCreateOrderPage() {
                unitPrice = parseFloat(rateText.replace(/[^0-9.]/g, "")) || 0;
              }
           }
-          items.push({ productName: name, quantity: qty, unitPrice });
+
+          const sizeHeader = input.closest("td")
+            ? (() => {
+                const td = input.closest("td")!;
+                const idx = Array.from(td.parentElement!.children).indexOf(td);
+                const table = td.closest("table");
+                return table?.querySelector("thead tr")?.children[idx]?.textContent?.trim() || "";
+              })()
+            : "";
+          const variant = [fabricName, sizeHeader].filter(Boolean).join(" / ") || "Standard";
+
+          if (!fabricId) {
+            alert(`Please select a fabric for ${name}.`);
+            throw new Error("Missing fabric");
+          }
+
+          items.push({ 
+            orderId: "", // Backend requires this field even though it's set on the server
+            productId: prodId,
+            fabricId: fabricId,
+            quantity: qty, 
+            unitPrice: unitPrice,
+            totalPrice: qty * unitPrice,
+            discount: 0,
+            createdAt: new Date().toISOString()
+          });
         }
       });
     });
@@ -230,7 +573,10 @@ export default function CrmCreateOrderPage() {
     const rawDate = formData.get("GlobalDeliveryDate") as string;
     if (rawDate) {
       const parts = rawDate.split('-');
-      if (parts.length === 3) {
+      if (parts.length === 3 && parts[0].length === 4) {
+        // Already YYYY-MM-DD
+        dueDateIso = `${parts[0]}-${parts[1]}-${parts[2]}T00:00:00Z`;
+      } else if (parts.length === 3) {
         // DD-MM-YYYY to YYYY-MM-DD
         dueDateIso = `${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`;
       } else {
@@ -241,10 +587,11 @@ export default function CrmCreateOrderPage() {
     const order = {
       customerId: customerId,
       orderNumber: `ORD-${Date.now()}`,
-      status: "Pending",
-      totalAmount: items.reduce((sum, i) => sum + (i.quantity * i.unitPrice), 0),
+      status: "Pending", // Pending status
+      totalAmount: items.reduce((sum, i) => sum + i.totalPrice, 0),
       dueDate: dueDateIso,
-      items: items,
+      createdAt: new Date().toISOString(),
+      orderItems: items, // Send orderItems as expected by C# backend
     };
 
     try {
@@ -290,8 +637,24 @@ export default function CrmCreateOrderPage() {
               </WizardStep>
 
               <WizardStep id="step-2" title="Product Selection">
-                <div id="selectedProductsRows"></div>
-                <button type="button" className="btn btn-outline-primary" onClick={() => callLegacy("addProductRow")}>
+                <div id="selectedProductsRows">
+                  {selectedProductRows.map((row) => (
+                    <div key={row.id} className="product-row">
+                      <div style={{ flex: 1 }}>
+                        <label>Select Product</label>
+                        <ProductSelect 
+                          value={row.productId} 
+                          onChange={(val) => updateProductRow(row.id, val)}
+                          products={productsData}
+                        />
+                      </div>
+                      <div>
+                        <button type="button" className="btn btn-danger btn-sm mt-4" onClick={() => removeProductRow(row.id)}>Remove</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <button type="button" className="btn btn-outline-primary mt-2" onClick={addProductRow}>
                   + Add Product
                 </button>
                 <div className="form-actions mt-4 d-flex justify-content-between">
@@ -303,8 +666,125 @@ export default function CrmCreateOrderPage() {
               </WizardStep>
 
               <WizardStep id="step-3" title="Material & Size Configuration">
-                <div id="materialsSizesContainer"></div>
-                <div id="centralMaterialBOM" className="central-material-calc" style={{ display: "none" }}></div>
+                <div id="materialsSizesContainer">
+                  {selectedProductRows.filter(r => r.productId).map((row) => {
+                    const product = productsData.find(p => p.productId === row.productId);
+                    if (!product) return null;
+                    return (
+                      <div key={row.id} className="product-config-block" data-productid={row.productId}>
+                        <div className="d-flex align-items-center mb-3">
+                          <img src={product.imagePath} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', marginRight: '15px' }} />
+                          <h5 style={{ margin: 0 }}>{product.name}</h5>
+                        </div>
+
+                        {row.fabrics.map((fabricRow, index) => {
+                          const selectedFabric = fabricsData.find(f => f.id === fabricRow.fabricId);
+                          return (
+                            <div key={fabricRow.id} className="fabric-row" data-fabricid={fabricRow.fabricId} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '15px', marginTop: '15px', padding: '15px', background: '#fdfdfd', border: '1px dashed #ccc', borderRadius: '6px' }}>
+                              <div className="d-flex align-items-center w-100">
+                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  {selectedFabric && (
+                                    <img src={selectedFabric.imagePath || "/images/products/denim.jpg"} style={{ width: '40px', height: '40px', borderRadius: '4px', border: '1px solid #ccc', objectFit: 'cover' }} alt={selectedFabric.name} />
+                                  )}
+                                  <button type="button" className="btn btn-outline-info btn-sm" onClick={() => setFabricModalState({ isOpen: true, rowId: row.id, fabricRowId: fabricRow.id })}>
+                                    Select Fabric
+                                  </button>
+                                  <span className="fabric-name-display" style={{ fontWeight: 500 }}>
+                                    {selectedFabric ? selectedFabric.name : "No fabric selected"}
+                                  </span>
+                                </div>
+                                <button type="button" className="btn btn-sm btn-outline-danger ms-3" onClick={() => removeFabricFromRow(row.id, fabricRow.id)}>
+                                  X
+                                </button>
+                              </div>
+                              
+                              <div className="size-table-container">
+                              <table className="size-table">
+                                <thead>
+                                  <tr>
+                                    {product.sizes.map((s: string) => <th key={s}>{s}</th>)}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    {product.sizes.map((s: string) => (
+                                      <td key={s}>
+                                        <input type="text" data-size={s} pattern="\d*" className="form-control size-input" min="0" placeholder="0" onChange={recalculateBom} />
+                                      </td>
+                                    ))}
+                                  </tr>
+                                  <tr className="rate-row">
+                                    {product.sizes.map((s: string) => {
+                                      const multiplier = sizeMultipliers[s] || 1.0;
+                                      const rate = Math.round(150 * 1.5 * multiplier);
+                                      return (
+                                        <td key={s}>Rs. {rate}</td>
+                                      );
+                                    })}
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )})}
+
+                        <button type="button" className="btn btn-sm btn-outline-secondary mt-3" onClick={() => addFabricToRow(row.id)}>
+                          + Add Fabric
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                {showBom && (
+                  <div id="centralMaterialBOM" className="central-material-calc mt-4 p-3 bg-white border rounded shadow-sm">
+                    <h5 className="mb-3 text-success">Consolidated Material Requirements</h5>
+                    <div className="table-responsive">
+                      <table className="table table-bordered table-sm mb-0">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Material Name</th>
+                            <th>Unit</th>
+                            <th>Calculated Req.</th>
+                            <th>Final Qty (To Source)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {calculatedBoms.length > 0 ? (
+                            calculatedBoms.map((mat, idx) => (
+                              <tr key={idx}>
+                                <td className="align-middle">
+                                  {mat.name}
+                                  <input type="hidden" name={`OrderMaterials[${idx}].MaterialName`} value={mat.name} />
+                                  <input type="hidden" name={`OrderMaterials[${idx}].MaterialId`} value={mat.materialId} />
+                                </td>
+                                <td className="align-middle">{mat.unit}</td>
+                                <td className="align-middle">{mat.required.toFixed(2)}</td>
+                                <td>
+                                  <input 
+                                    key={`${mat.name}-${mat.required}`}
+                                    type="number" 
+                                    step="0.01" 
+                                    className="form-control form-control-sm" 
+                                    name={`OrderMaterials[${idx}].Quantity`} 
+                                    defaultValue={mat.required.toFixed(2)} 
+                                    style={{ width: "120px" }} 
+                                    required 
+                                  />
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={4} className="text-center text-muted py-3">
+                                Calculating BOM... Ensure materials and bom data are seeded.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
                 <div className="form-actions mt-4 d-flex justify-content-between">
                   <StepButton step={2} className="btn btn-light">
                     &larr; Back
@@ -320,32 +800,33 @@ export default function CrmCreateOrderPage() {
                   </label>
                   <div className="d-flex gap-4 mt-2">
                     <label>
-                      <input type="radio" name="DeliveryType" value="Single" defaultChecked onChange={() => callLegacy("toggleDeliveryMode")} /> Single Delivery
+                      <input type="radio" name="DeliveryType" value="Single" checked={deliveryType === "Single"} onChange={() => setDeliveryType("Single")} /> Single Delivery
                       (All Products)
                     </label>
                     <label>
-                      <input type="radio" name="DeliveryType" value="Multiple" onChange={() => callLegacy("toggleDeliveryMode")} /> Multiple Deliveries (Per
+                      <input type="radio" name="DeliveryType" value="Multiple" checked={deliveryType === "Multiple"} onChange={() => setDeliveryType("Multiple")} /> Multiple Deliveries (Per
                       Product)
                     </label>
                   </div>
                 </div>
 
-                <div id="singleDeliveryContainer" className="product-config-block">
+                <div id="singleDeliveryContainer" className="product-config-block" style={{ display: deliveryType === "Single" ? "block" : "none" }}>
                   <h5 className="mb-3">Global Delivery Date</h5>
                   <div className="delivery-date-row">
-                    <input
-                      type="text"
+                    <NepaliDatePicker
                       name="GlobalDeliveryDate"
                       className="form-control form-control-sm nepali-date"
                       id="globalDateInput"
                       placeholder="DD-MM-YYYY"
-                      required
+                      required={deliveryType === "Single"}
+                      value={globalDeliveryDate}
+                      onChange={(e) => setGlobalDeliveryDate(e.target.value)}
                     />
                     <input type="text" name="GlobalDeliveryNote" className="form-control form-control-sm" placeholder="Destination / Note" />
                   </div>
                 </div>
 
-                <div id="multipleDeliveryContainer" style={{ display: "none" }}></div>
+                <div id="multipleDeliveryContainer" style={{ display: deliveryType === "Multiple" ? "block" : "none" }}></div>
 
                 <div className="form-group mt-4">
                   <label htmlFor="Remarks">Overall Order Instructions</label>
@@ -364,7 +845,16 @@ export default function CrmCreateOrderPage() {
           </div>
         </div>
       </div>
-      <FabricModal />
+      <FabricModalReact 
+        isOpen={fabricModalState.isOpen}
+        onClose={() => setFabricModalState({ isOpen: false })}
+        onSelect={(fabricId) => {
+          if (fabricModalState.rowId && fabricModalState.fabricRowId) {
+            updateFabricForRow(fabricModalState.rowId, fabricModalState.fabricRowId, fabricId);
+          }
+        }}
+        fabrics={fabricsData}
+      />
     </>
   );
 }

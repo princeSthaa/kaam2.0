@@ -16,8 +16,10 @@ export interface Order {
   customerId: string;
   orderNumber: string;
   status: string;
+  priority?: string;
   totalAmount: number;
   dueDate: string;
+  remarks?: string;
   items: OrderItem[];
   createdAt?: string;
   updatedAt?: string;
@@ -27,6 +29,9 @@ export interface OrderItem {
   productName: string;
   quantity: number;
   unitPrice: number;
+  variant?: string;
+  fabricName?: string;
+  productImage?: string;
 }
 
 export type Product = {
@@ -119,4 +124,10 @@ export async function updateOrder(id: string, order: Partial<Order>): Promise<Or
 export async function deleteOrder(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/orders/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete order');
+}
+
+export async function fetchProductionPlans(): Promise<any[]> {
+  const res = await fetch(`${API_BASE_URL}/production-plans`, { cache: 'no-store' });
+  if (!res.ok) throw new Error("Failed to fetch production plans");
+  return res.json();
 }

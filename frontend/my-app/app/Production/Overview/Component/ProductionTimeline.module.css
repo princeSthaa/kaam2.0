@@ -1,0 +1,8 @@
+.ganttGrid {
+    background-image: linear-gradient(to right, #e2e8f0 1px, transparent 1px);
+    background-size: calc(100% / 7) 100%;
+}
+
+.customShadow {
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);
+}

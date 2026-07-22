@@ -3,6 +3,29 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
+
+// Convert AD (Gregorian) date string "YYYY-MM-DD" to BS (Nepali) date string "YYYY-MM-DD"
+const adToBs = (adStr: string): string => {
+  if (!adStr || typeof window === "undefined" || !(window as any).NepaliFunctions) return adStr;
+  try {
+    const bsVal = (window as any).NepaliFunctions.AD2BS(adStr, "YYYY-MM-DD", "YYYY-MM-DD");
+    return typeof bsVal === "string" ? bsVal : `${bsVal.year}-${String(bsVal.month).padStart(2, '0')}-${String(bsVal.day).padStart(2, '0')}`;
+  } catch (e) {
+    return adStr;
+  }
+};
+
+// Convert BS (Nepali) date string "YYYY-MM-DD" to AD (Gregorian) date string "YYYY-MM-DD"
+const bsToAd = (bsStr: string): string => {
+  if (!bsStr || typeof window === "undefined" || !(window as any).NepaliFunctions) return bsStr;
+  try {
+    const adVal = (window as any).NepaliFunctions.BS2AD(bsStr, "YYYY-MM-DD", "YYYY-MM-DD");
+    return typeof adVal === "string" ? adVal : `${adVal.year}-${String(adVal.month).padStart(2, '0')}-${String(adVal.day).padStart(2, '0')}`;
+  } catch (e) {
+    return bsStr;
+  }
+};
 
 /* ─── Mock Data ─────────────────────────────────────────────────── */
 const mockWarehouses = [
@@ -206,6 +229,8 @@ const S = {
   sizeInput: { width: "100%", border: "1.5px solid #e2e8f0", borderRadius: 8, padding: "7px 4px", fontSize: 13, textAlign: "center" as const, background: "#f8fafc", outline: "none", fontFamily: "Inter, sans-serif", color: "#0f172a" },
 
   // Stage row
+  stageHeaderRow: { display: "flex", alignItems: "center", gap: 10, padding: "6px 12px", borderRadius: 8, background: "#f1f5f9", marginBottom: 4, border: "1px solid #e2e8f0" },
+  stageHeaderLabel: { fontSize: 10, fontWeight: 700, color: "#475569", textTransform: "uppercase" as const, letterSpacing: "0.05em", fontFamily: "JetBrains Mono, monospace" },
   stageRow: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: "1.5px solid #e2e8f0", borderRadius: 10, background: "#fff", transition: "border-color 0.2s, box-shadow 0.2s" },
   stageIndex: { width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#2563eb,#1d4ed8)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, flexShrink: 0 },
   stageInputs: { display: "grid", gridTemplateColumns: "2fr 1.4fr 80px 1fr", gap: 8, flex: 1 },
@@ -316,7 +341,7 @@ export function ProductionInHouseCreatePage() {
   };
 
   const removeProduct = (id: string) => setSelectedProducts(prev => prev.filter(p => p.productId !== id));
-  const toggleExpand  = (id: string) => setSelectedProducts(prev => prev.map(p => p.productId === id ? { ...p, isExpanded: !p.isExpanded } : p));
+  const toggleExpand  = (id: string) => setSelectedProducts(prev => prev.map(p => ({ ...p, isExpanded: p.productId === id ? !p.isExpanded : false })));
 
   const updateProductField = (productId: string, field: "plannedStartDate" | "plannedCompletionDate" | "requiredDate" | "productionNotes", value: string) =>
     setSelectedProducts(prev => prev.map(p => p.productId === productId ? { ...p, [field]: value } : p));
@@ -710,7 +735,10 @@ export function ProductionInHouseCreatePage() {
                               {(["plannedStartDate", "plannedCompletionDate", "requiredDate"] as const).map((f, i) => (
                                 <div key={f}>
                                   <label style={S.fieldLabel}>{["Planned Start", "Planned End", "Required By"][i]}</label>
-                                  <input style={{ ...S.input, height: 38 }} type="date" value={(prod as any)[f]} onChange={e => updateProductField(prod.productId, f, e.target.value)} />
+                                  <NepaliDatePicker style={{ ...S.input, height: 38 }} value={adToBs((prod as any)[f])} 
+                                    onChange={e => updateProductField(prod.productId, f, bsToAd(e.target.value))} 
+                                    onDateChange={bsVal => updateProductField(prod.productId, f, bsToAd(bsVal))} 
+                                  />
                                 </div>
                               ))}
                             </div>
@@ -789,6 +817,19 @@ export function ProductionInHouseCreatePage() {
                               </button>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column" as const, gap: 8 }}>
+                              {prod.stages.length > 0 && (
+                                <div style={S.stageHeaderRow}>
+                                  <span style={{ width: 16 }} />
+                                  <span style={{ width: 24, textAlign: "center", ...S.stageHeaderLabel }}>#</span>
+                                  <div style={S.stageInputs}>
+                                    <span style={S.stageHeaderLabel}>Stage Name</span>
+                                    <span style={S.stageHeaderLabel}>Work Center</span>
+                                    <span style={S.stageHeaderLabel}>Lead Time</span>
+                                    <span style={S.stageHeaderLabel}>Target Date (BS)</span>
+                                  </div>
+                                  <span style={{ width: 26 }} />
+                                </div>
+                              )}
                               {prod.stages.map((stage, si) => (
                                 <div key={stage.id} style={S.stageRow}
                                   onMouseEnter={e => { e.currentTarget.style.borderColor = "#bfdbfe"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(37,99,235,0.08)"; }}
@@ -809,10 +850,9 @@ export function ProductionInHouseCreatePage() {
                                         onChange={e => updateStage(prod.productId, si, "leadHours", e.target.value)} />
                                       <span style={{ fontSize: 10, color: "#94a3b8", whiteSpace: "nowrap" as const, fontFamily: "JetBrains Mono, monospace" }}>hrs</span>
                                     </div>
-                                    <input style={S.stageThinInput} type="date" value={stage.date}
-                                      onChange={e => updateStage(prod.productId, si, "date", e.target.value)}
-                                      onFocus={e => e.currentTarget.style.borderColor = "#2563eb"}
-                                      onBlur={e => e.currentTarget.style.borderColor = "#e2e8f0"}
+                                    <NepaliDatePicker style={S.stageThinInput} value={adToBs(stage.date)}
+                                      onChange={e => updateStage(prod.productId, si, "date", bsToAd(e.target.value))}
+                                      onDateChange={bsVal => updateStage(prod.productId, si, "date", bsToAd(bsVal))}
                                     />
                                   </div>
                                   <button type="button" onClick={() => removeStage(prod.productId, si)}

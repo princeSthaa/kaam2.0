@@ -12,7 +12,7 @@ interface Team {
   colorClass: string;
 }
 
-export default function ProcessAssignmentPage() {
+function ProcessAssignmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -248,21 +248,7 @@ export default function ProcessAssignmentPage() {
               <div className="flex flex-col gap-4">
                 
                 <div className="flex flex-wrap items-center gap-3">
-                  <button onClick={() => {
-                    if (currentPlanObj) {
-                      const type = currentPlanObj.demandType || "";
-                      const sourceId = currentPlanObj.sourceId || "";
-                      if (type.includes("Customer")) {
-                        router.push(`/Production/Customer/CreateCustomer?customerId=${sourceId}`);
-                      } else if (type.includes("Outlet")) {
-                        router.push(`/Production/Outlet/CreateOutlet?outletId=${sourceId}`);
-                      } else {
-                        router.push(`/Production/InHouse/CreateInHouse`);
-                      }
-                    } else {
-                      router.push("/Production/Create");
-                    }
-                  }} className="flex items-center gap-2 px-4 py-2 border border-kaam-outline-variant rounded-kaam-DEFAULT text-kaam-on-surface-variant font-kaam-label-md hover:bg-kaam-surface-container-high transition-colors">
+                  <button onClick={() => router.push("/Production/Plan/CreateDetails")} className="flex items-center gap-2 px-4 py-2 border border-kaam-outline-variant rounded-kaam-DEFAULT text-kaam-on-surface-variant font-kaam-label-md hover:bg-kaam-surface-container-high transition-colors">
                     <span className="material-symbols-outlined text-[18px]">arrow_back</span>
                     Back
                   </button>
@@ -401,8 +387,8 @@ export default function ProcessAssignmentPage() {
               {/* Search & Filters */}
               <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto md:min-w-[400px]">
                  <div className="relative flex-1 w-full group">
-                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-kaam-on-surface-variant text-[18px] group-focus-within:text-kaam-primary transition-colors">search</span>
-                   <input type="text" placeholder="Search operational teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-9 pr-4 py-2 bg-kaam-surface-container-low hover:bg-kaam-surface-container-high border border-kaam-outline-variant rounded-kaam-full text-kaam-body-sm focus:outline-none focus:border-kaam-primary focus:ring-1 focus:ring-kaam-primary transition-all" />
+                   <input type="text" placeholder="Search operational teams..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-4 pr-9 py-2 bg-kaam-surface-container-low hover:bg-kaam-surface-container-high border border-kaam-outline-variant rounded-kaam-full text-kaam-body-sm focus:outline-none focus:border-kaam-primary focus:ring-1 focus:ring-kaam-primary transition-all" />
+                   <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-kaam-on-surface-variant text-[18px] group-focus-within:text-kaam-primary transition-colors pointer-events-none">search</span>
                  </div>
                  <div className="relative w-full sm:w-auto">
                    <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} className="w-full sm:w-auto pl-4 pr-8 py-2 bg-kaam-surface-container-low hover:bg-kaam-surface-container-high border border-kaam-outline-variant rounded-kaam-full text-kaam-body-sm focus:outline-none focus:border-kaam-primary focus:ring-1 focus:ring-kaam-primary transition-all cursor-pointer appearance-none">
@@ -445,5 +431,20 @@ export default function ProcessAssignmentPage() {
         </footer>
       </PageShell>
     </>
+  );
+}
+
+export default function ProcessAssignmentPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="flex flex-col items-center gap-3 text-slate-400 animate-pulse">
+          <span className="material-symbols-outlined text-[48px]">hourglass_top</span>
+          <p className="text-sm">Loading assignment parameters…</p>
+        </div>
+      </div>
+    }>
+      <ProcessAssignmentPageContent />
+    </React.Suspense>
   );
 }

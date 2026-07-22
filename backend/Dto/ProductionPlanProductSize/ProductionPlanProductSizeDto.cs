@@ -45,7 +45,7 @@ namespace backend.Dto.ProductionPlanProductSize
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string ProductionPlanProductId { get; set; }
+        public string? ProductionPlanProductId { get; set; } = string.Empty;
         [NotMapped]
         public ProductionPlanProductDto? ProductionPlanProduct { get; set; }
 

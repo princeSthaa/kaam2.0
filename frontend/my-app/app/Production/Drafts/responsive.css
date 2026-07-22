@@ -1,0 +1,78 @@
+/* Responsive overrides for Production Drafts page (Legacy Component) */
+
+@media (max-width: 768px) {
+  /* Make the main grid and header stack vertically */
+  .pp-create-grid,
+  .folder-page-toolbar,
+  .folder-summary-strip,
+  .pp-page-header,
+  .pp-header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .pp-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Make search span full width */
+  .folder-search {
+    width: 100%;
+    grid-template-columns: 24px minmax(0, 1fr);
+  }
+
+  /* Wrapper to allow horizontal scrolling of the table on mobile */
+  .table-responsive-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Force the table to maintain a minimum width so contents don't crush */
+  .folder-list-header,
+  .folder-plan-list {
+    min-width: 800px;
+  }
+
+  /* Restore desktop grid layout for header and rows */
+  .folder-list-header,
+  .folder-plan-row {
+    display: grid !important;
+    grid-template-columns: 46px 40px minmax(0, 1fr) 104px auto !important;
+    gap: 14px !important;
+    align-items: center !important;
+  }
+
+  .folder-list-header.no-selection,
+  .folder-plan-row.no-selection {
+    grid-template-columns: 40px minmax(0, 1fr) 104px auto !important;
+  }
+
+  /* Restore desktop layout for children that get squished by legacy mobile CSS */
+  .folder-plan-icon {
+    display: flex !important;
+  }
+
+  .folder-plan-subject {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .folder-plan-date,
+  .folder-plan-actions,
+  .folder-plan-main {
+    grid-column: auto !important;
+  }
+
+  .folder-plan-actions {
+    display: flex !important;
+    width: auto !important;
+  }
+
+  .folder-plan-actions .btn {
+    width: auto !important;
+  }
+}

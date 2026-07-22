@@ -365,6 +365,94 @@ div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
   --text-kaam-label-md--line-height: 16px;
   --text-kaam-label-md--letter-spacing: 0.05em;
   --text-kaam-label-md--font-weight: 500;
+
+  --color-on-error-container: #93000a;
+  --color-secondary: #0051d5;
+  --color-on-surface: #0b1c30;
+  --color-tertiary-fixed: #6ffbbe;
+  --color-on-tertiary: #ffffff;
+  --color-on-primary-fixed: #131b2e;
+  --color-surface-container: #e5eeff;
+  --color-primary-fixed: #dae2fd;
+  --color-outline: #76777d;
+  --color-primary: #000000;
+  --color-primary-fixed-dim: #bec6e0;
+  --color-on-primary-container: #7c839b;
+  --color-outline-variant: #c6c6cd;
+  --color-surface-bright: #f8f9ff;
+  --color-on-primary: #ffffff;
+  --color-on-secondary: #ffffff;
+  --color-on-background: #0b1c30;
+  --color-surface-variant: #d3e4fe;
+  --color-error-container: #ffdad6;
+  --color-surface-container-highest: #d3e4fe;
+  --color-on-secondary-fixed: #00174b;
+  --color-inverse-primary: #bec6e0;
+  --color-primary-container: #131b2e;
+  --color-secondary-fixed-dim: #b4c5ff;
+  --color-on-tertiary-container: #009668;
+  --color-inverse-on-surface: #eaf1ff;
+  --color-surface-dim: #cbdbf5;
+  --color-surface-container-low: #eff4ff;
+  --color-on-tertiary-fixed-variant: #005236;
+  --color-surface-container-lowest: #ffffff;
+  --color-error: #ba1a1a;
+  --color-surface-tint: #565e74;
+  --color-on-secondary-container: #fefcff;
+  --color-on-error: #ffffff;
+  --color-secondary-container: #316bf3;
+  --color-on-surface-variant: #45464d;
+  --color-on-secondary-fixed-variant: #003ea8;
+  --color-surface: #f8f9ff;
+  --color-tertiary-container: #002113;
+  --color-surface-container-high: #dce9ff;
+  --color-tertiary: #000000;
+  --color-inverse-surface: #213145;
+  --color-background: #f8f9ff;
+  --color-tertiary-fixed-dim: #4edea3;
+  --color-on-tertiary-fixed: #002113;
+  --color-secondary-fixed: #dbe1ff;
+  --color-on-primary-fixed-variant: #3f465c;
+  --radius-DEFAULT: 0.125rem;
+  --radius-lg: 0.25rem;
+  --radius-xl: 0.5rem;
+  --radius-full: 0.75rem;
+  --spacing-gutter: 16px;
+  --spacing-column-gap: 24px;
+  --spacing-base: 4px;
+  --spacing-row-gap: 24px;
+  --spacing-container-padding: 24px;
+  --font-stats-lg: Inter, sans-serif;
+  --font-headline-lg-mobile: Inter, sans-serif;
+  --font-body-sm: Inter, sans-serif;
+  --font-body-lg: Inter, sans-serif;
+  --font-headline-md: Inter, sans-serif;
+  --font-headline-lg: Inter, sans-serif;
+  --font-label-md: JetBrains Mono, monospace;
+  --text-stats-lg: 36px;
+  --text-stats-lg--line-height: 40px;
+  --text-stats-lg--letter-spacing: -0.03em;
+  --text-stats-lg--font-weight: 700;
+  --text-headline-lg-mobile: 24px;
+  --text-headline-lg-mobile--line-height: 32px;
+  --text-headline-lg-mobile--font-weight: 600;
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 20px;
+  --text-body-sm--font-weight: 400;
+  --text-body-lg: 16px;
+  --text-body-lg--line-height: 24px;
+  --text-body-lg--font-weight: 400;
+  --text-headline-md: 20px;
+  --text-headline-md--line-height: 28px;
+  --text-headline-md--font-weight: 600;
+  --text-headline-lg: 30px;
+  --text-headline-lg--line-height: 36px;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-lg--font-weight: 600;
+  --text-label-md: 12px;
+  --text-label-md--line-height: 16px;
+  --text-label-md--letter-spacing: 0.05em;
+  --text-label-md--font-weight: 500;
 }
 
 /* Premium Status Badges for Production Pages */
@@ -625,4 +713,21 @@ div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
   border-color: #2563eb !important;
   background-color: #ffffff !important;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+}
+
+/* Card Layout Fixes */
+.card {
+  padding: 16px;
+  margin: 8px;
+  box-sizing: border-box;
+}
+
+.card-container {
+  display: flex;
+  gap: 12px;
+}
+
+.card-title {
+  text-align: left;
+  line-height: 1.2;
 }
