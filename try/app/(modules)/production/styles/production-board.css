@@ -1,0 +1,33 @@
+/* Production Board & Timeline Custom CSS Modules */
+
+.production-gantt-container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--pp-border, #e2e8f0);
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.production-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+}
+
+.production-stage-pill.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.production-stage-pill.completed {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}

@@ -2,6 +2,7 @@ import { ActionButton } from "@/app/components/ui/ActionButton";
 import { TableShell } from "@/app/components/ui/TableShell";
 import { WarehousePageHeader } from "@/app/components/ui/WarehousePageHeader";
 import { fetchWarehouseStock } from "../api/warehouse.api";
+import { StockRow } from "../components/StockRow";
 
 export default async function WarehouseStockPage() {
   const stockItems = await fetchWarehouseStock();
@@ -45,18 +46,15 @@ export default async function WarehouseStockPage() {
           </tr>
         ) : (
           stockItems.map((item) => (
-            <tr key={item.sku}>
-              <td>{item.sku}</td>
-              <td className="fw-medium">{item.item}</td>
-              <td>{item.type}</td>
-              <td>{item.quantity}</td>
-              <td>{item.location}</td>
-              <td>
-                <span className={`badge ${item.status === 'In Stock' ? 'bg-success' : item.status === 'Low Stock' ? 'bg-warning' : 'bg-secondary'}`}>
-                  {item.status}
-                </span>
-              </td>
-            </tr>
+            <StockRow
+              key={item.sku}
+              sku={item.sku}
+              item={item.item}
+              type={item.type}
+              quantity={item.quantity}
+              location={item.location}
+              status={item.status}
+            />
           ))
         )}
       </TableShell>

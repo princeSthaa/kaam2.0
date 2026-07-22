@@ -1,5 +1,7 @@
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { fetchWarehouseKpis, fetchShelfPreview } from "./api/warehouse.api";
+import { WarehouseKpiCard } from "./components/WarehouseKpiCard";
+import { ShelfPreviewGrid } from "./components/ShelfPreviewGrid";
 
 export default async function WarehouseIndexPage() {
   const kpis = await fetchWarehouseKpis();
@@ -43,22 +45,7 @@ export default async function WarehouseIndexPage() {
         </div>
 
         <div className="warehouse-rack-mini" aria-hidden="true">
-          {shelves.length === 0 ? (
-            <div className="p-3 text-muted" style={{ display: 'flex', alignItems: 'center', height: '100%', paddingLeft: '1rem' }}>No shelf data from API.</div>
-          ) : (
-            [4, 3, 2, 1].map((level) => (
-              <div className="warehouse-rack-mini-level" key={level}>
-                <span>Level {level}</span>
-                <div>
-                  {shelves.slice((4 - level) * 2, (4 - level) * 2 + 2).map((shelf) => (
-                    <i className={`warehouse-rack-mini-shelf ${shelf.tone}`} key={shelf.code}>
-                      {shelf.code}
-                    </i>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
+          <ShelfPreviewGrid shelves={shelves} />
         </div>
       </section>
 
@@ -68,16 +55,7 @@ export default async function WarehouseIndexPage() {
         ) : (
           kpis.map((kpi, idx) => (
             <div className="col-md-3" key={idx}>
-              <div className={`kpi-card ${kpi.tone}`}>
-                <div className="kpi-icon">
-                  <span className="material-symbols-outlined" aria-hidden="true">{kpi.icon}</span>
-                </div>
-                <div className="kpi-data">
-                  <span className="kpi-label">{kpi.label}</span>
-                  <span className="kpi-value">{kpi.value}</span>
-                  <span className="kpi-helper">{kpi.helper}</span>
-                </div>
-              </div>
+              <WarehouseKpiCard icon={kpi.icon} label={kpi.label} value={kpi.value} helper={kpi.helper} tone={kpi.tone} />
             </div>
           ))
         )}

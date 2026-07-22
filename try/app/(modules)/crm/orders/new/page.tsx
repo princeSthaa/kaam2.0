@@ -7,7 +7,7 @@ import { PageHeader } from "@/app/components/ui/PageHeader";
 import { fetchCustomers } from "../../api/customer.api";
 import { Customer } from "../../dto/customer.dto";
 import { createOrder } from "../../api/order.api";
-import { fetchProducts, fetchFabrics, Product, Fabric } from "../../api/catalog.api";
+import { fetchProducts, fetchFabrics, resolveMediaUrl, Product, Fabric } from "../../api/catalog.api";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 
 type StepControlProps = {
@@ -173,7 +173,8 @@ function FabricModalReact({
 
   if (!isOpen) return null;
 
-  const categories = Array.from(new Set(fabrics.map(f => f.category || "Other")));
+  const getCat = (f: Fabric) => f.category || (f as any).type || "General";
+  const categories = Array.from(new Set(fabrics.map(getCat)));
 
   const handleCategoryClick = (cat: string) => {
     setSelectedCategory(cat);
@@ -209,7 +210,7 @@ function FabricModalReact({
                   />
                   <div className="row">
                     {categories.filter(c => c.toLowerCase().includes(search.toLowerCase())).map(cat => {
-                      const catFabrics = fabrics.filter(f => (f.category || "Other") === cat);
+                      const catFabrics = fabrics.filter(f => getCat(f) === cat);
                       return (
                         <div key={cat} className="col-md-4 col-sm-6 mb-4">
                           <div 
@@ -219,7 +220,7 @@ function FabricModalReact({
                           >
                             <div className="d-flex" style={{ width: "100%", background: "#eee" }}>
                               {catFabrics.slice(0, 4).map(f => (
-                                <img key={f.id} src={f.imagePath || "/images/products/denim.jpg"} alt={f.name} style={{ flex: 1, height: "100px", objectFit: "cover", minWidth: 0 }} />
+                                <img key={f.id} src={resolveMediaUrl(f.imagePath, "fabric")} alt={f.name} style={{ flex: 1, height: "100px", objectFit: "cover", minWidth: 0 }} />
                               ))}
                             </div>
                             <div className="p-3 border-top">
@@ -248,7 +249,7 @@ function FabricModalReact({
                   </div>
                   <div className="row">
                     {fabrics
-                      .filter(f => (f.category || "Other") === selectedCategory)
+                      .filter(f => getCat(f) === selectedCategory)
                       .filter(f => f.name.toLowerCase().includes(search.toLowerCase()))
                       .map(f => (
                         <div key={f.id} className="col-md-4 col-sm-6 mb-3">
@@ -259,7 +260,7 @@ function FabricModalReact({
                               onClose();
                             }}
                           >
-                            <img src={f.imagePath || "/images/products/denim.jpg"} alt={f.name} />
+                            <img src={resolveMediaUrl(f.imagePath, "fabric")} alt={f.name} />
                             <strong>{f.name}</strong><br/>
                             <small className="text-muted">{f.id}</small>
                           </div>
@@ -414,21 +415,23 @@ export default function CrmCreateOrderPage() {
   };
 
   const addProductRow = () => {
-    setSelectedProductRows([...selectedProductRows, { 
+    setSelectedProductRows(prev => [...prev, { 
       id: Date.now().toString(), 
       productId: "",
       fabrics: [{ id: Date.now().toString() + "_f", fabricId: "" }]
     }]);
   };
+
   const removeProductRow = (id: string) => {
-    setSelectedProductRows(selectedProductRows.filter(r => r.id !== id));
+    setSelectedProductRows(prev => prev.filter(r => r.id !== id));
   };
+
   const updateProductRow = (id: string, productId: string) => {
-    setSelectedProductRows(selectedProductRows.map(r => r.id === id ? { ...r, productId } : r));
+    setSelectedProductRows(prev => prev.map(r => r.id === id ? { ...r, productId } : r));
   };
 
   const addFabricToRow = (rowId: string) => {
-    setSelectedProductRows(selectedProductRows.map(r => {
+    setSelectedProductRows(prev => prev.map(r => {
       if (r.id === rowId) {
         return { ...r, fabrics: [...r.fabrics, { id: Date.now().toString() + "_f", fabricId: "" }] };
       }
@@ -436,25 +439,26 @@ export default function CrmCreateOrderPage() {
     }));
   };
 
-  const removeFabricFromRow = (rowId: string, fabricId: string) => {
-    setSelectedProductRows(selectedProductRows.map(r => {
+  const removeFabricFromRow = (rowId: string, fabricRowId: string) => {
+    setSelectedProductRows(prev => prev.map(r => {
       if (r.id === rowId) {
-        return { ...r, fabrics: r.fabrics.filter(f => f.id !== fabricId) };
+        return { ...r, fabrics: r.fabrics.filter(f => f.id !== fabricRowId) };
       }
       return r;
     }));
   };
 
-  const updateFabricForRow = (rowId: string, fabricId: string, newFabricVal: string) => {
-    setSelectedProductRows(selectedProductRows.map(r => {
+  const updateFabricForRow = (rowId: string, fabricRowId: string, newFabricVal: string) => {
+    setSelectedProductRows(prev => prev.map(r => {
       if (r.id === rowId) {
         return {
           ...r,
-          fabrics: r.fabrics.map(f => f.id === fabricId ? { ...f, fabricId: newFabricVal } : f)
+          fabrics: r.fabrics.map(f => f.id === fabricRowId ? { ...f, fabricId: newFabricVal } : f)
         };
       }
       return r;
     }));
+    setTimeout(() => recalculateBom(), 50);
   };
 
   useEffect(() => {
@@ -479,7 +483,7 @@ export default function CrmCreateOrderPage() {
       const mappedProds = prods.map(p => ({
         productId: p.id,
         name: p.name,
-        imagePath: p.imagePath || "/images/products/place-holder.png",
+        imagePath: resolveMediaUrl(p.imagePath, "product"),
         sizes: p.sizes?.length ? p.sizes : ["XS", "S", "M", "L", "XL", "XXL"]
       }));
       setProductsData(mappedProds);
@@ -684,7 +688,7 @@ export default function CrmCreateOrderPage() {
                               <div className="d-flex align-items-center w-100">
                                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '10px' }}>
                                   {selectedFabric && (
-                                    <img src={selectedFabric.imagePath || "/images/products/denim.jpg"} style={{ width: '40px', height: '40px', borderRadius: '4px', border: '1px solid #ccc', objectFit: 'cover' }} alt={selectedFabric.name} />
+                                    <img src={resolveMediaUrl(selectedFabric.imagePath, "fabric")} style={{ width: '40px', height: '40px', borderRadius: '4px', border: '1px solid #ccc', objectFit: 'cover' }} alt={selectedFabric.name} />
                                   )}
                                   <button type="button" className="btn btn-outline-info btn-sm" onClick={() => setFabricModalState({ isOpen: true, rowId: row.id, fabricRowId: fabricRow.id })}>
                                     Select Fabric

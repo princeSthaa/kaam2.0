@@ -1,51 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { BootstrapCard, BootstrapCardHeader } from "@/app/components/ui/BootstrapCard";
-import { fetchCustomers, updateCustomer } from "../api/customer.api";
+import { useCustomers } from "../hooks";
+import { CustomerRow } from "../components/CustomerRow";
+import { updateCustomer } from "../api/customer.api";
 import { Customer } from "../dto/customer.dto";
 
-const filters = [
-  { id: "customerTypeFilter", label: "Customer Type", type: "select", options: ["All Types", "Retail", "Wholesale", "Distributor"] },
-  { id: "statusFilter", label: "Status", type: "select", options: ["All Statuses", "Active", "Inactive", "Blacklisted"] },
-  { id: "customerSearch", label: "Customer Search", type: "input", placeholder: "Search name, email, or phone..." },
-  { id: "locationSearch", label: "Location Search", type: "input", placeholder: "Search city or address..." },
-];
-
 export default function CrmCustomerFilterPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { customers, loading, refetch } = useCustomers();
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-
-  useEffect(() => {
-    loadCustomers();
-  }, []);
-
-  const loadCustomers = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchCustomers();
-      setCustomers(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const handleEdit = (c: Customer) => setSelectedCustomer(c);
-  
+
   const handleSaveStatus = async (status: string) => {
     if (!selectedCustomer?.id) return;
     try {
-      await updateCustomer(selectedCustomer.id, { ...selectedCustomer }); // mock update, as status isn't in base DTO yet
+      await updateCustomer(selectedCustomer.id, { ...selectedCustomer });
       setSelectedCustomer(null);
-      loadCustomers();
-    } catch(err) {
+      refetch();
+    } catch (err) {
       console.error(err);
     }
   };
+
+  const handleReset = () => {
+    setSearchQuery("");
+    setTypeFilter("");
+    setStatusFilter("");
+  };
+
+  const filtered = customers.filter(c => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const match = (c.name || "").toLowerCase().includes(q)
+        || (c.email || "").toLowerCase().includes(q)
+        || (c.phone || "").toLowerCase().includes(q)
+        || (c.address || "").toLowerCase().includes(q);
+      if (!match) return false;
+    }
+    return true;
+  });
 
   return (
     <div className="container-fluid px-0 py-3">
@@ -62,25 +61,33 @@ export default function CrmCustomerFilterPage() {
           <BootstrapCardHeader
             title="Filter Customers"
             subtitle="Search by customer details, region, or status."
-            action={<ActionButton id="resetFiltersBtn" variant="outline-secondary" size="sm">Reset Filters</ActionButton>}
+            action={<button type="button" className="btn btn-outline-secondary btn-sm" onClick={handleReset}>Reset Filters</button>}
           />
         }
       >
         <div className="row g-3">
-          {filters.map((filter) => (
-            <div className="col-12 col-sm-6 col-lg-3" key={filter.id}>
-              <label htmlFor={filter.id} className="form-label fw-bold">{filter.label}</label>
-              {filter.type === "select" ? (
-                <select id={filter.id} className="form-select">
-                  {filter.options?.map((option, index) => (
-                    <option key={option} value={index === 0 ? "" : option}>{option}</option>
-                  ))}
-                </select>
-              ) : (
-                <input type="text" id={filter.id} className="form-control" placeholder={filter.placeholder} />
-              )}
-            </div>
-          ))}
+          <div className="col-12 col-sm-6 col-lg-3">
+            <label htmlFor="customerTypeFilter" className="form-label fw-bold">Customer Type</label>
+            <select id="customerTypeFilter" className="form-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+              <option value="">All Types</option>
+              <option value="Retail">Retail</option>
+              <option value="Wholesale">Wholesale</option>
+              <option value="Distributor">Distributor</option>
+            </select>
+          </div>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <label htmlFor="statusFilter" className="form-label fw-bold">Status</label>
+            <select id="statusFilter" className="form-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="">All Statuses</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Blacklisted">Blacklisted</option>
+            </select>
+          </div>
+          <div className="col-12 col-sm-6 col-lg-3">
+            <label htmlFor="customerSearch" className="form-label fw-bold">Customer Search</label>
+            <input type="text" id="customerSearch" className="form-control" placeholder="Search name, email, or phone..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          </div>
         </div>
       </BootstrapCard>
 
@@ -89,7 +96,7 @@ export default function CrmCustomerFilterPage() {
         header={
           <div className="card-header bg-white py-3">
             <h5 className="mb-1">Customer Directory</h5>
-            <p className="text-muted small mb-0">Showing customer records.</p>
+            <p className="text-muted small mb-0">Showing {filtered.length} customer records.</p>
           </div>
         }
       >
@@ -108,20 +115,11 @@ export default function CrmCustomerFilterPage() {
             <tbody>
               {loading ? (
                 <tr><td colSpan={6} className="text-center text-muted py-4">Loading customers...</td></tr>
-              ) : customers.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr><td colSpan={6} className="text-center text-muted py-4">No customers found.</td></tr>
               ) : (
-                customers.map(c => (
-                  <tr key={c.id}>
-                    <td>{c.id}</td>
-                    <td><div className="fw-bold">{c.name}</div></td>
-                    <td><div>{c.email}</div><small className="text-muted">{c.phone}</small></td>
-                    <td>{c.address}</td>
-                    <td>{c.company}</td>
-                    <td className="text-end">
-                      <button className="btn btn-sm btn-outline-primary" onClick={() => handleEdit(c)}>Edit</button>
-                    </td>
-                  </tr>
+                filtered.map(c => (
+                  <CustomerRow key={c.id} customer={c} onEdit={handleEdit} />
                 ))
               )}
             </tbody>

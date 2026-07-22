@@ -1,29 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SummaryCard } from "@/app/components/ui/SummaryCard";
-import { fetchCustomers } from "./api/customer.api";
-import { Customer } from "./dto/customer.dto";
+import { useCustomers } from "./hooks";
 
 export default function CrmIndexPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const data = await fetchCustomers();
-        setCustomers(data);
-      } catch (err) {
-        console.error("Failed to load customers:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, []);
+  const { customers, loading } = useCustomers();
 
   const crmSummaryCards = [
     { label: "Total Customers", value: loading ? "..." : customers.length.toString(), hint: "All registered customers" },
@@ -51,3 +34,4 @@ export default function CrmIndexPage() {
     </div>
   );
 }
+

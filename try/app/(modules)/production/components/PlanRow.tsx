@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import ProductRow from './ProductRow';
+import { StatusBadge } from './StatusBadge';
 
 function formatCleanNepaliDate(dateVal: any): string {
   if (!dateVal) return "N/A";
@@ -63,11 +64,7 @@ export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: an
 
         <div className="flex items-center gap-4">
           <div className="hidden lg:flex items-center gap-4">
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-kaam-full text-[11px] font-bold w-fit ${
-              plan.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : plan.status === 'Active' ? 'bg-kaam-tertiary-fixed text-kaam-on-tertiary-fixed' : 'bg-amber-100 text-amber-800'
-            }`}>
-              {plan.status}
-            </span>
+            <StatusBadge status={plan.status} size="sm" />
             {(plan.priority === 'Urgent' || plan.priority === 'Critical' || plan.priority === 'High') && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-kaam-full text-[10px] font-bold bg-kaam-error-container text-kaam-on-error-container w-fit">
                 {plan.priority}

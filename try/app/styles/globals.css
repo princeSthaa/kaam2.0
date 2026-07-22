@@ -1,3 +1,10 @@
+@import "./site.css";
+@import "./app.css";
+@import "./components.css";
+@import "./sub-dashboard.css";
+@import "../(modules)/crm/styles/index.css";
+@import "../(modules)/production/styles/index.css";
+@import "../(modules)/warehouse/styles/index.css";
 @import "tailwindcss";
 
 body {

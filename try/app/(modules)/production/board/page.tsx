@@ -3,37 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Script from 'next/script';
 
-// ─── Nepali Date Conversion Helper ───────────────────────────────────────────
-function adToNepali(adDateStr: string): string {
-  if (!adDateStr) return "";
-  try {
-    const d = new Date(adDateStr);
-    if (isNaN(d.getTime())) return adDateStr;
-    if (typeof window !== "undefined" && (window as any).NepaliFunctions) {
-      const nf = (window as any).NepaliFunctions;
-      return nf.AD2BS(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
-    }
-    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
-  } catch {
-    return adDateStr;
-  }
-}
-
-const STAGE_COLORS = ['bg-blue-500','bg-purple-500','bg-orange-500','bg-teal-500','bg-pink-500','bg-indigo-500'];
-const STAGE_LIGHT = ['bg-blue-100 text-blue-700','bg-purple-100 text-purple-700','bg-orange-100 text-orange-700','bg-teal-100 text-teal-700','bg-pink-100 text-pink-700','bg-indigo-100 text-indigo-700'];
-
-function getStatusStyle(status: string, priority: string) {
-  if (status === 'Completed') return { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 border-emerald-200', bar: 'bg-emerald-500' };
-  if (status === 'On Hold' || status === 'Delayed') return { dot: 'bg-red-500', badge: 'bg-red-50 text-red-700 border-red-200', bar: 'bg-red-500' };
-  if (priority === 'High' || priority === 'Urgent') return { dot: 'bg-orange-500', badge: 'bg-orange-50 text-orange-700 border-orange-200', bar: 'bg-orange-500' };
-  return { dot: 'bg-blue-500', badge: 'bg-blue-50 text-blue-700 border-blue-200', bar: 'bg-blue-500' };
-}
-
-function planProgress(stages: any[]) {
-  if (!stages || stages.length === 0) return 0;
-  const done = stages.filter((s: any) => (s.status || s.Status) === 'Completed').length;
-  return Math.round((done / stages.length) * 100);
-}
+import { STAGE_COLORS, STAGE_LIGHT_COLORS as STAGE_LIGHT } from '../constants/production.constants';
+import { adToBs as adToNepali, getStatusStyle, calculatePlanProgress as planProgress } from '../lib/production-utils';
 
 export default function ProductionOverviewPage() {
   const [plans, setPlans] = useState<any[]>([]);

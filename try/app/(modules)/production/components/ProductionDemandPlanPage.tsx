@@ -11,20 +11,7 @@ import { Order } from "../../crm/dto/order.dto";
 import { fetchOrders } from "../../crm/api/order.api";
 import { checkMaterials } from "../api/production.api";
 
-// Mock Database Lists
-const mockCustomers: any[] = [];
 
-const mockOutlets: any[] = [];
-
-const mockProducts: any[] = [];
-
-const mockMaterials: any[] = [];
-
-const mockBoms: any[] = [];
-
-const mockCustomerOrders: any[] = [];
-
-const mockOutletDemands: any[] = [];
 
 type DemandKind = "customer" | "outlet";
 
@@ -40,6 +27,16 @@ function buildPlanNo(prefix: string) {
     .join("");
 
   return `${prefix}-${date}-${time}`;
+}
+
+export function resolveMediaUrl(path?: string, defaultType: "product" | "fabric" = "product"): string {
+  if (!path || path === "default.png" || path.includes("place-holder")) {
+    const fallbackFile = defaultType === "fabric" ? "FAB-001.jpg" : "polo-shirt.jpg";
+    return `http://localhost:5083/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${fallbackFile}`;
+  }
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (path.startsWith("/")) return `http://localhost:5083${path}`;
+  return `http://localhost:5083/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${path}`;
 }
 
 function saveProductionDraft(plan: Record<string, unknown>) {
@@ -97,11 +94,13 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
 
   const [liveCustomers, setLiveCustomers] = useState<Customer[]>([]);
   const [liveOrders, setLiveOrders] = useState<Order[]>([]);
+  const [existingPlans, setExistingPlans] = useState<any[]>([]);
 
   useEffect(() => {
     if (kind === "customer") {
       fetchCustomers().then(setLiveCustomers).catch(console.error);
       fetchOrders().then(setLiveOrders).catch(console.error);
+      fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).then(setExistingPlans).catch(console.error);
     }
   }, [kind]);
 
@@ -116,22 +115,37 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
           customerName: dbCust.name,
           phone: dbCust.phone,
           address: dbCust.address,
-          paymentTerms: "Net 30", // Placeholder if missing
+          paymentTerms: "Net 30",
           ordersCount: liveOrders.filter(o => o.customerId === dbCust.id).length,
           totalQty: liveOrders.filter(o => o.customerId === dbCust.id).reduce((sum, o) => sum + o.totalAmount, 0),
         };
       }
-      return mockCustomers.find(c => c.id === selectedSourceId) || null;
+      return null;
     } else {
-      return mockOutlets.find(o => o.id === selectedSourceId) || null;
+      return null;
     }
   }, [selectedSourceId, kind, liveCustomers, liveOrders]);
 
-  // Retrieve matching catalog items
+  // Retrieve matching catalog items (filtering out orders already in a plan or draft)
   const catalogItems = useMemo(() => {
     if (!selectedSourceId) return [];
+
+    const plannedOrderNos = new Set<string>();
+    existingPlans.forEach((p: any) => {
+      const prods = p.productionPlanProducts || p.products || [];
+      prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+    });
+    if (typeof window !== "undefined") {
+      try {
+        const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
+        drafts.forEach((d: any) => {
+          (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+        });
+      } catch {}
+    }
+
     if (kind === "customer") {
-      const custOrders = liveOrders.filter(o => o.customerId === selectedSourceId);
+      const custOrders = liveOrders.filter(o => o.customerId === selectedSourceId && !plannedOrderNos.has(o.orderNumber));
       if (custOrders.length > 0) {
         const itemsList: any[] = [];
         custOrders.forEach((o) => {
@@ -143,44 +157,27 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
                 id: `${o.id || o.orderNumber}-${index}`,
                 orderNo: o.orderNumber,
                 customerId: o.customerId,
-                productId: item.productId || "PRD-001", // Dynamically populated from backend
-                productName: item.productName || `Item #${index + 1}`,
+                productId: item.productId || item.product?.id || "PRD-001",
+                productName: item.product?.name || item.productName || `Item #${index + 1}`,
                 category: "General",
                 variant: "Standard Color",
                 quantity: qty,
                 deliveryDate: o.dueDate,
                 priority: "Normal",
-                productImage: item.product?.imagePath || "/images/products/place-holder.png",
+                productImage: resolveMediaUrl(item.product?.imagePath, "product"),
                 productionNotes: o.status,
                 sizes: { M: Math.floor(qty / 2), L: Math.ceil(qty / 2) }
               });
-            });
-          } else {
-            // Fallback for orders with no items
-            itemsList.push({
-              id: o.id || o.orderNumber,
-              orderNo: o.orderNumber,
-              customerId: o.customerId,
-              productId: "PRD-001",
-              productName: `Custom Order ${o.orderNumber}`,
-              category: "General",
-              variant: "Default",
-              quantity: 10,
-              deliveryDate: o.dueDate,
-              priority: "Normal",
-              productImage: "/images/products/place-holder.png",
-              productionNotes: o.status,
-              sizes: { M: 5, L: 5 }
             });
           }
         });
         return itemsList;
       }
-      return mockCustomerOrders.filter(o => o.customerId === selectedSourceId);
+      return [];
     } else {
-      return mockOutletDemands.filter(d => d.outletId === selectedSourceId);
+      return [];
     }
-  }, [selectedSourceId, kind, liveOrders]);
+  }, [selectedSourceId, kind, liveOrders, existingPlans]);
 
   // Basket state
   const [basket, setBasket] = useState<any[]>([]);

@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
-import { formatNepaliDate, ProductionPlanDetailsPage } from "../components/ProductionPlanDetailsPage";
-import "@/public/css/production/production-plans-list.css";
+import PlanDetailsPage from "./[id]/page";
+import { formatNepaliDate } from "../lib/production-utils";
+import "../styles/production-plans-list.css";
 
 const demandTypeOptions = [
   "All Demand Types",
@@ -88,6 +89,12 @@ export default function ProductionPlansListPage() {
         if (stLower === "completed") return st === "completed" || st === "5";
         return st.includes(stLower);
       });
+    } else {
+      // By default exclude Drafts from active plans list
+      result = result.filter((p) => {
+        const st = String(p.status || "").toLowerCase();
+        return st !== "draft" && st !== "0";
+      });
     }
 
     if (sourceSearch.trim()) {
@@ -129,7 +136,7 @@ export default function ProductionPlansListPage() {
             &larr; Back to Production Plans
           </button>
         </div>
-        <ProductionPlanDetailsPage />
+        <PlanDetailsPage />
       </div>
     );
   }

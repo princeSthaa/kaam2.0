@@ -6,7 +6,8 @@ import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { SummaryCard } from "@/app/components/ui/SummaryCard";
 import { fetchProductionPlans } from "../api/production.api";
-import { ProductionPlan } from "../dto/production.dto";
+import { ProductionPlanDto } from "../dto";
+import { StatusBadge } from "./StatusBadge";
 
 type ProductionFolderConfig = {
   folder: "drafts" | "in-progress" | "completed";
@@ -55,7 +56,7 @@ const folderConfigs: Record<string, ProductionFolderConfig> = {
   },
 };
 
-function getPlanIcon(plan: ProductionPlan) {
+function getPlanIcon(plan: ProductionPlanDto) {
   const status = String(plan.status || "").toLowerCase();
   const demandType = String(plan.demandSource || "").toLowerCase();
 
@@ -88,7 +89,7 @@ function getEmptyText(folder: string) {
 
 export function ProductionFolderPage({ folder }: { folder: keyof typeof folderConfigs }) {
   const config = folderConfigs[folder];
-  const [plans, setPlans] = useState<ProductionPlan[]>([]);
+  const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -271,7 +272,7 @@ export function ProductionFolderPage({ folder }: { folder: keyof typeof folderCo
                   <div className="folder-plan-main" style={{ flex: '1', minWidth: '0' }}>
                       <div className="folder-plan-subject" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                           <strong style={{ fontSize: '15px', color: 'var(--pp-text)' }}>{plan.planNumber}</strong>
-                          <span className={`status-badge ${statusClass(plan.status)}`}>{plan.status}</span>
+                          <StatusBadge status={plan.status} size="sm" />
                           <em style={{ fontStyle: 'normal', fontSize: '12px', color: 'var(--pp-muted)', fontWeight: 'bold', marginLeft: 'auto' }}>{plan.demandSource}</em>
                       </div>
 

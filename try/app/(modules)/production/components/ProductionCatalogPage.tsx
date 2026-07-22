@@ -370,18 +370,37 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
   useEffect(() => {
     if (kind === "customer") {
       setLoading(true);
-      Promise.all([fetchCustomers(), fetchOrders()]).then(([custs, ords]) => {
+      Promise.all([
+        fetchCustomers(),
+        fetchOrders(),
+        fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).catch(() => [])
+      ]).then(([custs, ords, plans]) => {
+        const plannedOrderNos = new Set<string>();
+        (plans || []).forEach((p: any) => {
+          const prods = p.productionPlanProducts || p.products || [];
+          prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+        });
+        if (typeof window !== "undefined") {
+          try {
+            const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
+            drafts.forEach((d: any) => {
+              (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(prod.orderNo); });
+            });
+          } catch {}
+        }
+
         const combined = custs.map(c => {
-          const cOrders = ords.filter(o => o.customerId === c.id);
+          const cOrders = ords.filter(o => o.customerId === c.id && !plannedOrderNos.has(o.orderNumber));
           const mappedOrders: any[] = [];
           
           cOrders.forEach(o => {
-            if (o.items) {
-              o.items.forEach(item => {
+            const orderItems = o.orderItems || (o as any).items;
+            if (orderItems && Array.isArray(orderItems)) {
+              orderItems.forEach(item => {
                 mappedOrders.push({
-                  id: `${o.id}-${item.productName}-${item.quantity}`,
+                  id: `${o.id}-${item.product?.name || (item as any).productName || item.productId}-${item.quantity}`,
                   orderNo: o.orderNumber,
-                  productName: item.productName,
+                  productName: item.product?.name || (item as any).productName || "Garment Item",
                   variant: (item as any).variant || "Standard Color",
                   quantity: item.quantity,
                   deliveryDate: o.dueDate,
@@ -410,7 +429,6 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
         setLoading(false);
       });
     } else {
-      setLoading(true);
       // Load outlet data from window variables
       const rawDemands = (window as any).outletDemandCatalogData || (window as any).outletDemands || [];
       const grouped: Record<string, any> = {};
