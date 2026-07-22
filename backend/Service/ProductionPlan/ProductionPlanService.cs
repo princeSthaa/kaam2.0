@@ -126,6 +126,7 @@ namespace backend.Service.ProductionPlan
             {
                 foreach (var product in productionPlanDto.ProductionPlanProducts)
                 {
+                    product.ProductImage = backend.Helpers.ImagePathHelper.ToRelativePath(product.ProductImage);
                     if (string.IsNullOrEmpty(product.Id)) product.Id = Guid.NewGuid().ToString();
                     product.ProductionPlanId = productionPlanDto.Id;
                     await _context.Database.ExecuteSqlInterpolatedAsync($@"

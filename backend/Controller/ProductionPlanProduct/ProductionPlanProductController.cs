@@ -70,6 +70,11 @@ namespace backend.Controller.ProductionPlanProduct
                 productionPlanId
             );
 
+            foreach (var item in items)
+            {
+                backend.Helpers.ImagePathHelper.ResolveProductionPlanProductImage(item, Request);
+            }
+
             return Ok(items);
         }
 

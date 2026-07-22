@@ -42,6 +42,11 @@ namespace backend.Controller.Product
                 updatedBy
             );
 
+            foreach (var item in items)
+            {
+                backend.Helpers.ImagePathHelper.ResolveProductImage(item, Request);
+            }
+
             return Ok(items);
         }
 

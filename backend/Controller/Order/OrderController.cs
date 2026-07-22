@@ -48,6 +48,11 @@ namespace backend.Controller.Order
                 customerId
             );
 
+            foreach (var item in items)
+            {
+                backend.Helpers.ImagePathHelper.ResolveOrderImages(item, Request);
+            }
+
             return Ok(items);
         }
 

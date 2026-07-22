@@ -97,9 +97,10 @@ export function ProductionFolderPage({ folder }: { folder: keyof typeof folderCo
   useEffect(() => {
     fetchProductionPlans().then(data => {
       let filtered = data.filter(p => {
-        if (folder === "drafts") return p.status === "Draft";
-        if (folder === "completed") return p.status === "Completed";
-        return p.status !== "Draft" && p.status !== "Completed" && p.status !== "Cancelled";
+        const st = String(p.status || "").toLowerCase();
+        if (folder === "drafts") return st === "draft" || st === "0";
+        if (folder === "completed") return st === "completed" || st === "5";
+        return st !== "draft" && st !== "0" && st !== "completed" && st !== "5" && st !== "cancelled";
       });
       
       filtered.sort((a, b) => {

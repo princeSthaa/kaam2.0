@@ -36,6 +36,8 @@ namespace backend.Controller.ProductionPlan
 
             if (plan == null) return NotFound($"ProductionPlan with ID {id} not found.");
 
+            backend.Helpers.ImagePathHelper.ResolveProductionPlanModelImages(plan, Request);
+
             return Ok(plan);
         }
 
@@ -98,6 +100,11 @@ namespace backend.Controller.ProductionPlan
                 updatedAt,
                 updatedBy
             );
+
+            foreach (var item in items)
+            {
+                backend.Helpers.ImagePathHelper.ResolveProductionPlanImages(item, Request);
+            }
 
             return Ok(items);
         }

@@ -45,6 +45,11 @@ namespace backend.Controller.Fabric
                 updatedBy
             );
 
+            foreach (var item in items)
+            {
+                backend.Helpers.ImagePathHelper.ResolveFabricImage(item, Request);
+            }
+
             return Ok(items);
         }
 

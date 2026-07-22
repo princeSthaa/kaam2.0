@@ -78,6 +78,7 @@ namespace backend.Service.ProductionPlanProduct
 
         public async Task<bool> CreateAsync(ProductionPlanProductDto productionPlanProductDto)
         {
+            productionPlanProductDto.ProductImage = backend.Helpers.ImagePathHelper.ToRelativePath(productionPlanProductDto.ProductImage);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertProductionPlanProduct
@@ -109,6 +110,7 @@ namespace backend.Service.ProductionPlanProduct
 
         public async Task<bool> UpdateAsync(string id, ProductionPlanProductDto productionPlanProductDto)
         {
+            productionPlanProductDto.ProductImage = backend.Helpers.ImagePathHelper.ToRelativePath(productionPlanProductDto.ProductImage);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateProductionPlanProduct

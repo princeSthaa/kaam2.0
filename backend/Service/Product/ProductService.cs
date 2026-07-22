@@ -50,6 +50,7 @@ namespace backend.Service.Product
 
         public async Task<bool> CreateAsync(ProductDto productDto)
         {
+            productDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(productDto.ImagePath);
             var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
@@ -69,6 +70,7 @@ namespace backend.Service.Product
 
         public async Task<bool> UpdateAsync(string id, ProductDto productDto)
         {
+            productDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(productDto.ImagePath);
             var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"

@@ -53,6 +53,7 @@ namespace backend.Service.Fabric
 
         public async Task<bool> CreateAsync(FabricDto fabricDto)
         {
+            fabricDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(fabricDto.ImagePath);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertFabric
@@ -72,6 +73,7 @@ namespace backend.Service.Fabric
 
         public async Task<bool> UpdateAsync(string id, FabricDto fabricDto)
         {
+            fabricDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(fabricDto.ImagePath);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateFabric

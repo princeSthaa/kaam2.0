@@ -90,10 +90,10 @@ export default function ProductionPlansListPage() {
         return st.includes(stLower);
       });
     } else {
-      // By default exclude Drafts from active plans list
+      // By default exclude Drafts and Completed from active plans list
       result = result.filter((p) => {
         const st = String(p.status || "").toLowerCase();
-        return st !== "draft" && st !== "0";
+        return st !== "draft" && st !== "0" && st !== "completed" && st !== "5";
       });
     }
 

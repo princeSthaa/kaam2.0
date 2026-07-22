@@ -62,11 +62,20 @@ namespace backend.Data
                 context.SaveChanges();
             }
 
-            // Ensure all existing products have valid Media/images/products paths
+            // Ensure all existing products have valid relative Media/images/products paths
             var existingProds = context.Products.ToList();
             bool prodsUpdated = false;
             for (int i = 0; i < existingProds.Count; i++)
             {
+                if (!string.IsNullOrWhiteSpace(existingProds[i].ImagePath))
+                {
+                    var relative = backend.Helpers.ImagePathHelper.ToRelativePath(existingProds[i].ImagePath);
+                    if (existingProds[i].ImagePath != relative)
+                    {
+                        existingProds[i].ImagePath = relative;
+                        prodsUpdated = true;
+                    }
+                }
                 if (string.IsNullOrWhiteSpace(existingProds[i].ImagePath) || !existingProds[i].ImagePath.StartsWith("/Media/images/products/"))
                 {
                     var imgName = prodImgFiles[i % prodImgFiles.Length];
@@ -106,11 +115,20 @@ namespace backend.Data
                 context.SaveChanges();
             }
 
-            // Ensure all existing fabrics have valid Media/images/fabrics paths
+            // Ensure all existing fabrics have valid relative Media/images/fabrics paths
             var existingFabs = context.Fabrics.ToList();
             bool fabsUpdated = false;
             for (int i = 0; i < existingFabs.Count; i++)
             {
+                if (!string.IsNullOrWhiteSpace(existingFabs[i].ImagePath))
+                {
+                    var relative = backend.Helpers.ImagePathHelper.ToRelativePath(existingFabs[i].ImagePath);
+                    if (existingFabs[i].ImagePath != relative)
+                    {
+                        existingFabs[i].ImagePath = relative;
+                        fabsUpdated = true;
+                    }
+                }
                 if (string.IsNullOrWhiteSpace(existingFabs[i].ImagePath) || !existingFabs[i].ImagePath.StartsWith("/Media/images/fabrics/"))
                 {
                     var imgName = fabricImgFiles[i % fabricImgFiles.Length];
@@ -119,6 +137,23 @@ namespace backend.Data
                 }
             }
             if (fabsUpdated) context.SaveChanges();
+
+            // Ensure all existing ProductionPlanProducts have relative ProductImage paths
+            var existingPlanProds = context.ProductionPlanProducts.ToList();
+            bool planProdsUpdated = false;
+            for (int i = 0; i < existingPlanProds.Count; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(existingPlanProds[i].ProductImage))
+                {
+                    var relative = backend.Helpers.ImagePathHelper.ToRelativePath(existingPlanProds[i].ProductImage);
+                    if (existingPlanProds[i].ProductImage != relative)
+                    {
+                        existingPlanProds[i].ProductImage = relative;
+                        planProdsUpdated = true;
+                    }
+                }
+            }
+            if (planProdsUpdated) context.SaveChanges();
 
             // Re-seed Orders with OrderItems if OrderItems is empty
             if (!context.OrderItems.Any() && context.Orders.Any())
