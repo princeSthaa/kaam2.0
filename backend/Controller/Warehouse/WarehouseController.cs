@@ -94,6 +94,102 @@ namespace backend.Controller.Warehouse
 
             return NoContent();
         }
+
+        [HttpPost("receive-inspect")]
+        public async Task<IActionResult> ReceiveInspect([FromBody] SupplierInspectionDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (success, message) = await _WarehouseService.ProcessSupplierInspectionAsync(dto);
+            if (!success)
+            {
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+
+        [HttpPost("accept-finished-goods")]
+        public async Task<IActionResult> AcceptFinishedGoods([FromBody] FinishedGoodsAcceptanceDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (success, message) = await _WarehouseService.AcceptFinishedGoodsAsync(dto);
+            if (!success)
+            {
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+
+        [HttpPost("initiate-sale")]
+        public async Task<IActionResult> InitiateSale([FromBody] ProductSaleDispatchDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (success, message) = await _WarehouseService.InitiateProductSaleAsync(dto);
+            if (!success)
+            {
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+
+        [HttpPost("customer-return")]
+        public async Task<IActionResult> CustomerReturn([FromBody] CustomerReturnDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (success, message) = await _WarehouseService.ProcessCustomerReturnAsync(dto);
+            if (!success)
+            {
+                return BadRequest(new { message });
+            }
+
+            return Ok(new { message });
+        }
+
+        [HttpGet("kpis")]
+        public async Task<IActionResult> GetKpis()
+        {
+            var data = await _WarehouseService.GetKpisAsync();
+            return Ok(data);
+        }
+
+        [HttpGet("shelves/preview")]
+        public async Task<IActionResult> GetShelvesPreview()
+        {
+            var data = await _WarehouseService.GetShelvesPreviewAsync();
+            return Ok(data);
+        }
+
+        [HttpGet("stock")]
+        public async Task<IActionResult> GetStock()
+        {
+            var data = await _WarehouseService.GetStockAsync();
+            return Ok(data);
+        }
+
+        [HttpGet("visualization")]
+        public async Task<IActionResult> GetVisualization()
+        {
+            var data = await _WarehouseService.GetVisualizationDataAsync();
+            return Ok(data);
+        }
         // </crudgen:actions>
     }
 }

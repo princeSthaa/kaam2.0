@@ -842,6 +842,228 @@
           "Type": "string"
         }
       ]
+    },
+    {
+      "Name": "MaterialRequest",
+      "Annotations": [
+        "Table(\"MaterialRequests\")"
+      ],
+      "Properties": [
+        {
+          "Name": "Id",
+          "Type": "string",
+          "IsPrimaryKey": true
+        },
+        {
+          "Name": "MaterialId",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "MaterialName",
+          "Type": "string"
+        },
+        {
+          "Name": "RequestedQuantity",
+          "Type": "decimal"
+        },
+        {
+          "Name": "SupplierName",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "Urgency",
+          "Type": "string"
+        },
+        {
+          "Name": "RequiredDate",
+          "Type": "datetime"
+        },
+        {
+          "Name": "Notes",
+          "Type": "string"
+        },
+        {
+          "Name": "RequestedBy",
+          "Type": "string"
+        },
+        {
+          "Name": "Status",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "Name": "MaterialIssue",
+      "Annotations": [
+        "Table(\"MaterialIssues\")"
+      ],
+      "Properties": [
+        {
+          "Name": "Id",
+          "Type": "string",
+          "IsPrimaryKey": true
+        },
+        {
+          "Name": "MaterialId",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "IssueQuantity",
+          "Type": "decimal"
+        },
+        {
+          "Name": "TargetDestination",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "IssuedTo",
+          "Type": "string"
+        },
+        {
+          "Name": "Notes",
+          "Type": "string"
+        },
+        {
+          "Name": "Status",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "Name": "MaterialInspection",
+      "Annotations": [
+        "Table(\"MaterialInspections\")"
+      ],
+      "Properties": [
+        {
+          "Name": "Id",
+          "Type": "string",
+          "IsPrimaryKey": true
+        },
+        {
+          "Name": "MaterialId",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "MaterialName",
+          "Type": "string"
+        },
+        {
+          "Name": "SupplierName",
+          "Type": "string"
+        },
+        {
+          "Name": "ReceivedQuantity",
+          "Type": "decimal"
+        },
+        {
+          "Name": "InspectionStatus",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "Notes",
+          "Type": "string"
+        },
+        {
+          "Name": "InspectorName",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "Name": "FinishedGoodsHandover",
+      "Annotations": [
+        "Table(\"FinishedGoodsHandovers\")"
+      ],
+      "Properties": [
+        {
+          "Name": "Id",
+          "Type": "string",
+          "IsPrimaryKey": true
+        },
+        {
+          "Name": "ProductId",
+          "Type": "string"
+        },
+        {
+          "Name": "ProductName",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "SKU",
+          "Type": "string"
+        },
+        {
+          "Name": "Quantity",
+          "Type": "int"
+        },
+        {
+          "Name": "SourceFactoryLine",
+          "Type": "string"
+        },
+        {
+          "Name": "Location",
+          "Type": "string"
+        },
+        {
+          "Name": "AcceptedBy",
+          "Type": "string"
+        },
+        {
+          "Name": "Status",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "Name": "CustomerReturn",
+      "Annotations": [
+        "Table(\"CustomerReturns\")"
+      ],
+      "Properties": [
+        {
+          "Name": "Id",
+          "Type": "string",
+          "IsPrimaryKey": true
+        },
+        {
+          "Name": "OrderNumber",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "CustomerName",
+          "Type": "string",
+          "Required": true
+        },
+        {
+          "Name": "ProductId",
+          "Type": "string"
+        },
+        {
+          "Name": "ReturnedQuantity",
+          "Type": "int"
+        },
+        {
+          "Name": "Reason",
+          "Type": "string"
+        },
+        {
+          "Name": "Notes",
+          "Type": "string"
+        },
+        {
+          "Name": "ProcessedBy",
+          "Type": "string"
+        }
+      ]
     }
   ]
 }

@@ -29,6 +29,10 @@ namespace backend.Service.Material
 
         Task<bool> DeleteAsync(string id);
 
+        Task<bool> RequestSupplierAsync(SupplierMaterialRequestDto dto);
+
+        Task<(bool Success, string Message, decimal RemainingQty)> IssueToFactoryAsync(MaterialIssueDto dto);
+
         // </crudgen:method-signatures>
     }
 }

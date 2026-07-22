@@ -271,6 +271,42 @@ namespace backend.Data
                 warehouses = context.Warehouses.ToList();
             }
 
+            // Seed WarehouseRooms
+            if (!context.WarehouseRooms.Any() && warehouses.Any())
+            {
+                var mainWh = warehouses.First();
+                var rooms = new List<WarehouseRoom>
+                {
+                    new WarehouseRoom { Id = "ROOM-A", Name = "Room A - Raw Fabrics", Floor = "Ground Floor", WarehouseId = mainWh.Id },
+                    new WarehouseRoom { Id = "ROOM-B", Name = "Room B - Finished Garments", Floor = "Ground Floor", WarehouseId = mainWh.Id },
+                    new WarehouseRoom { Id = "ROOM-C", Name = "Room C - Accessories & Trims", Floor = "1st Floor", WarehouseId = mainWh.Id },
+                    new WarehouseRoom { Id = "ROOM-D", Name = "Room D - Returns & Quarantine", Floor = "1st Floor", WarehouseId = mainWh.Id }
+                };
+                context.WarehouseRooms.AddRange(rooms);
+                context.SaveChanges();
+
+                // Seed WarehouseShelves
+                if (!context.WarehouseShelfs.Any())
+                {
+                    var shelves = new List<WarehouseShelf>();
+                    for (int level = 1; level <= 4; level++)
+                    {
+                        for (int pos = 1; pos <= 4; pos++)
+                        {
+                            shelves.Add(new WarehouseShelf
+                            {
+                                Id = Guid.NewGuid().ToString(),
+                                Code = $"A-{level}0{pos}",
+                                Capacity = "1000",
+                                WarehouseRoomId = "ROOM-A"
+                            });
+                        }
+                    }
+                    context.WarehouseShelfs.AddRange(shelves);
+                    context.SaveChanges();
+                }
+            }
+
             // Seed Production Plans (25)
             if (!context.ProductionPlans.Any())
             {
@@ -329,6 +365,53 @@ namespace backend.Data
                     }
                     context.BillOfMaterials.AddRange(boms);
                 }
+            }
+
+            // Seed MaterialRequests
+            if (!context.MaterialRequests.Any())
+            {
+                context.MaterialRequests.AddRange(new List<MaterialRequest>
+                {
+                    new MaterialRequest { Id = Guid.NewGuid().ToString(), MaterialId = "MAT-001", MaterialName = "Dyed Cotton", RequestedQuantity = 500, SupplierName = "Everest Textiles Ltd", Urgency = "High", RequiredDate = DateTime.UtcNow.AddDays(3), Notes = "Shortage for upcoming production batch", RequestedBy = "Warehouse Manager", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" },
+                    new MaterialRequest { Id = Guid.NewGuid().ToString(), MaterialId = "MAT-004", MaterialName = "Zipper", RequestedQuantity = 1000, SupplierName = "Nepal Accessories Pvt", Urgency = "Normal", RequiredDate = DateTime.UtcNow.AddDays(5), Notes = "Routine raw material requisition", RequestedBy = "Stock Controller", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Stock Controller", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Stock Controller" }
+                });
+            }
+
+            // Seed MaterialIssues
+            if (!context.MaterialIssues.Any())
+            {
+                context.MaterialIssues.AddRange(new List<MaterialIssue>
+                {
+                    new MaterialIssue { Id = Guid.NewGuid().ToString(), MaterialId = "MAT-001", IssueQuantity = 200, TargetDestination = "Factory Stitching Line 1", IssuedTo = "Ram Bahadur (Supervisor)", Notes = "Issued for Production Plan PP-0001", Status = "Completed", CreatedAt = DateTime.UtcNow, CreatedBy = "Ram Bahadur (Supervisor)", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Ram Bahadur (Supervisor)" }
+                });
+            }
+
+            // Seed MaterialInspections
+            if (!context.MaterialInspections.Any())
+            {
+                context.MaterialInspections.AddRange(new List<MaterialInspection>
+                {
+                    new MaterialInspection { Id = Guid.NewGuid().ToString(), MaterialId = "MAT-002", MaterialName = "Dyed Thread", SupplierName = "Himalayan Yarns", ReceivedQuantity = 1000, InspectionStatus = "Accepted", Notes = "Passed quality test", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" },
+                    new MaterialInspection { Id = Guid.NewGuid().ToString(), MaterialId = "MAT-003", MaterialName = "Buttons", SupplierName = "Global Buttons", ReceivedQuantity = 250, InspectionStatus = "Purchase Return", Notes = "Corroded batch - returned to supplier", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" }
+                });
+            }
+
+            // Seed FinishedGoodsHandovers
+            if (!context.FinishedGoodsHandovers.Any())
+            {
+                context.FinishedGoodsHandovers.AddRange(new List<FinishedGoodsHandover>
+                {
+                    new FinishedGoodsHandover { Id = Guid.NewGuid().ToString(), ProductId = "PROD-001", ProductName = "Polo Shirt", SKU = "SKU-POLO-01", Quantity = 100, SourceFactoryLine = "Stitching Floor A", Location = "Central Warehouse Rack A", AcceptedBy = "Warehouse Manager", Status = "Accepted", CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" }
+                });
+            }
+
+            // Seed CustomerReturns
+            if (!context.CustomerReturns.Any())
+            {
+                context.CustomerReturns.AddRange(new List<CustomerReturn>
+                {
+                    new CustomerReturn { Id = Guid.NewGuid().ToString(), OrderNumber = "ORD-0001", CustomerName = "Customer 1", ProductId = "PROD-001", ReturnedQuantity = 2, Reason = "Damaged / Defective", Notes = "Fabric seam torn on delivery", ProcessedBy = "Returns Desk", CreatedAt = DateTime.UtcNow, CreatedBy = "Returns Desk", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Returns Desk" }
+                });
             }
 
             context.SaveChanges();

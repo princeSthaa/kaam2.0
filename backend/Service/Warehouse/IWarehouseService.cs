@@ -26,6 +26,22 @@ namespace backend.Service.Warehouse
 
         Task<bool> DeleteAsync(string id);
 
+        Task<(bool Success, string Message)> ProcessSupplierInspectionAsync(SupplierInspectionDto dto);
+
+        Task<(bool Success, string Message)> AcceptFinishedGoodsAsync(FinishedGoodsAcceptanceDto dto);
+
+        Task<(bool Success, string Message)> InitiateProductSaleAsync(ProductSaleDispatchDto dto);
+
+        Task<(bool Success, string Message)> ProcessCustomerReturnAsync(CustomerReturnDto dto);
+
+        Task<object> GetKpisAsync();
+
+        Task<object> GetShelvesPreviewAsync();
+
+        Task<object> GetStockAsync();
+
+        Task<object> GetVisualizationDataAsync();
+
         // </crudgen:method-signatures>
     }
 }

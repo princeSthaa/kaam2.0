@@ -100,6 +100,40 @@ namespace backend.Controller.Material
 
             return NoContent();
         }
+
+        [HttpPost("request-supplier")]
+        public async Task<IActionResult> RequestSupplier([FromBody] SupplierMaterialRequestDto request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var success = await _MaterialService.RequestSupplierAsync(request);
+            if (!success)
+            {
+                return BadRequest("Failed to submit material request to supplier.");
+            }
+
+            return Ok(new { message = "Material request submitted to supplier successfully." });
+        }
+
+        [HttpPost("issue-factory")]
+        public async Task<IActionResult> IssueToFactory([FromBody] MaterialIssueDto issue)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var (success, message, remainingQty) = await _MaterialService.IssueToFactoryAsync(issue);
+            if (!success)
+            {
+                return BadRequest(new { message, remainingQty });
+            }
+
+            return Ok(new { message, remainingQty });
+        }
         // </crudgen:actions>
     }
 }

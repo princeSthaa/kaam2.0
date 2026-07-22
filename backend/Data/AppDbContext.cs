@@ -30,6 +30,11 @@ namespace backend.Data
         public DbSet<OutletDemand> OutletDemands { get; set; } = null!;
         public DbSet<Transaction> Transactions { get; set; } = null!;
         public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
+        public DbSet<MaterialRequest> MaterialRequests { get; set; } = null!;
+        public DbSet<MaterialIssue> MaterialIssues { get; set; } = null!;
+        public DbSet<MaterialInspection> MaterialInspections { get; set; } = null!;
+        public DbSet<FinishedGoodsHandover> FinishedGoodsHandovers { get; set; } = null!;
+        public DbSet<CustomerReturn> CustomerReturns { get; set; } = null!;
         // </crudgen:dbsets>
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -131,6 +136,25 @@ namespace backend.Data
             modelBuilder.Entity<ActivityLog>().HasKey(e => e.Id);
             modelBuilder.Entity<ActivityLog>().Property(e => e.Title).IsRequired();
             modelBuilder.Entity<ActivityLog>().Property(e => e.CreatedAt).IsRequired();
+
+            modelBuilder.Entity<MaterialRequest>().HasKey(e => e.Id);
+            modelBuilder.Entity<MaterialRequest>().Property(e => e.MaterialId).IsRequired();
+            modelBuilder.Entity<MaterialRequest>().Property(e => e.SupplierName).IsRequired();
+
+            modelBuilder.Entity<MaterialIssue>().HasKey(e => e.Id);
+            modelBuilder.Entity<MaterialIssue>().Property(e => e.MaterialId).IsRequired();
+            modelBuilder.Entity<MaterialIssue>().Property(e => e.TargetDestination).IsRequired();
+
+            modelBuilder.Entity<MaterialInspection>().HasKey(e => e.Id);
+            modelBuilder.Entity<MaterialInspection>().Property(e => e.MaterialId).IsRequired();
+            modelBuilder.Entity<MaterialInspection>().Property(e => e.InspectionStatus).IsRequired();
+
+            modelBuilder.Entity<FinishedGoodsHandover>().HasKey(e => e.Id);
+            modelBuilder.Entity<FinishedGoodsHandover>().Property(e => e.ProductName).IsRequired();
+
+            modelBuilder.Entity<CustomerReturn>().HasKey(e => e.Id);
+            modelBuilder.Entity<CustomerReturn>().Property(e => e.OrderNumber).IsRequired();
+            modelBuilder.Entity<CustomerReturn>().Property(e => e.CustomerName).IsRequired();
 
             // </crudgen:modelbuilder>
         }

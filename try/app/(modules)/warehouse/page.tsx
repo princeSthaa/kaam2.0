@@ -18,14 +18,14 @@ export default async function WarehouseIndexPage() {
           </p>
         </div>
         <div className="warehouse-hero-actions">
-          <button className="btn btn-light btn-sm fw-semibold" type="button">
-            <span className="material-symbols-outlined" aria-hidden="true">inventory</span>
-            Receive
-          </button>
-          <button className="btn btn-dark btn-sm fw-semibold" type="button">
+          <ActionButton href="/warehouse/purchasedemand" variant="light" size="sm" className="fw-semibold text-decoration-none">
+            <span className="material-symbols-outlined" aria-hidden="true">shopping_cart_checkout</span>
+            Supplier Request
+          </ActionButton>
+          <ActionButton href="/warehouse/issue" variant="secondary" size="sm" className="fw-semibold text-decoration-none">
             <span className="material-symbols-outlined" aria-hidden="true">forklift</span>
-            Issue
-          </button>
+            Issue to Factory
+          </ActionButton>
           <ActionButton href="/warehouse/visualization" variant="light" size="sm" className="fw-semibold text-decoration-none">
             <span className="material-symbols-outlined" aria-hidden="true">shelves</span>
             Shelf View

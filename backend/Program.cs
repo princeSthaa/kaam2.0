@@ -61,6 +61,90 @@ using (var scope = app.Services.CreateScope())
     {
         dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('WorkCenters') AND name = 'ProductionLine') ALTER TABLE WorkCenters ADD ProductionLine NVARCHAR(MAX) NULL;");
         dbContext.Database.ExecuteSqlRaw("UPDATE WorkCenters SET ProductionLine = '' WHERE ProductionLine IS NULL;");
+
+        dbContext.Database.ExecuteSqlRaw(@"
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MaterialRequests')
+            CREATE TABLE MaterialRequests (
+                Id NVARCHAR(450) PRIMARY KEY,
+                MaterialId NVARCHAR(MAX) NOT NULL,
+                MaterialName NVARCHAR(MAX) NULL,
+                RequestedQuantity DECIMAL(18,2) NOT NULL,
+                SupplierName NVARCHAR(MAX) NOT NULL,
+                Urgency NVARCHAR(MAX) NULL,
+                RequiredDate DATETIME2 NULL,
+                Notes NVARCHAR(MAX) NULL,
+                RequestedBy NVARCHAR(MAX) NULL,
+                Status NVARCHAR(MAX) NULL,
+                CreatedAt DATETIME2 NOT NULL,
+                CreatedBy NVARCHAR(MAX) NULL,
+                UpdatedAt DATETIME2 NOT NULL,
+                UpdatedBy NVARCHAR(MAX) NULL
+            );
+
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MaterialIssues')
+            CREATE TABLE MaterialIssues (
+                Id NVARCHAR(450) PRIMARY KEY,
+                MaterialId NVARCHAR(MAX) NOT NULL,
+                IssueQuantity DECIMAL(18,2) NOT NULL,
+                TargetDestination NVARCHAR(MAX) NOT NULL,
+                IssuedTo NVARCHAR(MAX) NULL,
+                Notes NVARCHAR(MAX) NULL,
+                Status NVARCHAR(MAX) NULL,
+                CreatedAt DATETIME2 NOT NULL,
+                CreatedBy NVARCHAR(MAX) NULL,
+                UpdatedAt DATETIME2 NOT NULL,
+                UpdatedBy NVARCHAR(MAX) NULL
+            );
+
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MaterialInspections')
+            CREATE TABLE MaterialInspections (
+                Id NVARCHAR(450) PRIMARY KEY,
+                MaterialId NVARCHAR(MAX) NOT NULL,
+                MaterialName NVARCHAR(MAX) NULL,
+                SupplierName NVARCHAR(MAX) NULL,
+                ReceivedQuantity DECIMAL(18,2) NOT NULL,
+                InspectionStatus NVARCHAR(MAX) NOT NULL,
+                Notes NVARCHAR(MAX) NULL,
+                InspectorName NVARCHAR(MAX) NULL,
+                CreatedAt DATETIME2 NOT NULL,
+                CreatedBy NVARCHAR(MAX) NULL,
+                UpdatedAt DATETIME2 NOT NULL,
+                UpdatedBy NVARCHAR(MAX) NULL
+            );
+
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FinishedGoodsHandovers')
+            CREATE TABLE FinishedGoodsHandovers (
+                Id NVARCHAR(450) PRIMARY KEY,
+                ProductId NVARCHAR(MAX) NULL,
+                ProductName NVARCHAR(MAX) NOT NULL,
+                SKU NVARCHAR(MAX) NULL,
+                Quantity INT NOT NULL,
+                SourceFactoryLine NVARCHAR(MAX) NULL,
+                Location NVARCHAR(MAX) NULL,
+                AcceptedBy NVARCHAR(MAX) NULL,
+                Status NVARCHAR(MAX) NULL,
+                CreatedAt DATETIME2 NOT NULL,
+                CreatedBy NVARCHAR(MAX) NULL,
+                UpdatedAt DATETIME2 NOT NULL,
+                UpdatedBy NVARCHAR(MAX) NULL
+            );
+
+            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'CustomerReturns')
+            CREATE TABLE CustomerReturns (
+                Id NVARCHAR(450) PRIMARY KEY,
+                OrderNumber NVARCHAR(MAX) NOT NULL,
+                CustomerName NVARCHAR(MAX) NOT NULL,
+                ProductId NVARCHAR(MAX) NULL,
+                ReturnedQuantity INT NOT NULL,
+                Reason NVARCHAR(MAX) NULL,
+                Notes NVARCHAR(MAX) NULL,
+                ProcessedBy NVARCHAR(MAX) NULL,
+                CreatedAt DATETIME2 NOT NULL,
+                CreatedBy NVARCHAR(MAX) NULL,
+                UpdatedAt DATETIME2 NOT NULL,
+                UpdatedBy NVARCHAR(MAX) NULL
+            );
+        ");
     }
     catch (Exception ex)
     {
