@@ -1,37 +1,39 @@
+/* Warehouse Visualization Module Stylesheet - Scoped & Prefixed */
+
 .warehouse-visual-page {
-    --primary: #2563eb;
-    --primary-soft: #dbeafe;
-    --green: #16a34a;
-    --green-soft: #dcfce7;
-    --amber: #f59e0b;
-    --purple: #8b5cf6;
-    --red: #ef4444;
-    --bg: #f5f7fb;
-    --surface: #ffffff;
-    --surface-soft: #f8fafc;
-    --text: #111827;
-    --muted: #6b7280;
-    --border: #e5e7eb;
-    background: var(--bg);
-    color: var(--text);
+    --wh-primary: #2563eb;
+    --wh-primary-soft: #dbeafe;
+    --wh-green: #16a34a;
+    --wh-green-soft: #dcfce7;
+    --wh-amber: #f59e0b;
+    --wh-purple: #8b5cf6;
+    --wh-red: #ef4444;
+    --wh-bg: #f5f7fb;
+    --wh-surface: #ffffff;
+    --wh-surface-soft: #f8fafc;
+    --wh-text: #111827;
+    --wh-muted: #6b7280;
+    --wh-border: #e5e7eb;
+    background: var(--wh-bg);
+    color: var(--wh-text);
     padding: 24px;
     min-height: 100vh;
     font-family: "Inter", sans-serif;
     overflow-x: hidden;
 }
 
-.warehouse-visual-page .breadcrumb-line {
-    color: var(--muted);
+.warehouse-visual-page .wh-visual-breadcrumb {
+    color: var(--wh-muted);
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 8px;
 }
 
-.warehouse-visual-page .breadcrumb-line span {
+.warehouse-visual-page .wh-visual-breadcrumb span {
     margin: 0 8px;
 }
 
-.warehouse-visual-page .page-header {
+.warehouse-visual-page .wh-visual-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -39,27 +41,27 @@
     margin-bottom: 24px;
 }
 
-.warehouse-visual-page .page-header h1 {
+.warehouse-visual-page .wh-visual-header h1 {
     margin: 0;
     font-size: 34px;
     font-weight: 800;
 }
 
-.warehouse-visual-page .page-header p {
+.warehouse-visual-page .wh-visual-header p {
     margin: 6px 0 0;
-    color: var(--muted);
+    color: var(--wh-muted);
 }
 
-.warehouse-visual-page .header-actions {
+.warehouse-visual-page .wh-visual-header-actions {
     display: flex;
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
 }
 
-.warehouse-visual-page .warehouse-select,
-.warehouse-visual-page .header-actions .btn,
-.warehouse-visual-page .selected-card .btn {
+.warehouse-visual-page .wh-visual-select,
+.warehouse-visual-page .wh-visual-header-actions .btn,
+.warehouse-visual-page .wh-visual-selected-card .btn {
     border-radius: 8px;
     min-height: 40px;
     display: inline-flex;
@@ -69,19 +71,25 @@
     font-weight: 600;
 }
 
-.warehouse-visual-page .kpi-card,
-.warehouse-visual-page .panel-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
+.warehouse-visual-page .wh-visual-kpi-card,
+.warehouse-visual-page .wh-visual-panel-card {
+    background: var(--wh-surface);
+    border: 1px solid var(--wh-border);
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
-.warehouse-visual-page .row {
+.warehouse-visual-page .wh-visual-panel-card {
+    padding: 20px;
+    height: 100%;
+    min-width: 0;
+}
+
+.warehouse-visual-page .wh-visual-row {
     align-items: stretch;
 }
 
-.warehouse-visual-page .kpi-card {
+.warehouse-visual-page .wh-visual-kpi-card {
     padding: 18px;
     display: flex;
     gap: 14px;
@@ -90,7 +98,7 @@
     height: 100%;
 }
 
-.warehouse-visual-page .kpi-icon {
+.warehouse-visual-page .wh-visual-kpi-icon {
     width: 48px;
     height: 48px;
     border-radius: 8px;
@@ -99,33 +107,33 @@
     flex-shrink: 0;
 }
 
-.warehouse-visual-page .kpi-icon span {
+.warehouse-visual-page .wh-visual-kpi-icon span {
     font-size: 24px;
 }
 
-.warehouse-visual-page .kpi-icon.blue {
-    background: var(--primary-soft);
-    color: var(--primary);
+.warehouse-visual-page .wh-visual-kpi-icon.blue {
+    background: var(--wh-primary-soft);
+    color: var(--wh-primary);
 }
 
-.warehouse-visual-page .kpi-icon.green {
-    background: var(--green-soft);
-    color: var(--green);
+.warehouse-visual-page .wh-visual-kpi-icon.green {
+    background: var(--wh-green-soft);
+    color: var(--wh-green);
 }
 
-.warehouse-visual-page .kpi-icon.soft {
+.warehouse-visual-page .wh-visual-kpi-icon.soft {
     background: #f3f4f6;
     color: #475569;
 }
 
-.warehouse-visual-page .kpi-body span {
+.warehouse-visual-page .wh-visual-kpi-body span {
     display: block;
-    color: var(--muted);
+    color: var(--wh-muted);
     font-size: 13px;
     font-weight: 700;
 }
 
-.warehouse-visual-page .kpi-body strong {
+.warehouse-visual-page .wh-visual-kpi-body strong {
     display: block;
     margin-top: 2px;
     font-size: 36px;
@@ -133,19 +141,19 @@
     line-height: 1.1;
 }
 
-.warehouse-visual-page .kpi-body small {
-    color: var(--muted);
+.warehouse-visual-page .wh-visual-kpi-body small {
+    color: var(--wh-muted);
     display: block;
     margin-top: 6px;
 }
 
-.warehouse-visual-page .panel-card {
+.warehouse-visual-page .wh-visual-panel-card {
     padding: 20px;
     height: 100%;
     min-width: 0;
 }
 
-.warehouse-visual-page .panel-head {
+.warehouse-visual-page .wh-visual-panel-head {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
@@ -153,47 +161,47 @@
     margin-bottom: 16px;
 }
 
-.warehouse-visual-page .panel-head h2 {
+.warehouse-visual-page .wh-visual-panel-head h2 {
     margin: 0;
     font-size: 21px;
     font-weight: 800;
 }
 
-.warehouse-visual-page .panel-head p {
+.warehouse-visual-page .wh-visual-panel-head p {
     margin: 4px 0 0;
-    color: var(--muted);
+    color: var(--wh-muted);
     font-size: 14px;
 }
 
-.warehouse-visual-page .slim-progress,
-.warehouse-visual-page .table-progress {
+.warehouse-visual-page .wh-visual-slim-progress,
+.warehouse-visual-page .wh-visual-table-progress {
     height: 9px;
     border-radius: 999px;
     overflow: hidden;
     background: #e5e7eb;
 }
 
-.warehouse-visual-page .progress-bar {
-    background: var(--primary);
+.warehouse-visual-page .wh-visual-progress-bar {
+    background: var(--wh-primary);
 }
 
-.warehouse-visual-page .progress-bar.low {
-    background: var(--green) !important;
+.warehouse-visual-page .wh-visual-progress-bar.low {
+    background: var(--wh-green) !important;
 }
 
-.warehouse-visual-page .progress-bar.medium {
-    background: var(--amber) !important;
+.warehouse-visual-page .wh-visual-progress-bar.medium {
+    background: var(--wh-amber) !important;
 }
 
-.warehouse-visual-page .progress-bar.high {
-    background: var(--primary) !important;
+.warehouse-visual-page .wh-visual-progress-bar.high {
+    background: var(--wh-primary) !important;
 }
 
-.warehouse-visual-page .progress-bar.full {
-    background: var(--red) !important;
+.warehouse-visual-page .wh-visual-progress-bar.full {
+    background: var(--wh-red) !important;
 }
 
-.warehouse-visual-page .layout-grid {
+.warehouse-visual-page .wh-visual-layout-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
@@ -201,7 +209,7 @@
     min-height: 230px;
 }
 
-.warehouse-visual-page .layout-room {
+.warehouse-visual-page .wh-visual-layout-room {
     border-radius: 8px;
     border: 1px dashed #cbd5e1;
     padding: 16px;
@@ -214,34 +222,34 @@
     justify-content: center;
 }
 
-.warehouse-visual-page .layout-room:hover,
-.warehouse-visual-page .layout-room.active {
+.warehouse-visual-page .wh-visual-layout-room:hover,
+.warehouse-visual-page .wh-visual-layout-room.active {
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
 }
 
-.warehouse-visual-page .layout-room strong,
-.warehouse-visual-page .layout-room em,
-.warehouse-visual-page .layout-room small,
-.warehouse-visual-page .layout-room .layout-tag {
+.warehouse-visual-page .wh-visual-layout-room strong,
+.warehouse-visual-page .wh-visual-layout-room em,
+.warehouse-visual-page .wh-visual-layout-room small,
+.warehouse-visual-page .wh-visual-layout-room .wh-visual-layout-tag {
     display: block;
 }
 
-.warehouse-visual-page .layout-tag {
+.warehouse-visual-page .wh-visual-layout-tag {
     font-size: 12px;
     font-weight: 700;
     opacity: 0.8;
     margin-bottom: 10px;
 }
 
-.warehouse-visual-page .layout-room strong {
+.warehouse-visual-page .wh-visual-layout-room strong {
     font-size: 16px;
     font-weight: 800;
     font-style: normal;
     margin-bottom: 8px;
 }
 
-.warehouse-visual-page .layout-room em {
+.warehouse-visual-page .wh-visual-layout-room em {
     font-size: 34px;
     font-style: normal;
     font-weight: 800;
@@ -249,32 +257,32 @@
     margin-bottom: 6px;
 }
 
-.warehouse-visual-page .layout-room small {
-    color: var(--muted);
+.warehouse-visual-page .wh-visual-layout-room small {
+    color: var(--wh-muted);
     font-size: 13px;
 }
 
-.warehouse-visual-page .layout-blue {
+.warehouse-visual-page .wh-visual-layout-blue {
     background: #eff6ff;
     color: #1d4ed8;
 }
 
-.warehouse-visual-page .layout-green {
+.warehouse-visual-page .wh-visual-layout-green {
     background: #f0fdf4;
     color: #15803d;
 }
 
-.warehouse-visual-page .layout-amber {
+.warehouse-visual-page .wh-visual-layout-amber {
     background: #fffbeb;
     color: #d97706;
 }
 
-.warehouse-visual-page .layout-purple {
+.warehouse-visual-page .wh-visual-layout-purple {
     background: #f5f3ff;
     color: #7c3aed;
 }
 
-.warehouse-visual-page .receiving-strip {
+.warehouse-visual-page .wh-visual-receiving-strip {
     border-radius: 8px;
     background: #f3f4f6;
     text-align: center;
@@ -286,7 +294,7 @@
     place-items: center;
 }
 
-.warehouse-visual-page .rack-visual-wrap {
+.warehouse-visual-page .wh-visual-rack-wrap {
     display: grid;
     grid-template-columns: 74px minmax(0, 1fr);
     gap: 14px;
@@ -294,14 +302,14 @@
     min-width: 0;
 }
 
-.warehouse-visual-page .level-labels {
+.warehouse-visual-page .wh-visual-level-labels {
     display: grid;
     grid-template-rows: repeat(4, 1fr);
     gap: 0;
     padding: 14px 0;
 }
 
-.warehouse-visual-page .level-labels span {
+.warehouse-visual-page .wh-visual-level-labels span {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -311,10 +319,10 @@
     min-height: 82px;
 }
 
-.warehouse-visual-page .rack-visual {
+.warehouse-visual-page .wh-visual-rack {
     position: relative;
     background: #f8fafc;
-    border: 1px solid var(--border);
+    border: 1px solid var(--wh-border);
     border-radius: 8px;
     padding: 14px 20px;
     display: grid;
@@ -325,7 +333,7 @@
     min-height: 390px;
 }
 
-.warehouse-visual-page .rack-frame {
+.warehouse-visual-page .wh-visual-rack-frame {
     position: absolute;
     top: 10px;
     bottom: 10px;
@@ -334,15 +342,15 @@
     border-radius: 999px;
 }
 
-.warehouse-visual-page .rack-frame.left {
+.warehouse-visual-page .wh-visual-rack-frame.left {
     left: 12px;
 }
 
-.warehouse-visual-page .rack-frame.right {
+.warehouse-visual-page .wh-visual-rack-frame.right {
     right: 12px;
 }
 
-.warehouse-visual-page .rack-level {
+.warehouse-visual-page .wh-visual-rack-level {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
@@ -353,93 +361,93 @@
     min-width: 0;
 }
 
-.warehouse-visual-page .rack-level:last-child {
+.warehouse-visual-page .wh-visual-rack-level:last-child {
     border-bottom: 0;
 }
 
-.warehouse-visual-page .shelf-card {
+.warehouse-visual-page .wh-visual-shelf-card,
+.warehouse-visual-page .wh-visual-tactile-shelf {
     min-height: 58px;
-    border: 0;
     border-radius: 8px;
     font-weight: 800;
-    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.08);
     transition: 0.2s ease;
     width: 100%;
-    white-space: nowrap;
 }
 
-.warehouse-visual-page .shelf-card:hover {
+.warehouse-visual-page .wh-visual-shelf-card:hover,
+.warehouse-visual-page .wh-visual-tactile-shelf:hover {
     transform: translateY(-2px);
 }
 
-.warehouse-visual-page .shelf-card.active {
+.warehouse-visual-page .wh-visual-shelf-card.active,
+.warehouse-visual-page .wh-visual-tactile-shelf.active {
     outline: 3px solid #1e3a8a;
     outline-offset: 2px;
 }
 
-.warehouse-visual-page .shelf-card.shelf-low {
+.warehouse-visual-page .wh-visual-shelf-card.shelf-low {
     background: #dcfce7;
     color: #166534;
 }
 
-.warehouse-visual-page .shelf-card.shelf-medium {
+.warehouse-visual-page .wh-visual-shelf-card.shelf-medium {
     background: #fed7aa;
     color: #9a3412;
 }
 
-.warehouse-visual-page .shelf-card.shelf-high {
+.warehouse-visual-page .wh-visual-shelf-card.shelf-high {
     background: #60a5fa;
     color: #ffffff;
 }
 
-.warehouse-visual-page .shelf-card.shelf-full {
+.warehouse-visual-page .wh-visual-shelf-card.shelf-full {
     background: #2563eb;
     color: #ffffff;
 }
 
-.warehouse-visual-page .legend {
+.warehouse-visual-page .wh-visual-legend {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    color: var(--muted);
+    color: var(--wh-muted);
     font-size: 13px;
     margin-top: 16px;
 }
 
-.warehouse-visual-page .legend span {
+.warehouse-visual-page .wh-visual-legend span {
     display: inline-flex;
     align-items: center;
     gap: 6px;
 }
 
-.warehouse-visual-page .dot {
+.warehouse-visual-page .wh-visual-dot {
     width: 10px;
     height: 10px;
     border-radius: 999px;
     display: inline-block;
 }
 
-.warehouse-visual-page .dot.empty {
+.warehouse-visual-page .wh-visual-dot.empty {
     background: #cbd5e1;
 }
 
-.warehouse-visual-page .dot.low {
-    background: var(--green);
+.warehouse-visual-page .wh-visual-dot.low {
+    background: var(--wh-green);
 }
 
-.warehouse-visual-page .dot.medium {
-    background: var(--amber);
+.warehouse-visual-page .wh-visual-dot.medium {
+    background: var(--wh-amber);
 }
 
-.warehouse-visual-page .dot.high {
-    background: var(--primary);
+.warehouse-visual-page .wh-visual-dot.high {
+    background: var(--wh-primary);
 }
 
-.warehouse-visual-page .dot.full {
+.warehouse-visual-page .wh-visual-dot.full {
     background: #1d4ed8;
 }
 
-.warehouse-visual-page .status-badge {
+.warehouse-visual-page .wh-visual-status-badge {
     display: inline-flex;
     align-items: center;
     padding: 6px 10px;
@@ -448,83 +456,83 @@
     font-weight: 700;
 }
 
-.warehouse-visual-page .status-badge.success {
+.warehouse-visual-page .wh-visual-status-badge.success {
     background: #dcfce7;
     color: #166534;
 }
 
-.warehouse-visual-page .status-badge.warning {
+.warehouse-visual-page .wh-visual-status-badge.warning {
     background: #fef3c7;
     color: #92400e;
 }
 
-.warehouse-visual-page .status-badge.danger {
+.warehouse-visual-page .wh-visual-status-badge.danger {
     background: #fee2e2;
     color: #b91c1c;
 }
 
-.warehouse-visual-page .selected-card h3 {
+.warehouse-visual-page .wh-visual-selected-card h3 {
     margin: 0;
     font-size: 32px;
     font-weight: 800;
 }
 
-.warehouse-visual-page .selected-main-item {
+.warehouse-visual-page .wh-visual-selected-main-item {
     margin-top: 6px;
     font-size: 18px;
     font-weight: 700;
 }
 
-.warehouse-visual-page .selected-sub {
+.warehouse-visual-page .wh-visual-selected-sub {
     margin-top: 4px;
-    color: var(--muted);
+    color: var(--wh-muted);
     font-size: 14px;
     font-weight: 600;
 }
 
-.warehouse-visual-page .detail-grid {
+.warehouse-visual-page .wh-visual-detail-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
 }
 
-.warehouse-visual-page .detail-grid div {
-    background: var(--surface-soft);
-    border: 1px solid var(--border);
+.warehouse-visual-page .wh-visual-detail-grid div {
+    background: var(--wh-surface-soft);
+    border: 1px solid var(--wh-border);
     border-radius: 8px;
     padding: 12px;
 }
 
-.warehouse-visual-page .detail-grid span {
+.warehouse-visual-page .wh-visual-detail-grid span {
     display: block;
-    color: var(--muted);
+    color: var(--wh-muted);
     font-size: 12px;
     font-weight: 700;
     margin-bottom: 5px;
 }
 
-.warehouse-visual-page .detail-grid strong {
+.warehouse-visual-page .wh-visual-detail-grid strong {
     font-size: 14px;
     overflow-wrap: anywhere;
 }
 
-.warehouse-visual-page .utilization-box {
+.warehouse-visual-page .wh-visual-utilization-box {
     margin-top: 16px;
-    background: var(--surface-soft);
-    border: 1px solid var(--border);
+    background: var(--wh-surface-soft);
+    border: 1px solid var(--wh-border);
     border-radius: 8px;
     padding: 14px;
 }
 
-.warehouse-visual-page .table-actions {
+.warehouse-visual-page .wh-visual-table-actions {
     width: 300px;
 }
 
-.warehouse-visual-page .table-actions input {
+.warehouse-visual-page .wh-visual-table-actions input {
     border-radius: 8px;
 }
 
-.warehouse-visual-page .table-responsive {
+.warehouse-visual-page .wh-visual-table-responsive {
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
@@ -532,25 +540,25 @@
     -webkit-overflow-scrolling: touch;
 }
 
-.warehouse-visual-page .warehouse-table thead th {
+.warehouse-visual-page .wh-visual-table thead th {
     background: #f8fafc;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
+    color: var(--wh-muted);
+    border-bottom: 1px solid var(--wh-border);
     font-size: 13px;
     font-weight: 700;
 }
 
-.warehouse-visual-page .warehouse-table tbody td {
+.warehouse-visual-page .wh-visual-table tbody td {
     vertical-align: middle;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--wh-border);
     font-size: 14px;
 }
 
-.warehouse-visual-page .warehouse-table {
+.warehouse-visual-page .wh-visual-table {
     min-width: 760px;
 }
 
-.warehouse-visual-page .type-badge {
+.warehouse-visual-page .wh-visual-type-badge {
     display: inline-flex;
     align-items: center;
     padding: 6px 10px;
@@ -559,17 +567,17 @@
     font-weight: 700;
 }
 
-.warehouse-visual-page .type-badge.raw {
+.warehouse-visual-page .wh-visual-type-badge.raw {
     background: #eff6ff;
     color: #1d4ed8;
 }
 
-.warehouse-visual-page .type-badge.finished {
+.warehouse-visual-page .wh-visual-type-badge.finished {
     background: #ecfdf5;
     color: #047857;
 }
 
-.warehouse-visual-page .util-cell {
+.warehouse-visual-page .wh-visual-util-cell {
     display: grid;
     grid-template-columns: 1fr 42px;
     gap: 10px;
@@ -577,48 +585,48 @@
     min-width: 140px;
 }
 
-.warehouse-visual-page .low-stock-list {
+.warehouse-visual-page .wh-visual-low-stock-list {
     display: grid;
     gap: 12px;
 }
 
-.warehouse-visual-page .low-stock-item {
+.warehouse-visual-page .wh-visual-low-stock-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 14px;
     padding: 12px 0;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--wh-border);
 }
 
-.warehouse-visual-page .low-stock-item:last-child {
+.warehouse-visual-page .wh-visual-low-stock-item:last-child {
     border-bottom: 0;
 }
 
-.warehouse-visual-page .low-stock-item strong,
-.warehouse-visual-page .low-stock-item span,
-.warehouse-visual-page .low-stock-item small {
+.warehouse-visual-page .wh-visual-low-stock-item strong,
+.warehouse-visual-page .wh-visual-low-stock-item span,
+.warehouse-visual-page .wh-visual-low-stock-item small {
     display: block;
 }
 
-.warehouse-visual-page .low-stock-item span {
-    color: var(--text);
+.warehouse-visual-page .wh-visual-low-stock-item span {
+    color: var(--wh-text);
     font-size: 14px;
     margin-top: 3px;
 }
 
-.warehouse-visual-page .low-stock-item small {
-    color: var(--muted);
+.warehouse-visual-page .wh-visual-low-stock-item small {
+    color: var(--wh-muted);
     margin-top: 3px;
 }
 
-.warehouse-visual-page .low-stock-item b {
+.warehouse-visual-page .wh-visual-low-stock-item b {
     color: #b91c1c;
     font-size: 14px;
     white-space: nowrap;
 }
 
-.warehouse-visual-page .low-stock-link {
+.warehouse-visual-page .wh-visual-low-stock-link {
     margin-top: 14px;
     font-weight: 700;
     text-decoration: none;
@@ -626,7 +634,7 @@
 }
 
 @media (max-width: 1399px) {
-    .warehouse-visual-page .kpi-body strong {
+    .warehouse-visual-page .wh-visual-kpi-body strong {
         font-size: 30px;
     }
 }
@@ -636,50 +644,154 @@
         padding: 16px;
     }
 
-    .warehouse-visual-page .page-header,
-    .warehouse-visual-page .panel-head {
+    .warehouse-visual-page .wh-visual-header,
+    .warehouse-visual-page .wh-visual-panel-head {
         flex-direction: column;
     }
 
-    .warehouse-visual-page .layout-grid,
-    .warehouse-visual-page .detail-grid {
+    .warehouse-visual-page .wh-visual-layout-grid,
+    .warehouse-visual-page .wh-visual-detail-grid {
         grid-template-columns: 1fr;
     }
 
-    .warehouse-visual-page .rack-visual-wrap {
+    .warehouse-visual-page .wh-visual-rack-wrap {
         grid-template-columns: 56px minmax(0, 1fr);
         gap: 8px;
     }
 
-    .warehouse-visual-page .level-labels span {
+    .warehouse-visual-page .wh-visual-level-labels span {
         min-height: 70px;
         font-size: 11px;
         writing-mode: vertical-rl;
         text-orientation: mixed;
     }
 
-    .warehouse-visual-page .rack-visual {
+    .warehouse-visual-page .wh-visual-rack {
         min-height: 340px;
         grid-template-rows: repeat(4, minmax(70px, 1fr));
         padding: 10px 14px;
     }
 
-    .warehouse-visual-page .rack-level {
+    .warehouse-visual-page .wh-visual-rack-level {
         grid-template-columns: repeat(3, minmax(42px, 1fr));
         gap: 8px;
         padding: 8px 10px;
     }
 
-    .warehouse-visual-page .shelf-card {
+    .warehouse-visual-page .wh-visual-shelf-card {
         min-height: 46px;
         font-size: 12px;
     }
 
-    .warehouse-visual-page .table-actions {
+    .warehouse-visual-page .wh-visual-table-actions {
         width: 100%;
     }
 
-    .warehouse-visual-page .warehouse-table {
+    .warehouse-visual-page .wh-visual-table {
         min-width: 720px;
     }
+}
+
+.warehouse-visual-page .wh-visual-selected-card {
+    padding: 24px;
+    background: var(--wh-surface);
+    border: 1px solid var(--wh-border);
+    border-radius: 8px;
+}
+
+
+/* 1. Adds padding to the top header and filter bar */
+.warehouse-visual-page>.bg-white.p-6 {
+    padding: 24px;
+    border-radius: 16px;
+}
+
+/* 2. Adds padding to the right-side inspector panel (Shelf A1-04) */
+.xl\:col-span-1 {
+    padding: 28px;
+}
+
+/* 3. Adds padding to the gray Capacity Utilization box */
+.bg-slate-50\/80.p-4\.5 {
+    padding: 18px;
+    border-radius: 12px;
+}
+
+/* 4. Adds padding to the individual Current Stored Items cards */
+.p-4.border.border-slate-200\/90 {
+    padding: 16px;
+}
+
+/* =========================================
+   Spatial Map Header & Legend Styles 
+   ========================================= */
+
+.wh-map-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--wh-border);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    /* Allows it to stack neatly on mobile */
+    gap: 16px;
+}
+
+.wh-map-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--wh-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wh-map-title .material-symbols-outlined {
+    color: var(--wh-primary);
+    /* Blue icon */
+    font-size: 24px;
+}
+
+.wh-map-subtitle {
+    margin: 6px 0 0 0;
+    font-size: 13px;
+    color: var(--wh-muted);
+    font-weight: 500;
+}
+
+.wh-map-legend {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background-color: var(--wh-surface-soft);
+    padding: 10px 16px;
+    border-radius: 12px;
+    border: 1px solid var(--wh-border);
+}
+
+.wh-map-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+}
+
+.wh-map-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.wh-map-dot.finished {
+    background-color: var(--wh-primary);
+    /* Blue Dot */
+}
+
+.wh-map-dot.raw {
+    background-color: var(--wh-amber);
+    /* Orange Dot */
 }

@@ -1,0 +1,405 @@
+/* Warehouse Factory Requests (Material Issuance Hub) Stylesheet - Scoped & Prefixed */
+
+.wh-freq-page {
+    --wh-freq-primary: #0f172a;
+    --wh-freq-blue: #2563eb;
+    --wh-freq-blue-soft: #eff6ff;
+    --wh-freq-green: #16a34a;
+    --wh-freq-green-soft: #f0fdf4;
+    --wh-freq-amber: #d97706;
+    --wh-freq-amber-soft: #fffbeb;
+    --wh-freq-red: #dc2626;
+    --wh-freq-red-soft: #fef2f2;
+    --wh-freq-bg: #f8fafc;
+    --wh-freq-surface: #ffffff;
+    --wh-freq-surface-soft: #f1f5f9;
+    --wh-freq-text: #0f172a;
+    --wh-freq-muted: #64748b;
+    --wh-freq-border: #e2e8f0;
+    
+    font-family: "Inter", sans-serif;
+    color: var(--wh-freq-text);
+    width: 100%;
+}
+
+.wh-freq-header-card {
+    background: var(--wh-freq-surface);
+    border: 1px solid var(--wh-freq-border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wh-freq-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.wh-freq-title h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--wh-freq-primary);
+    margin: 0;
+}
+
+.wh-freq-title p {
+    font-size: 13px;
+    color: var(--wh-freq-muted);
+    margin: 4px 0 0 0;
+    font-weight: 500;
+}
+
+/* Bento Stats Grid */
+.wh-freq-bento-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+    .wh-freq-bento-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .wh-freq-bento-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.wh-freq-stat-card {
+    background: var(--wh-freq-surface);
+    border: 1px solid var(--wh-freq-border);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.wh-freq-stat-card.alert {
+    background: #fff5f5;
+    border-color: #fecaca;
+    border-left: 4px solid var(--wh-freq-red);
+}
+
+.wh-freq-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.wh-freq-stat-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--wh-freq-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wh-freq-stat-value {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--wh-freq-primary);
+}
+
+.wh-freq-stat-footer {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Tabs & Toolbar */
+.wh-freq-toolbar-card {
+    background: var(--wh-freq-surface);
+    border: 1px solid var(--wh-freq-border);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (min-width: 1024px) {
+    .wh-freq-toolbar-card {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.wh-freq-tabs {
+    display: flex;
+    gap: 6px;
+    background: var(--wh-freq-surface-soft);
+    padding: 4px;
+    border-radius: 12px;
+}
+
+.wh-freq-tab-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    background: transparent;
+    color: var(--wh-freq-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.wh-freq-tab-btn.active {
+    background: #ffffff;
+    color: var(--wh-freq-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.wh-freq-filter-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.wh-freq-select {
+    height: 40px;
+    padding: 0 32px 0 14px;
+    background: var(--wh-freq-surface);
+    border: 1px solid var(--wh-freq-border);
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--wh-freq-text);
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+}
+
+.wh-freq-search-input {
+    height: 40px;
+    padding-left: 38px !important;
+    padding-right: 14px;
+    background: var(--wh-freq-surface-soft);
+    border: 1px solid var(--wh-freq-border);
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--wh-freq-text);
+    outline: none;
+    min-width: 240px;
+}
+
+.wh-freq-search-input:focus {
+    border-color: var(--wh-freq-blue);
+    background: #ffffff;
+}
+
+/* Master Data Table Container */
+.wh-freq-table-card {
+    background: var(--wh-freq-surface);
+    border: 1px solid var(--wh-freq-border);
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.wh-freq-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.wh-freq-table th {
+    background: #f8fafc;
+    border-bottom: 1px solid var(--wh-freq-border);
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--wh-freq-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+}
+
+.wh-freq-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--wh-freq-border);
+    vertical-align: middle;
+}
+
+.wh-freq-table tr:hover {
+    background: #f8fafc;
+}
+
+.wh-freq-table tr:last-child td {
+    border-bottom: none;
+}
+
+.wh-freq-code-badge {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    background: var(--wh-freq-surface-soft);
+    padding: 3px 6px;
+    border-radius: 6px;
+    border: 1px solid var(--wh-freq-border);
+}
+
+.wh-freq-urgency-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.wh-freq-urgency-pill.critical {
+    background: var(--wh-freq-red-soft);
+    color: var(--wh-freq-red);
+    border: 1px solid #fecaca;
+}
+
+.wh-freq-urgency-pill.normal {
+    background: var(--wh-freq-surface-soft);
+    color: var(--wh-freq-muted);
+    border: 1px solid var(--wh-freq-border);
+}
+
+.wh-freq-btn-quick-issue {
+    background: var(--wh-freq-primary);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.wh-freq-btn-quick-issue:hover {
+    background: #1e293b;
+}
+
+.wh-freq-btn-partial {
+    background: #ffffff;
+    color: var(--wh-freq-text);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--wh-freq-border);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.wh-freq-btn-partial:hover {
+    background: var(--wh-freq-surface-soft);
+}
+
+/* Modal Overlay (Full Viewport Coverage - Covers Navbar & Sidebar) */
+.wh-freq-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    z-index: 9999 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.wh-freq-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid var(--wh-freq-border);
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    position: relative;
+    z-index: 10000;
+}
+
+.wh-freq-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--wh-freq-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+}
+
+.wh-freq-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--wh-freq-primary);
+}
+
+.wh-freq-modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.wh-freq-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.wh-freq-field label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--wh-freq-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wh-freq-field input {
+    width: 100%;
+    height: 44px;
+    border: 1px solid var(--wh-freq-border);
+    border-radius: 12px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--wh-freq-text);
+    outline: none;
+    transition: border 0.15s ease;
+}
+
+.wh-freq-field input:focus {
+    border-color: var(--wh-freq-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.wh-freq-modal-footer {
+    padding: 16px 24px;
+    background: #f8fafc;
+    border-top: 1px solid var(--wh-freq-border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
