@@ -28,7 +28,7 @@ namespace backend.Dto.Material
     public class MaterialDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "MaterialCode is required.")]
         public string MaterialCode { get; set; } = string.Empty;

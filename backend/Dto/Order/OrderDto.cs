@@ -29,7 +29,7 @@ namespace backend.Dto.Order
     public class OrderDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         public string OrderNumber { get; set; } = string.Empty;
 
@@ -48,10 +48,7 @@ namespace backend.Dto.Order
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string CustomerId { get; set; }
-        [NotMapped]
-        public CustomerDto? Customer { get; set; }
-
+        public Guid CustomerId { get; set; }
         [NotMapped]
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
 

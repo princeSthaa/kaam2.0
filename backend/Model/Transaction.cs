@@ -9,7 +9,7 @@ namespace backend.Model
     public class Transaction
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public DateTime Timestamp { get; set; }
         public string TransactionType { get; set; } = string.Empty;
         public decimal Amount { get; set; }

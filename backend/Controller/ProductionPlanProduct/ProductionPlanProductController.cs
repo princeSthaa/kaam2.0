@@ -21,9 +21,22 @@ namespace backend.Controller.ProductionPlanProduct
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<ProductionPlanProductDto>> GetById(Guid id)
+        {
+            var item = await _ProductionPlanProductService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"ProductionPlanProduct with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<ProductionPlanProductDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? lineId = null,
             [FromQuery] string? orderNo = null,
             [FromQuery] string? productId = null,
@@ -43,7 +56,7 @@ namespace backend.Controller.ProductionPlanProduct
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] string? productionPlanId = null
+            [FromQuery] Guid? productionPlanId = null
         )
         {
             var items = await _ProductionPlanProductService.GetAllAsync(
@@ -70,11 +83,6 @@ namespace backend.Controller.ProductionPlanProduct
                 productionPlanId
             );
 
-            foreach (var item in items)
-            {
-                backend.Helpers.ImagePathHelper.ResolveProductionPlanProductImage(item, Request);
-            }
-
             return Ok(items);
         }
 
@@ -97,7 +105,7 @@ namespace backend.Controller.ProductionPlanProduct
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] ProductionPlanProductDto productionPlanProductDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] ProductionPlanProductDto productionPlanProductDto)
         {
             if (!ModelState.IsValid)
             {
@@ -115,7 +123,7 @@ namespace backend.Controller.ProductionPlanProduct
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _ProductionPlanProductService.DeleteAsync(id);
 

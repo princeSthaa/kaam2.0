@@ -10,7 +10,7 @@ namespace backend.Service.Material
     {
         // <crudgen:method-signatures>
         Task<List<MaterialDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? materialCode = null,
             string? name = null,
             string? type = null,
@@ -23,15 +23,13 @@ namespace backend.Service.Material
             string? updatedBy = null
         );
 
+        Task<MaterialDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(MaterialDto materialDto);
 
-        Task<bool> UpdateAsync(string id, MaterialDto materialDto);
+        Task<bool> UpdateAsync(Guid id, MaterialDto materialDto);
 
-        Task<bool> DeleteAsync(string id);
-
-        Task<bool> RequestSupplierAsync(SupplierMaterialRequestDto dto);
-
-        Task<(bool Success, string Message, decimal RemainingQty)> IssueToFactoryAsync(MaterialIssueDto dto);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

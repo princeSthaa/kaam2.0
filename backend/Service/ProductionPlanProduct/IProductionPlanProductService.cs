@@ -11,7 +11,7 @@ namespace backend.Service.ProductionPlanProduct
     {
         // <crudgen:method-signatures>
         Task<List<ProductionPlanProductDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? lineId = null,
             string? orderNo = null,
             string? productId = null,
@@ -31,14 +31,16 @@ namespace backend.Service.ProductionPlanProduct
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? productionPlanId = null
+            Guid? productionPlanId = null
         );
+
+        Task<ProductionPlanProductDto?> GetByIdAsync(Guid id);
 
         Task<bool> CreateAsync(ProductionPlanProductDto productionPlanProductDto);
 
-        Task<bool> UpdateAsync(string id, ProductionPlanProductDto productionPlanProductDto);
+        Task<bool> UpdateAsync(Guid id, ProductionPlanProductDto productionPlanProductDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

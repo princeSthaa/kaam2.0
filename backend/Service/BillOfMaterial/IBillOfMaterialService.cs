@@ -10,7 +10,7 @@ namespace backend.Service.BillOfMaterial
     {
         // <crudgen:method-signatures>
         Task<List<BillOfMaterialDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             decimal? qtyPerUnit = null,
             decimal? wastagePercent = null,
             DateTime? createdAt = null,
@@ -19,11 +19,13 @@ namespace backend.Service.BillOfMaterial
             string? updatedBy = null
         );
 
+        Task<BillOfMaterialDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(BillOfMaterialDto billOfMaterialDto);
 
-        Task<bool> UpdateAsync(string id, BillOfMaterialDto billOfMaterialDto);
+        Task<bool> UpdateAsync(Guid id, BillOfMaterialDto billOfMaterialDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

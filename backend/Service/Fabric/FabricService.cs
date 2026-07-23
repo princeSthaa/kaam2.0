@@ -23,7 +23,7 @@ namespace backend.Service.Fabric
 
         // <crudgen:methods>
         public async Task<List<FabricDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? category = null,
             string? imagePath = null,
@@ -51,13 +51,24 @@ namespace backend.Service.Fabric
                 .ToListAsync();
         }
 
+        public async Task<FabricDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(FabricDto fabricDto)
         {
+            if (fabricDto.Id == Guid.Empty)
+            {
+                fabricDto.Id = Guid.NewGuid();
+            }
+
             fabricDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(fabricDto.ImagePath);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertFabric
-
+                    @Id = {fabricDto.Id},
                     @Name = {fabricDto.Name},
                     @Category = {fabricDto.Category},
                     @ImagePath = {fabricDto.ImagePath},
@@ -71,14 +82,13 @@ namespace backend.Service.Fabric
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, FabricDto fabricDto)
+        public async Task<bool> UpdateAsync(Guid id, FabricDto fabricDto)
         {
-            fabricDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(fabricDto.ImagePath);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateFabric
 
-                    @Id = {id},
+                    @Id = {fabricDto.Id},
                     @Name = {fabricDto.Name},
                     @Category = {fabricDto.Category},
                     @ImagePath = {fabricDto.ImagePath},
@@ -92,7 +102,7 @@ namespace backend.Service.Fabric
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteFabric

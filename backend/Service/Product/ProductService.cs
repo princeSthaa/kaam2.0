@@ -22,14 +22,14 @@ namespace backend.Service.Product
             _context = context;
         }
 
-         public async Task<bool> CreateAsync(ProductDto productDto)
+        public async Task<bool> CreateAsync(ProductDto productDto)
         {
             productDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(productDto.ImagePath);
-            var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
+            var sizesJson = JsonSerializer.Serialize(productDto.Sizes.Select(s => s.ToString()).ToList());
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertProduct
-
+                    @Id = {productDto.Id},
                     @Name = {productDto.Name},
                     @ImagePath = {productDto.ImagePath},
                     @CreatedAt = {productDto.CreatedAt},
@@ -44,7 +44,7 @@ namespace backend.Service.Product
 
         // <crudgen:methods>
         public async Task<List<ProductDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? imagePath = null,
             DateTime? createdAt = null,
@@ -53,10 +53,9 @@ namespace backend.Service.Product
             string? updatedBy = null
         )
         {
-            return await _context.Database
-                .SqlQuery<ProductDto>($@"
+            var products = await _context.Products
+                .FromSqlInterpolated($@"
                     EXEC sp_GetProducts
-
                         @Id = {id},
                         @Name = {name},
                         @ImagePath = {imagePath},
@@ -65,20 +64,35 @@ namespace backend.Service.Product
                         @UpdatedAt = {updatedAt},
                         @UpdatedBy = {updatedBy}
                 ")
+                .AsNoTracking()
                 .ToListAsync();
+
+            return products.Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                ImagePath = p.ImagePath,
+                Sizes = p.Sizes ?? new List<ProductSize>(),
+                CreatedAt = p.CreatedAt,
+                CreatedBy = p.CreatedBy,
+                UpdatedAt = p.UpdatedAt,
+                UpdatedBy = p.UpdatedBy
+            }).ToList();
         }
 
-       
-
-        public async Task<bool> UpdateAsync(string id, ProductDto productDto)
+        public async Task<ProductDto?> GetByIdAsync(Guid id)
         {
-            productDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(productDto.ImagePath);
-            var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
+        public async Task<bool> UpdateAsync(Guid id, ProductDto productDto)
+        {
+            var sizesJson = JsonSerializer.Serialize(productDto.Sizes.Select(s => s.ToString()).ToList());
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateProduct
-
-                    @Id = {id},
+                    @Id = {productDto.Id},
                     @Name = {productDto.Name},
                     @ImagePath = {productDto.ImagePath},
                     @CreatedAt = {productDto.CreatedAt},
@@ -91,7 +105,7 @@ namespace backend.Service.Product
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteProduct

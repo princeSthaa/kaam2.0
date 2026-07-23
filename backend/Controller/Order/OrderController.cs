@@ -21,9 +21,22 @@ namespace backend.Controller.Order
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<OrderDto>> GetById(Guid id)
+        {
+            var item = await _OrderService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"Order with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<OrderDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? orderNumber = null,
             [FromQuery] OrderStatus? status = null,
             [FromQuery] decimal? totalAmount = null,
@@ -32,7 +45,7 @@ namespace backend.Controller.Order
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] string? customerId = null
+            [FromQuery] Guid? customerId = null
         )
         {
             var items = await _OrderService.GetAllAsync(
@@ -47,11 +60,6 @@ namespace backend.Controller.Order
                 updatedBy,
                 customerId
             );
-
-            foreach (var item in items)
-            {
-                backend.Helpers.ImagePathHelper.ResolveOrderImages(item, Request);
-            }
 
             return Ok(items);
         }
@@ -75,7 +83,7 @@ namespace backend.Controller.Order
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] OrderDto orderDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] OrderDto orderDto)
         {
             if (!ModelState.IsValid)
             {
@@ -93,7 +101,7 @@ namespace backend.Controller.Order
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _OrderService.DeleteAsync(id);
 

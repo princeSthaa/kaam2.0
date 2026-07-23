@@ -10,7 +10,7 @@ namespace backend.Service.Fabric
     {
         // <crudgen:method-signatures>
         Task<List<FabricDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? category = null,
             string? imagePath = null,
@@ -21,11 +21,13 @@ namespace backend.Service.Fabric
             string? updatedBy = null
         );
 
+        Task<FabricDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(FabricDto fabricDto);
 
-        Task<bool> UpdateAsync(string id, FabricDto fabricDto);
+        Task<bool> UpdateAsync(Guid id, FabricDto fabricDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

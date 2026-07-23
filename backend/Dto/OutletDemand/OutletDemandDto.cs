@@ -28,7 +28,7 @@ namespace backend.Dto.OutletDemand
     public class OutletDemandDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "DemandNumber is required.")]
         public string DemandNumber { get; set; } = string.Empty;
@@ -46,10 +46,7 @@ namespace backend.Dto.OutletDemand
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string OutletId { get; set; }
-        [NotMapped]
-        public OutletDto? Outlet { get; set; }
-
+        public Guid OutletId { get; set; }
         // </crudgen:properties>
     }
 }

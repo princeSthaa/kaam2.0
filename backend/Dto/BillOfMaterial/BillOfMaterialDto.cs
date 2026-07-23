@@ -28,13 +28,13 @@ namespace backend.Dto.BillOfMaterial
     public class BillOfMaterialDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
-        public string ProductId { get; set; }
+        public Guid ProductId { get; set; }
         [NotMapped]
         public ProductDto? Product { get; set; }
 
-        public string MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
         [NotMapped]
         public MaterialDto? Material { get; set; }
 

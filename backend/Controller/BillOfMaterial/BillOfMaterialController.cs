@@ -20,9 +20,22 @@ namespace backend.Controller.BillOfMaterial
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<BillOfMaterialDto>> GetById(Guid id)
+        {
+            var item = await _BillOfMaterialService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"BillOfMaterial with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<BillOfMaterialDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] decimal? qtyPerUnit = null,
             [FromQuery] decimal? wastagePercent = null,
             [FromQuery] DateTime? createdAt = null,
@@ -63,7 +76,7 @@ namespace backend.Controller.BillOfMaterial
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] BillOfMaterialDto billOfMaterialDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] BillOfMaterialDto billOfMaterialDto)
         {
             if (!ModelState.IsValid)
             {
@@ -81,7 +94,7 @@ namespace backend.Controller.BillOfMaterial
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _BillOfMaterialService.DeleteAsync(id);
 

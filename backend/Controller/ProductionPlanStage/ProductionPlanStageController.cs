@@ -21,9 +21,22 @@ namespace backend.Controller.ProductionPlanStage
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<ProductionPlanStageDto>> GetById(Guid id)
+        {
+            var item = await _ProductionPlanStageService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"ProductionPlanStage with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<ProductionPlanStageDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? stageId = null,
             [FromQuery] string? stageName = null,
             [FromQuery] string? operatorName = null,
@@ -39,7 +52,7 @@ namespace backend.Controller.ProductionPlanStage
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] string? productionPlanId = null
+            [FromQuery] Guid? productionPlanId = null
         )
         {
             var items = await _ProductionPlanStageService.GetAllAsync(
@@ -84,7 +97,7 @@ namespace backend.Controller.ProductionPlanStage
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] ProductionPlanStageDto productionPlanStageDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] ProductionPlanStageDto productionPlanStageDto)
         {
             if (!ModelState.IsValid)
             {
@@ -102,7 +115,7 @@ namespace backend.Controller.ProductionPlanStage
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _ProductionPlanStageService.DeleteAsync(id);
 

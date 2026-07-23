@@ -20,9 +20,22 @@ namespace backend.Controller.Material
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<MaterialDto>> GetById(Guid id)
+        {
+            var item = await _MaterialService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"Material with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<MaterialDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? materialCode = null,
             [FromQuery] string? name = null,
             [FromQuery] string? type = null,
@@ -71,7 +84,7 @@ namespace backend.Controller.Material
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] MaterialDto materialDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] MaterialDto materialDto)
         {
             if (!ModelState.IsValid)
             {
@@ -89,7 +102,7 @@ namespace backend.Controller.Material
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _MaterialService.DeleteAsync(id);
 
@@ -99,40 +112,6 @@ namespace backend.Controller.Material
             }
 
             return NoContent();
-        }
-
-        [HttpPost("request-supplier")]
-        public async Task<IActionResult> RequestSupplier([FromBody] SupplierMaterialRequestDto request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var success = await _MaterialService.RequestSupplierAsync(request);
-            if (!success)
-            {
-                return BadRequest("Failed to submit material request to supplier.");
-            }
-
-            return Ok(new { message = "Material request submitted to supplier successfully." });
-        }
-
-        [HttpPost("issue-factory")]
-        public async Task<IActionResult> IssueToFactory([FromBody] MaterialIssueDto issue)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var (success, message, remainingQty) = await _MaterialService.IssueToFactoryAsync(issue);
-            if (!success)
-            {
-                return BadRequest(new { message, remainingQty });
-            }
-
-            return Ok(new { message, remainingQty });
         }
         // </crudgen:actions>
     }

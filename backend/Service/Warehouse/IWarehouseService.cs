@@ -10,7 +10,7 @@ namespace backend.Service.Warehouse
     {
         // <crudgen:method-signatures>
         Task<List<WarehouseDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? code = null,
             string? name = null,
             string? location = null,
@@ -20,27 +20,13 @@ namespace backend.Service.Warehouse
             string? updatedBy = null
         );
 
+        Task<WarehouseDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(WarehouseDto warehouseDto);
 
-        Task<bool> UpdateAsync(string id, WarehouseDto warehouseDto);
+        Task<bool> UpdateAsync(Guid id, WarehouseDto warehouseDto);
 
-        Task<bool> DeleteAsync(string id);
-
-        Task<(bool Success, string Message)> ProcessSupplierInspectionAsync(SupplierInspectionDto dto);
-
-        Task<(bool Success, string Message)> AcceptFinishedGoodsAsync(FinishedGoodsAcceptanceDto dto);
-
-        Task<(bool Success, string Message)> InitiateProductSaleAsync(ProductSaleDispatchDto dto);
-
-        Task<(bool Success, string Message)> ProcessCustomerReturnAsync(CustomerReturnDto dto);
-
-        Task<object> GetKpisAsync();
-
-        Task<object> GetShelvesPreviewAsync();
-
-        Task<object> GetStockAsync();
-
-        Task<object> GetVisualizationDataAsync();
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

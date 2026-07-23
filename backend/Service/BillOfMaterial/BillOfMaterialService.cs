@@ -23,7 +23,7 @@ namespace backend.Service.BillOfMaterial
 
         // <crudgen:methods>
         public async Task<List<BillOfMaterialDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             decimal? qtyPerUnit = null,
             decimal? wastagePercent = null,
             DateTime? createdAt = null,
@@ -35,6 +35,7 @@ namespace backend.Service.BillOfMaterial
             return await _context.Database
                 .SqlQuery<BillOfMaterialDto>($@"
                     EXEC sp_GetBillOfMaterials
+
                         @Id = {id},
                         @QtyPerUnit = {qtyPerUnit},
                         @WastagePercent = {wastagePercent},
@@ -46,12 +47,23 @@ namespace backend.Service.BillOfMaterial
                 .ToListAsync();
         }
 
+        public async Task<BillOfMaterialDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(BillOfMaterialDto billOfMaterialDto)
         {
+            if (billOfMaterialDto.Id == Guid.Empty)
+            {
+                billOfMaterialDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertBillOfMaterial
 
+                    @Id = {billOfMaterialDto.Id},
                     @QtyPerUnit = {billOfMaterialDto.QtyPerUnit},
                     @WastagePercent = {billOfMaterialDto.WastagePercent},
                     @CreatedAt = {billOfMaterialDto.CreatedAt},
@@ -65,13 +77,13 @@ namespace backend.Service.BillOfMaterial
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, BillOfMaterialDto billOfMaterialDto)
+        public async Task<bool> UpdateAsync(Guid id, BillOfMaterialDto billOfMaterialDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateBillOfMaterial
 
-                    @Id = {id},
+                    @Id = {billOfMaterialDto.Id},
                     @QtyPerUnit = {billOfMaterialDto.QtyPerUnit},
                     @WastagePercent = {billOfMaterialDto.WastagePercent},
                     @CreatedAt = {billOfMaterialDto.CreatedAt},
@@ -85,7 +97,7 @@ namespace backend.Service.BillOfMaterial
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteBillOfMaterial

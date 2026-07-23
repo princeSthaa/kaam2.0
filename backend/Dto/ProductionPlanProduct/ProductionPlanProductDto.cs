@@ -29,7 +29,7 @@ namespace backend.Dto.ProductionPlanProduct
     public class ProductionPlanProductDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         public string LineId { get; set; } = string.Empty;
 
@@ -70,10 +70,7 @@ namespace backend.Dto.ProductionPlanProduct
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string? ProductionPlanId { get; set; } = string.Empty;
-        [NotMapped]
-        public ProductionPlanDto? ProductionPlan { get; set; }
-
+        public Guid ProductionPlanId { get; set; }
         [NotMapped]
         public List<ProductionPlanProductSizeDto> ProductionPlanProductSizes { get; set; } = new List<ProductionPlanProductSizeDto>();
 

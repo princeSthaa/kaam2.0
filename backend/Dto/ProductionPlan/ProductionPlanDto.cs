@@ -29,7 +29,7 @@ namespace backend.Dto.ProductionPlan
     public class ProductionPlanDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "PlanId is required.")]
         public string PlanId { get; set; } = string.Empty;

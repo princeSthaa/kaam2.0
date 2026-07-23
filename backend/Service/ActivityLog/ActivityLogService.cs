@@ -23,7 +23,7 @@ namespace backend.Service.ActivityLog
 
         // <crudgen:methods>
         public async Task<List<ActivityLogDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? title = null,
             string? text = null,
             DateTime? timestamp = null,
@@ -53,12 +53,23 @@ namespace backend.Service.ActivityLog
                 .ToListAsync();
         }
 
+        public async Task<ActivityLogDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(ActivityLogDto activityLogDto)
         {
+            if (activityLogDto.Id == Guid.Empty)
+            {
+                activityLogDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertActivityLog
 
+                    @Id = {activityLogDto.Id},
                     @Title = {activityLogDto.Title},
                     @Text = {activityLogDto.Text},
                     @Timestamp = {activityLogDto.Timestamp},
@@ -73,13 +84,13 @@ namespace backend.Service.ActivityLog
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, ActivityLogDto activityLogDto)
+        public async Task<bool> UpdateAsync(Guid id, ActivityLogDto activityLogDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateActivityLog
 
-                    @Id = {id},
+                    @Id = {activityLogDto.Id},
                     @Title = {activityLogDto.Title},
                     @Text = {activityLogDto.Text},
                     @Timestamp = {activityLogDto.Timestamp},
@@ -94,7 +105,7 @@ namespace backend.Service.ActivityLog
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteActivityLog

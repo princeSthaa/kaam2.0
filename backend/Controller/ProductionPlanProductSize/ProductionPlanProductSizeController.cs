@@ -21,16 +21,29 @@ namespace backend.Controller.ProductionPlanProductSize
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<ProductionPlanProductSizeDto>> GetById(Guid id)
+        {
+            var item = await _ProductionPlanProductSizeService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"ProductionPlanProductSize with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<ProductionPlanProductSizeDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] ProductSize? size = null,
             [FromQuery] int? quantity = null,
             [FromQuery] DateTime? createdAt = null,
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] string? productionPlanProductId = null
+            [FromQuery] Guid? productionPlanProductId = null
         )
         {
             var items = await _ProductionPlanProductSizeService.GetAllAsync(
@@ -66,7 +79,7 @@ namespace backend.Controller.ProductionPlanProductSize
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] ProductionPlanProductSizeDto productionPlanProductSizeDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] ProductionPlanProductSizeDto productionPlanProductSizeDto)
         {
             if (!ModelState.IsValid)
             {
@@ -84,7 +97,7 @@ namespace backend.Controller.ProductionPlanProductSize
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _ProductionPlanProductSizeService.DeleteAsync(id);
 

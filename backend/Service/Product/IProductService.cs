@@ -11,7 +11,7 @@ namespace backend.Service.Product
     {
         // <crudgen:method-signatures>
         Task<List<ProductDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? imagePath = null,
             DateTime? createdAt = null,
@@ -20,11 +20,13 @@ namespace backend.Service.Product
             string? updatedBy = null
         );
 
+        Task<ProductDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(ProductDto productDto);
 
-        Task<bool> UpdateAsync(string id, ProductDto productDto);
+        Task<bool> UpdateAsync(Guid id, ProductDto productDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

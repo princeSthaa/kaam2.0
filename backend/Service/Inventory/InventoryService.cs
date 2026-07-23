@@ -23,7 +23,7 @@ namespace backend.Service.Inventory
 
         // <crudgen:methods>
         public async Task<List<InventoryDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? sKU = null,
             string? itemName = null,
             string? type = null,
@@ -55,12 +55,23 @@ namespace backend.Service.Inventory
                 .ToListAsync();
         }
 
+        public async Task<InventoryDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(InventoryDto inventoryDto)
         {
+            if (inventoryDto.Id == Guid.Empty)
+            {
+                inventoryDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertInventory
 
+                    @Id = {inventoryDto.Id},
                     @SKU = {inventoryDto.SKU},
                     @ItemName = {inventoryDto.ItemName},
                     @Type = {inventoryDto.Type},
@@ -76,13 +87,13 @@ namespace backend.Service.Inventory
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, InventoryDto inventoryDto)
+        public async Task<bool> UpdateAsync(Guid id, InventoryDto inventoryDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateInventory
 
-                    @Id = {id},
+                    @Id = {inventoryDto.Id},
                     @SKU = {inventoryDto.SKU},
                     @ItemName = {inventoryDto.ItemName},
                     @Type = {inventoryDto.Type},
@@ -98,7 +109,7 @@ namespace backend.Service.Inventory
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteInventory

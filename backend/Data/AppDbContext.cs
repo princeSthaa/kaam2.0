@@ -13,6 +13,7 @@ namespace backend.Data
         public DbSet<Customer> Customers { get; set; } = null!;
         public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<OrderItem> OrderItems { get; set; } = null!;
+        public DbSet<OrderItemSize> OrderItemSizes { get; set; } = null!;
         public DbSet<Product> Products { get; set; } = null!;
         public DbSet<Fabric> Fabrics { get; set; } = null!;
         public DbSet<WorkCenter> WorkCenters { get; set; } = null!;
@@ -60,9 +61,21 @@ namespace backend.Data
             modelBuilder.Entity<OrderItem>().Property(e => e.CreatedAt).IsRequired();
             modelBuilder.Entity<OrderItem>().HasOne(e => e.Order).WithMany(p => p.OrderItems).HasForeignKey(e => e.OrderId).OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<OrderItemSize>().HasKey(e => e.Id);
+            modelBuilder.Entity<OrderItemSize>().Property(e => e.CreatedAt).IsRequired();
+            modelBuilder.Entity<OrderItemSize>().HasOne(e => e.OrderItem).WithMany(p => p.OrderItemSizes).HasForeignKey(e => e.OrderItemId).OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<Product>().HasKey(e => e.Id);
             modelBuilder.Entity<Product>().Property(e => e.Name).IsRequired();
             modelBuilder.Entity<Product>().Property(e => e.CreatedAt).IsRequired();
+            modelBuilder.Entity<Product>()
+                .Property(e => e.Sizes)
+                .HasConversion(
+                    v => System.Text.Json.JsonSerializer.Serialize(v.Select(s => s.ToString()).ToList(), (System.Text.Json.JsonSerializerOptions)null!),
+                    v => (System.Text.Json.JsonSerializer.Deserialize<List<string>>(string.IsNullOrWhiteSpace(v) ? "[]" : v, (System.Text.Json.JsonSerializerOptions)null!) ?? new List<string>())
+                            .Select(s => backend.Model.Enums.ProductSizeParser.ParseSingleSize(s))
+                            .ToList()
+                );
 
             modelBuilder.Entity<Fabric>().HasKey(e => e.Id);
             modelBuilder.Entity<Fabric>().Property(e => e.Name).IsRequired();
@@ -82,7 +95,6 @@ namespace backend.Data
 
             modelBuilder.Entity<ProductionPlanProductSize>().HasKey(e => e.Id);
             modelBuilder.Entity<ProductionPlanProductSize>().Property(e => e.CreatedAt).IsRequired();
-            modelBuilder.Entity<ProductionPlanProductSize>().Property(e => e.Size).HasConversion<string>();
             modelBuilder.Entity<ProductionPlanProductSize>().HasOne(e => e.ProductionPlanProduct).WithMany(p => p.ProductionPlanProductSizes).HasForeignKey(e => e.ProductionPlanProductId).OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProductionPlanStage>().HasKey(e => e.Id);
@@ -140,21 +152,26 @@ namespace backend.Data
             modelBuilder.Entity<MaterialRequest>().HasKey(e => e.Id);
             modelBuilder.Entity<MaterialRequest>().Property(e => e.MaterialId).IsRequired();
             modelBuilder.Entity<MaterialRequest>().Property(e => e.SupplierName).IsRequired();
+            modelBuilder.Entity<MaterialRequest>().Property(e => e.CreatedAt).IsRequired();
 
             modelBuilder.Entity<MaterialIssue>().HasKey(e => e.Id);
             modelBuilder.Entity<MaterialIssue>().Property(e => e.MaterialId).IsRequired();
             modelBuilder.Entity<MaterialIssue>().Property(e => e.TargetDestination).IsRequired();
+            modelBuilder.Entity<MaterialIssue>().Property(e => e.CreatedAt).IsRequired();
 
             modelBuilder.Entity<MaterialInspection>().HasKey(e => e.Id);
             modelBuilder.Entity<MaterialInspection>().Property(e => e.MaterialId).IsRequired();
             modelBuilder.Entity<MaterialInspection>().Property(e => e.InspectionStatus).IsRequired();
+            modelBuilder.Entity<MaterialInspection>().Property(e => e.CreatedAt).IsRequired();
 
             modelBuilder.Entity<FinishedGoodsHandover>().HasKey(e => e.Id);
             modelBuilder.Entity<FinishedGoodsHandover>().Property(e => e.ProductName).IsRequired();
+            modelBuilder.Entity<FinishedGoodsHandover>().Property(e => e.CreatedAt).IsRequired();
 
             modelBuilder.Entity<CustomerReturn>().HasKey(e => e.Id);
             modelBuilder.Entity<CustomerReturn>().Property(e => e.OrderNumber).IsRequired();
             modelBuilder.Entity<CustomerReturn>().Property(e => e.CustomerName).IsRequired();
+            modelBuilder.Entity<CustomerReturn>().Property(e => e.CreatedAt).IsRequired();
 
             // </crudgen:modelbuilder>
         }

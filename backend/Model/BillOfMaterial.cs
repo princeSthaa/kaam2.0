@@ -10,9 +10,9 @@ namespace backend.Model
     {
         // <crudgen:properties>
         public Guid Id { get; set; }
-        public string ProductId { get; set; }
+        public Guid ProductId { get; set; }
         public virtual Product Product { get; set; } = null!;
-        public string MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
         public virtual Material Material { get; set; } = null!;
         public decimal QtyPerUnit { get; set; }
         public decimal WastagePercent { get; set; }

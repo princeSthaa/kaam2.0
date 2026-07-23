@@ -20,9 +20,22 @@ namespace backend.Controller.ActivityLog
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<ActivityLogDto>> GetById(Guid id)
+        {
+            var item = await _ActivityLogService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"ActivityLog with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<ActivityLogDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? title = null,
             [FromQuery] string? text = null,
             [FromQuery] DateTime? timestamp = null,
@@ -69,7 +82,7 @@ namespace backend.Controller.ActivityLog
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] ActivityLogDto activityLogDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] ActivityLogDto activityLogDto)
         {
             if (!ModelState.IsValid)
             {
@@ -87,7 +100,7 @@ namespace backend.Controller.ActivityLog
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _ActivityLogService.DeleteAsync(id);
 

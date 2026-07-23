@@ -10,7 +10,7 @@ namespace backend.Service.Customer
     {
         // <crudgen:method-signatures>
         Task<List<CustomerDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? email = null,
             string? phone = null,
@@ -24,11 +24,13 @@ namespace backend.Service.Customer
             string? updatedBy = null
         );
 
+        Task<CustomerDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(CustomerDto customerDto);
 
-        Task<bool> UpdateAsync(string id, CustomerDto customerDto);
+        Task<bool> UpdateAsync(Guid id, CustomerDto customerDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

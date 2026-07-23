@@ -9,7 +9,7 @@ namespace backend.Model
     public class Inventory
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string SKU { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

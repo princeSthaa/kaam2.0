@@ -1,5 +1,5 @@
 CREATE OR ALTER PROCEDURE sp_GetFabrics
-    @Id NVARCHAR(MAX) = NULL,
+    @Id UNIQUEIDENTIFIER = NULL,
     @Name NVARCHAR(MAX) = NULL,
     @Category NVARCHAR(MAX) = NULL,
     @ImagePath NVARCHAR(MAX) = NULL,
@@ -27,7 +27,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_InsertFabric
-    @Id NVARCHAR(MAX),
+    @Id UNIQUEIDENTIFIER,
     @Name NVARCHAR(MAX),
     @Category NVARCHAR(MAX),
     @ImagePath NVARCHAR(MAX),
@@ -50,7 +50,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateFabric
-    @Id NVARCHAR(MAX),
+    @Id UNIQUEIDENTIFIER,
     @Name NVARCHAR(MAX),
     @Category NVARCHAR(MAX),
     @ImagePath NVARCHAR(MAX),
@@ -78,7 +78,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_DeleteFabric
-    @Id NVARCHAR(MAX)
+    @Id UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;

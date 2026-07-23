@@ -20,13 +20,25 @@ namespace backend.Controller.WorkCenter
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<WorkCenterDto>> GetById(Guid id)
+        {
+            var item = await _WorkCenterService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"WorkCenter with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<WorkCenterDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? name = null,
             [FromQuery] string? type = null,
             [FromQuery] string? status = null,
-            [FromQuery] string? productionLine = null,
             [FromQuery] DateTime? createdAt = null,
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
@@ -38,7 +50,6 @@ namespace backend.Controller.WorkCenter
                 name,
                 type,
                 status,
-                productionLine,
                 createdAt,
                 createdBy,
                 updatedAt,
@@ -67,7 +78,7 @@ namespace backend.Controller.WorkCenter
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] WorkCenterDto workCenterDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] WorkCenterDto workCenterDto)
         {
             if (!ModelState.IsValid)
             {
@@ -85,7 +96,7 @@ namespace backend.Controller.WorkCenter
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _WorkCenterService.DeleteAsync(id);
 

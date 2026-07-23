@@ -10,7 +10,7 @@ namespace backend.Model
     public class ProductionPlanProduct
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string LineId { get; set; } = string.Empty;
         public string OrderNo { get; set; } = string.Empty;
         public string ProductId { get; set; } = string.Empty;
@@ -30,7 +30,7 @@ namespace backend.Model
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
-        public string ProductionPlanId { get; set; }
+        public Guid ProductionPlanId { get; set; }
         public virtual ProductionPlan ProductionPlan { get; set; } = null!;
         public virtual ICollection<ProductionPlanProductSize> ProductionPlanProductSizes { get; set; } = new List<ProductionPlanProductSize>();
         // </crudgen:properties>

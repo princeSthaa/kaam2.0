@@ -28,7 +28,7 @@ namespace backend.Dto.WorkCenter
     public class WorkCenterDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; } = string.Empty;
@@ -36,8 +36,6 @@ namespace backend.Dto.WorkCenter
         public string Type { get; set; } = string.Empty;
 
         public string Status { get; set; } = string.Empty;
-
-        public string? ProductionLine { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "CreatedAt is required.")]
         public DateTime CreatedAt { get; set; }

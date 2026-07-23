@@ -24,7 +24,7 @@ namespace backend.Service.ProductionPlanProduct
 
         // <crudgen:methods>
         public async Task<List<ProductionPlanProductDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? lineId = null,
             string? orderNo = null,
             string? productId = null,
@@ -44,7 +44,7 @@ namespace backend.Service.ProductionPlanProduct
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? productionPlanId = null
+            Guid? productionPlanId = null
         )
         {
             return await _context.Database
@@ -76,13 +76,23 @@ namespace backend.Service.ProductionPlanProduct
                 .ToListAsync();
         }
 
+        public async Task<ProductionPlanProductDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(ProductionPlanProductDto productionPlanProductDto)
         {
-            productionPlanProductDto.ProductImage = backend.Helpers.ImagePathHelper.ToRelativePath(productionPlanProductDto.ProductImage);
+            if (productionPlanProductDto.Id == Guid.Empty)
+            {
+                productionPlanProductDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertProductionPlanProduct
 
+                    @Id = {productionPlanProductDto.Id},
                     @LineId = {productionPlanProductDto.LineId},
                     @OrderNo = {productionPlanProductDto.OrderNo},
                     @ProductId = {productionPlanProductDto.ProductId},
@@ -108,14 +118,13 @@ namespace backend.Service.ProductionPlanProduct
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, ProductionPlanProductDto productionPlanProductDto)
+        public async Task<bool> UpdateAsync(Guid id, ProductionPlanProductDto productionPlanProductDto)
         {
-            productionPlanProductDto.ProductImage = backend.Helpers.ImagePathHelper.ToRelativePath(productionPlanProductDto.ProductImage);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateProductionPlanProduct
 
-                    @Id = {id},
+                    @Id = {productionPlanProductDto.Id},
                     @LineId = {productionPlanProductDto.LineId},
                     @OrderNo = {productionPlanProductDto.OrderNo},
                     @ProductId = {productionPlanProductDto.ProductId},
@@ -141,7 +150,7 @@ namespace backend.Service.ProductionPlanProduct
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteProductionPlanProduct

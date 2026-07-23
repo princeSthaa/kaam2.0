@@ -9,7 +9,7 @@ namespace backend.Model
     public class OutletDemand
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string DemandNumber { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public DateTime DueDate { get; set; }
@@ -17,7 +17,7 @@ namespace backend.Model
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
-        public string OutletId { get; set; }
+        public Guid OutletId { get; set; }
         public virtual Outlet Outlet { get; set; } = null!;
         // </crudgen:properties>
     }

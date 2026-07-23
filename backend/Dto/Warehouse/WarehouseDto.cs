@@ -28,7 +28,7 @@ namespace backend.Dto.Warehouse
     public class WarehouseDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Code is required.")]
         public string Code { get; set; } = string.Empty;

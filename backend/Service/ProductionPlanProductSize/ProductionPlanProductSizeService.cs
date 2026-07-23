@@ -24,14 +24,14 @@ namespace backend.Service.ProductionPlanProductSize
 
         // <crudgen:methods>
         public async Task<List<ProductionPlanProductSizeDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             ProductSize? size = null,
             int? quantity = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? productionPlanProductId = null
+            Guid? productionPlanProductId = null
         )
         {
             return await _context.Database
@@ -50,12 +50,23 @@ namespace backend.Service.ProductionPlanProductSize
                 .ToListAsync();
         }
 
+        public async Task<ProductionPlanProductSizeDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(ProductionPlanProductSizeDto productionPlanProductSizeDto)
         {
+            if (productionPlanProductSizeDto.Id == Guid.Empty)
+            {
+                productionPlanProductSizeDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertProductionPlanProductSize
 
+                    @Id = {productionPlanProductSizeDto.Id},
                     @Size = {productionPlanProductSizeDto.Size},
                     @Quantity = {productionPlanProductSizeDto.Quantity},
                     @CreatedAt = {productionPlanProductSizeDto.CreatedAt},
@@ -68,13 +79,13 @@ namespace backend.Service.ProductionPlanProductSize
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, ProductionPlanProductSizeDto productionPlanProductSizeDto)
+        public async Task<bool> UpdateAsync(Guid id, ProductionPlanProductSizeDto productionPlanProductSizeDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateProductionPlanProductSize
 
-                    @Id = {id},
+                    @Id = {productionPlanProductSizeDto.Id},
                     @Size = {productionPlanProductSizeDto.Size},
                     @Quantity = {productionPlanProductSizeDto.Quantity},
                     @CreatedAt = {productionPlanProductSizeDto.CreatedAt},
@@ -87,7 +98,7 @@ namespace backend.Service.ProductionPlanProductSize
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteProductionPlanProductSize

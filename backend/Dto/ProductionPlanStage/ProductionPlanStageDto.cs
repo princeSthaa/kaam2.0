@@ -29,13 +29,13 @@ namespace backend.Dto.ProductionPlanStage
     public class ProductionPlanStageDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         public string StageId { get; set; } = string.Empty;
 
         public string StageName { get; set; } = string.Empty;
 
-        public string WorkCenterId { get; set; }
+        public Guid WorkCenterId { get; set; }
         [NotMapped]
         public WorkCenterDto? WorkCenter { get; set; }
 
@@ -66,10 +66,7 @@ namespace backend.Dto.ProductionPlanStage
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string? ProductionPlanId { get; set; } = string.Empty;
-        [NotMapped]
-        public ProductionPlanDto? ProductionPlan { get; set; }
-
+        public Guid ProductionPlanId { get; set; }
         // </crudgen:properties>
     }
 }

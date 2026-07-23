@@ -10,7 +10,7 @@ namespace backend.Service.Outlet
     {
         // <crudgen:method-signatures>
         Task<List<OutletDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? location = null,
             string? code = null,
@@ -20,11 +20,13 @@ namespace backend.Service.Outlet
             string? updatedBy = null
         );
 
+        Task<OutletDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(OutletDto outletDto);
 
-        Task<bool> UpdateAsync(string id, OutletDto outletDto);
+        Task<bool> UpdateAsync(Guid id, OutletDto outletDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

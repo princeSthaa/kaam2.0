@@ -10,9 +10,10 @@ namespace backend.Model
     public class Product
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string ImagePath { get; set; } = string.Empty;
+        public List<ProductSize> Sizes { get; set; } = new List<ProductSize>();
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }

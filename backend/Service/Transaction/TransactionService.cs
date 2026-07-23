@@ -23,7 +23,7 @@ namespace backend.Service.Transaction
 
         // <crudgen:methods>
         public async Task<List<TransactionDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             DateTime? timestamp = null,
             string? transactionType = null,
             decimal? amount = null,
@@ -59,12 +59,23 @@ namespace backend.Service.Transaction
                 .ToListAsync();
         }
 
+        public async Task<TransactionDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(TransactionDto transactionDto)
         {
+            if (transactionDto.Id == Guid.Empty)
+            {
+                transactionDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertTransaction
 
+                    @Id = {transactionDto.Id},
                     @Timestamp = {transactionDto.Timestamp},
                     @TransactionType = {transactionDto.TransactionType},
                     @Amount = {transactionDto.Amount},
@@ -82,13 +93,13 @@ namespace backend.Service.Transaction
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, TransactionDto transactionDto)
+        public async Task<bool> UpdateAsync(Guid id, TransactionDto transactionDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateTransaction
 
-                    @Id = {id},
+                    @Id = {transactionDto.Id},
                     @Timestamp = {transactionDto.Timestamp},
                     @TransactionType = {transactionDto.TransactionType},
                     @Amount = {transactionDto.Amount},
@@ -106,7 +117,7 @@ namespace backend.Service.Transaction
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteTransaction

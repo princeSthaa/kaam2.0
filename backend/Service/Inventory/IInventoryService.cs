@@ -10,7 +10,7 @@ namespace backend.Service.Inventory
     {
         // <crudgen:method-signatures>
         Task<List<InventoryDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? sKU = null,
             string? itemName = null,
             string? type = null,
@@ -23,11 +23,13 @@ namespace backend.Service.Inventory
             string? updatedBy = null
         );
 
+        Task<InventoryDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(InventoryDto inventoryDto);
 
-        Task<bool> UpdateAsync(string id, InventoryDto inventoryDto);
+        Task<bool> UpdateAsync(Guid id, InventoryDto inventoryDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

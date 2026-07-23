@@ -20,9 +20,22 @@ namespace backend.Controller.Transaction
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<TransactionDto>> GetById(Guid id)
+        {
+            var item = await _TransactionService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"Transaction with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<TransactionDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] DateTime? timestamp = null,
             [FromQuery] string? transactionType = null,
             [FromQuery] decimal? amount = null,
@@ -75,7 +88,7 @@ namespace backend.Controller.Transaction
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] TransactionDto transactionDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] TransactionDto transactionDto)
         {
             if (!ModelState.IsValid)
             {
@@ -93,7 +106,7 @@ namespace backend.Controller.Transaction
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _TransactionService.DeleteAsync(id);
 

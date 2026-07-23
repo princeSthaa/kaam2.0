@@ -29,18 +29,14 @@ namespace backend.Dto.Product
     public class ProductDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; } = string.Empty;
 
         public string ImagePath { get; set; } = string.Empty;
 
-        [NotMapped]
         public List<ProductSize> Sizes { get; set; } = new List<ProductSize>();
-
-        [NotMapped]
-        public string SizesJson { get; set; } = "[]";
 
         [Required(ErrorMessage = "CreatedAt is required.")]
         public DateTime CreatedAt { get; set; }

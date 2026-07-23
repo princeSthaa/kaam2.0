@@ -11,7 +11,7 @@ namespace backend.Service.Order
     {
         // <crudgen:method-signatures>
         Task<List<OrderDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? orderNumber = null,
             OrderStatus? status = null,
             decimal? totalAmount = null,
@@ -20,14 +20,16 @@ namespace backend.Service.Order
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? customerId = null
+            Guid? customerId = null
         );
+
+        Task<OrderDto?> GetByIdAsync(Guid id);
 
         Task<bool> CreateAsync(OrderDto orderDto);
 
-        Task<bool> UpdateAsync(string id, OrderDto orderDto);
+        Task<bool> UpdateAsync(Guid id, OrderDto orderDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

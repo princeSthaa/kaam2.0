@@ -23,7 +23,7 @@ namespace backend.Service.Customer
 
         // <crudgen:methods>
         public async Task<List<CustomerDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? email = null,
             string? phone = null,
@@ -57,12 +57,23 @@ namespace backend.Service.Customer
                 .ToListAsync();
         }
 
+        public async Task<CustomerDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(CustomerDto customerDto)
         {
+            if (customerDto.Id == Guid.Empty)
+            {
+                customerDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertCustomer
 
+                    @Id = {customerDto.Id},
                     @Name = {customerDto.Name},
                     @Email = {customerDto.Email},
                     @Phone = {customerDto.Phone},
@@ -79,13 +90,13 @@ namespace backend.Service.Customer
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, CustomerDto customerDto)
+        public async Task<bool> UpdateAsync(Guid id, CustomerDto customerDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateCustomer
 
-                    @Id = {id},
+                    @Id = {customerDto.Id},
                     @Name = {customerDto.Name},
                     @Email = {customerDto.Email},
                     @Phone = {customerDto.Phone},
@@ -102,7 +113,7 @@ namespace backend.Service.Customer
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteCustomer

@@ -25,26 +25,36 @@ namespace backend.Controller.ProductionPlan
             _context = context;
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(string id)
+        // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<ProductionPlanDto>> GetById(Guid id)
         {
-            var plan = await _context.ProductionPlans
-                .Include(p => p.ProductionPlanProducts)
-                    .ThenInclude(p => p.ProductionPlanProductSizes)
-                .Include(p => p.ProductionPlanStages)
-                .FirstOrDefaultAsync(p => p.Id == id || p.PlanId == id);
+            var item = await _ProductionPlanService.GetByIdAsync(id);
 
-            if (plan == null) return NotFound($"ProductionPlan with ID {id} not found.");
+            if (item == null)
+            {
+                return NotFound($"ProductionPlan with ID {id} not found.");
+            }
 
-            backend.Helpers.ImagePathHelper.ResolveProductionPlanModelImages(plan, Request);
-
-            return Ok(plan);
+            return Ok(item);
         }
 
-        // <crudgen:actions>
+        [HttpGet("by-plan-id/{planId}")] 
+        public async Task<ActionResult<ProductionPlanDto>> GetByPlanId(string planId)
+        {
+            var item = await _ProductionPlanService.GetByPlanIdAsync(planId);
+
+            if (item == null)
+            {
+                return NotFound($"ProductionPlan with PlanId { planId } not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<ProductionPlanDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? planId = null,
             [FromQuery] string? batchId = null,
             [FromQuery] string? planName = null,
@@ -101,11 +111,6 @@ namespace backend.Controller.ProductionPlan
                 updatedBy
             );
 
-            foreach (var item in items)
-            {
-                backend.Helpers.ImagePathHelper.ResolveProductionPlanImages(item, Request);
-            }
-
             return Ok(items);
         }
 
@@ -128,7 +133,7 @@ namespace backend.Controller.ProductionPlan
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] ProductionPlanDto productionPlanDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] ProductionPlanDto productionPlanDto)
         {
             if (!ModelState.IsValid)
             {
@@ -146,7 +151,7 @@ namespace backend.Controller.ProductionPlan
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _ProductionPlanService.DeleteAsync(id);
 
@@ -157,30 +162,6 @@ namespace backend.Controller.ProductionPlan
 
             return NoContent();
         }
-
-        [HttpPost("{id}/activate")]
-        public async Task<IActionResult> Activate(string id)
-        {
-            var activated = await _ProductionPlanService.ActivateAsync(id);
-            if (!activated)
-            {
-                return NotFound($"ProductionPlan with ID {id} not found.");
-            }
-            return Ok(new { message = "Plan activated successfully" });
-        }
-        
-        [HttpPost("check-materials")]
-        public async Task<IActionResult> CheckMaterials([FromBody] MaterialCheckRequestDto request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = await _ProductionPlanService.CheckMaterialsAsync(request);
-            return Ok(result);
-        }
-
         // </crudgen:actions>
     }
 }

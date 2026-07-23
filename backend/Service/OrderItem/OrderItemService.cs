@@ -23,7 +23,7 @@ namespace backend.Service.OrderItem
 
         // <crudgen:methods>
         public async Task<List<OrderItemDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             int? quantity = null,
             decimal? unitPrice = null,
             decimal? totalPrice = null,
@@ -32,7 +32,7 @@ namespace backend.Service.OrderItem
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? orderId = null
+            Guid? orderId = null
         )
         {
             return await _context.Database
@@ -53,12 +53,23 @@ namespace backend.Service.OrderItem
                 .ToListAsync();
         }
 
+        public async Task<OrderItemDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(OrderItemDto orderItemDto)
         {
+            if (orderItemDto.Id == Guid.Empty)
+            {
+                orderItemDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertOrderItem
 
+                    @Id = {orderItemDto.Id},
                     @Quantity = {orderItemDto.Quantity},
                     @UnitPrice = {orderItemDto.UnitPrice},
                     @TotalPrice = {orderItemDto.TotalPrice},
@@ -75,13 +86,13 @@ namespace backend.Service.OrderItem
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, OrderItemDto orderItemDto)
+        public async Task<bool> UpdateAsync(Guid id, OrderItemDto orderItemDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateOrderItem
 
-                    @Id = {id},
+                    @Id = {orderItemDto.Id},
                     @Quantity = {orderItemDto.Quantity},
                     @UnitPrice = {orderItemDto.UnitPrice},
                     @TotalPrice = {orderItemDto.TotalPrice},
@@ -98,7 +109,7 @@ namespace backend.Service.OrderItem
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteOrderItem

@@ -20,9 +20,22 @@ namespace backend.Controller.Inventory
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<InventoryDto>> GetById(Guid id)
+        {
+            var item = await _InventoryService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"Inventory with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<InventoryDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? sKU = null,
             [FromQuery] string? itemName = null,
             [FromQuery] string? type = null,
@@ -71,7 +84,7 @@ namespace backend.Controller.Inventory
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] InventoryDto inventoryDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] InventoryDto inventoryDto)
         {
             if (!ModelState.IsValid)
             {
@@ -89,7 +102,7 @@ namespace backend.Controller.Inventory
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _InventoryService.DeleteAsync(id);
 

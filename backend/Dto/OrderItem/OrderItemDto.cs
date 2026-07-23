@@ -1,44 +1,29 @@
-using System.ComponentModel.DataAnnotations.Schema;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using backend.Model;
-using backend.Dto.Customer;
-using backend.Dto.Order;
-using backend.Dto.Product;
+using System.ComponentModel.DataAnnotations.Schema;
 using backend.Dto.Fabric;
-using backend.Dto.WorkCenter;
-using backend.Dto.ProductionPlan;
-using backend.Dto.ProductionPlanProduct;
-using backend.Dto.ProductionPlanProductSize;
-using backend.Dto.ProductionPlanStage;
-using backend.Dto.Material;
-using backend.Dto.BillOfMaterial;
-using backend.Dto.Warehouse;
-using backend.Dto.WarehouseRoom;
-using backend.Dto.WarehouseShelf;
-using backend.Dto.Inventory;
-using backend.Dto.Outlet;
-using backend.Dto.OutletDemand;
-using backend.Dto.Transaction;
-using backend.Dto.ActivityLog;
+using backend.Dto.OrderItemSize;
+using backend.Dto.Product;
 
 namespace backend.Dto.OrderItem
 {
     public class OrderItemDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         public int Quantity { get; set; }
 
         public decimal UnitPrice { get; set; }
 
-        public string ProductId { get; set; }
+        public Guid ProductId { get; set; }
+        
         [NotMapped]
         public ProductDto? Product { get; set; }
 
-        public string FabricId { get; set; }
+        public Guid FabricId { get; set; }
+
         [NotMapped]
         public FabricDto? Fabric { get; set; }
 
@@ -55,11 +40,10 @@ namespace backend.Dto.OrderItem
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string OrderId { get; set; }
-        [NotMapped]
-        public OrderDto? Order { get; set; }
+        public Guid OrderId { get; set; }
 
+        [NotMapped]
+        public List<OrderItemSizeDto> Sizes { get; set; } = new List<OrderItemSizeDto>();
         // </crudgen:properties>
     }
 }
-

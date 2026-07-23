@@ -8,7 +8,7 @@ namespace backend.Model
     public class CustomerReturn
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string OrderNumber { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
         public string ProductId { get; set; } = string.Empty;
@@ -16,9 +16,9 @@ namespace backend.Model
         public string Reason { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
         public string ProcessedBy { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
         // </crudgen:properties>
     }

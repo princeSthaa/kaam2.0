@@ -23,14 +23,14 @@ namespace backend.Service.WarehouseShelf
 
         // <crudgen:methods>
         public async Task<List<WarehouseShelfDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? code = null,
             string? capacity = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? warehouseRoomId = null
+            Guid? warehouseRoomId = null
         )
         {
             return await _context.Database
@@ -49,12 +49,23 @@ namespace backend.Service.WarehouseShelf
                 .ToListAsync();
         }
 
+        public async Task<WarehouseShelfDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(WarehouseShelfDto warehouseShelfDto)
         {
+            if (warehouseShelfDto.Id == Guid.Empty)
+            {
+                warehouseShelfDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertWarehouseShelf
 
+                    @Id = {warehouseShelfDto.Id},
                     @Code = {warehouseShelfDto.Code},
                     @Capacity = {warehouseShelfDto.Capacity},
                     @CreatedAt = {warehouseShelfDto.CreatedAt},
@@ -67,13 +78,13 @@ namespace backend.Service.WarehouseShelf
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, WarehouseShelfDto warehouseShelfDto)
+        public async Task<bool> UpdateAsync(Guid id, WarehouseShelfDto warehouseShelfDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateWarehouseShelf
 
-                    @Id = {id},
+                    @Id = {warehouseShelfDto.Id},
                     @Code = {warehouseShelfDto.Code},
                     @Capacity = {warehouseShelfDto.Capacity},
                     @CreatedAt = {warehouseShelfDto.CreatedAt},
@@ -86,7 +97,7 @@ namespace backend.Service.WarehouseShelf
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteWarehouseShelf

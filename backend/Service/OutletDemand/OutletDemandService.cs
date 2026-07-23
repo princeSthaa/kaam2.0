@@ -23,7 +23,7 @@ namespace backend.Service.OutletDemand
 
         // <crudgen:methods>
         public async Task<List<OutletDemandDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? demandNumber = null,
             string? status = null,
             DateTime? dueDate = null,
@@ -31,7 +31,7 @@ namespace backend.Service.OutletDemand
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? outletId = null
+            Guid? outletId = null
         )
         {
             return await _context.Database
@@ -51,12 +51,23 @@ namespace backend.Service.OutletDemand
                 .ToListAsync();
         }
 
+        public async Task<OutletDemandDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(OutletDemandDto outletDemandDto)
         {
+            if (outletDemandDto.Id == Guid.Empty)
+            {
+                outletDemandDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertOutletDemand
 
+                    @Id = {outletDemandDto.Id},
                     @DemandNumber = {outletDemandDto.DemandNumber},
                     @Status = {outletDemandDto.Status},
                     @DueDate = {outletDemandDto.DueDate},
@@ -70,13 +81,13 @@ namespace backend.Service.OutletDemand
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, OutletDemandDto outletDemandDto)
+        public async Task<bool> UpdateAsync(Guid id, OutletDemandDto outletDemandDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateOutletDemand
 
-                    @Id = {id},
+                    @Id = {outletDemandDto.Id},
                     @DemandNumber = {outletDemandDto.DemandNumber},
                     @Status = {outletDemandDto.Status},
                     @DueDate = {outletDemandDto.DueDate},
@@ -90,7 +101,7 @@ namespace backend.Service.OutletDemand
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteOutletDemand

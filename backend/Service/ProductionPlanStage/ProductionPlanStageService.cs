@@ -24,7 +24,7 @@ namespace backend.Service.ProductionPlanStage
 
         // <crudgen:methods>
         public async Task<List<ProductionPlanStageDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? stageId = null,
             string? stageName = null,
             string? operatorName = null,
@@ -40,7 +40,7 @@ namespace backend.Service.ProductionPlanStage
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? productionPlanId = null
+            Guid? productionPlanId = null
         )
         {
             return await _context.Database
@@ -68,14 +68,17 @@ namespace backend.Service.ProductionPlanStage
                 .ToListAsync();
         }
 
+        public async Task<ProductionPlanStageDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(ProductionPlanStageDto productionPlanStageDto)
         {
-            // Generate an Id if not provided (SP requires @Id)
-            if (string.IsNullOrWhiteSpace(productionPlanStageDto.Id))
+            if (productionPlanStageDto.Id == Guid.Empty)
             {
-                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                var random = new Random().Next(10000, 99999).ToString();
-                productionPlanStageDto.Id = $"STG-{timestamp}-{random}";
+                productionPlanStageDto.Id = Guid.NewGuid();
             }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
@@ -104,13 +107,13 @@ namespace backend.Service.ProductionPlanStage
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, ProductionPlanStageDto productionPlanStageDto)
+        public async Task<bool> UpdateAsync(Guid id, ProductionPlanStageDto productionPlanStageDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateProductionPlanStage
 
-                    @Id = {id},
+                    @Id = {productionPlanStageDto.Id},
                     @StageId = {productionPlanStageDto.StageId},
                     @StageName = {productionPlanStageDto.StageName},
                     @OperatorName = {productionPlanStageDto.OperatorName},
@@ -133,7 +136,7 @@ namespace backend.Service.ProductionPlanStage
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteProductionPlanStage

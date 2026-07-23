@@ -1,5 +1,5 @@
 CREATE OR ALTER PROCEDURE sp_GetProducts
-    @Id NVARCHAR(MAX) = NULL,
+    @Id UNIQUEIDENTIFIER = NULL,
     @Name NVARCHAR(MAX) = NULL,
     @ImagePath NVARCHAR(MAX) = NULL,
     @CreatedAt DATETIME2 = NULL,
@@ -23,7 +23,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_InsertProduct
-    @Id NVARCHAR(MAX),
+    @Id UNIQUEIDENTIFIER,
     @Name NVARCHAR(MAX),
     @ImagePath NVARCHAR(MAX),
     @CreatedAt DATETIME2,
@@ -36,18 +36,16 @@ BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO [Products] (
-        [Id], [Name], [ImagePath], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
+        [Id], [Name], [ImagePath], [Sizes], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
     )
     VALUES (
-        @Id, @Name, @ImagePath, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
+        @Id, @Name, @ImagePath, COALESCE(@SizesJson, '[]'), @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
     );
-
-    -- Handle JSON arrays here if applicable to a separate junction table, or store directly if mapping is JSON.
 END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateProduct
-    @Id NVARCHAR(MAX),
+    @Id UNIQUEIDENTIFIER,
     @Name NVARCHAR(MAX),
     @ImagePath NVARCHAR(MAX),
     @CreatedAt DATETIME2,
@@ -63,6 +61,7 @@ BEGIN
     SET
         [Name] = @Name,
         [ImagePath] = @ImagePath,
+        [Sizes] = COALESCE(@SizesJson, [Sizes]),
         [CreatedAt] = @CreatedAt,
         [CreatedBy] = @CreatedBy,
         [UpdatedAt] = @UpdatedAt,
@@ -72,7 +71,7 @@ END
 GO
 
 CREATE OR ALTER PROCEDURE sp_DeleteProduct
-    @Id NVARCHAR(MAX)
+    @Id UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;

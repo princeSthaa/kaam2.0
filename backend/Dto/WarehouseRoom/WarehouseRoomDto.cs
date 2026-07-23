@@ -28,7 +28,7 @@ namespace backend.Dto.WarehouseRoom
     public class WarehouseRoomDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; } = string.Empty;
@@ -44,10 +44,7 @@ namespace backend.Dto.WarehouseRoom
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string WarehouseId { get; set; }
-        [NotMapped]
-        public WarehouseDto? Warehouse { get; set; }
-
+        public Guid WarehouseId { get; set; }
         [NotMapped]
         public List<WarehouseShelfDto> WarehouseShelfs { get; set; } = new List<WarehouseShelfDto>();
 

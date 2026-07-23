@@ -10,10 +10,10 @@ namespace backend.Model
     public class ProductionPlanStage
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string StageId { get; set; } = string.Empty;
         public string StageName { get; set; } = string.Empty;
-        public string WorkCenterId { get; set; }
+        public Guid WorkCenterId { get; set; }
         public virtual WorkCenter WorkCenter { get; set; } = null!;
         public string OperatorName { get; set; } = string.Empty;
         public DateTime PlannedStartDate { get; set; }
@@ -28,7 +28,7 @@ namespace backend.Model
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
-        public string ProductionPlanId { get; set; }
+        public Guid ProductionPlanId { get; set; }
         public virtual ProductionPlan ProductionPlan { get; set; } = null!;
         // </crudgen:properties>
     }

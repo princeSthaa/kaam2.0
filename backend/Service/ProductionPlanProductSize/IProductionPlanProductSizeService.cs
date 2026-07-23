@@ -11,21 +11,23 @@ namespace backend.Service.ProductionPlanProductSize
     {
         // <crudgen:method-signatures>
         Task<List<ProductionPlanProductSizeDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             ProductSize? size = null,
             int? quantity = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? productionPlanProductId = null
+            Guid? productionPlanProductId = null
         );
+
+        Task<ProductionPlanProductSizeDto?> GetByIdAsync(Guid id);
 
         Task<bool> CreateAsync(ProductionPlanProductSizeDto productionPlanProductSizeDto);
 
-        Task<bool> UpdateAsync(string id, ProductionPlanProductSizeDto productionPlanProductSizeDto);
+        Task<bool> UpdateAsync(Guid id, ProductionPlanProductSizeDto productionPlanProductSizeDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

@@ -10,21 +10,23 @@ namespace backend.Service.WarehouseRoom
     {
         // <crudgen:method-signatures>
         Task<List<WarehouseRoomDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? floor = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? warehouseId = null
+            Guid? warehouseId = null
         );
+
+        Task<WarehouseRoomDto?> GetByIdAsync(Guid id);
 
         Task<bool> CreateAsync(WarehouseRoomDto warehouseRoomDto);
 
-        Task<bool> UpdateAsync(string id, WarehouseRoomDto warehouseRoomDto);
+        Task<bool> UpdateAsync(Guid id, WarehouseRoomDto warehouseRoomDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

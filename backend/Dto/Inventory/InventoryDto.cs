@@ -28,7 +28,7 @@ namespace backend.Dto.Inventory
     public class InventoryDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "SKU is required.")]
         public string SKU { get; set; } = string.Empty;

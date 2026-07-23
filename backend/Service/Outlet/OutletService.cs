@@ -23,7 +23,7 @@ namespace backend.Service.Outlet
 
         // <crudgen:methods>
         public async Task<List<OutletDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? location = null,
             string? code = null,
@@ -49,12 +49,23 @@ namespace backend.Service.Outlet
                 .ToListAsync();
         }
 
+        public async Task<OutletDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(OutletDto outletDto)
         {
+            if (outletDto.Id == Guid.Empty)
+            {
+                outletDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertOutlet
 
+                    @Id = {outletDto.Id},
                     @Name = {outletDto.Name},
                     @Location = {outletDto.Location},
                     @Code = {outletDto.Code},
@@ -67,13 +78,13 @@ namespace backend.Service.Outlet
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, OutletDto outletDto)
+        public async Task<bool> UpdateAsync(Guid id, OutletDto outletDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateOutlet
 
-                    @Id = {id},
+                    @Id = {outletDto.Id},
                     @Name = {outletDto.Name},
                     @Location = {outletDto.Location},
                     @Code = {outletDto.Code},
@@ -86,7 +97,7 @@ namespace backend.Service.Outlet
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteOutlet

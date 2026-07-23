@@ -29,9 +29,8 @@ namespace backend.Dto.ProductionPlanProductSize
     public class ProductionPlanProductSizeDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
-        [NotMapped]
         public ProductSize Size { get; set; }
 
         public int Quantity { get; set; }
@@ -45,10 +44,7 @@ namespace backend.Dto.ProductionPlanProductSize
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public string? ProductionPlanProductId { get; set; } = string.Empty;
-        [NotMapped]
-        public ProductionPlanProductDto? ProductionPlanProduct { get; set; }
-
+        public Guid ProductionPlanProductId { get; set; }
         // </crudgen:properties>
     }
 }

@@ -20,9 +20,22 @@ namespace backend.Controller.Warehouse
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<WarehouseDto>> GetById(Guid id)
+        {
+            var item = await _WarehouseService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"Warehouse with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<WarehouseDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? code = null,
             [FromQuery] string? name = null,
             [FromQuery] string? location = null,
@@ -65,7 +78,7 @@ namespace backend.Controller.Warehouse
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] WarehouseDto warehouseDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] WarehouseDto warehouseDto)
         {
             if (!ModelState.IsValid)
             {
@@ -83,7 +96,7 @@ namespace backend.Controller.Warehouse
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _WarehouseService.DeleteAsync(id);
 
@@ -93,102 +106,6 @@ namespace backend.Controller.Warehouse
             }
 
             return NoContent();
-        }
-
-        [HttpPost("receive-inspect")]
-        public async Task<IActionResult> ReceiveInspect([FromBody] SupplierInspectionDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var (success, message) = await _WarehouseService.ProcessSupplierInspectionAsync(dto);
-            if (!success)
-            {
-                return BadRequest(new { message });
-            }
-
-            return Ok(new { message });
-        }
-
-        [HttpPost("accept-finished-goods")]
-        public async Task<IActionResult> AcceptFinishedGoods([FromBody] FinishedGoodsAcceptanceDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var (success, message) = await _WarehouseService.AcceptFinishedGoodsAsync(dto);
-            if (!success)
-            {
-                return BadRequest(new { message });
-            }
-
-            return Ok(new { message });
-        }
-
-        [HttpPost("initiate-sale")]
-        public async Task<IActionResult> InitiateSale([FromBody] ProductSaleDispatchDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var (success, message) = await _WarehouseService.InitiateProductSaleAsync(dto);
-            if (!success)
-            {
-                return BadRequest(new { message });
-            }
-
-            return Ok(new { message });
-        }
-
-        [HttpPost("customer-return")]
-        public async Task<IActionResult> CustomerReturn([FromBody] CustomerReturnDto dto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var (success, message) = await _WarehouseService.ProcessCustomerReturnAsync(dto);
-            if (!success)
-            {
-                return BadRequest(new { message });
-            }
-
-            return Ok(new { message });
-        }
-
-        [HttpGet("kpis")]
-        public async Task<IActionResult> GetKpis()
-        {
-            var data = await _WarehouseService.GetKpisAsync();
-            return Ok(data);
-        }
-
-        [HttpGet("shelves/preview")]
-        public async Task<IActionResult> GetShelvesPreview()
-        {
-            var data = await _WarehouseService.GetShelvesPreviewAsync();
-            return Ok(data);
-        }
-
-        [HttpGet("stock")]
-        public async Task<IActionResult> GetStock()
-        {
-            var data = await _WarehouseService.GetStockAsync();
-            return Ok(data);
-        }
-
-        [HttpGet("visualization")]
-        public async Task<IActionResult> GetVisualization()
-        {
-            var data = await _WarehouseService.GetVisualizationDataAsync();
-            return Ok(data);
         }
         // </crudgen:actions>
     }

@@ -23,14 +23,14 @@ namespace backend.Service.WarehouseRoom
 
         // <crudgen:methods>
         public async Task<List<WarehouseRoomDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? floor = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            string? warehouseId = null
+            Guid? warehouseId = null
         )
         {
             return await _context.Database
@@ -49,12 +49,23 @@ namespace backend.Service.WarehouseRoom
                 .ToListAsync();
         }
 
+        public async Task<WarehouseRoomDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(WarehouseRoomDto warehouseRoomDto)
         {
+            if (warehouseRoomDto.Id == Guid.Empty)
+            {
+                warehouseRoomDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertWarehouseRoom
 
+                    @Id = {warehouseRoomDto.Id},
                     @Name = {warehouseRoomDto.Name},
                     @Floor = {warehouseRoomDto.Floor},
                     @CreatedAt = {warehouseRoomDto.CreatedAt},
@@ -67,13 +78,13 @@ namespace backend.Service.WarehouseRoom
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, WarehouseRoomDto warehouseRoomDto)
+        public async Task<bool> UpdateAsync(Guid id, WarehouseRoomDto warehouseRoomDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateWarehouseRoom
 
-                    @Id = {id},
+                    @Id = {warehouseRoomDto.Id},
                     @Name = {warehouseRoomDto.Name},
                     @Floor = {warehouseRoomDto.Floor},
                     @CreatedAt = {warehouseRoomDto.CreatedAt},
@@ -86,7 +97,7 @@ namespace backend.Service.WarehouseRoom
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteWarehouseRoom

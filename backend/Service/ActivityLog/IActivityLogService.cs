@@ -10,7 +10,7 @@ namespace backend.Service.ActivityLog
     {
         // <crudgen:method-signatures>
         Task<List<ActivityLogDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? title = null,
             string? text = null,
             DateTime? timestamp = null,
@@ -22,11 +22,13 @@ namespace backend.Service.ActivityLog
             string? updatedBy = null
         );
 
+        Task<ActivityLogDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(ActivityLogDto activityLogDto);
 
-        Task<bool> UpdateAsync(string id, ActivityLogDto activityLogDto);
+        Task<bool> UpdateAsync(Guid id, ActivityLogDto activityLogDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

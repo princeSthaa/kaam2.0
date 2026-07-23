@@ -20,9 +20,22 @@ namespace backend.Controller.OrderItem
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<OrderItemDto>> GetById(Guid id)
+        {
+            var item = await _OrderItemService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"OrderItem with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<OrderItemDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] int? quantity = null,
             [FromQuery] decimal? unitPrice = null,
             [FromQuery] decimal? totalPrice = null,
@@ -31,7 +44,7 @@ namespace backend.Controller.OrderItem
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] string? orderId = null
+            [FromQuery] Guid? orderId = null
         )
         {
             var items = await _OrderItemService.GetAllAsync(
@@ -69,7 +82,7 @@ namespace backend.Controller.OrderItem
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] OrderItemDto orderItemDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] OrderItemDto orderItemDto)
         {
             if (!ModelState.IsValid)
             {
@@ -87,7 +100,7 @@ namespace backend.Controller.OrderItem
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _OrderItemService.DeleteAsync(id);
 

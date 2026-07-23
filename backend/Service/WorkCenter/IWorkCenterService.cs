@@ -10,22 +10,23 @@ namespace backend.Service.WorkCenter
     {
         // <crudgen:method-signatures>
         Task<List<WorkCenterDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? type = null,
             string? status = null,
-            string? productionLine = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null
         );
 
+        Task<WorkCenterDto?> GetByIdAsync(Guid id);
+
         Task<bool> CreateAsync(WorkCenterDto workCenterDto);
 
-        Task<bool> UpdateAsync(string id, WorkCenterDto workCenterDto);
+        Task<bool> UpdateAsync(Guid id, WorkCenterDto workCenterDto);
 
-        Task<bool> DeleteAsync(string id);
+        Task<bool> DeleteAsync(Guid id);
 
         // </crudgen:method-signatures>
     }

@@ -23,7 +23,7 @@ namespace backend.Service.Material
 
         // <crudgen:methods>
         public async Task<List<MaterialDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? materialCode = null,
             string? name = null,
             string? type = null,
@@ -55,12 +55,23 @@ namespace backend.Service.Material
                 .ToListAsync();
         }
 
+        public async Task<MaterialDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(MaterialDto materialDto)
         {
+            if (materialDto.Id == Guid.Empty)
+            {
+                materialDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertMaterial
 
+                    @Id = {materialDto.Id},
                     @MaterialCode = {materialDto.MaterialCode},
                     @Name = {materialDto.Name},
                     @Type = {materialDto.Type},
@@ -76,13 +87,13 @@ namespace backend.Service.Material
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, MaterialDto materialDto)
+        public async Task<bool> UpdateAsync(Guid id, MaterialDto materialDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateMaterial
 
-                    @Id = {id},
+                    @Id = {materialDto.Id},
                     @MaterialCode = {materialDto.MaterialCode},
                     @Name = {materialDto.Name},
                     @Type = {materialDto.Type},
@@ -98,7 +109,7 @@ namespace backend.Service.Material
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteMaterial
@@ -106,108 +117,6 @@ namespace backend.Service.Material
             ");
 
             return true;
-        }
-
-        public async Task<bool> RequestSupplierAsync(SupplierMaterialRequestDto dto)
-        {
-            var mat = await _context.Materials.FirstOrDefaultAsync(m => m.Id == dto.MaterialId || m.MaterialCode == dto.MaterialId);
-            var matName = mat?.Name ?? dto.MaterialName;
-
-            var requestEntry = new MaterialRequest
-            {
-                Id = Guid.NewGuid().ToString(),
-                MaterialId = dto.MaterialId,
-                MaterialName = matName,
-                RequestedQuantity = dto.RequestedQuantity,
-                SupplierName = dto.SupplierName,
-                Urgency = dto.Urgency,
-                RequiredDate = dto.RequiredDate,
-                Notes = dto.Notes,
-                RequestedBy = dto.RequestedBy,
-                Status = "Requested",
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = dto.RequestedBy,
-                UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = dto.RequestedBy
-            };
-            _context.MaterialRequests.Add(requestEntry);
-
-            var transaction = new backend.Model.Transaction
-            {
-                Id = Guid.NewGuid().ToString(),
-                Timestamp = DateTime.UtcNow,
-                TransactionType = "Supplier Request",
-                Amount = dto.RequestedQuantity * (mat?.CostPerUnit ?? 0),
-                PaymentMethod = "Purchase Demand",
-                ReferenceEntity = dto.MaterialId,
-                HandledBy = dto.RequestedBy,
-                Notes = $"Requested {dto.RequestedQuantity} units of {matName} from {dto.SupplierName}. Urgency: {dto.Urgency}. Notes: {dto.Notes}",
-                Status = "Requested",
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = dto.RequestedBy,
-                UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = dto.RequestedBy
-            };
-
-            _context.Transactions.Add(transaction);
-            await _context.SaveChangesAsync();
-
-            return true;
-        }
-
-        public async Task<(bool Success, string Message, decimal RemainingQty)> IssueToFactoryAsync(MaterialIssueDto dto)
-        {
-            var mat = await _context.Materials.FirstOrDefaultAsync(m => m.Id == dto.MaterialId || m.MaterialCode == dto.MaterialId);
-            if (mat == null)
-            {
-                return (false, "Material not found.", 0);
-            }
-
-            if (mat.AvailableQty < dto.IssueQuantity)
-            {
-                return (false, $"Insufficient stock available. Current available stock: {mat.AvailableQty} {mat.Unit}.", mat.AvailableQty);
-            }
-
-            mat.AvailableQty -= dto.IssueQuantity;
-            mat.UpdatedAt = DateTime.UtcNow;
-
-            var issueEntry = new MaterialIssue
-            {
-                Id = Guid.NewGuid().ToString(),
-                MaterialId = mat.Id,
-                IssueQuantity = dto.IssueQuantity,
-                TargetDestination = dto.TargetDestination,
-                IssuedTo = dto.IssuedTo,
-                Notes = dto.Notes,
-                Status = "Completed",
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = dto.IssuedTo,
-                UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = dto.IssuedTo
-            };
-            _context.MaterialIssues.Add(issueEntry);
-
-            var transaction = new backend.Model.Transaction
-            {
-                Id = Guid.NewGuid().ToString(),
-                Timestamp = DateTime.UtcNow,
-                TransactionType = "Material Issue",
-                Amount = dto.IssueQuantity * mat.CostPerUnit,
-                PaymentMethod = "Factory Transfer",
-                ReferenceEntity = mat.Id,
-                HandledBy = dto.IssuedTo,
-                Notes = $"Issued {dto.IssueQuantity} {mat.Unit} of {mat.Name} to {dto.TargetDestination}. Issued by: {dto.IssuedTo}. Notes: {dto.Notes}",
-                Status = "Completed",
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = dto.IssuedTo,
-                UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = dto.IssuedTo
-            };
-
-            _context.Transactions.Add(transaction);
-            await _context.SaveChangesAsync();
-
-            return (true, $"Successfully issued {dto.IssueQuantity} {mat.Unit} of {mat.Name} to {dto.TargetDestination}.", mat.AvailableQty);
         }
 
         // </crudgen:methods>

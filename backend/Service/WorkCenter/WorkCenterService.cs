@@ -23,11 +23,10 @@ namespace backend.Service.WorkCenter
 
         // <crudgen:methods>
         public async Task<List<WorkCenterDto>> GetAllAsync(
-            string? id = null,
+            Guid? id = null,
             string? name = null,
             string? type = null,
             string? status = null,
-            string? productionLine = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
@@ -42,7 +41,6 @@ namespace backend.Service.WorkCenter
                         @Name = {name},
                         @Type = {type},
                         @Status = {status},
-                        @ProductionLine = {productionLine},
                         @CreatedAt = {createdAt},
                         @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
@@ -51,8 +49,18 @@ namespace backend.Service.WorkCenter
                 .ToListAsync();
         }
 
+        public async Task<WorkCenterDto?> GetByIdAsync(Guid id)
+        {
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
+        }
+
         public async Task<bool> CreateAsync(WorkCenterDto workCenterDto)
         {
+            if (workCenterDto.Id == Guid.Empty)
+            {
+                workCenterDto.Id = Guid.NewGuid();
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertWorkCenter
@@ -61,7 +69,6 @@ namespace backend.Service.WorkCenter
                     @Name = {workCenterDto.Name},
                     @Type = {workCenterDto.Type},
                     @Status = {workCenterDto.Status},
-                    @ProductionLine = {workCenterDto.ProductionLine},
                     @CreatedAt = {workCenterDto.CreatedAt},
                     @CreatedBy = {workCenterDto.CreatedBy},
                     @UpdatedAt = {workCenterDto.UpdatedAt},
@@ -71,13 +78,13 @@ namespace backend.Service.WorkCenter
             return true;
         }
 
-        public async Task<bool> UpdateAsync(string id, WorkCenterDto workCenterDto)
+        public async Task<bool> UpdateAsync(Guid id, WorkCenterDto workCenterDto)
         {
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateWorkCenter
 
-                    @Id = {id},
+                    @Id = {workCenterDto.Id},
                     @Name = {workCenterDto.Name},
                     @Type = {workCenterDto.Type},
                     @Status = {workCenterDto.Status},
@@ -90,7 +97,7 @@ namespace backend.Service.WorkCenter
             return true;
         }
 
-        public async Task<bool> DeleteAsync(string id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_DeleteWorkCenter

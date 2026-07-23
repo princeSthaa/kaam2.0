@@ -20,9 +20,22 @@ namespace backend.Controller.Customer
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<CustomerDto>> GetById(Guid id)
+        {
+            var item = await _CustomerService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"Customer with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<CustomerDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? name = null,
             [FromQuery] string? email = null,
             [FromQuery] string? phone = null,
@@ -73,7 +86,7 @@ namespace backend.Controller.Customer
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] CustomerDto customerDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] CustomerDto customerDto)
         {
             if (!ModelState.IsValid)
             {
@@ -91,7 +104,7 @@ namespace backend.Controller.Customer
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _CustomerService.DeleteAsync(id);
 

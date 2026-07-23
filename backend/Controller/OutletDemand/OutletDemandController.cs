@@ -20,9 +20,22 @@ namespace backend.Controller.OutletDemand
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<OutletDemandDto>> GetById(Guid id)
+        {
+            var item = await _OutletDemandService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"OutletDemand with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<OutletDemandDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? demandNumber = null,
             [FromQuery] string? status = null,
             [FromQuery] DateTime? dueDate = null,
@@ -30,7 +43,7 @@ namespace backend.Controller.OutletDemand
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] string? outletId = null
+            [FromQuery] Guid? outletId = null
         )
         {
             var items = await _OutletDemandService.GetAllAsync(
@@ -67,7 +80,7 @@ namespace backend.Controller.OutletDemand
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] OutletDemandDto outletDemandDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] OutletDemandDto outletDemandDto)
         {
             if (!ModelState.IsValid)
             {
@@ -85,7 +98,7 @@ namespace backend.Controller.OutletDemand
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _OutletDemandService.DeleteAsync(id);
 

@@ -20,16 +20,29 @@ namespace backend.Controller.WarehouseShelf
         }
 
         // <crudgen:actions>
+        [HttpGet("{id}")] 
+        public async Task<ActionResult<WarehouseShelfDto>> GetById(Guid id)
+        {
+            var item = await _WarehouseShelfService.GetByIdAsync(id);
+
+            if (item == null)
+            {
+                return NotFound($"WarehouseShelf with ID {id} not found.");
+            }
+
+            return Ok(item);
+        }
+
         [HttpGet]
         public async Task<ActionResult<List<WarehouseShelfDto>>> GetAll(
-            [FromQuery] string? id = null,
+            [FromQuery] Guid? id = null,
             [FromQuery] string? code = null,
             [FromQuery] string? capacity = null,
             [FromQuery] DateTime? createdAt = null,
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] string? warehouseRoomId = null
+            [FromQuery] Guid? warehouseRoomId = null
         )
         {
             var items = await _WarehouseShelfService.GetAllAsync(
@@ -65,7 +78,7 @@ namespace backend.Controller.WarehouseShelf
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] WarehouseShelfDto warehouseShelfDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] WarehouseShelfDto warehouseShelfDto)
         {
             if (!ModelState.IsValid)
             {
@@ -83,7 +96,7 @@ namespace backend.Controller.WarehouseShelf
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var deleted = await _WarehouseShelfService.DeleteAsync(id);
 

@@ -98,7 +98,7 @@
       "Annotations": [ "Table(\"ProductionPlans\")" ],
       "Properties": [
         { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
-        { "Name": "PlanId", "Type": "string", "Required": true },
+        { "Name": "PlanId", "Type": "string", "Required": true, "Lookup": true },
         { "Name": "BatchId", "Type": "string" },
         { "Name": "PlanName", "Type": "string" },
         { "Name": "DemandType", "Type": "string" },

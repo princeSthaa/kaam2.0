@@ -28,7 +28,7 @@ namespace backend.Dto.ActivityLog
     public class ActivityLogDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Title is required.")]
         public string Title { get; set; } = string.Empty;

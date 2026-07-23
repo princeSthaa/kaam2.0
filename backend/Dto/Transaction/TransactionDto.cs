@@ -28,7 +28,7 @@ namespace backend.Dto.Transaction
     public class TransactionDto
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Timestamp is required.")]
         public DateTime Timestamp { get; set; }
