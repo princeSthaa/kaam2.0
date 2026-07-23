@@ -4,1065 +4,366 @@
     "DefaultAudit": true
   },
   "Enums": [
+    { 
+      "Name": "ProductSize", 
+      "Values": ["XS", "S", "M", "L", "XL", "XXL"] },
     {
-      "Name": "ProductSize",
-      "Values": [
-        "XS",
-        "S",
-        "M",
-        "L",
-        "XL",
-        "XXL"
-      ]
-    },
-    {
-      "Name": "OrderStatus",
-      "Values": [
-        "Pending",
-        "Processing",
-        "Completed",
-        "Cancelled"
-      ]
+      "Name": "OrderStatus", 
+      "Values": [ "Pending", "Processing", "Completed", "Cancelled"] 
     },
     {
       "Name": "PlanStatus",
-      "Values": [
-        "Draft",
-        "Active",
-        "Cutting",
-        "Stitching",
-        "NotStarted",
-        "Completed",
-        "OnHold",
-        "Blocked",
-        "Cancelled"
-      ]
+      "Values": ["Draft", "Active", "Cutting", "Stitching", "NotStarted", "Completed", "OnHold", "Blocked", "Cancelled"]
     },
     {
       "Name": "PlanPriority",
-      "Values": [
-        "Low",
-        "Medium",
-        "High",
-        "Urgent",
-        "Critical",
-        "Seasonal"
-      ]
+      "Values": ["Low", "Medium", "High", "Urgent", "Critical", "Seasonal"]
     }
   ],
   "Entities": [
     {
       "Name": "Customer",
-      "Annotations": [
-        "Table(\"Customers\")"
-      ],
+      "Annotations": [ "Table(\"Customers\")"],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Email",
-          "Type": "string",
-          "Format": "email",
-          "Required": true
-        },
-        {
-          "Name": "Phone",
-          "Type": "string",
-          "Format": "phone",
-          "Required": true
-        },
-        {
-          "Name": "Address",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Type",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Company",
-          "Type": "string"
-        },
-        {
-          "Name": "PanVat",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Email", "Type": "string", "Format": "email", "Required": true },
+        { "Name": "Phone", "Type": "string", "Format": "phone", "Required": true },
+        { "Name": "Address", "Type": "string", "Required": true },
+        { "Name": "Type", "Type": "string", "Required": true },
+        { "Name": "Company", "Type": "string" },
+        { "Name": "PanVat", "Type": "string" }
       ],
-      "Children": [
-        "Order"
-      ]
+      "Children": [ "Order" ]
     },
-    {
-      "Name": "Order",
-      "Parent": "Customer",
-      "Annotations": [
-        "Table(\"Orders\")"
-      ],
+    { "Name": "Order", "Parent": "Customer", "Annotations": [ "Table(\"Orders\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "OrderNumber",
-          "Type": "string"
-        },
-        {
-          "Name": "Status",
-          "Type": "OrderStatus"
-        },
-        {
-          "Name": "TotalAmount",
-          "Type": "decimal"
-        },
-        {
-          "Name": "DueDate",
-          "Type": "datetime"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "OrderNumber", "Type": "string" },
+        { "Name": "Status", "Type": "OrderStatus" },
+        { "Name": "TotalAmount", "Type": "decimal" },
+        { "Name": "DueDate", "Type": "datetime" }
       ],
-      "Children": [
-        "OrderItem"
-      ]
+      "Children": [ "OrderItem" ]
     },
     {
       "Name": "OrderItem",
       "Parent": "Order",
-      "Annotations": [
-        "Table(\"OrderItems\")"
-      ],
+      "Annotations": [ "Table(\"OrderItems\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Quantity",
-          "Type": "int"
-        },
-        {
-          "Name": "UnitPrice",
-          "Type": "decimal"
-        },
-        {
-          "Name": "Product",
-          "Type": "Product"
-        },
-        {
-          "Name": "Fabric",
-          "Type": "Fabric"
-        },
-        {
-          "Name": "TotalPrice",
-          "Type": "decimal"
-        },
-        {
-          "Name": "Discount",
-          "Type": "decimal"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Quantity", "Type": "int" },
+        { "Name": "UnitPrice", "Type": "decimal" },
+        { "Name": "Product", "Type": "Product" },
+        { "Name": "Fabric", "Type": "Fabric" },
+        { "Name": "TotalPrice", "Type": "decimal" },
+        { "Name": "Discount", "Type": "decimal" }
       ]
     },
     {
       "Name": "Product",
-      "Annotations": [
-        "Table(\"Products\")"
-      ],
+      "Annotations": [ "Table(\"Products\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "ImagePath",
-          "Type": "string",
-          "Format": "image"
-        },
-        {
-          "Name": "Sizes",
-          "Type": "ProductSize[]"
-        }
-      ]
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "ImagePath", "Type": "string", "Format": "image" },
+        { "Name": "Sizes", "Type": "ProductSize[]" }
+      ],
+      "SkipMethods": ["Create"]
     },
     {
       "Name": "Fabric",
-      "Annotations": [
-        "Table(\"Fabrics\")"
-      ],
+      "Annotations": [ "Table(\"Fabrics\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "Guid",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Category",
-          "Type": "string"
-        },
-        {
-          "Name": "ImagePath",
-          "Type": "string",
-          "Format": "image"
-        },
-        {
-          "Name": "UnitPrice",
-          "Type": "decimal"
-        }
-      ]
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Category", "Type": "string" },
+        { "Name": "ImagePath", "Type": "string", "Format": "image"},
+        {"Name": "UnitPrice", "Type": "decimal"}
+      ],
+      "SkipMethods": ["Create"]
     },
     {
       "Name": "WorkCenter",
-      "Annotations": [
-        "Table(\"WorkCenters\")"
-      ],
+      "Annotations": ["Table(\"WorkCenters\")"],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Type",
-          "Type": "string"
-        },
-        {
-          "Name": "Status",
-          "Type": "string"
-        }
+        {"Name": "Id","Type": "Guid","IsPrimaryKey": true},
+        { "Name": "Name","Type": "string", "Required": true },
+        { "Name": "Type", "Type": "string" },
+        { "Name": "Status", "Type": "string" }
       ]
     },
     {
       "Name": "ProductionPlan",
-      "Annotations": [
-        "Table(\"ProductionPlans\")"
-      ],
+      "Annotations": [ "Table(\"ProductionPlans\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "PlanId",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "BatchId",
-          "Type": "string"
-        },
-        {
-          "Name": "PlanName",
-          "Type": "string"
-        },
-        {
-          "Name": "DemandType",
-          "Type": "string"
-        },
-        {
-          "Name": "SourceId",
-          "Type": "string"
-        },
-        {
-          "Name": "SourceName",
-          "Type": "string"
-        },
-        {
-          "Name": "Priority",
-          "Type": "PlanPriority"
-        },
-        {
-          "Name": "Status",
-          "Type": "PlanStatus"
-        },
-        {
-          "Name": "PlannedStartDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "PlannedCompletionDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "Quantity",
-          "Type": "int"
-        },
-        {
-          "Name": "EstimatedCost",
-          "Type": "decimal"
-        },
-        {
-          "Name": "Supervisor",
-          "Type": "string"
-        },
-        {
-          "Name": "ProductionLine",
-          "Type": "string"
-        },
-        {
-          "Name": "MaterialWarehouse",
-          "Type": "string"
-        },
-        {
-          "Name": "ProductionNotes",
-          "Type": "string"
-        },
-        {
-          "Name": "PlanDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "OutputDestination",
-          "Type": "string"
-        },
-        {
-          "Name": "RequiredDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "Progress",
-          "Type": "decimal"
-        },
-        {
-          "Name": "Blocked",
-          "Type": "bool"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "PlanId", "Type": "string", "Required": true },
+        { "Name": "BatchId", "Type": "string" },
+        { "Name": "PlanName", "Type": "string" },
+        { "Name": "DemandType", "Type": "string" },
+        { "Name": "SourceId", "Type": "string" },
+        { "Name": "SourceName", "Type": "string" },
+        { "Name": "Priority", "Type": "PlanPriority" },
+        { "Name": "Status", "Type": "PlanStatus" },
+        { "Name": "PlannedStartDate", "Type": "datetime" },
+        { "Name": "PlannedCompletionDate", "Type": "datetime" },
+        { "Name": "Quantity", "Type": "int" },
+        { "Name": "EstimatedCost", "Type": "decimal" },
+        { "Name": "Supervisor", "Type": "string" },
+        { "Name": "ProductionLine", "Type": "string" },
+        { "Name": "MaterialWarehouse", "Type": "string" },
+        { "Name": "ProductionNotes", "Type": "string" },
+        { "Name": "PlanDate", "Type": "datetime" },
+        { "Name": "OutputDestination", "Type": "string" },
+        { "Name": "RequiredDate", "Type": "datetime" },
+        { "Name": "Progress", "Type": "decimal" },
+        { "Name": "Blocked", "Type": "bool" }
       ],
-      "Children": [
-        "ProductionPlanProduct",
-        "ProductionPlanStage"
-      ]
+      "Children": [ "ProductionPlanProduct", "ProductionPlanStage" ]
     },
     {
       "Name": "ProductionPlanProduct",
       "Parent": "ProductionPlan",
-      "Annotations": [
-        "Table(\"ProductionPlanProducts\")"
-      ],
+      "Annotations": [ "Table(\"ProductionPlanProducts\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "LineId",
-          "Type": "string"
-        },
-        {
-          "Name": "OrderNo",
-          "Type": "string"
-        },
-        {
-          "Name": "ProductId",
-          "Type": "string"
-        },
-        {
-          "Name": "ProductCode",
-          "Type": "string"
-        },
-        {
-          "Name": "ProductName",
-          "Type": "string"
-        },
-        {
-          "Name": "Category",
-          "Type": "string"
-        },
-        {
-          "Name": "Variant",
-          "Type": "string"
-        },
-        {
-          "Name": "Quantity",
-          "Type": "int"
-        },
-        {
-          "Name": "RequiredDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "Status",
-          "Type": "PlanStatus"
-        },
-        {
-          "Name": "ProductImage",
-          "Type": "string",
-          "Format": "image"
-        },
-        {
-          "Name": "PlannedStartDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "PlannedCompletionDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "Priority",
-          "Type": "PlanPriority"
-        },
-        {
-          "Name": "ProductionNotes",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "LineId", "Type": "string" },
+        { "Name": "OrderNo", "Type": "string" },
+        { "Name": "ProductId", "Type": "string" },
+        { "Name": "ProductCode", "Type": "string" },
+        { "Name": "ProductName", "Type": "string" },
+        { "Name": "Category", "Type": "string" },
+        { "Name": "Variant", "Type": "string" },
+        { "Name": "Quantity", "Type": "int" },
+        { "Name": "RequiredDate", "Type": "datetime" },
+        { "Name": "Status", "Type": "PlanStatus" },
+        { "Name": "ProductImage", "Type": "string", "Format": "image" },
+        { "Name": "PlannedStartDate", "Type": "datetime" },
+        { "Name": "PlannedCompletionDate", "Type": "datetime" },
+        { "Name": "Priority", "Type": "PlanPriority" },
+        { "Name": "ProductionNotes", "Type": "string" }
       ],
-      "Children": [
-        "ProductionPlanProductSize"
-      ]
+      "Children": [ "ProductionPlanProductSize" ]
     },
     {
       "Name": "ProductionPlanProductSize",
       "Parent": "ProductionPlanProduct",
-      "Annotations": [
-        "Table(\"ProductionPlanProductSizes\")"
-      ],
+      "Annotations": [ "Table(\"ProductionPlanProductSizes\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Size",
-          "Type": "ProductSize"
-        },
-        {
-          "Name": "Quantity",
-          "Type": "int"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Size", "Type": "ProductSize" },
+        { "Name": "Quantity", "Type": "int" }
       ]
     },
     {
       "Name": "ProductionPlanStage",
       "Parent": "ProductionPlan",
-      "Annotations": [
-        "Table(\"ProductionPlanStages\")"
-      ],
+      "Annotations": [ "Table(\"ProductionPlanStages\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "StageId",
-          "Type": "string"
-        },
-        {
-          "Name": "StageName",
-          "Type": "string"
-        },
-        {
-          "Name": "WorkCenter",
-          "Type": "WorkCenter"
-        },
-        {
-          "Name": "OperatorName",
-          "Type": "string"
-        },
-        {
-          "Name": "PlannedStartDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "PlannedEndDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "Status",
-          "Type": "PlanStatus"
-        },
-        {
-          "Name": "CompletedQty",
-          "Type": "int"
-        },
-        {
-          "Name": "RejectedQty",
-          "Type": "int"
-        },
-        {
-          "Name": "ActualStartDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "ActualEndDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "Remarks",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "StageId", "Type": "string" },
+        { "Name": "StageName", "Type": "string" },
+        { "Name": "WorkCenter", "Type": "WorkCenter" },
+        { "Name": "OperatorName", "Type": "string" },
+        { "Name": "PlannedStartDate", "Type": "datetime" },
+        { "Name": "PlannedEndDate", "Type": "datetime" },
+        { "Name": "Status", "Type": "PlanStatus" },
+        { "Name": "CompletedQty", "Type": "int" },
+        { "Name": "RejectedQty", "Type": "int" },
+        { "Name": "ActualStartDate", "Type": "datetime" },
+        { "Name": "ActualEndDate", "Type": "datetime" },
+        { "Name": "Remarks", "Type": "string" }
       ]
     },
     {
       "Name": "Material",
-      "Annotations": [
-        "Table(\"Materials\")"
-      ],
+      "Annotations": [ "Table(\"Materials\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "MaterialCode",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Type",
-          "Type": "string"
-        },
-        {
-          "Name": "AvailableQty",
-          "Type": "decimal"
-        },
-        {
-          "Name": "Unit",
-          "Type": "string"
-        },
-        {
-          "Name": "CostPerUnit",
-          "Type": "decimal"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "MaterialCode", "Type": "string", "Required": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Type", "Type": "string" },
+        { "Name": "AvailableQty", "Type": "decimal" },
+        { "Name": "Unit", "Type": "string" },
+        { "Name": "CostPerUnit", "Type": "decimal" }
       ]
     },
     {
       "Name": "BillOfMaterial",
-      "Annotations": [
-        "Table(\"BillOfMaterials\")"
-      ],
+      "Annotations": [ "Table(\"BillOfMaterials\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Product",
-          "Type": "Product"
-        },
-        {
-          "Name": "Material",
-          "Type": "Material"
-        },
-        {
-          "Name": "QtyPerUnit",
-          "Type": "decimal"
-        },
-        {
-          "Name": "WastagePercent",
-          "Type": "decimal"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Product", "Type": "Product" },
+        { "Name": "Material", "Type": "Material" },
+        { "Name": "QtyPerUnit", "Type": "decimal" },
+        { "Name": "WastagePercent", "Type": "decimal" }
       ]
     },
     {
       "Name": "Warehouse",
-      "Annotations": [
-        "Table(\"Warehouses\")"
-      ],
+      "Annotations": [ "Table(\"Warehouses\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Code",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Location",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Code", "Type": "string", "Required": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Location", "Type": "string" }
       ],
-      "Children": [
-        "WarehouseRoom"
-      ]
+      "Children": [ "WarehouseRoom" ]
     },
     {
       "Name": "WarehouseRoom",
       "Parent": "Warehouse",
-      "Annotations": [
-        "Table(\"WarehouseRooms\")"
-      ],
+      "Annotations": [ "Table(\"WarehouseRooms\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Floor",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Floor", "Type": "string" }
       ],
-      "Children": [
-        "WarehouseShelf"
-      ]
+      "Children": [ "WarehouseShelf" ]
     },
     {
       "Name": "WarehouseShelf",
       "Parent": "WarehouseRoom",
-      "Annotations": [
-        "Table(\"WarehouseShelves\")"
-      ],
+      "Annotations": [ "Table(\"WarehouseShelves\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Code",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Capacity",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Code", "Type": "string", "Required": true },
+        { "Name": "Capacity", "Type": "string" }
       ]
     },
     {
       "Name": "Inventory",
-      "Annotations": [
-        "Table(\"Inventories\")"
-      ],
+      "Annotations": [ "Table(\"Inventories\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "SKU",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "ItemName",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Type",
-          "Type": "string"
-        },
-        {
-          "Name": "Quantity",
-          "Type": "decimal"
-        },
-        {
-          "Name": "Location",
-          "Type": "string"
-        },
-        {
-          "Name": "Status",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "SKU", "Type": "string", "Required": true },
+        { "Name": "ItemName", "Type": "string", "Required": true },
+        { "Name": "Type", "Type": "string" },
+        { "Name": "Quantity", "Type": "decimal" },
+        { "Name": "Location", "Type": "string" },
+        { "Name": "Status", "Type": "string" }
       ]
     },
     {
       "Name": "Outlet",
-      "Annotations": [
-        "Table(\"Outlets\")"
-      ],
+      "Annotations": [ "Table(\"Outlets\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Name",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Location",
-          "Type": "string"
-        },
-        {
-          "Name": "Code",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true },
+        { "Name": "Location", "Type": "string" },
+        { "Name": "Code", "Type": "string" }
       ],
-      "Children": [
-        "OutletDemand"
-      ]
+      "Children": [ "OutletDemand" ]
     },
     {
       "Name": "OutletDemand",
       "Parent": "Outlet",
-      "Annotations": [
-        "Table(\"OutletDemands\")"
-      ],
+      "Annotations": [ "Table(\"OutletDemands\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "DemandNumber",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Status",
-          "Type": "string"
-        },
-        {
-          "Name": "DueDate",
-          "Type": "datetime"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "DemandNumber", "Type": "string", "Required": true },
+        { "Name": "Status", "Type": "string" },
+        { "Name": "DueDate", "Type": "datetime" }
       ]
     },
     {
       "Name": "Transaction",
-      "Annotations": [
-        "Table(\"Transactions\")"
-      ],
+      "Annotations": [ "Table(\"Transactions\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Timestamp",
-          "Type": "datetime",
-          "Required": true
-        },
-        {
-          "Name": "TransactionType",
-          "Type": "string"
-        },
-        {
-          "Name": "Amount",
-          "Type": "decimal"
-        },
-        {
-          "Name": "PaymentMethod",
-          "Type": "string"
-        },
-        {
-          "Name": "ReferenceEntity",
-          "Type": "string"
-        },
-        {
-          "Name": "HandledBy",
-          "Type": "string"
-        },
-        {
-          "Name": "Notes",
-          "Type": "string"
-        },
-        {
-          "Name": "Status",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Timestamp", "Type": "datetime", "Required": true },
+        { "Name": "TransactionType", "Type": "string" },
+        { "Name": "Amount", "Type": "decimal" },
+        { "Name": "PaymentMethod", "Type": "string" },
+        { "Name": "ReferenceEntity", "Type": "string" },
+        { "Name": "HandledBy", "Type": "string" },
+        { "Name": "Notes", "Type": "string" },
+        { "Name": "Status", "Type": "string" }
       ]
     },
     {
       "Name": "ActivityLog",
-      "Annotations": [
-        "Table(\"ActivityLogs\")"
-      ],
+      "Annotations": [ "Table(\"ActivityLogs\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "Title",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Text",
-          "Type": "string"
-        },
-        {
-          "Name": "Timestamp",
-          "Type": "datetime"
-        },
-        {
-          "Name": "EntityId",
-          "Type": "string"
-        },
-        {
-          "Name": "EntityType",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Title", "Type": "string", "Required": true },
+        { "Name": "Text", "Type": "string" },
+        { "Name": "Timestamp", "Type": "datetime" },
+        { "Name": "EntityId", "Type": "string" },
+        { "Name": "EntityType", "Type": "string" }
       ]
     },
     {
       "Name": "MaterialRequest",
-      "Annotations": [
-        "Table(\"MaterialRequests\")"
-      ],
+      "Annotations": [ "Table(\"MaterialRequests\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "MaterialId",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "MaterialName",
-          "Type": "string"
-        },
-        {
-          "Name": "RequestedQuantity",
-          "Type": "decimal"
-        },
-        {
-          "Name": "SupplierName",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Urgency",
-          "Type": "string"
-        },
-        {
-          "Name": "RequiredDate",
-          "Type": "datetime"
-        },
-        {
-          "Name": "Notes",
-          "Type": "string"
-        },
-        {
-          "Name": "RequestedBy",
-          "Type": "string"
-        },
-        {
-          "Name": "Status",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "MaterialId", "Type": "string", "Required": true },
+        { "Name": "MaterialName", "Type": "string" },
+        { "Name": "RequestedQuantity", "Type": "decimal" },
+        { "Name": "SupplierName", "Type": "string", "Required": true },
+        { "Name": "Urgency", "Type": "string" },
+        { "Name": "RequiredDate", "Type": "datetime" },
+        { "Name": "Notes", "Type": "string" },
+        { "Name": "RequestedBy", "Type": "string" },
+        { "Name": "Status", "Type": "string" }
       ]
     },
     {
       "Name": "MaterialIssue",
-      "Annotations": [
-        "Table(\"MaterialIssues\")"
-      ],
+      "Annotations": [ "Table(\"MaterialIssues\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "MaterialId",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "IssueQuantity",
-          "Type": "decimal"
-        },
-        {
-          "Name": "TargetDestination",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "IssuedTo",
-          "Type": "string"
-        },
-        {
-          "Name": "Notes",
-          "Type": "string"
-        },
-        {
-          "Name": "Status",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "MaterialId", "Type": "string", "Required": true },
+        { "Name": "IssueQuantity", "Type": "decimal" },
+        { "Name": "TargetDestination", "Type": "string", "Required": true },
+        { "Name": "IssuedTo", "Type": "string" },
+        { "Name": "Notes", "Type": "string" },
+        { "Name": "Status", "Type": "string" }
       ]
     },
     {
       "Name": "MaterialInspection",
-      "Annotations": [
-        "Table(\"MaterialInspections\")"
-      ],
+      "Annotations": [ "Table(\"MaterialInspections\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "MaterialId",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "MaterialName",
-          "Type": "string"
-        },
-        {
-          "Name": "SupplierName",
-          "Type": "string"
-        },
-        {
-          "Name": "ReceivedQuantity",
-          "Type": "decimal"
-        },
-        {
-          "Name": "InspectionStatus",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "Notes",
-          "Type": "string"
-        },
-        {
-          "Name": "InspectorName",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "MaterialId", "Type": "string", "Required": true },
+        { "Name": "MaterialName", "Type": "string" },
+        { "Name": "SupplierName", "Type": "string" },
+        { "Name": "ReceivedQuantity", "Type": "decimal" },
+        { "Name": "InspectionStatus", "Type": "string", "Required": true },
+        { "Name": "Notes", "Type": "string" },
+        { "Name": "InspectorName", "Type": "string" }
       ]
     },
     {
       "Name": "FinishedGoodsHandover",
-      "Annotations": [
-        "Table(\"FinishedGoodsHandovers\")"
-      ],
+      "Annotations": [ "Table(\"FinishedGoodsHandovers\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "ProductId",
-          "Type": "string"
-        },
-        {
-          "Name": "ProductName",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "SKU",
-          "Type": "string"
-        },
-        {
-          "Name": "Quantity",
-          "Type": "int"
-        },
-        {
-          "Name": "SourceFactoryLine",
-          "Type": "string"
-        },
-        {
-          "Name": "Location",
-          "Type": "string"
-        },
-        {
-          "Name": "AcceptedBy",
-          "Type": "string"
-        },
-        {
-          "Name": "Status",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "ProductId", "Type": "string" },
+        { "Name": "ProductName", "Type": "string", "Required": true },
+        { "Name": "SKU", "Type": "string" },
+        { "Name": "Quantity", "Type": "int" },
+        { "Name": "SourceFactoryLine", "Type": "string" },
+        { "Name": "Location", "Type": "string" },
+        { "Name": "AcceptedBy", "Type": "string" },
+        { "Name": "Status", "Type": "string" }
       ]
     },
     {
       "Name": "CustomerReturn",
-      "Annotations": [
-        "Table(\"CustomerReturns\")"
-      ],
+      "Annotations": [ "Table(\"CustomerReturns\")" ],
       "Properties": [
-        {
-          "Name": "Id",
-          "Type": "string",
-          "IsPrimaryKey": true
-        },
-        {
-          "Name": "OrderNumber",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "CustomerName",
-          "Type": "string",
-          "Required": true
-        },
-        {
-          "Name": "ProductId",
-          "Type": "string"
-        },
-        {
-          "Name": "ReturnedQuantity",
-          "Type": "int"
-        },
-        {
-          "Name": "Reason",
-          "Type": "string"
-        },
-        {
-          "Name": "Notes",
-          "Type": "string"
-        },
-        {
-          "Name": "ProcessedBy",
-          "Type": "string"
-        }
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "OrderNumber", "Type": "string", "Required": true },
+        { "Name": "CustomerName", "Type": "string", "Required": true },
+        { "Name": "ProductId", "Type": "string" },
+        { "Name": "ReturnedQuantity", "Type": "int" },
+        { "Name": "Reason", "Type": "string" },
+        { "Name": "Notes", "Type": "string" },
+        { "Name": "ProcessedBy", "Type": "string" }
       ]
     }
   ]

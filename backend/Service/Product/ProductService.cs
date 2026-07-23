@@ -22,6 +22,26 @@ namespace backend.Service.Product
             _context = context;
         }
 
+         public async Task<bool> CreateAsync(ProductDto productDto)
+        {
+            productDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(productDto.ImagePath);
+            var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_InsertProduct
+
+                    @Name = {productDto.Name},
+                    @ImagePath = {productDto.ImagePath},
+                    @CreatedAt = {productDto.CreatedAt},
+                    @CreatedBy = {productDto.CreatedBy},
+                    @UpdatedAt = {productDto.UpdatedAt},
+                    @UpdatedBy = {productDto.UpdatedBy},
+                    @SizesJson = {sizesJson}
+            ");
+
+            return true;
+        }
+
         // <crudgen:methods>
         public async Task<List<ProductDto>> GetAllAsync(
             string? id = null,
@@ -48,25 +68,7 @@ namespace backend.Service.Product
                 .ToListAsync();
         }
 
-        public async Task<bool> CreateAsync(ProductDto productDto)
-        {
-            productDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(productDto.ImagePath);
-            var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
-
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertProduct
-
-                    @Name = {productDto.Name},
-                    @ImagePath = {productDto.ImagePath},
-                    @CreatedAt = {productDto.CreatedAt},
-                    @CreatedBy = {productDto.CreatedBy},
-                    @UpdatedAt = {productDto.UpdatedAt},
-                    @UpdatedBy = {productDto.UpdatedBy},
-                    @SizesJson = {sizesJson}
-            ");
-
-            return true;
-        }
+       
 
         public async Task<bool> UpdateAsync(string id, ProductDto productDto)
         {

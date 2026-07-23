@@ -9,7 +9,7 @@ namespace backend.Model
     public class BillOfMaterial
     {
         // <crudgen:properties>
-        public string Id { get; set; } = string.Empty;
+        public Guid Id { get; set; }
         public string ProductId { get; set; }
         public virtual Product Product { get; set; } = null!;
         public string MaterialId { get; set; }

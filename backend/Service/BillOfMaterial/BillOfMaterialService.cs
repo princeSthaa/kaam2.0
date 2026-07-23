@@ -35,7 +35,6 @@ namespace backend.Service.BillOfMaterial
             return await _context.Database
                 .SqlQuery<BillOfMaterialDto>($@"
                     EXEC sp_GetBillOfMaterials
-
                         @Id = {id},
                         @QtyPerUnit = {qtyPerUnit},
                         @WastagePercent = {wastagePercent},

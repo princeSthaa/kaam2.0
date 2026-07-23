@@ -359,8 +359,8 @@ namespace backend.Data
                         for (int i = 0; i < allProds.Count; i++)
                         {
                             var prodId = allProds[i].Id;
-                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = prodId, MaterialId = "MAT-001", QtyPerUnit = 1.5m, WastagePercent = 5 });
-                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid().ToString(), ProductId = prodId, MaterialId = "MAT-002", QtyPerUnit = 0.5m, WastagePercent = 2 });
+                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid(), ProductId = prodId, MaterialId = "MAT-001", QtyPerUnit = 1.5m, WastagePercent = 5 });
+                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid(), ProductId = prodId, MaterialId = "MAT-002", QtyPerUnit = 0.5m, WastagePercent = 2 });
                         }
                     }
                     context.BillOfMaterials.AddRange(boms);
