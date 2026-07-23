@@ -383,6 +383,38 @@ export function ProductionPlanEditPage() {
               const endPair = parseDatePair(p.plannedCompletionDate || plan.plannedCompletionDate);
               const reqPair = parseDatePair(p.requiredDate || plan.requiredDate);
 
+              // Find stages belonging to this specific product by checking if stageName contains the productName or productCode
+              let productStages = planStages.filter((ps: any) => 
+                (ps.stageName || "").toLowerCase().includes((p.productName || "").toLowerCase()) ||
+                (ps.stageName || "").toLowerCase().includes((p.productCode || "").toLowerCase())
+              );
+              
+              // If we didn't find any specific stages for this product, and we have loadedStages (which might be un-prefixed defaults),
+              // we can fallback to the default loaded stages, but ideally we only want the matched ones if they exist.
+              if (productStages.length === 0 && planStages.length === 0) {
+                 productStages = loadedStages; // fallback to generated defaults if no DB stages exist
+              } else if (productStages.length > 0) {
+                 // Format the matched DB stages
+                 productStages = productStages.sort((a: any, b: any) => {
+                    const numA = parseInt((a.stageId || "").replace(/\D/g, "")) || 0;
+                    const numB = parseInt((b.stageId || "").replace(/\D/g, "")) || 0;
+                    if (numA !== numB) return numA - numB;
+                    return (a.createdAt || "").localeCompare(b.createdAt || "");
+                 }).map((s: any, idx: number) => {
+                    const stgPair = parseDatePair(s.plannedStartDate || plan.plannedStartDate);
+                    // Strip the product name prefix for cleaner display in the UI if desired, or keep it.
+                    // We'll keep it as is, since they can edit it.
+                    return {
+                      id: String(idx + 1).padStart(2, "0"),
+                      name: s.stageName || `Stage ${idx + 1}`,
+                      workCenter: s.workCenter || s.workCenterName || s.workCenterId || "QC Station 1",
+                      leadHours: "8",
+                      date: stgPair.ad,
+                      dateNp: stgPair.bs
+                    };
+                 });
+              }
+
               group = {
                 productId: p.productId,
                 productCode: p.productCode || p.productId,
@@ -395,7 +427,7 @@ export function ProductionPlanEditPage() {
                 requiredDate: reqPair.ad,
                 requiredDateNp: reqPair.bs,
                 variants: [],
-                stages: loadedStages,
+                stages: productStages.length > 0 ? productStages.map((s: any) => ({ ...s })) : loadedStages.map((s: any) => ({ ...s })),
                 productionNotes: p.productionNotes || plan.productionNotes || ""
               };
               grouped.push(group);
@@ -568,16 +600,24 @@ export function ProductionPlanEditPage() {
           productionPlanProductSizes: Object.entries(v.sizes).filter(([_, qty]) => Number(qty) > 0).map(([size, qty]) => ({ size, quantity: Number(qty) })),
           productionNotes: prod.productionNotes
         }))),
-        productionPlanStages: selectedProducts[0]?.stages?.map((s: any) => ({
-          stageId: `STG-${s.id}`,
-          stageName: s.name,
-          workCenter: s.workCenter,
-          plannedStartDate: s.dateNp || s.date,
-          plannedEndDate: s.dateNp || s.date,
-          status: "Not Started",
-          completedQty: 0,
-          rejectedQty: 0
-        })) || originalPlan.productionPlanStages
+        productionPlanStages: selectedProducts.flatMap(prod => 
+          (prod.stages || []).map((s: any) => {
+            // Ensure the stage name has the product name so it can be filtered back out on next load
+            const finalStageName = s.name.toLowerCase().includes((prod.productName || "").toLowerCase()) 
+              ? s.name 
+              : `${prod.productName} - ${s.name}`;
+            return {
+              stageId: `STG-${s.id}`,
+              stageName: finalStageName,
+              workCenter: s.workCenter,
+              plannedStartDate: s.dateNp || s.date,
+              plannedEndDate: s.dateNp || s.date,
+              status: "Not Started",
+              completedQty: 0,
+              rejectedQty: 0
+            };
+          })
+        )
       } : {})
     };
 
@@ -792,7 +832,7 @@ export function ProductionPlanEditPage() {
           </div>
         </div>
 
-        {/* ── SECTION 2: PRODUCTS WORKSPACE (SPLIT-SCREEN) ────────── */}
+        {/* ── SECTION 2: PRODUCTS WORKSPACE ────────── */}
         <div style={S.card}>
           <div style={S.cardHeader}>
             <div style={S.cardHeaderLeft}>
@@ -800,7 +840,7 @@ export function ProductionPlanEditPage() {
                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>view_sidebar</span>
               </div>
               <div>
-                <div style={S.cardTitle}>Products Workspace (Split-Screen)</div>
+                <div style={S.cardTitle}>Products Workspace</div>
                 <div style={S.cardSub}>Select a product on the left, and edit its sizes and routing stages on the right.</div>
               </div>
             </div>
@@ -1004,6 +1044,18 @@ export function ProductionPlanEditPage() {
                        </div>
                      </div>
                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                       {/* Column Headers */}
+                       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 12px" }}>
+                         <span style={{ width: 16 }}></span>{/* drag icon spacer */}
+                         <span style={{ width: 24 }}></span>{/* index spacer */}
+                         <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 60px 1.2fr 1.2fr", gap: 8, flex: 1 }}>
+                           <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>Stage Name</span>
+                           <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>Work Center</span>
+                           <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>Hours</span>
+                           <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>Date (AD)</span>
+                           <span style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase" as const, letterSpacing: "0.04em" }}>Date (BS)</span>
+                         </div>
+                       </div>
                        {activeProduct.stages.map((stage: any, si: number) => (
                          <div key={stage.id} style={S.stageRow}>
                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#cbd5e1", cursor: "grab" }}>drag_indicator</span>

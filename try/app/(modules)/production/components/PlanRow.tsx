@@ -3,33 +3,10 @@ import Link from 'next/link';
 import ProductRow from './ProductRow';
 import { StatusBadge } from './StatusBadge';
 
-function formatCleanNepaliDate(dateVal: any): string {
-  if (!dateVal) return "N/A";
-  let dateStr = String(dateVal).trim();
-  if (dateStr.includes("T")) dateStr = dateStr.split("T")[0];
-  if (dateStr.includes(" ")) dateStr = dateStr.split(" ")[0];
-
-  if (dateStr.startsWith("208") || dateStr.startsWith("207") || dateStr.startsWith("209")) {
-    return dateStr.includes("BS") ? dateStr : `${dateStr} BS`;
-  }
-
-  const d = new Date(dateVal);
-  if (isNaN(d.getTime())) return `${dateStr} BS`;
-
-  const adYear = d.getFullYear();
-  const adMonth = d.getMonth();
-  const adDay = d.getDate();
-
-  const bsYear = adYear + (adMonth > 3 || (adMonth === 3 && adDay >= 14) ? 57 : 56);
-  const bsMonthNum = ((adMonth + 8) % 12) + 1;
-  const mStr = String(bsMonthNum).padStart(2, "0");
-  const dStr = String(adDay).padStart(2, "0");
-
-  return `${bsYear}-${mStr}-${dStr} BS`;
-}
-
 export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: any) {
+  const firstProductId = plan.products?.[0]?.id || null;
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+  const activeProductId = expandedProductId === "closed" ? null : (expandedProductId ?? firstProductId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const handleStatusChange = (newStatus: string, e: React.MouseEvent) => {
@@ -41,29 +18,41 @@ export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: an
     });
   };
 
+  const totalQuantity = (plan.products || []).reduce(
+    (sum: number, p: any) => sum + (Number(p.qty) || 0),
+    0
+  );
+
   return (
     <div className="border-b border-kaam-outline-variant bg-kaam-surface-bright last:border-b-0">
       {/* Plan Header Row */}
       <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-kaam-surface-container-low transition-colors relative"
+        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 cursor-pointer hover:bg-kaam-surface-container-low transition-colors relative gap-3"
         onClick={onToggle}
       >
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-kaam-DEFAULT bg-kaam-surface-container flex items-center justify-center shrink-0 mt-0.5 border border-kaam-outline-variant">
+          <div className="w-10 h-10 rounded-kaam-DEFAULT bg-kaam-surface-container flex items-center justify-center shrink-0 border border-kaam-outline-variant">
             <span className="material-symbols-outlined text-kaam-secondary">assignment</span>
           </div>
           <div>
-            <div className="font-kaam-label-md text-kaam-label-md text-kaam-on-surface font-bold font-mono">
-              Plan: {plan.id}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-kaam-label-md text-sm font-black font-mono text-kaam-on-surface">
+                {plan.id}
+              </span>
+              <span className="text-xs font-semibold text-kaam-on-surface-variant">
+                • {plan.client}
+              </span>
             </div>
-            <div className="font-kaam-body-sm text-xs text-kaam-on-surface-variant truncate mt-0.5">
-              Client/Source: <strong className="text-kaam-on-surface">{plan.client}</strong> &bull; Due: <strong className="text-kaam-on-surface font-mono">{formatCleanNepaliDate(plan.dueDate)}</strong>
+            <div className="flex items-center gap-3 text-xs text-kaam-on-surface-variant mt-1 flex-wrap">
+              <span>Qty: <strong className="text-kaam-on-surface font-mono font-bold">{totalQuantity.toLocaleString()} pcs</strong></span>
+              <span>•</span>
+              <span>Products: <strong className="text-kaam-on-surface font-bold">{plan.products?.length || 0} items</strong></span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden lg:flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0 justify-between sm:justify-end">
+          <div className="flex items-center gap-3 flex-wrap">
             <StatusBadge status={plan.status} size="sm" />
             {(plan.priority === 'Urgent' || plan.priority === 'Critical' || plan.priority === 'High') && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-kaam-full text-[10px] font-bold bg-kaam-error-container text-kaam-on-error-container w-fit">
@@ -71,19 +60,22 @@ export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: an
               </span>
             )}
             
-            <div className="flex items-center gap-2 w-32">
-              <div className="flex-1 h-1.5 bg-kaam-surface-container-highest rounded-kaam-full overflow-hidden">
+            <div className="flex items-center gap-2 w-28 sm:w-32">
+              <div className="flex-1 h-2 bg-kaam-surface-container-highest rounded-kaam-full overflow-hidden">
                 <div className="h-full bg-kaam-secondary transition-all" style={{ width: `${plan.progress}%` }}></div>
               </div>
-              <span className="font-kaam-label-md text-xs font-mono text-kaam-on-surface-variant">{plan.progress}%</span>
+              <span className="font-kaam-label-md text-xs font-mono text-kaam-on-surface-variant font-bold">{plan.progress}%</span>
             </div>
           </div>
 
-          {/* Action Dropdown Button (Isolated per row) */}
+          {/* Action Dropdown Button */}
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsDropdownOpen((prev) => !prev);
+              }}
               className="px-2.5 py-1 text-xs font-bold bg-kaam-surface-container border border-kaam-outline-variant rounded-kaam-DEFAULT hover:bg-kaam-surface-container-high transition-colors flex items-center gap-1 text-kaam-on-surface"
             >
               Actions
@@ -91,42 +83,51 @@ export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: an
             </button>
 
             {isDropdownOpen && (
-              <div 
-                className="absolute right-0 mt-1 w-44 bg-white border border-kaam-outline-variant rounded-kaam-DEFAULT shadow-lg z-50 py-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Link
-                  href={`/production/plans/${encodeURIComponent(plan.id)}`}
-                  className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2"
-                  onClick={() => setIsDropdownOpen(false)}
+              <>
+                <div 
+                  className="fixed inset-0 z-40"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDropdownOpen(false);
+                  }}
+                />
+                <div 
+                  className="absolute right-0 mt-1 w-44 bg-white border border-kaam-outline-variant rounded-kaam-DEFAULT shadow-lg z-50 py-1"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <span className="material-symbols-outlined text-[16px]">visibility</span> View Details
-                </Link>
-                {!(String(plan.status || "").toLowerCase() === "completed" || String(plan.status || "") === "5") && (
                   <Link
-                    href={`/production/plans/${encodeURIComponent(plan.planNo || plan.planId || plan.id)}/edit`}
+                    href={`/production/plans/${encodeURIComponent(plan.id)}`}
                     className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2"
                     onClick={() => setIsDropdownOpen(false)}
                   >
-                    <span className="material-symbols-outlined text-[16px]">edit</span> Edit Plan
+                    <span className="material-symbols-outlined text-[16px]">visibility</span> View Details
                   </Link>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => handleStatusChange(plan.status === 'On Hold' ? 'Active' : 'On Hold', e)}
-                  className="w-full text-left px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-[16px]">pause_circle</span> 
-                  {plan.status === 'On Hold' ? 'Resume Plan' : 'Hold / Pause Plan'}
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleStatusChange('Completed', e)}
-                  className="w-full text-left px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2 border-t border-slate-100"
-                >
-                  <span className="material-symbols-outlined text-[16px]">check_circle</span> Mark Completed
-                </button>
-              </div>
+                  {!(String(plan.status || "").toLowerCase() === "completed" || String(plan.status || "") === "5") && (
+                    <Link
+                      href={`/production/plans/${encodeURIComponent(plan.planNo || plan.planId || plan.id)}/edit`}
+                      className="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-2"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">edit</span> Edit Plan
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => handleStatusChange(plan.status === 'On Hold' ? 'Active' : 'On Hold', e)}
+                    className="w-full text-left px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-50 flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">pause_circle</span> 
+                    {plan.status === 'On Hold' ? 'Resume Plan' : 'Hold / Pause Plan'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => handleStatusChange('Completed', e)}
+                    className="w-full text-left px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50 flex items-center gap-2 border-t border-slate-100"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">check_circle</span> Mark Completed
+                  </button>
+                </div>
+              </>
             )}
           </div>
           
@@ -153,22 +154,24 @@ export default function PlanRow({ plan, isExpanded, onToggle, onUpdatePlan }: an
               <ProductRow 
                 key={product.id} 
                 product={product} 
-                isExpanded={expandedProductId === product.id}
-                onToggle={() => setExpandedProductId(expandedProductId === product.id ? null : product.id)}
+                isExpanded={activeProductId === product.id}
+                onToggle={() => setExpandedProductId(activeProductId === product.id ? "closed" : product.id)}
                 onUpdateProduct={(updatedProduct: any) => {
                   const updatedProducts = plan.products.map((p: any) => p.id === updatedProduct.id ? updatedProduct : p);
-                  const activeProdStages = updatedProducts[0]?.stages || [];
-                  const completedCount = activeProdStages.filter((s: any) => {
+                  
+                  // Aggregate stages across ALL products
+                  const allProdStages = updatedProducts.flatMap((p: any) => p.stages || []);
+                  const completedCount = allProdStages.filter((s: any) => {
                     const st = String(s.status).toLowerCase();
                     return st === "completed" || st === "5";
                   }).length;
-                  const activeCount = activeProdStages.filter((s: any) => {
+                  const activeCount = allProdStages.filter((s: any) => {
                     const st = String(s.status).toLowerCase();
                     return st === "active" || st === "in progress" || st === "2";
                   }).length;
 
-                  const planCalculatedProgress = activeProdStages.length > 0 
-                    ? Math.min(100, Math.round(((completedCount + (activeCount * 0.5)) / activeProdStages.length) * 100))
+                  const planCalculatedProgress = allProdStages.length > 0 
+                    ? Math.min(100, Math.round(((completedCount + (activeCount * 0.5)) / allProdStages.length) * 100))
                     : 0;
 
                   onUpdatePlan({

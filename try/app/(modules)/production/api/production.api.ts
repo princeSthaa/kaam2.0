@@ -3,16 +3,19 @@ import { ProductionPlan, ProductionSummary } from "../dto/production.dto";
 const API_BASE_URL = 'http://localhost:5083/api';
 
 /**
- * Maps numeric or string backend status values into standard UI status strings.
+ * Maps numeric or string backend PlanStatus enum values into standard UI status strings.
+ * PlanStatus enum: Draft=0, Active=1, Cutting=2, Stitching=3, NotStarted=4, Completed=5, OnHold=6, Blocked=7, Cancelled=8
  */
 const mapStatus = (status: any): string => {
   if (status === 0 || status === "0" || status === "Draft") return "Draft";
-  if (status === 1 || status === "1" || status === "Pending") return "Pending";
-  if (status === 2 || status === "2" || status === "InProgress" || status === "In Progress") return "In Progress";
-  if (status === 3 || status === "3" || status === "OnHold") return "OnHold";
+  if (status === 1 || status === "1" || status === "Active") return "Active";
+  if (status === 2 || status === "2" || status === "Cutting") return "In Progress";
+  if (status === 3 || status === "3" || status === "Stitching") return "In Progress";
   if (status === 4 || status === "4" || status === "NotStarted" || status === "Not Started") return "Not Started";
   if (status === 5 || status === "5" || status === "Completed") return "Completed";
-  if (status === 6 || status === "6" || status === "Cancelled") return "Cancelled";
+  if (status === 6 || status === "6" || status === "OnHold" || status === "On Hold") return "On Hold";
+  if (status === 7 || status === "7" || status === "Blocked") return "Blocked";
+  if (status === 8 || status === "8" || status === "Cancelled") return "Cancelled";
   return String(status || "Draft");
 };
 

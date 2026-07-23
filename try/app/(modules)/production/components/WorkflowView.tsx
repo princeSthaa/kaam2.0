@@ -72,26 +72,75 @@ export default function WorkflowView({ product, onUpdateProduct }: any) {
       : 0;
 
     // Backend stage update payload
-    if (selectedStage && selectedStage.id) {
-      const stagePayload = {
-        id: selectedStage.id,
-        stageId: selectedStage.stageId || "STG-001",
+    // PlanStatus enum: Draft=0, Active=1, Cutting=2, Stitching=3, NotStarted=4, Completed=5, OnHold=6, Blocked=7, Cancelled=8
+    if (selectedStage) {
+      const nowIso = new Date().toISOString();
+      const realStageId = (selectedStage.id && selectedStage.id.length > 5) ? selectedStage.id : null;
+
+      const statusToEnum = (s: string): number => {
+        const sl = s.toLowerCase();
+        if (sl === "completed" || sl === "5") return 5;
+        if (sl === "active" || sl === "in progress" || sl === "1" || sl === "2") return 1;
+        if (sl === "on hold" || sl === "onhold" || sl === "6") return 6;
+        if (sl === "blocked" || sl === "7") return 7;
+        if (sl === "cancelled" || sl === "8") return 8;
+        return 4; // NotStarted
+      };
+
+      const stagePayload: any = {
+        id: realStageId || undefined,
+        stageId: selectedStage.stageId || `STG-${String(selectedStageIdx + 1).padStart(2, "0")}`,
         stageName: selectedStage.name || selectedStage.stageName || "Production Stage",
-        workCenterId: selectedStage.workCenterId || selectedStage.workCenter || "wc-001",
-        status: status === "Completed" ? "Completed" : (status === "Active" || status === "In Progress") ? "Active" : status === "On Hold" ? "OnHold" : "NotStarted",
+        workCenterId: selectedStage.workCenterId || selectedStage.workCenter || null,
+        operatorName: selectedStage.operatorName || "",
+        plannedStartDate: selectedStage.plannedStartDate || nowIso,
+        plannedEndDate: selectedStage.plannedEndDate || nowIso,
+        status: statusToEnum(status),
         completedQty: Number(completedQty),
         rejectedQty: Number(rejectedQty),
+        actualStartDate: selectedStage.actualStartDate || (status === "Active" || status === "In Progress" || status === "Completed" ? nowIso : nowIso),
+        actualEndDate: status === "Completed" ? nowIso : (selectedStage.actualEndDate || nowIso),
         remarks: remarks || "",
-        productionPlanId: product.productionPlanId || selectedStage.productionPlanId || "",
-        updatedAt: new Date().toISOString()
+        createdAt: selectedStage.createdAt || nowIso,
+        createdBy: selectedStage.createdBy || "",
+        updatedAt: nowIso,
+        updatedBy: "",
+        productionPlanId: product.productionPlanId || selectedStage.productionPlanId || product.planDbId || product.planId || ""
       };
 
       try {
-        await fetch(`http://localhost:5083/api/production-plan-stage/${encodeURIComponent(selectedStage.id)}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(stagePayload)
-        });
+        let saveRes: Response;
+        if (realStageId) {
+          saveRes = await fetch(`http://localhost:5083/api/production-plan-stage/${encodeURIComponent(realStageId)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(stagePayload)
+          });
+
+          if (!saveRes.ok) {
+            console.warn("PUT failed, falling back to POST. Status:", saveRes.status);
+            delete stagePayload.id;
+            saveRes = await fetch(`http://localhost:5083/api/production-plan-stage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(stagePayload)
+            });
+          }
+        } else {
+          delete stagePayload.id;
+          saveRes = await fetch(`http://localhost:5083/api/production-plan-stage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(stagePayload)
+          });
+        }
+
+        if (!saveRes.ok) {
+          const errText = await saveRes.text();
+          console.error("Stage save failed:", saveRes.status, errText);
+        } else {
+          console.log("Stage saved successfully:", stagePayload.stageName);
+        }
       } catch (err) {
         console.error("Backend stage update failed:", err);
       }

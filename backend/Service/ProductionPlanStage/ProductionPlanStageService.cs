@@ -70,10 +70,18 @@ namespace backend.Service.ProductionPlanStage
 
         public async Task<bool> CreateAsync(ProductionPlanStageDto productionPlanStageDto)
         {
+            // Generate an Id if not provided (SP requires @Id)
+            if (string.IsNullOrWhiteSpace(productionPlanStageDto.Id))
+            {
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var random = new Random().Next(10000, 99999).ToString();
+                productionPlanStageDto.Id = $"STG-{timestamp}-{random}";
+            }
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertProductionPlanStage
 
+                    @Id = {productionPlanStageDto.Id},
                     @StageId = {productionPlanStageDto.StageId},
                     @StageName = {productionPlanStageDto.StageName},
                     @OperatorName = {productionPlanStageDto.OperatorName},
