@@ -62,6 +62,14 @@ export default function SupplierProductAndInspectPage() {
   const acceptedCount = rolls.filter((r) => r.status === "accepted").length;
   const rejectedCount = rolls.filter((r) => r.status === "rejected" as unknown as RollStatus).length;
 
+  // Initiate Return Modal State
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+  const [returnReason, setReturnReason] = useState("");
+  const [returnComments, setReturnComments] = useState("");
+  const [evidenceImages, setEvidenceImages] = useState<string[]>([
+    "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&w=300&q=80",
+  ]);
+
   function updateRoll(id: string, patch: Partial<Roll>) {
     setRolls((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
@@ -345,7 +353,10 @@ export default function SupplierProductAndInspectPage() {
           </div>
           <div className="wh-si-bottom-btns">
             <button className="wh-si-btn-secondary">Save Progress</button>
-            <button className="wh-si-btn-danger">
+            <button
+              className="wh-si-btn-danger"
+              onClick={() => setIsReturnModalOpen(true)}
+            >
               Initiate Return ({rejectedCount})
             </button>
             <button className="wh-si-btn-primary">
@@ -355,6 +366,179 @@ export default function SupplierProductAndInspectPage() {
           </div>
         </div>
       </section>
+
+      {/* ── MODAL: INITIATE RETURN (Stitch node 0c2c8d3b32154982aa0d3206141b7b49) ── */}
+      {isReturnModalOpen && (
+        <>
+          <div
+            className="wh-si-modal-backdrop"
+            onClick={() => setIsReturnModalOpen(false)}
+          />
+          <div className="wh-si-modal-wrapper">
+            <div className="wh-si-return-card">
+
+              {/* Header */}
+              <div className="wh-si-return-header">
+                <div className="wh-si-return-header-left">
+                  <div className="wh-si-return-icon-box">
+                    <span className="wh-si-icon wh-si-return-header-icon">assignment_return</span>
+                  </div>
+                  <div>
+                    <h3 className="wh-si-return-title">Initiate Return</h3>
+                    <p className="wh-si-return-subtitle">
+                      Record inspection failure for shipment {selectedPO.poNumber}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsReturnModalOpen(false)}
+                  className="wh-si-return-close-btn"
+                >
+                  <span className="wh-si-icon text-[20px]">close</span>
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="wh-si-return-body">
+
+                {/* Line Items for Return */}
+                <div>
+                  <label className="wh-si-return-label">Line Items for Return</label>
+                  <div className="wh-si-return-item-box">
+                    <div className="wh-si-return-item-left">
+                      <div className="wh-si-return-item-thumb">
+                        <span className="wh-si-icon text-[24px]">texture</span>
+                      </div>
+                      <div>
+                        <p className="wh-si-return-item-name">1 Roll of FAB-COT-NAVY-01</p>
+                        <p className="wh-si-return-item-batch">Batch #TX-2024-001 • Pima Cotton Roll</p>
+                      </div>
+                    </div>
+                    <div className="wh-si-return-item-right">
+                      <p className="wh-si-return-item-qty">QTY: 01</p>
+                      <span className="wh-si-return-rejected-badge">REJECTED</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid 2-col inputs */}
+                <div className="wh-si-return-grid-2">
+
+                  {/* Reason for Return */}
+                  <div>
+                    <label className="wh-si-return-label">Reason for Return</label>
+                    <div className="wh-si-return-select-wrap">
+                      <select
+                        className="wh-si-return-select"
+                        value={returnReason}
+                        onChange={(e) => setReturnReason(e.target.value)}
+                      >
+                        <option value="" disabled>Select a reason...</option>
+                        <option value="damaged">Damaged during transit</option>
+                        <option value="wrong_shade">Wrong Shade / Color Variance</option>
+                        <option value="defective">Defective Material / Holes</option>
+                        <option value="incorrect_sku">Incorrect SKU Sent</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <span className="wh-si-icon wh-si-return-select-arrow text-[18px]">expand_more</span>
+                    </div>
+                  </div>
+
+                  {/* Photo Evidence Upload */}
+                  <div>
+                    <label className="wh-si-return-label">Photo Evidence</label>
+                    <div className="wh-si-return-upload-box">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="wh-si-return-upload-input"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const url = URL.createObjectURL(file);
+                            setEvidenceImages((prev) => [...prev, url]);
+                          }
+                        }}
+                      />
+                      <div className="wh-si-return-upload-label">
+                        <span className="wh-si-icon text-[20px] text-slate-500">cloud_upload</span>
+                        <span className="wh-si-return-upload-text">Upload images (Max 5MB)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Additional Comments */}
+                <div>
+                  <label className="wh-si-return-label">Additional Comments</label>
+                  <textarea
+                    className="wh-si-return-textarea"
+                    placeholder="Describe the specific defect or situation for the supplier..."
+                    value={returnComments}
+                    onChange={(e) => setReturnComments(e.target.value)}
+                  />
+                </div>
+
+                {/* Evidence Gallery */}
+                <div className="wh-si-return-gallery">
+                  {evidenceImages.map((imgUrl, idx) => (
+                    <div key={idx} className="wh-si-return-thumb-card">
+                      <img src={imgUrl} alt={`Evidence ${idx + 1}`} className="wh-si-return-thumb-img" />
+                      <button
+                        type="button"
+                        className="wh-si-return-thumb-del"
+                        onClick={() => setEvidenceImages((prev) => prev.filter((_, i) => i !== idx))}
+                      >
+                        <span className="wh-si-icon text-[14px]">close</span>
+                      </button>
+                    </div>
+                  ))}
+
+                  <label className="wh-si-return-add-more-btn">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const url = URL.createObjectURL(file);
+                          setEvidenceImages((prev) => [...prev, url]);
+                        }
+                      }}
+                    />
+                    <span className="wh-si-icon text-[20px]">add_photo_alternate</span>
+                    <span className="wh-si-return-add-more-text">ADD MORE</span>
+                  </label>
+                </div>
+
+              </div>
+
+              {/* Footer */}
+              <div className="wh-si-return-footer">
+                <button
+                  type="button"
+                  className="wh-si-return-btn-cancel"
+                  onClick={() => setIsReturnModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="wh-si-return-btn-confirm"
+                  onClick={() => setIsReturnModalOpen(false)}
+                >
+                  Confirm Return
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </>
+      )}
     </main>
   );
 }
+
