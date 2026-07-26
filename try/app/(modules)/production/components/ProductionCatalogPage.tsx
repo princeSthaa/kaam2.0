@@ -78,7 +78,7 @@ const catalogConfig = {
         id: "customerCatalogSort",
         label: "Sort By",
         type: "select",
-        options: ["Nearest Delivery Date", "Customer Name", "Quantity High to Low", "Order Count"],
+        options: ["Nearest Delivery Date", "Latest Order", "Older Order", "Customer Name", "Quantity High to Low", "Order Count"],
       },
     ] satisfies FilterConfig[],
     modalSummary: [
@@ -161,6 +161,8 @@ const optionValues: Record<string, string> = {
   "All Status": "",
   "All Velocity": "",
   "Nearest Delivery Date": "deliveryDate",
+  "Latest Order": "latestOrder",
+  "Older Order": "olderOrder",
   "Customer Name": "customerName",
   "Quantity High to Low": "quantityHigh",
   "Order Count": "orderCount",
@@ -526,9 +528,25 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
       if (sortBy === "orderCount") {
         return b.orderCount - a.orderCount;
       }
-      // Sort by delivery date
-      const aDate = a.orders.map(o => o.deliveryDate).filter(Boolean).sort()[0] || "";
-      const bDate = b.orders.map(o => o.deliveryDate).filter(Boolean).sort()[0] || "";
+      // Latest Order: most recent delivery date first (descending)
+      if (sortBy === "latestOrder") {
+        const aDate = a.orders.map((o: any) => o.deliveryDate).filter(Boolean).sort().reverse()[0] || "";
+        const bDate = b.orders.map((o: any) => o.deliveryDate).filter(Boolean).sort().reverse()[0] || "";
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return bDate.localeCompare(aDate); // newest first
+      }
+      // Older Order: oldest delivery date first (ascending)
+      if (sortBy === "olderOrder") {
+        const aDate = a.orders.map((o: any) => o.deliveryDate).filter(Boolean).sort()[0] || "";
+        const bDate = b.orders.map((o: any) => o.deliveryDate).filter(Boolean).sort()[0] || "";
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return aDate.localeCompare(bDate); // oldest first
+      }
+      // Default: Nearest Delivery Date (ascending)
+      const aDate = a.orders.map((o: any) => o.deliveryDate).filter(Boolean).sort()[0] || "";
+      const bDate = b.orders.map((o: any) => o.deliveryDate).filter(Boolean).sort()[0] || "";
       if (!aDate) return 1;
       if (!bDate) return -1;
       return aDate.localeCompare(bDate);
