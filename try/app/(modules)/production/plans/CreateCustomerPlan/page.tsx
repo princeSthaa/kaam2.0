@@ -14,12 +14,11 @@ const S_stage = {
 };
 
 import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { ActionButton } from "@/app/components/ui/ActionButton";
-import { MaterialIcon } from "@/app/components/ui/MaterialIcon";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 import { checkMaterials } from "../../api/production.api";
+import "./styles/create-customer-plan.css";
 
 // Mock Database Lists
 const mockMaterials = [
@@ -299,8 +298,58 @@ export default function CreateCustomerPlanPage() {
     }
   }, [tempData, productStages]);
 
+  const searchParams = useSearchParams();
+  const editPlanId = searchParams.get("editPlanId");
+
   useEffect(() => {
     if (typeof window !== "undefined") {
+      if (editPlanId) {
+        fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(editPlanId)}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data) {
+              setPlanNo(data.planId || data.planNo || editPlanId);
+              setPlanName(data.planName || "");
+              setPlanDate(data.planDate ? data.planDate.split("T")[0] : "");
+              setPriority(data.priority || "Normal");
+              setLeadPlanner(data.supervisor || "");
+              setOutputDestination(data.outputDestination || "Finished Goods Warehouse");
+              setProductionLine(data.productionLine || "Sewing Line 1");
+              setMaterialWarehouse(data.materialWarehouse || "Central Raw Material Hub");
+              setProductionNotes(data.productionNotes || "");
+
+              const prods = data.productionPlanProducts || data.products || [];
+              const mappedBasket = prods.map((p: any, i: number) => ({
+                id: p.id || `edit-prod-${i}`,
+                productId: p.productId || "PRD-001",
+                productName: p.productName || "Garment Item",
+                variant: p.variant || "Standard",
+                quantity: Number(p.quantity) || 1,
+                productImage: p.productImage || "/images/products/polo-shirt.jpg",
+                deliveryDate: p.requiredDate || p.plannedCompletionDate,
+              }));
+
+              setTempData({
+                kind: data.demandType === "Customer Order" ? "customer" : "outlet",
+                selectedSourceId: data.sourceId || "",
+                sourceDetail: {
+                  customerName: data.sourceName || "Customer",
+                  name: data.sourceName || "Customer",
+                  address: "Kathmandu Valley Hub",
+                  paymentTerms: "Net 30",
+                },
+                basket: mappedBasket,
+              });
+            }
+            setIsLoading(false);
+          })
+          .catch((err) => {
+            console.error("Error loading plan to edit:", err);
+            setIsLoading(false);
+          });
+        return;
+      }
+
       const dataStr = localStorage.getItem("temp_plan_basket");
       if (dataStr) {
         try {
@@ -332,33 +381,7 @@ export default function CreateCustomerPlanPage() {
       }
       setIsLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    const initPicker = () => {
-      const inputs = document.querySelectorAll(".nepali-date");
-      if (inputs.length > 0 && typeof (window as any).NepaliFunctions !== "undefined") {
-        inputs.forEach((input: any) => {
-          if (typeof input.nepaliDatePicker === "function" && !input.dataset.datepickerInitialized) {
-            input.dataset.datepickerInitialized = "true";
-
-            input.nepaliDatePicker({
-              dateFormat: "YYYY-MM-DD",
-              miniEnglishDates: true,
-              onChange: () => {
-                input.dispatchEvent(new Event("change", { bubbles: true }));
-              }
-            });
-          }
-        });
-      }
-    };
-
-    initPicker();
-    const interval = setInterval(initPicker, 150);
-    setTimeout(() => clearInterval(interval), 3000);
-    return () => clearInterval(interval);
-  }, [isLoading]);
+  }, [editPlanId]);
 
   const handleCheckMaterials = async () => {
     if (!tempData || !tempData.basket.length) return;
@@ -616,7 +639,7 @@ export default function CreateCustomerPlanPage() {
 
   if (isLoading) {
     return (
-      <div className="pp-page text-center py-50">
+      <div className="ccp-container text-center py-50">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -627,18 +650,18 @@ export default function CreateCustomerPlanPage() {
 
   if (!tempData || !tempData.basket.length) {
     return (
-      <div className="pp-page">
-        <div className="alert alert-warning max-w-600 mx-auto mt-50 text-center p-30 rounded-20 shadow-sm border bg-red-soft text-danger">
-          <span style={{ fontSize: "40px", marginBottom: "16px", display: "inline-block" }}>
-            <MaterialIcon name="warning" />
+      <div className="ccp-container">
+        <div style={{ backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: "16px", padding: "32px", textAlign: "center", maxWidth: "600px", margin: "40px auto" }}>
+          <span className="ccp-icon" style={{ fontSize: "48px", marginBottom: "16px", color: "#dc2626" }}>
+            warning
           </span>
-          <h3>Planning Session Expired</h3>
-          <p className="mt-8 mb-20 text-muted">No items were found in your planning basket. Please return to the catalog and select items.</p>
-          <div className="d-flex justify-content-center gap-12">
-            <Link href="/production/demands/catalog/customer" className="btn btn-primary">
+          <h3 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 8px 0" }}>Planning Session Expired</h3>
+          <p style={{ color: "#64748b", fontSize: "13px", marginBottom: "24px" }}>No items were found in your planning basket. Please return to the catalog and select items.</p>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+            <Link href="/production/demands/catalog/customer" className="ccp-btn ccp-btn-primary">
               Customer Catalog
             </Link>
-            <Link href="/production/demands/catalog/outlet" className="btn btn-outline">
+            <Link href="/production/demands/catalog/outlet" className="ccp-btn ccp-btn-outline">
               Outlet Catalog
             </Link>
           </div>
@@ -650,187 +673,80 @@ export default function CreateCustomerPlanPage() {
   const totalQuantity = tempData.basket.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
   return (
-    <div className="pp-page">
-      <style>{`
-        .desktop-only-table {
-          display: block;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        .mobile-only-list {
-          display: none;
-        }
-        .truncate {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .stage-num-badge {
-          background-color: #2563eb;
-          color: #ffffff;
-          border-radius: 50%;
-          width: 22px;
-          height: 22px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 11px;
-          font-weight: 700;
-          flex-shrink: 0;
-        }
-        .customer-profile-card {
-          background: #ffffff;
-          border: 1px solid #e2e8f0;
-          border-radius: 12px;
-          padding: 16px;
-          margin-bottom: 20px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .profile-header-icon {
-          background-color: #eff6ff;
-          color: #2563eb;
-          border-radius: 8px;
-          width: 38px;
-          height: 38px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-        .profile-info-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 6px 0;
-          font-size: 12px;
-          border-bottom: 1px dashed #f1f5f9;
-        }
-        .profile-info-row:last-child {
-          border-bottom: none;
-        }
-        .profile-info-label {
-          color: #64748b;
-          font-weight: 500;
-        }
-        .profile-info-value {
-          color: #0f172a;
-          font-weight: 600;
-          text-align: right;
-          max-width: 170px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-        @media (max-width: 767px) {
-          .desktop-only-table {
-            display: none !important;
-          }
-          .mobile-only-list {
-            display: flex !important;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 16px;
-          }
-          .mobile-stage-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-          }
-          .mobile-stage-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 10px;
-            margin-bottom: 12px;
-          }
-          .mobile-stage-inputs {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-          }
-          .mobile-stage-dates {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-          }
-        }
-      `}</style>
-      <div className="pp-page-header">
-        <div>
+    <div className="ccp-container">
+      {/* Page Header */}
+      <div className="ccp-header-card">
+        <div className="ccp-header-title-group">
           <h1>Configure Plan Details</h1>
           <p>Provide schedule dates, work center assignments, and stage deadlines to finalize the production run.</p>
         </div>
-        <div className="pp-header-actions">
-          <ActionButton href={tempData.kind === "customer" ? `/production/demands/customer?customerId=${tempData.selectedSourceId}` : `/production/demands/outlet?outletId=${tempData.selectedSourceId}`} variant="light">
-            <MaterialIcon name="arrow_back" />
+        <div>
+          <Link
+            href={tempData.kind === "customer" ? `/production/demands/customer?customerId=${tempData.selectedSourceId}` : `/production/demands/outlet?outletId=${tempData.selectedSourceId}`}
+            className="ccp-btn ccp-btn-outline"
+          >
+            <span className="ccp-icon">arrow_back</span>
             Back to Basket
-          </ActionButton>
+          </Link>
         </div>
       </div>
 
       {validationError && (
-        <div className="alert alert-danger p-16 rounded-12 mb-20 d-flex align-items-center gap-12">
-          <MaterialIcon name="error" />
+        <div style={{ backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", borderRadius: "12px", padding: "14px 18px", display: "flex", alignItems: "center", gap: "10px", fontSize: "13px", fontWeight: 600 }}>
+          <span className="ccp-icon">error</span>
           <span>{validationError}</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="catalog-layout">
-          {/* Configuration Form */}
-          <main className="catalog-main d-flex flex-column gap-24">
-            {/* General Settings */}
-            <section className="pp-card p-24">
-              <div className="pp-card-header mb-16">
-                <div>
-                  <h2 className="fs-18">1. General Production Information</h2>
-                  <p>Define identification details and priority for this plan.</p>
-                </div>
+        <div className="ccp-layout-grid">
+          {/* Main Content Area */}
+          <main className="ccp-main-content">
+            {/* 1. General Production Information */}
+            <section className="ccp-card">
+              <div className="ccp-card-header">
+                <h2>1. General Production Information</h2>
+                <p>Define identification details and priority for this plan.</p>
               </div>
               
-              <div className="form-grid two-col">
-                <div className="form-group">
-                  <label htmlFor="planNo">Plan Code / No</label>
-                  <input type="text" id="planNo" className="form-control bg-light" value={planNo} readOnly />
+              <div className="ccp-form-grid-2">
+                <div className="ccp-form-group">
+                  <label htmlFor="planNo" className="ccp-label">Plan Code / No</label>
+                  <input type="text" id="planNo" className="ccp-input readonly" value={planNo} readOnly />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="planDate">Plan Date (BS)</label>
-                  <input type="text" id="planDate" className="form-control bg-light" value={adToBs(planDate)} readOnly />
+                <div className="ccp-form-group">
+                  <label htmlFor="planDate" className="ccp-label">Plan Date (BS)</label>
+                  <input type="text" id="planDate" className="ccp-input readonly" value={adToBs(planDate)} readOnly />
                 </div>
-                <div className="form-group full">
-                  <label htmlFor="planName">Production Plan Name <span className="text-danger">*</span></label>
+                <div className="ccp-form-group full">
+                  <label htmlFor="planName" className="ccp-label">Production Plan Name <span style={{ color: "#dc2626" }}>*</span></label>
                   <input 
                     type="text" 
                     id="planName" 
-                    className="form-control font-bold" 
+                    className="ccp-input" 
                     placeholder="Enter descriptive name for the production plan"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="leadPlanner">Lead Planner / Supervisor <span className="text-danger">*</span></label>
+                <div className="ccp-form-group">
+                  <label htmlFor="leadPlanner" className="ccp-label">Lead Planner / Supervisor <span style={{ color: "#dc2626" }}>*</span></label>
                   <input 
                     type="text" 
                     id="leadPlanner" 
-                    className="form-control" 
+                    className="ccp-input" 
                     placeholder="E.g. Ramesh Shrestha"
                     value={leadPlanner}
                     onChange={(e) => setLeadPlanner(e.target.value)}
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="priority">Production Priority</label>
+                <div className="ccp-form-group">
+                  <label htmlFor="priority" className="ccp-label">Production Priority</label>
                   <select 
                     id="priority" 
-                    className="form-control"
+                    className="ccp-select"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
                   >
@@ -843,21 +759,19 @@ export default function CreateCustomerPlanPage() {
               </div>
             </section>
 
-            {/* Allocation & Logistics */}
-            <section className="pp-card p-24">
-              <div className="pp-card-header mb-16">
-                <div>
-                  <h2 className="fs-18">2. Facilities & Logistics</h2>
-                  <p>Assign assembly line, inventory sources, and output storage locations.</p>
-                </div>
+            {/* 2. Facilities & Logistics */}
+            <section className="ccp-card">
+              <div className="ccp-card-header">
+                <h2>2. Facilities & Logistics</h2>
+                <p>Assign assembly line, inventory sources, and output storage locations.</p>
               </div>
               
-              <div className="form-grid two-col">
-                <div className="form-group">
-                  <label htmlFor="productionLine">Primary Assembly Line</label>
+              <div className="ccp-form-grid-2">
+                <div className="ccp-form-group">
+                  <label htmlFor="productionLine" className="ccp-label">Primary Assembly Line</label>
                   <select 
                     id="productionLine" 
-                    className="form-control"
+                    className="ccp-select"
                     value={productionLine}
                     onChange={(e) => setProductionLine(e.target.value)}
                   >
@@ -868,11 +782,11 @@ export default function CreateCustomerPlanPage() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label htmlFor="materialWarehouse">Raw Material Hub</label>
+                <div className="ccp-form-group">
+                  <label htmlFor="materialWarehouse" className="ccp-label">Raw Material Hub</label>
                   <select 
                     id="materialWarehouse" 
-                    className="form-control"
+                    className="ccp-select"
                     value={materialWarehouse}
                     onChange={(e) => setMaterialWarehouse(e.target.value)}
                   >
@@ -881,11 +795,11 @@ export default function CreateCustomerPlanPage() {
                     <option value="Pokhara Local Store">Pokhara Local Store (Lakeside)</option>
                   </select>
                 </div>
-                <div className="form-group full">
-                  <label htmlFor="outputDestination">Finished Output Destination</label>
+                <div className="ccp-form-group full">
+                  <label htmlFor="outputDestination" className="ccp-label">Finished Output Destination</label>
                   <select 
                     id="outputDestination" 
-                    className="form-control"
+                    className="ccp-select"
                     value={outputDestination}
                     onChange={(e) => setOutputDestination(e.target.value)}
                   >
@@ -897,58 +811,56 @@ export default function CreateCustomerPlanPage() {
               </div>
             </section>
 
-            {/* Schedule & Stages */}
-            <section className="pp-card p-24 mb-24">
-              <div className="pp-card-header mb-16">
-                <div>
-                  <h2 className="fs-18">3. Product-Specific Timelines & Stages</h2>
-                  <p>Adjust dates and stage schedules individually for each product.</p>
-                </div>
+            {/* 3. Product-Specific Timelines & Stages */}
+            <section className="ccp-card">
+              <div className="ccp-card-header">
+                <h2>3. Product-Specific Timelines & Stages</h2>
+                <p>Adjust dates and stage schedules individually for each product.</p>
               </div>
 
-              <div className="d-flex flex-column gap-12 mb-24">
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {tempData.basket.map((item: any, pIdx: number) => {
                   const isExpanded = expandedProductId === item.id;
                   const pd = productDates[item.id] || { start: new Date().toISOString().split("T")[0], end: new Date().toISOString().split("T")[0], required: new Date().toISOString().split("T")[0] };
                   const pStages = productStages[item.id] || [];
 
                   return (
-                    <div key={item.id} className="border rounded-12 overflow-hidden" style={{ background: isExpanded ? '#f8fafc' : '#ffffff', transition: 'all 0.2s' }}>
+                    <div key={item.id} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", backgroundColor: isExpanded ? "#f8fafc" : "#ffffff", transition: "all 0.2s" }}>
                       <div 
-                        className="d-flex justify-content-between align-items-center p-16 cursor-pointer" 
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", cursor: "pointer", borderBottom: isExpanded ? "1px solid #e2e8f0" : "none" }} 
                         onClick={() => setExpandedProductId(isExpanded ? null : item.id)}
-                        style={{ borderBottom: isExpanded ? '1px solid #e2e8f0' : 'none' }}
                       >
-                        <div className="d-flex align-items-center gap-12">
-                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: 12 }}>{pIdx + 1}</div>
-                          <img src={item.productImage} alt={item.productName} className="rounded-8" style={{ width: 40, height: 40, objectFit: 'cover' }} />
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <div style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#e0e7ff", color: "#4f46e5", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: 12 }}>{pIdx + 1}</div>
+                          <img src={item.productImage} alt={item.productName} style={{ width: 40, height: 40, borderRadius: "8px", objectFit: "cover" }} />
                           <div>
-                            <h4 className="fs-14 fw-bold m-0">{item.productName}</h4>
-                            <div className="text-muted fs-12">{item.variant} &bull; {item.quantity} pcs</div>
+                            <h4 style={{ fontSize: "14px", fontWeight: "700", margin: 0, color: "#0f172a" }}>{item.productName}</h4>
+                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>{item.variant} &bull; {item.quantity} pcs</div>
                           </div>
                         </div>
-                        <span className="material-symbols-outlined text-muted">
+                        <span className="ccp-icon" style={{ color: "#94a3b8" }}>
                           {isExpanded ? 'keyboard_arrow_up' : 'keyboard_arrow_down'}
                         </span>
                       </div>
+
                       {isExpanded && (
-                        <div className="p-16 bg-white border-top">
-                          <div className="form-grid mb-16" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+                        <div style={{ padding: "16px", backgroundColor: "#ffffff", borderTop: "1px solid #e2e8f0" }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "16px" }}>
                             <div>
-                              <label className="text-xs font-bold text-muted uppercase d-block mb-4">Planned Start (BS)</label>
-                              <NepaliDatePicker className="form-control form-control-sm" value={adToBs(pd.start)} 
+                              <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Planned Start (BS)</label>
+                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.start)} 
                                 onChange={(e: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, start: bsToAd(e.target.value) }}))}
                                 onDateChange={(bsVal: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, start: bsToAd(bsVal) }}))} />
                             </div>
                             <div>
-                              <label className="text-xs font-bold text-muted uppercase d-block mb-4">Planned End (BS)</label>
-                              <NepaliDatePicker className="form-control form-control-sm" value={adToBs(pd.end)} 
+                              <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Planned End (BS)</label>
+                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.end)} 
                                 onChange={(e: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, end: bsToAd(e.target.value) }}))}
                                 onDateChange={(bsVal: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, end: bsToAd(bsVal) }}))} />
                             </div>
                             <div>
-                              <label className="text-xs font-bold text-muted uppercase d-block mb-4">Required By (BS)</label>
-                              <NepaliDatePicker className="form-control form-control-sm" value={adToBs(pd.required)} 
+                              <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Required By (BS)</label>
+                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.required)} 
                                 onChange={(e: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, required: bsToAd(e.target.value) }}))}
                                 onDateChange={(bsVal: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, required: bsToAd(bsVal) }}))} />
                             </div>
@@ -957,12 +869,10 @@ export default function CreateCustomerPlanPage() {
                           <div>
                             <div style={{ ...S_stage.flexBetween, marginBottom: 10, marginTop: 16 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "JetBrains Mono, monospace", display: "flex", alignItems: "center", gap: 6 }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>timeline</span> Operational Routing Stages
+                                <span className="ccp-icon" style={{ fontSize: 14 }}>timeline</span> Operational Routing Stages
                               </div>
-                              <button type="button" onClick={() => addStage(item.id)} style={S_stage.btnAddStage}
-                                onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg,#dcfce7,#bbf7d0)"; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg,#f0fdf4,#dcfce7)"; }}>
-                                <span className="material-symbols-outlined" style={{ fontSize: 15 }}>add</span> Add Stage
+                              <button type="button" onClick={() => addStage(item.id)} style={S_stage.btnAddStage}>
+                                <span className="ccp-icon" style={{ fontSize: 15 }}>add</span> Add Stage
                               </button>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -980,16 +890,12 @@ export default function CreateCustomerPlanPage() {
                                 </div>
                               )}
                               {pStages.map((stage: any, si: number) => (
-                                <div key={si} style={S_stage.stageRow}
-                                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#bfdbfe"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(37,99,235,0.08)"; }}
-                                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.boxShadow = "none"; }}>
-                                  <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#cbd5e1", cursor: "grab" }}>drag_indicator</span>
+                                <div key={si} style={S_stage.stageRow}>
+                                  <span className="ccp-icon" style={{ fontSize: 16, color: "#cbd5e1", cursor: "grab" }}>drag_indicator</span>
                                   <div style={S_stage.stageIndex}>{si + 1}</div>
                                   <div style={S_stage.stageInputs}>
                                     <input style={S_stage.stageThinInput} type="text" value={stage.stageName} placeholder="Stage name"
                                       onChange={e => updateStage(item.id, si, "stageName", e.target.value)}
-                                      onFocus={e => e.currentTarget.style.borderColor = "#2563eb"}
-                                      onBlur={e => e.currentTarget.style.borderColor = "#e2e8f0"}
                                     />
                                     <select
                                       style={S_stage.stageThinSelect}
@@ -1017,11 +923,8 @@ export default function CreateCustomerPlanPage() {
                                       onDateChange={(bsVal: any) => updateStage(item.id, si, "plannedEndDate", bsToAd(bsVal))}
                                     />
                                   </div>
-                                  <button type="button" onClick={() => removeStage(item.id, si)}
-                                    style={{ ...S_stage.btnDanger }}
-                                    onMouseEnter={e => { e.currentTarget.style.color = "#dc2626"; e.currentTarget.style.background = "#fef2f2"; }}
-                                    onMouseLeave={e => { e.currentTarget.style.color = "#94a3b8"; e.currentTarget.style.background = "transparent"; }}>
-                                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                                  <button type="button" onClick={() => removeStage(item.id, si)} style={S_stage.btnDanger}>
+                                    <span className="ccp-icon" style={{ fontSize: 16 }}>delete</span>
                                   </button>
                                 </div>
                               ))}
@@ -1035,16 +938,14 @@ export default function CreateCustomerPlanPage() {
               </div>
             </section>
 
-            {/* Production Notes */}
-            <section className="pp-card p-24">
-              <div className="pp-card-header mb-12">
-                <div>
-                  <h2 className="fs-18">4. Production Instructions / Notes</h2>
-                  <p>Add special instructions for cutting, packing, or tailoring departments.</p>
-                </div>
+            {/* 4. Production Notes */}
+            <section className="ccp-card">
+              <div className="ccp-card-header">
+                <h2>4. Production Instructions / Notes</h2>
+                <p>Add special instructions for cutting, packing, or tailoring departments.</p>
               </div>
               <textarea 
-                className="form-control" 
+                className="ccp-textarea" 
                 rows={3} 
                 placeholder="E.g. Pack sizes individually. Ensure double stitches on all stress points."
                 value={productionNotes}
@@ -1053,152 +954,133 @@ export default function CreateCustomerPlanPage() {
             </section>
           </main>
 
-          {/* Sidebar: Summary Panels */}
-          <aside className="plan-basket-panel">
-            {/* Account / Source summary */}
-            <div className="plan-basket-header">
-              <div>
-                <h2>Source Account</h2>
+          {/* Sidebar Panel */}
+          <aside className="ccp-sidebar-panel">
+            {/* Source Account */}
+            <div className="ccp-sidebar-section">
+              <div className="ccp-sidebar-title">
+                <h3>Source Account</h3>
                 <p>{tempData.kind === "customer" ? "Customer Profile" : "Outlet Profile"}</p>
               </div>
-            </div>
-            
-            <div className="customer-profile-card">
-              <div className="d-flex align-items-center gap-12">
-                <div className="profile-header-icon">
-                  <MaterialIcon name={tempData.kind === "customer" ? "person" : "storefront"} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <strong className="fs-14 text-dark d-block truncate" style={{ lineHeight: "1.2" }}>
-                    {tempData.sourceDetail?.customerName || tempData.sourceDetail?.name}
-                  </strong>
-                  <span className="text-xs text-muted d-block mt-2">
-                    {tempData.sourceDetail?.customerCode || tempData.sourceDetail?.outletCode}
-                  </span>
-                </div>
-              </div>
-              <div>
-                <div className="profile-info-row">
-                  <span className="profile-info-label">Location:</span>
-                  <span className="profile-info-value" title={tempData.sourceDetail?.address || tempData.sourceDetail?.location}>
-                    {tempData.sourceDetail?.address || tempData.sourceDetail?.location}
-                  </span>
-                </div>
-                <div className="profile-info-row">
-                  <span className="profile-info-label">
-                    {tempData.kind === "customer" ? "Payment terms:" : "Manager:"}
-                  </span>
-                  <span className="profile-info-value">
-                    {tempData.sourceDetail?.paymentTerms || tempData.sourceDetail?.manager}
-                  </span>
-                </div>
-                {tempData.sourceDetail?.phone && (
-                  <div className="profile-info-row">
-                    <span className="profile-info-label">Contact:</span>
-                    <span className="profile-info-value">{tempData.sourceDetail?.phone}</span>
+              
+              <div style={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: "#eff6ff", color: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span className="ccp-icon">{tempData.kind === "customer" ? "person" : "storefront"}</span>
                   </div>
-                )}
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ fontSize: "13px", color: "#0f172a", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {tempData.sourceDetail?.customerName || tempData.sourceDetail?.name}
+                    </strong>
+                    <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>
+                      {tempData.sourceDetail?.customerCode || tempData.sourceDetail?.outletCode}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px", borderTop: "1px dashed #f1f5f9", paddingTop: "8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>Location:</span>
+                    <strong style={{ color: "#0f172a", maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {tempData.sourceDetail?.address || tempData.sourceDetail?.location}
+                    </strong>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#64748b" }}>
+                      {tempData.kind === "customer" ? "Payment terms:" : "Manager:"}
+                    </span>
+                    <strong style={{ color: "#0f172a" }}>
+                      {tempData.sourceDetail?.paymentTerms || tempData.sourceDetail?.manager}
+                    </strong>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Plan Content Summary */}
-            <div className="plan-basket-header">
-              <div>
-                <h2>Basket Items ({tempData.basket.length})</h2>
+            {/* Basket Items Summary */}
+            <div className="ccp-sidebar-section">
+              <div className="ccp-sidebar-title">
+                <h3>Basket Items ({tempData.basket.length})</h3>
                 <p>Garments sent to production</p>
               </div>
-            </div>
 
-            <div className="plan-basket-items mb-20" style={{ maxHeight: "300px", overflowY: "auto" }}>
-              {tempData.basket.map((item: any) => (
-                <div key={item.id} className="p-12 mb-8 border rounded-12 bg-white d-flex align-items-center gap-12">
-                  <img src={item.productImage} alt={item.productName} className="rounded-8" style={{ width: "36px", height: "36px", objectFit: "cover" }} />
-                  <div className="flex-grow-1" style={{ minWidth: 0 }}>
-                    <strong className="fs-12 text-dark d-block truncate">{item.productName}</strong>
-                    <span className="text-xs text-muted d-block">{item.variant} | {item.quantity} pcs</span>
+              <div style={{ maxHeight: "240px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px" }}>
+                {tempData.basket.map((item: any) => (
+                  <div key={item.id} style={{ padding: "10px", border: "1px solid #e2e8f0", borderRadius: "10px", backgroundColor: "#ffffff", display: "flex", alignItems: "center", gap: "10px" }}>
+                    <img src={item.productImage} alt={item.productName} style={{ width: "32px", height: "32px", borderRadius: "6px", objectFit: "cover" }} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <strong style={{ fontSize: "12px", color: "#0f172a", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.productName}</strong>
+                      <span style={{ fontSize: "11px", color: "#64748b", display: "block" }}>{item.variant} | {item.quantity} pcs</span>
+                    </div>
                   </div>
+                ))}
+              </div>
+
+              <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#64748b" }}>Total Items:</span>
+                  <strong style={{ color: "#0f172a" }}>{tempData.basket.length}</strong>
                 </div>
-              ))}
-            </div>
-
-            {/* Plan summary info */}
-            <div className="plan-basket-summary border-top pt-16 mt-16">
-              <div className="d-flex justify-content-between mb-8 fs-12">
-                <span>Total Items:</span>
-                <strong className="text-dark">{tempData.basket.length}</strong>
-              </div>
-              <div className="d-flex justify-content-between mb-16 fs-12">
-                <span>Total Quantity:</span>
-                <strong className="text-dark fs-14">{totalQuantity.toLocaleString()} pcs</strong>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#64748b" }}>Total Quantity:</span>
+                  <strong style={{ color: "#2563eb", fontSize: "14px" }}>{totalQuantity.toLocaleString()} pcs</strong>
+                </div>
               </div>
             </div>
 
-            {/* Materials Preview Check */}
-            <div className="border rounded-12 p-16 bg-light d-flex flex-column gap-12">
-              <div className="d-flex justify-content-between align-items-center">
-                <div className="d-flex align-items-center gap-6">
-                  <span className="fs-12 font-bold text-dark">Material Checklist</span>
-                  {materialChecked && (
-                    <span style={{
-                      backgroundColor: stockCheckSummary.shortages > 0 ? "#fef2f2" : "#dcfce7",
-                      color: stockCheckSummary.shortages > 0 ? "#991b1b" : "#166534",
-                      border: `1px solid ${stockCheckSummary.shortages > 0 ? "#fca5a5" : "#86efac"}`,
-                      padding: "2px 8px",
-                      borderRadius: "12px",
-                      fontSize: "10px",
-                      fontWeight: 700
-                    }}>
-                      {stockCheckSummary.shortages > 0 ? `${stockCheckSummary.shortages} Shortage(s)` : "Sufficient"}
-                    </span>
-                  )}
+            {/* Material Check */}
+            <div className="ccp-sidebar-section">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div className="ccp-sidebar-title">
+                  <h3>Material Checklist</h3>
                 </div>
                 <button 
                   type="button" 
-                  className="btn btn-outline btn-xs py-2 px-8 text-xs font-bold"
+                  className="ccp-btn ccp-btn-outline"
+                  style={{ padding: "4px 10px", fontSize: "11px" }}
                   onClick={handleCheckMaterials}
                   disabled={isCheckingMaterials}
                 >
                   {isCheckingMaterials ? "Verifying..." : "Verify Stock"}
                 </button>
               </div>
-              
+
               {isCheckingMaterials ? (
-                <div className="text-center py-12 text-xs text-muted">
-                  <div className="spinner-border spinner-border-sm text-primary me-2" role="status" />
+                <div style={{ textAlign: "center", padding: "12px", fontSize: "12px", color: "#64748b" }}>
                   Checking live inventory & BOM stock...
                 </div>
               ) : materialChecked ? (
-                <div className="d-flex flex-column gap-8">
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {stockCheckSummary.status === "success" ? (
-                    <div style={{ backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", padding: "8px 12px", borderRadius: "8px", fontSize: "11px" }} className="d-flex align-items-center gap-6">
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span>
-                      <span>All {stockCheckSummary.total} required materials are fully available in stock.</span>
+                    <div style={{ backgroundColor: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0", padding: "8px 12px", borderRadius: "8px", fontSize: "11px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span className="ccp-icon" style={{ fontSize: 16 }}>check_circle</span>
+                      <span>All materials are available in stock.</span>
                     </div>
                   ) : (
-                    <div style={{ backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", padding: "8px 12px", borderRadius: "8px", fontSize: "11px" }} className="d-flex align-items-center gap-6">
-                      <span className="material-symbols-outlined" style={{ fontSize: 16 }}>warning</span>
-                      <span>{stockCheckSummary.shortages} material(s) have inventory shortages for this plan.</span>
+                    <div style={{ backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca", padding: "8px 12px", borderRadius: "8px", fontSize: "11px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span className="ccp-icon" style={{ fontSize: 16 }}>warning</span>
+                      <span>{stockCheckSummary.shortages} material(s) have shortages.</span>
                     </div>
                   )}
 
-                  <div className="d-flex flex-column gap-6" style={{ maxHeight: "180px", overflowY: "auto" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", maxHeight: "160px", overflowY: "auto" }}>
                     {materialsList.map(mat => (
-                      <div key={mat.materialCode} className="d-flex justify-content-between align-items-center fs-11 p-6 rounded-6 bg-white border">
+                      <div key={mat.materialCode} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 8px", backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "6px", fontSize: "11px" }}>
                         <div style={{ minWidth: 0 }}>
-                          <span className="truncate fw-bold d-block text-dark" style={{ maxWidth: "140px" }} title={mat.materialName}>
+                          <span style={{ fontWeight: 700, display: "block", color: "#0f172a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "130px" }} title={mat.materialName}>
                             {mat.materialName}
                           </span>
-                          <span className="text-2xs text-muted">
+                          <span style={{ fontSize: "10px", color: "#64748b" }}>
                             Req: {Math.ceil(mat.requiredQty)} {mat.unit} | Avail: {Math.floor(mat.availableQty)} {mat.unit}
                           </span>
                         </div>
-                        <div className="d-flex align-items-center gap-4 flex-shrink-0">
+                        <div style={{ flexShrink: 0 }}>
                           {mat.shortageQty > 0 ? (
-                            <span style={{ backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fca5a5", padding: "2px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: 700 }} title={`Shortage of ${Math.ceil(mat.shortageQty)} ${mat.unit}`}>
+                            <span style={{ backgroundColor: "#fef2f2", color: "#991b1b", border: "1px solid #fca5a5", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: 700 }}>
                               Short: -{Math.ceil(mat.shortageQty)} {mat.unit}
                             </span>
                           ) : (
-                            <span style={{ backgroundColor: "#dcfce7", color: "#166534", border: "1px solid #86efac", padding: "2px 8px", borderRadius: "6px", fontSize: "10px", fontWeight: 700 }}>
+                            <span style={{ backgroundColor: "#dcfce7", color: "#166534", border: "1px solid #86efac", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", fontWeight: 700 }}>
                               In Stock
                             </span>
                           )}
@@ -1208,15 +1090,15 @@ export default function CreateCustomerPlanPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-center text-xs text-muted my-10">Click Verify Stock to check material shortages against BOM requirements.</p>
+                <p style={{ textAlign: "center", fontSize: "11px", color: "#64748b", margin: 0 }}>Click Verify Stock to check material shortages against BOM requirements.</p>
               )}
             </div>
 
             {/* Submission Actions */}
-            <div className="d-flex flex-column gap-10 mt-20">
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
               <button
                 type="button"
-                className="btn btn-primary full-width font-bold py-12"
+                className="ccp-btn ccp-btn-primary ccp-btn-full"
                 disabled={isSubmitting}
                 onClick={(e) => handleSubmit(e as any, false)}
               >
@@ -1224,7 +1106,7 @@ export default function CreateCustomerPlanPage() {
                   "Saving Plan..."
                 ) : (
                   <>
-                    <MaterialIcon name="check_circle" />
+                    <span className="ccp-icon">check_circle</span>
                     Confirm & Create Plan
                   </>
                 )}
@@ -1232,17 +1114,17 @@ export default function CreateCustomerPlanPage() {
               
               <button
                 type="button"
-                className="btn btn-outline full-width font-bold py-12"
+                className="ccp-btn ccp-btn-outline ccp-btn-full"
                 disabled={isSubmitting}
                 onClick={(e) => handleSubmit(e as any, true)}
               >
-                <MaterialIcon name="save" />
+                <span className="ccp-icon">save</span>
                 Save as Draft
               </button>
 
               <Link 
                 href={tempData.kind === "customer" ? `/production/demands/customer?customerId=${tempData.selectedSourceId}` : `/production/demands/outlet?outletId=${tempData.selectedSourceId}`}
-                className="btn btn-ghost full-width text-center"
+                className="ccp-btn ccp-btn-ghost ccp-btn-full"
               >
                 Cancel Configuration
               </Link>

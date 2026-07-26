@@ -389,7 +389,15 @@ export default function ProductionDraftsPage() {
                     </time>
 
                     <div className="folder-plan-actions" style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-                      <Link href={detailsUrl} className="btn btn-primary btn-sm font-bold">
+                      <Link
+                        href={`/production/plans/CreateCustomerPlan?editPlanId=${encodeURIComponent(planNo)}`}
+                        className="btn btn-outline-primary btn-sm font-bold"
+                        style={{ padding: "4px 10px", display: "inline-flex", alignItems: "center", gap: "4px" }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
+                        Edit
+                      </Link>
+                      <Link href={detailsUrl} className="btn btn-light btn-sm font-bold">
                         Details
                       </Link>
                       <button

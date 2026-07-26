@@ -6,6 +6,7 @@ import Link from "next/link";
 
 import { STAGE_COLORS, STAGE_LIGHT_COLORS as STAGE_LIGHT } from "../constants/production.constants";
 import { adToBs as adToNepali, getStatusStyle, calculatePlanProgress as planProgress } from "../lib/production-utils";
+import "./styles/production-board.css";
 
 export default function ProductionOverviewPage() {
   const [plans, setPlans] = useState<any[]>([]);
@@ -72,8 +73,6 @@ export default function ProductionOverviewPage() {
       });
 
       // FLATTEN PLANS BY PRODUCT LINE:
-      // If a plan has multiple products, create a dedicated row for each product line.
-      // Each card will display its own Product ID, Product Code, Product Name, and specific Gantt bar!
       const seenPlanProductKeys = new Set<string>();
       const formattedPlans: any[] = [];
 
@@ -106,7 +105,7 @@ export default function ProductionOverviewPage() {
             });
 
             if (prodStages.length === 0) {
-              prodStages = dbStages; // Fallback to plan stages
+              prodStages = dbStages;
             }
 
             formattedPlans.push({
@@ -188,7 +187,7 @@ export default function ProductionOverviewPage() {
     });
   }, [today, viewDays]);
 
-  // Robust Date Parser supporting both AD ISO dates and BS strings (e.g., "2083-04-07")
+  // Robust Date Parser supporting both AD ISO dates and BS strings
   const parseToADDate = (dateVal: any): Date | null => {
     if (!dateVal) return null;
     let s = String(dateVal).trim();
@@ -204,7 +203,6 @@ export default function ProductionOverviewPage() {
 
     if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
 
-    // Handle BS Year (2070 - 2100) -> convert to AD Date
     if (year >= 2070 && year <= 2100) {
       if (typeof window !== "undefined" && (window as any).NepaliFunctions) {
         try {
@@ -216,7 +214,6 @@ export default function ProductionOverviewPage() {
           }
         } catch (e) {}
       }
-      // Standard BS to AD approximation: Subtract 57 years
       const adYear = year - 57;
       let adMonth = month + 3;
       let adDay = day + 13;
@@ -235,7 +232,7 @@ export default function ProductionOverviewPage() {
     return isNaN(d.getTime()) ? null : d;
   };
 
-  // Calculates exact grid columns for active plans starting from today extending to completion
+  // Calculates exact grid columns for active plans starting from today
   const gridCols = (startStr: string, endStr: string, stagesList: any[]) => {
     let startDate = parseToADDate(startStr);
     let endDate = parseToADDate(endStr);
@@ -247,7 +244,7 @@ export default function ProductionOverviewPage() {
         totalStageDays += Math.max(1, Math.ceil(hrs / 8));
       });
     }
-    if (totalStageDays < 3) totalStageDays = 7; // Default fallback duration 7 days for active plan
+    if (totalStageDays < 3) totalStageDays = 7;
 
     if (!startDate) {
       startDate = new Date(today);
@@ -263,7 +260,6 @@ export default function ProductionOverviewPage() {
     let startOffset = Math.ceil((startDate.getTime() - today.getTime()) / 86400000);
     let endOffset = Math.ceil((endDate.getTime() - today.getTime()) / 86400000);
 
-    // If started in the past, start the visible bar from Today (column 0) extending rightward
     if (startOffset < 0) {
       startOffset = 0;
     }
@@ -282,7 +278,7 @@ export default function ProductionOverviewPage() {
     return { start: startOffset + 1, span };
   };
 
-  // Filtered plans list (DEFAULT HIDES COMPLETED PLANS)
+  // Filtered plans list
   const filteredPlans = useMemo(() => {
     return plans.filter((plan) => {
       const st = planStatusToString(plan.status).toLowerCase();
@@ -290,7 +286,6 @@ export default function ProductionOverviewPage() {
 
       let matchFilter = true;
       if (filterStatus === "active") {
-        // By default, show active/in-progress plans and EXCLUDE completed, draft, or cancelled
         matchFilter = st !== "completed" && st !== "draft" && st !== "cancelled" && st !== "5" && st !== "0" && st !== "8";
       } else if (filterStatus === "urgent") {
         matchFilter = (priority === "urgent" || priority === "high" || priority === "critical" || st === "on hold" || st === "blocked") && st !== "completed";
@@ -372,7 +367,7 @@ export default function ProductionOverviewPage() {
     }).slice(0, 8);
   }, [plans]);
 
-  // Dynamic CLEAN unique stage names for Legend (Strips "Item #1 - ", "Item #2 - " prefixes)
+  // Dynamic CLEAN unique stage names for Legend
   const uniqueStageNames = useMemo(() => {
     const seen = new Map<string, number>();
     let colorCounter = 0;
@@ -421,104 +416,99 @@ export default function ProductionOverviewPage() {
         strategy="lazyOnload"
       />
 
-      <div className="flex-1 flex flex-col bg-slate-50 font-sans p-6 md:p-8 min-h-[calc(100vh-64px)] gap-6">
+      <div className="prd-board-container">
 
         {/* ── PAGE HEADER & ACTIONS ── */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm mt-2 md:mt-4">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Production Execution Board</h1>
-            <p className="text-xs text-slate-500 mt-1">
+        <div className="prd-board-header-card">
+          <div className="prd-header-title-group">
+            <h1>Production Execution Board</h1>
+            <p>
               Active schedule window, work center allocations &amp; real-time stage progress tracking per product line.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="prd-header-actions">
             <button
+              type="button"
               onClick={fetchData}
               title="Refresh Live Data"
-              className="px-3.5 py-2 bg-slate-50 hover:bg-white text-slate-700 hover:text-blue-600 rounded-full border border-slate-200 hover:border-blue-300 transition-all text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95 group"
+              className="prd-action-btn-light"
             >
-              <span className="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-500 text-slate-500 group-hover:text-blue-600">
-                refresh
-              </span>
+              <span className="material-symbols-outlined text-[16px]">refresh</span>
               <span>Sync Floor Data</span>
             </button>
 
-            <Link
-              href="/production"
-              className="px-3.5 py-2 bg-slate-50 hover:bg-white text-slate-700 hover:text-slate-900 rounded-full border border-slate-200 hover:border-slate-300 transition-all text-xs font-semibold flex items-center gap-1.5 shadow-sm active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[16px] text-slate-500">dashboard</span>
+            <Link href="/production" className="prd-action-btn-light">
+              <span className="material-symbols-outlined text-[16px]">dashboard</span>
               <span>Overview</span>
             </Link>
 
-            <Link
-              href="/production/demands"
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full transition-all text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-blue-500/20 active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[17px]">add_circle</span>
+            <Link href="/production/demands" className="prd-action-btn-primary">
+              <span className="material-symbols-outlined text-[16px]">add_circle</span>
               <span>New Plan</span>
             </Link>
           </div>
         </div>
 
         {/* ── KPI STRIP ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-            <span className="font-semibold text-slate-500 uppercase tracking-wider text-xs">Active Product Lines</span>
-            <span className="text-blue-600 text-3xl font-extrabold mt-2">{loading ? "…" : kpis.active}</span>
+        <div className="prd-kpi-grid">
+          <div className="prd-kpi-card">
+            <p className="prd-kpi-label">Active Product Lines</p>
+            <div className="prd-kpi-val">{loading ? "…" : kpis.active}</div>
           </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-            <span className="font-semibold text-slate-500 uppercase tracking-wider text-xs">Units in WIP</span>
-            <span className="text-violet-600 text-3xl font-extrabold mt-2">{loading ? "…" : kpis.totalQty.toLocaleString()}</span>
+
+          <div className="prd-kpi-card">
+            <p className="prd-kpi-label">Units in WIP</p>
+            <div className="prd-kpi-val violet">{loading ? "…" : kpis.totalQty.toLocaleString()}</div>
           </div>
-          <div className="bg-rose-50/60 border border-rose-200/80 rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-            <span className="font-semibold text-rose-600 uppercase tracking-wider text-xs flex items-center gap-1">
+
+          <div className="prd-kpi-card risk">
+            <p className="prd-kpi-label flex items-center gap-1" style={{ color: "#e11d48" }}>
               <span className="material-symbols-outlined text-[15px]">warning</span>
               High Priority / At Risk
-            </span>
-            <span className="text-rose-600 text-3xl font-extrabold mt-2">{loading ? "…" : kpis.highRisk}</span>
+            </p>
+            <div className="prd-kpi-val rose">{loading ? "…" : kpis.highRisk}</div>
           </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between shadow-sm">
-            <span className="font-semibold text-slate-500 uppercase tracking-wider text-xs">Avg Completion</span>
-            <div className="mt-2">
-              <span className="text-emerald-600 text-3xl font-extrabold">{loading ? "…" : kpis.avgProgress}%</span>
+
+          <div className="prd-kpi-card">
+            <p className="prd-kpi-label">Avg Completion</p>
+            <div>
+              <div className="prd-kpi-val emerald">{loading ? "…" : kpis.avgProgress}%</div>
               <div className="w-full h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
-                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${kpis.avgProgress}%` }}></div>
+                <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${kpis.avgProgress}%` }} />
               </div>
             </div>
           </div>
         </div>
 
         {/* ── MAIN CONTENT GRID ── */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
+        <div className="prd-layout-main">
 
           {/* ── LEFT (3 COLS): SCHEDULE TIMELINE & ACTIVE PLAN CARDS ── */}
-          <div className="xl:col-span-3 flex flex-col gap-6">
+          <div className="prd-layout-left">
 
             {/* ── ACTIVE FLOOR EXECUTION SCHEDULE (GANTT PER PRODUCT LINE) ── */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+            <div className="prd-card">
               
               {/* Timeline Header & Controls */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-5 py-4 border-b border-slate-100 gap-3">
+              <div className="prd-card-header">
                 <div>
-                  <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <h2 className="prd-card-title">
                     <span className="material-symbols-outlined text-blue-600 text-[18px]">calendar_today</span>
                     Active Floor Execution Schedule (By Product Line)
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Individual product schedule Gantt bars starting from today ({today.toLocaleDateString("en-US", { month: "short", day: "numeric" })}).</p>
+                  <p className="prd-card-sub">Individual product schedule Gantt bars starting from today ({today.toLocaleDateString("en-US", { month: "short", day: "numeric" })}).</p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                <div className="flex items-center gap-3 flex-wrap">
                   {/* Filter Pills */}
-                  <div className="inline-flex p-1 rounded-xl bg-slate-100 text-xs font-semibold">
+                  <div className="prd-filter-pills">
                     {(["active", "urgent", "completed"] as const).map((st) => (
                       <button
                         key={st}
+                        type="button"
                         onClick={() => setFilterStatus(st)}
-                        className={`px-3 py-1 rounded-lg capitalize transition-all ${
-                          filterStatus === st ? "bg-white text-blue-700 shadow-sm font-bold" : "text-slate-600 hover:text-slate-900"
-                        }`}
+                        className={`prd-filter-pill-btn ${filterStatus === st ? "active" : ""}`}
                       >
                         {st}
                       </button>
@@ -530,8 +520,9 @@ export default function ProductionOverviewPage() {
                     {[7, 14, 30].map((d) => (
                       <button
                         key={d}
+                        type="button"
                         onClick={() => setViewDays(d)}
-                        className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors ${
+                        className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
                           viewDays === d ? "bg-blue-600 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                       >
@@ -542,10 +533,10 @@ export default function ProductionOverviewPage() {
                 </div>
               </div>
 
-              {/* Search Bar */}
+              {/* ISOLATED SEARCH BAR FIX */}
               <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">
+                <div className="prd-search-box-wrapper">
+                  <span className="material-symbols-outlined prd-search-icon">
                     search
                   </span>
                   <input
@@ -553,7 +544,7 @@ export default function ProductionOverviewPage() {
                     placeholder="Search execution schedule by plan ID, product name, product code, product ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                    className="prd-search-input"
                   />
                 </div>
               </div>
@@ -564,22 +555,22 @@ export default function ProductionOverviewPage() {
                   Loading execution schedule...
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <div style={{ minWidth: "720px" }}>
+                <div className="prd-gantt-wrapper">
+                  <div className="prd-gantt-min-canvas">
                     
                     {/* Gantt Date Column Header */}
-                    <div className="flex border-b border-slate-200 bg-slate-50">
-                      <div className="w-64 shrink-0 px-4 py-2.5 border-r border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center">
+                    <div className="prd-gantt-head-row">
+                      <div className="prd-gantt-col-meta-head">
                         Plan &amp; Product Info
                       </div>
-                      <div className="flex-grow grid" style={{ gridTemplateColumns: `repeat(${viewDays}, minmax(0, 1fr))` }}>
+                      <div className="prd-gantt-col-days-head" style={{ gridTemplateColumns: `repeat(${viewDays}, minmax(0, 1fr))` }}>
                         {timelineDays.map((d, i) => {
                           const isToday = i === 0;
                           const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                           return (
-                            <div key={i} className={`py-2 border-r border-slate-200 last:border-r-0 text-center min-w-[32px] ${isWeekend ? "bg-slate-100/60" : ""}`}>
-                              <div className="text-[9px] text-slate-400 font-semibold uppercase">{d.toLocaleDateString("en-US", { weekday: "short" })}</div>
-                              <div className={`text-xs font-extrabold mt-0.5 ${isToday ? "text-blue-600 bg-blue-100 rounded-full w-5 h-5 flex items-center justify-center mx-auto" : "text-slate-800"}`}>
+                            <div key={i} className={`prd-gantt-day-cell ${isWeekend ? "bg-slate-100/60" : ""}`}>
+                              <div className="prd-gantt-day-name">{d.toLocaleDateString("en-US", { weekday: "short" })}</div>
+                              <div className={`prd-gantt-day-num ${isToday ? "is-today" : ""}`}>
                                 {d.getDate()}
                               </div>
                             </div>
@@ -588,7 +579,7 @@ export default function ProductionOverviewPage() {
                       </div>
                     </div>
 
-                    {/* Gantt Plan Rows - ONE ROW PER PRODUCT ITEM */}
+                    {/* Gantt Plan Rows */}
                     <div className="flex flex-col">
                       {filteredPlans.length === 0 ? (
                         <div className="p-8 text-center text-slate-400 text-xs">No active product lines matched the selected schedule filter.</div>
@@ -607,14 +598,13 @@ export default function ProductionOverviewPage() {
                             ? `${String(plan.productId).substring(0, 8)}...`
                             : plan.productId;
 
-                          // Strictly UNIQUE Key per plan + product
                           const uniqueKey = `gantt-row-${plan.planDbId}-${idx}`;
 
                           return (
-                            <div key={uniqueKey} className="flex border-b border-slate-100 last:border-b-0 hover:bg-slate-50/80 transition-colors group">
-                              {/* Left Meta Information: Clear Plan ID + Product Name + Product ID */}
-                              <div className="w-64 shrink-0 px-4 py-3 border-r border-slate-200 flex flex-col justify-center gap-1">
-                                <div className="font-bold text-xs text-slate-900 truncate flex items-center justify-between">
+                            <div key={uniqueKey} className="prd-gantt-plan-row">
+                              {/* Left Meta Information */}
+                              <div className="prd-gantt-meta-cell">
+                                <div className="prd-gantt-meta-title">
                                   <span className="flex items-center gap-1 text-blue-600">
                                     <span className="material-symbols-outlined text-[15px]">inventory_2</span>
                                     {plan.planId}
@@ -624,13 +614,12 @@ export default function ProductionOverviewPage() {
                                   </span>
                                 </div>
 
-                                <div className="text-xs font-extrabold text-slate-800 truncate">
+                                <div className="prd-gantt-meta-prodname">
                                   {plan.productName}
                                 </div>
 
-                                {/* Full Product ID Badge */}
                                 <div
-                                  className="text-[10px] text-blue-700 font-mono bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/80 truncate cursor-help"
+                                  className="prd-gantt-meta-prodid truncate cursor-help"
                                   title={`Product Name: ${plan.productName}\nProduct Code: ${plan.productCode}\nProduct ID: ${plan.productId}`}
                                 >
                                   Product ID: {shortProdId}
@@ -638,7 +627,7 @@ export default function ProductionOverviewPage() {
 
                                 <div className="flex items-center justify-between mt-0.5">
                                   <div className="flex items-center gap-1">
-                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`}></span>
+                                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${style.dot}`} />
                                     <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${style.badge}`}>
                                       {planStatusToString(plan.status)}
                                     </span>
@@ -647,18 +636,16 @@ export default function ProductionOverviewPage() {
                                 </div>
                               </div>
 
-                              {/* Gantt Bar Area - Dedicated to THIS Product Line */}
-                              <div className="flex-grow grid relative py-2" style={{ gridTemplateColumns: `repeat(${viewDays}, minmax(0, 1fr))` }}>
-                                {/* Grid Column Lines */}
+                              {/* Gantt Bar Area */}
+                              <div className="prd-gantt-bar-area" style={{ gridTemplateColumns: `repeat(${viewDays}, minmax(0, 1fr))` }}>
                                 {timelineDays.map((td, i) => {
                                   const isWknd = td.getDay() === 0 || td.getDay() === 6;
-                                  return <div key={i} className={`border-r border-slate-200/40 last:border-r-0 h-full ${isWknd ? "bg-slate-100/30" : ""}`}></div>;
+                                  return <div key={i} className={`border-r border-slate-200/40 last:border-r-0 h-full ${isWknd ? "bg-slate-100/30" : ""}`} />;
                                 })}
 
-                                {/* Schedule Bar for Product */}
                                 {gi && (
                                   <div
-                                    className={`absolute top-2 bottom-2 rounded-lg overflow-hidden shadow-sm z-10 group-hover:ring-2 ring-blue-500/40 transition-all cursor-pointer ${
+                                    className={`prd-gantt-bar-element ${
                                       isDraft ? "border-2 border-dashed border-slate-300 bg-slate-50" :
                                       isDelayed ? "border border-rose-300 bg-rose-50" :
                                       "border border-blue-300 bg-blue-50"
@@ -666,23 +653,20 @@ export default function ProductionOverviewPage() {
                                     style={{ gridColumnStart: gi.start, gridColumnEnd: gi.start + gi.span }}
                                     title={`${plan.planId} - ${plan.productName} (ID: ${plan.productId}): ${stagesList.length} Stages`}
                                   >
-                                    {/* Segmented Stages */}
                                     <div className="absolute inset-0 flex">
                                       {stagesList.length > 0 ? stagesList.map((_s: any, si: number) => (
                                         <div
                                           key={si}
                                           style={{ width: `${100 / stagesList.length}%` }}
                                           className={`${STAGE_COLORS[si % STAGE_COLORS.length]} opacity-60 border-r border-white/20 h-full`}
-                                        ></div>
+                                        />
                                       )) : (
-                                        <div className="w-full h-full bg-blue-500 opacity-60"></div>
+                                        <div className="w-full h-full bg-blue-500 opacity-60" />
                                       )}
                                     </div>
 
-                                    {/* Progress Overlay */}
-                                    <div className="absolute top-0 left-0 bottom-0 bg-slate-900/30 z-10" style={{ width: `${pct}%` }}></div>
+                                    <div className="absolute top-0 left-0 bottom-0 bg-slate-900/30 z-10" style={{ width: `${pct}%` }} />
 
-                                    {/* Bar Text Label */}
                                     <div className="absolute inset-0 flex items-center px-2 z-20">
                                       <span className="text-[10px] font-bold text-white drop-shadow truncate">
                                         {plan.productName} ({plan.productCode}) · {pct}%
@@ -697,17 +681,17 @@ export default function ProductionOverviewPage() {
                       )}
                     </div>
 
-                    {/* Dynamic Legend with CLEAN stage names */}
+                    {/* Dynamic Legend */}
                     <div className="flex items-center gap-3 px-4 py-3 border-t border-slate-200 bg-slate-50 flex-wrap">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Stages:</span>
                       {uniqueStageNames.slice(0, 6).map(([name, colorIdx]) => (
                         <div key={name} className="flex items-center gap-1.5 text-[10px] text-slate-600 font-medium">
-                          <span className={`w-2.5 h-2.5 rounded-sm ${STAGE_COLORS[colorIdx % STAGE_COLORS.length]}`}></span>
+                          <span className={`w-2.5 h-2.5 rounded-sm ${STAGE_COLORS[colorIdx % STAGE_COLORS.length]}`} />
                           {name}
                         </div>
                       ))}
                       <div className="flex items-center gap-1.5 text-[10px] text-slate-400 ml-auto">
-                        <span className="w-2.5 h-2.5 rounded-sm bg-slate-900/40"></span>
+                        <span className="w-2.5 h-2.5 rounded-sm bg-slate-900/40" />
                         Overlay = Progress %
                       </div>
                     </div>
@@ -717,8 +701,8 @@ export default function ProductionOverviewPage() {
               )}
             </div>
 
-            {/* ── ACTIVE PLAN DETAILS LIST (PER PRODUCT LINE) ── */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+            {/* ── ACTIVE PLAN DETAILS LIST ── */}
+            <div className="prd-card">
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-bold text-slate-900">Active Plan Details &amp; Process Routing</h2>
@@ -746,7 +730,6 @@ export default function ProductionOverviewPage() {
 
                   return (
                     <div key={detailsKey} className="border-b border-slate-100 last:border-b-0">
-                      {/* Plan Header Row */}
                       <div
                         className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-slate-50/80 transition-colors"
                         onClick={() => setExpandedPlanId(isExpanded ? null : pid)}
@@ -784,7 +767,7 @@ export default function ProductionOverviewPage() {
                             </span>
                             <div className="flex items-center gap-2 w-28">
                               <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className={`h-full ${style.bar} rounded-full`} style={{ width: `${pct}%` }}></div>
+                                <div className={`h-full ${style.bar} rounded-full`} style={{ width: `${pct}%` }} />
                               </div>
                               <span className="text-xs font-bold text-slate-700">{pct}%</span>
                             </div>
@@ -795,14 +778,13 @@ export default function ProductionOverviewPage() {
                         </div>
                       </div>
 
-                      {/* Expanded Plan Tabs */}
                       {isExpanded && (
                         <div className="border-t border-slate-100 bg-slate-50/50 p-5">
-                          {/* Tabs */}
                           <div className="flex border-b border-slate-200 mb-4 gap-2">
                             {(["stages", "product", "notes"] as const).map((tab) => (
                               <button
                                 key={tab}
+                                type="button"
                                 onClick={() => setActivePlanTab((prev) => ({ ...prev, [pid]: tab }))}
                                 className={`px-4 py-2 text-xs font-bold capitalize transition-all border-b-2 ${
                                   currentTab === tab
@@ -815,7 +797,6 @@ export default function ProductionOverviewPage() {
                             ))}
                           </div>
 
-                          {/* Stages Tab */}
                           {currentTab === "stages" && (
                             <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200/80">
                               {stagesList.length === 0 ? (
@@ -858,7 +839,6 @@ export default function ProductionOverviewPage() {
                             </div>
                           )}
 
-                          {/* Product Details Tab */}
                           {currentTab === "product" && (
                             <div className="bg-white p-4 rounded-xl border border-slate-200/80 space-y-2">
                               <div className="flex justify-between items-center text-xs border-b border-slate-100 pb-2">
@@ -875,7 +855,6 @@ export default function ProductionOverviewPage() {
                             </div>
                           )}
 
-                          {/* Notes Tab */}
                           {currentTab === "notes" && (
                             <div className="bg-white p-4 rounded-xl border border-slate-200/80 space-y-3">
                               <label className="block text-xs font-bold text-slate-700">Operational Remarks &amp; Shift Notes</label>
@@ -887,9 +866,10 @@ export default function ProductionOverviewPage() {
                                 onChange={(e) => setNoteMap((prev) => ({ ...prev, [plan.planId]: e.target.value }))}
                               />
                               <button
+                                type="button"
                                 onClick={() => handleSaveNotes(rawPlanDbId, plan.planId)}
                                 disabled={savingNoteId === plan.planId}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm"
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
                               >
                                 <span className="material-symbols-outlined text-[15px]">save</span>
                                 {savingNoteId === plan.planId ? "Saving..." : "Save Notes"}
@@ -908,12 +888,12 @@ export default function ProductionOverviewPage() {
           </div>
 
           {/* ── RIGHT (1 COL): WORK CENTER LOAD & RECENT PROCESSES ── */}
-          <div className="xl:col-span-1 flex flex-col gap-6">
+          <div className="prd-layout-right">
 
             {/* Work Center Utilization */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+            <div className="prd-card p-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 m-0">
                   <span className="material-symbols-outlined text-blue-600 text-[18px]">factory</span>
                   Work Center Load
                 </h3>
@@ -940,7 +920,7 @@ export default function ProductionOverviewPage() {
                           <div
                             className={`h-full rounded-full ${loadPct > 80 ? "bg-amber-500" : "bg-blue-600"}`}
                             style={{ width: `${loadPct}%` }}
-                          ></div>
+                          />
                         </div>
                         <div className="flex justify-between text-[10px] text-slate-400">
                           <span>{type}</span>
@@ -954,9 +934,9 @@ export default function ProductionOverviewPage() {
             </div>
 
             {/* Recent Floor Activities */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm">
+            <div className="prd-card p-5">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5 m-0">
                   <span className="material-symbols-outlined text-violet-600 text-[18px]">timeline</span>
                   Recent Stage Processes
                 </h3>
@@ -972,7 +952,7 @@ export default function ProductionOverviewPage() {
                     const isAct = st === "active" || st === "in progress";
 
                     return (
-                      <div key={idx} className="flex items-start gap-2.5 p-2 rounded-xl bg-slate-50/60 border border-slate-100">
+                      <div key={idx} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-slate-50/80 border border-slate-100">
                         <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
                           isComp ? "bg-emerald-100 text-emerald-600" : isAct ? "bg-blue-100 text-blue-600" : "bg-slate-200 text-slate-500"
                         }`}>

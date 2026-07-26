@@ -17,6 +17,7 @@ import {
   Area,
   ComposedChart
 } from "recharts";
+import "./styles/production-dashboard.css";
 
 // Clean & Harmonized Color Palette
 const COLORS = {
@@ -269,123 +270,119 @@ export default function ProductionOverviewDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-64px)] flex-col items-center justify-center bg-slate-50 gap-3">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-        <p className="text-xs font-semibold text-slate-500">Loading Dashboard Overview...</p>
+      <div className="prd-dashboard-container text-center py-50 align-items-center justify-content-center">
+        <div className="spinner-border text-primary me-2" role="status"></div>
+        <p className="text-xs font-semibold text-muted">Loading Dashboard Overview...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50 min-h-[calc(100vh-64px)] p-6 md:p-8 font-sans gap-6">
+    <div className="prd-dashboard-container">
       
-      {/* ── SIMPLE HEADER ── */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm mt-2 md:mt-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Production Dashboard</h1>
-          <p className="text-xs text-slate-500 mt-1">Real-time overview of active runs, throughput, and stage queues.</p>
+      {/* HEADER CARD */}
+      <div className="prd-dashboard-header">
+        <div className="prd-dashboard-title">
+          <h1>Production Dashboard</h1>
+          <p>Real-time overview of active runs, throughput, and stage queues.</p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="prd-dashboard-actions">
           <button
             onClick={fetchData}
             title="Refresh Live Data"
-            className="px-3.5 py-2 bg-slate-50 hover:bg-white text-slate-700 hover:text-blue-600 rounded-full border border-slate-200 hover:border-blue-300 transition-all text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:shadow active:scale-95 group"
+            className="prd-dash-btn prd-dash-btn-light"
           >
-            <span className="material-symbols-outlined text-[16px] group-hover:rotate-180 transition-transform duration-500 text-slate-500 group-hover:text-blue-600">
-              refresh
-            </span>
+            <span className="prd-dashboard-icon" style={{ fontSize: 16 }}>refresh</span>
             <span>Refresh</span>
           </button>
 
           <Link
             href="/production/plans"
-            className="px-3.5 py-2 bg-slate-50 hover:bg-white text-slate-700 hover:text-slate-900 rounded-full border border-slate-200 hover:border-slate-300 transition-all text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:shadow active:scale-95"
+            className="prd-dash-btn prd-dash-btn-light"
           >
-            <span className="material-symbols-outlined text-[16px] text-slate-500">list_alt</span>
+            <span className="prd-dashboard-icon" style={{ fontSize: 16 }}>list_alt</span>
             <span>View Plans</span>
           </Link>
 
           <Link
             href="/production/demands"
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white rounded-full transition-all text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-blue-500/20 active:scale-95"
+            className="prd-dash-btn prd-dash-btn-primary"
           >
-            <span className="material-symbols-outlined text-[17px]">add_circle</span>
+            <span className="prd-dashboard-icon" style={{ fontSize: 16 }}>add_circle</span>
             <span>New Plan</span>
           </Link>
         </div>
       </div>
 
-      {/* ── SIMPLIFIED KPI CARDS (5 CARDS GRID) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        
+      {/* KPI CARDS (5 CARDS GRID) */}
+      <div className="prd-kpi-grid-5">
         {/* KPI 1: Active Runs */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Active Pipelines</span>
-            <span className="material-symbols-outlined text-blue-600 text-[20px]">precision_manufacturing</span>
+        <div className="prd-kpi-card">
+          <div className="prd-kpi-header">
+            <span className="prd-kpi-label">Active Pipelines</span>
+            <span className="prd-dashboard-icon text-primary" style={{ fontSize: 20 }}>precision_manufacturing</span>
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">{metrics.activePlansCount}</div>
-          <div className="text-[11px] text-slate-500 mt-1">{metrics.totalPlans} total plans recorded</div>
+          <div className="prd-kpi-value">{metrics.activePlansCount}</div>
+          <div className="prd-kpi-subtext">{metrics.totalPlans} total plans recorded</div>
         </div>
 
         {/* KPI 2: Units in WIP */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Units in WIP</span>
-            <span className="material-symbols-outlined text-violet-600 text-[20px]">inventory_2</span>
+        <div className="prd-kpi-card">
+          <div className="prd-kpi-header">
+            <span className="prd-kpi-label">Units in WIP</span>
+            <span className="prd-dashboard-icon text-purple" style={{ fontSize: 20, color: "#7c3aed" }}>inventory_2</span>
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">{metrics.totalWipUnits.toLocaleString()}</div>
-          <div className="text-[11px] text-emerald-600 font-medium mt-1">Live WIP Order Volume</div>
+          <div className="prd-kpi-value">{metrics.totalWipUnits.toLocaleString()}</div>
+          <div className="prd-kpi-subtext text-success font-semibold" style={{ color: "#059669" }}>Live WIP Order Volume</div>
         </div>
 
         {/* KPI 3: Completion Rate */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Completion Rate</span>
-            <span className="material-symbols-outlined text-emerald-600 text-[20px]">donut_large</span>
+        <div className="prd-kpi-card">
+          <div className="prd-kpi-header">
+            <span className="prd-kpi-label">Completion Rate</span>
+            <span className="prd-dashboard-icon text-success" style={{ fontSize: 20, color: "#059669" }}>donut_large</span>
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">{metrics.avgProgress}%</div>
-          <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-            <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${metrics.avgProgress}%` }}></div>
+          <div className="prd-kpi-value">{metrics.avgProgress}%</div>
+          <div style={{ backgroundColor: "#f1f5f9", height: "6px", borderRadius: "999px", marginTop: "8px", overflow: "hidden" }}>
+            <div style={{ backgroundColor: "#059669", height: "100%", borderRadius: "999px", width: `${metrics.avgProgress}%` }}></div>
           </div>
         </div>
 
         {/* KPI 4: Schedule On-Time Rate */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">On-Time Schedule</span>
-            <span className="material-symbols-outlined text-amber-600 text-[20px]">event_available</span>
+        <div className="prd-kpi-card">
+          <div className="prd-kpi-header">
+            <span className="prd-kpi-label">On-Time Schedule</span>
+            <span className="prd-dashboard-icon" style={{ fontSize: 20, color: "#d97706" }}>event_available</span>
           </div>
-          <div className="text-2xl font-bold text-slate-900 mt-2">{metrics.onTimeRate}%</div>
-          <div className="text-[11px] text-slate-500 mt-1">Tracking to deadlines</div>
+          <div className="prd-kpi-value">{metrics.onTimeRate}%</div>
+          <div className="prd-kpi-subtext">Tracking to deadlines</div>
         </div>
 
         {/* KPI 5: Urgent Plans */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Urgent Runs</span>
-            <span className="material-symbols-outlined text-rose-600 text-[20px]">priority_high</span>
+        <div className="prd-kpi-card">
+          <div className="prd-kpi-header">
+            <span className="prd-kpi-label">Urgent Runs</span>
+            <span className="prd-dashboard-icon" style={{ fontSize: 20, color: "#dc2626" }}>priority_high</span>
           </div>
-          <div className="text-2xl font-bold text-rose-600 mt-2">{metrics.urgentCount}</div>
-          <div className="text-[11px] text-rose-600 font-medium mt-1">High priority runs</div>
+          <div className="prd-kpi-value" style={{ color: "#dc2626" }}>{metrics.urgentCount}</div>
+          <div className="prd-kpi-subtext" style={{ color: "#dc2626", fontWeight: 600 }}>High priority runs</div>
         </div>
       </div>
 
-      {/* ── CHARTS SECTION (2x2 GRID STRUCTURE) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
+      {/* CHARTS SECTION (2x2 GRID) */}
+      <div className="prd-charts-grid-2">
         {/* CHART 1: Throughput Trend */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <div className="mb-4">
-            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <span className="material-symbols-outlined text-blue-600 text-[18px]">show_chart</span>
+        <div className="prd-chart-card">
+          <div className="prd-chart-header">
+            <h2>
+              <span className="prd-dashboard-icon text-primary" style={{ fontSize: 18 }}>show_chart</span>
               Weekly Production Throughput
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">Daily unit output vs planned capacity target.</p>
+            <p>Daily unit output vs planned capacity target.</p>
           </div>
 
-          <div className="h-[250px] w-full">
+          <div className="prd-chart-body">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={weeklyThroughputData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

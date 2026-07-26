@@ -10,6 +10,7 @@ import { Customer } from "../../crm/dto/customer.dto";
 import { Order } from "../../crm/dto/order.dto";
 import { fetchOrders } from "../../crm/api/order.api";
 import { checkMaterials } from "../api/production.api";
+import "../styles/production-demand-plan.css";
 
 
 
@@ -417,7 +418,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
   }
 
   return (
-    <div className="pp-page">
+    <div className="pdp-page">
       <style>{`
         .customer-order-card.selected {
           border-color: #2563eb !important;
@@ -594,15 +595,15 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
           <h1>Create {kind === "customer" ? "Customer Order" : "Outlet Replenishment"} Plan</h1>
           <p>Configure garments, size matrices, and bulk materials for {sourceDetail.customerName || sourceDetail.name}.</p>
         </div>
-        <div className="pp-header-actions">
-          <Link href={kind === "customer" ? "/production/demands/catalog/customer" : "/production/demands/catalog/outlet"} className="btn btn-light">
-            <MaterialIcon name="chevron_left" />
+        <div className="pdp-header-actions">
+          <Link href={kind === "customer" ? "/production/demands/catalog/customer" : "/production/demands/catalog/outlet"} className="pdp-btn pdp-btn-light">
+            <span className="pdp-icon">chevron_left</span>
             Choose {kind === "customer" ? "Customer" : "Outlet"}
           </Link>
-          <Link href="/production/demands" className="btn btn-light">
+          <Link href="/production/demands" className="pdp-btn pdp-btn-light">
             Change Demand Type
           </Link>
-          <Link href="/production/plans" className="btn btn-primary">
+          <Link href="/production/plans" className="pdp-btn pdp-btn-primary">
             Back to Plans
           </Link>
         </div>
@@ -749,18 +750,17 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
                       </div>
 
                       <div className="catalog-card-actions">
-                        <button type="button" className="btn btn-light" onClick={() => setModalItem(item)}>
+                        <button type="button" className="pdp-btn pdp-btn-light" onClick={() => setModalItem(item)}>
                           View Details
                         </button>
                         <button
                           type="button"
-                          className={`btn ${isInBasket ? "btn-light" : "btn-primary"}`}
-                          style={isInBasket ? { backgroundColor: "#ecfdf5", color: "#047857", borderColor: "#a7f3d0" } : undefined}
+                          className={`pdp-btn ${isInBasket ? "pdp-btn-added" : "pdp-btn-primary"}`}
                           onClick={() => handleAddToBasket(item)}
                         >
                           {isInBasket ? (
                             <span className="d-flex align-items-center justify-content-center gap-4">
-                              <MaterialIcon name="check_circle" />
+                              <span className="pdp-icon">check_circle</span>
                               Added
                             </span>
                           ) : (
@@ -842,23 +842,23 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
           <form onSubmit={handleCreatePlan} className="d-flex flex-column gap-10">
             <button
               type="button"
-              className="btn btn-outline full-width"
+              className="pdp-btn pdp-btn-outline pdp-btn-full"
               disabled={!basket.length || isCheckingBulk}
               onClick={handleCheckBulkMaterials}
             >
-              <MaterialIcon name="inventory" />
+              <span className="pdp-icon">inventory</span>
               {isCheckingBulk ? "Checking..." : "Check Materials in Bulk"}
             </button>
             <button
               type="submit"
-              className="btn btn-primary full-width"
+              className="pdp-btn pdp-btn-primary pdp-btn-full"
               disabled={!basket.length || isSubmitting}
             >
               {isSubmitting ? (
                 "Redirecting..."
               ) : (
                 <>
-                  <MaterialIcon name="arrow_forward" />
+                  <span className="pdp-icon">arrow_forward</span>
                   Proceed to Plan Details
                 </>
               )}

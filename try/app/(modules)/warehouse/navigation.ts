@@ -13,7 +13,8 @@ export const warehouseNavigation: SidebarSection = {
     // { name: "Supplier Request", url: "/warehouse/purchasedemand", icon: "shopping_cart_checkout" },
     // { name: "Issue to Factory", url: "/warehouse/issue", icon: "forklift" },
     { name: "Receive & Inspect", url: "/warehouse/receive", icon: "fact_check" },
-    { name: "Sales & Dispatch", url: "/warehouse/dispatch", icon: "local_shipping" },
+    { name: "Finished Goods & Dispatch", url: "/warehouse/finishedgoodandsalesdispatch", icon: "local_shipping" },
+    // { name: "Sales & Dispatch", url: "/warehouse/dispatch", icon: "local_shipping" },
     { name: "Customer Returns", url: "/warehouse/damagereturn", icon: "assignment_return" },
   ],
 };

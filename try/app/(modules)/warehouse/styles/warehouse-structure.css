@@ -191,6 +191,10 @@
     padding-left: 64px;
 }
 
+.wh-struct-level-indent-4 {
+    padding-left: 96px;
+}
+
 .wh-struct-node-title {
     display: flex;
     align-items: center;
@@ -250,6 +254,11 @@
 .wh-struct-type-tag.pallet {
     background: var(--wh-struct-green-soft);
     color: var(--wh-struct-green);
+}
+
+.wh-struct-type-tag.bin {
+    background: #f3e8ff;
+    color: #7e22ce;
 }
 
 .wh-struct-action-buttons {

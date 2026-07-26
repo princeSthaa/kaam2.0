@@ -7,7 +7,7 @@ export type StructureNode = {
   id: string;
   code: string;
   name: string;
-  levelType: "floor" | "rack" | "level";
+  levelType: "floor" | "rack" | "level" | "shelf";
   typeTag: string;
   maxCap: string;
   parentId?: string;
@@ -23,7 +23,7 @@ export default function WarehouseStructureManagementPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
 
-  const [addType, setAddType] = useState<"floor" | "rack" | "level">("floor");
+  const [addType, setAddType] = useState<"floor" | "rack" | "level" | "shelf">("floor");
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newTag, setNewTag] = useState("Main Storage");
@@ -68,6 +68,33 @@ export default function WarehouseStructureManagementPage() {
       parentId: "flr-01-ra",
     },
     {
+      id: "flr-01-ra-l1-s1",
+      code: "FLR-01-RA-L1-S1",
+      name: "Shelf 1A (Bin 01)",
+      levelType: "shelf",
+      typeTag: "Bin Location",
+      maxCap: "500kg",
+      parentId: "flr-01-ra-l1",
+    },
+    {
+      id: "flr-01-ra-l1-s2",
+      code: "FLR-01-RA-L1-S2",
+      name: "Shelf 1B (Bin 02)",
+      levelType: "shelf",
+      typeTag: "Bin Location",
+      maxCap: "500kg",
+      parentId: "flr-01-ra-l1",
+    },
+    {
+      id: "flr-01-ra-l2-s1",
+      code: "FLR-01-RA-L2-S1",
+      name: "Shelf 2A (Bin 01)",
+      levelType: "shelf",
+      typeTag: "Bin Location",
+      maxCap: "500kg",
+      parentId: "flr-01-ra-l2",
+    },
+    {
       id: "flr-01-rb",
       code: "FLR-01-RB",
       name: "Rack B",
@@ -99,12 +126,13 @@ export default function WarehouseStructureManagementPage() {
     setExpandedNodes((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleOpenAddModal = (type: "floor" | "rack" | "level") => {
+  const handleOpenAddModal = (type: "floor" | "rack" | "level" | "shelf", defaultParentId?: string) => {
     setAddType(type);
     setNewCode(type === "floor" ? `FLR-0${nodes.filter((n) => n.levelType === "floor").length + 1}` : "");
     setNewName("");
-    setNewTag(type === "floor" ? "Main Storage" : type === "rack" ? "High Density" : "Pallet Storage");
-    setNewCap(type === "level" ? "2,500kg" : type === "rack" ? "10,000kg" : "--");
+    setNewTag(type === "floor" ? "Main Storage" : type === "rack" ? "High Density" : type === "level" ? "Pallet Storage" : "Bin Location");
+    setNewCap(type === "shelf" ? "500kg" : type === "level" ? "2,500kg" : type === "rack" ? "10,000kg" : "--");
+    setParentSelection(defaultParentId || "");
     setIsAddModalOpen(true);
   };
 
@@ -181,7 +209,7 @@ export default function WarehouseStructureManagementPage() {
     );
   }, [nodes, searchTerm]);
 
-  // Organize floors, racks, and levels hierarchically
+  // Organize floors, racks, levels, and shelves hierarchically
   const floorNodes = useMemo(() => {
     return filteredNodes.filter((n) => n.levelType === "floor");
   }, [filteredNodes]);
@@ -192,6 +220,10 @@ export default function WarehouseStructureManagementPage() {
 
   const getLevelsForRack = (rackId: string) => {
     return filteredNodes.filter((n) => n.levelType === "level" && n.parentId === rackId);
+  };
+
+  const getShelvesForLevel = (levelId: string) => {
+    return filteredNodes.filter((n) => n.levelType === "shelf" && n.parentId === levelId);
   };
 
   return (
@@ -208,7 +240,7 @@ export default function WarehouseStructureManagementPage() {
               Storage Layout
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1 font-medium">Configure physical storage locations, floor layouts, racks, and shelf levels.</p>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Configure physical storage locations, floor layouts, racks, levels, and shelf bins.</p>
         </div>
 
         {/* Dedicated Control Toolbar (Action Buttons + Search Bar) */}
@@ -230,6 +262,14 @@ export default function WarehouseStructureManagementPage() {
             >
               <span className="material-symbols-outlined text-[18px]">shelves</span>
               <span>Add Rack</span>
+            </button>
+
+            <button
+              onClick={() => handleOpenAddModal("shelf")}
+              className="wh-struct-btn-secondary"
+            >
+              <span className="material-symbols-outlined text-[18px]">grid_view</span>
+              <span>Add Shelf</span>
             </button>
           </div>
 
@@ -399,49 +439,119 @@ export default function WarehouseStructureManagementPage() {
 
                           {/* LEVEL ROWS (CHILDREN OF RACK) */}
                           {isRackExpanded &&
-                            childLevels.map((lvl) => (
-                              <div key={lvl.id} className="wh-struct-row bg-white/90">
-                                <div className="wh-struct-node-title wh-struct-level-indent-3">
-                                  <div className="w-6 flex items-center justify-center">
-                                    <span className="material-symbols-outlined text-slate-300 text-[16px]">
-                                      horizontal_rule
-                                    </span>
+                            childLevels.map((lvl) => {
+                              const isLevelExpanded = !!expandedNodes[lvl.id] || !!searchTerm;
+                              const childShelves = getShelvesForLevel(lvl.id);
+
+                              return (
+                                <React.Fragment key={lvl.id}>
+                                  <div className="wh-struct-row bg-white/90">
+                                    <div className="wh-struct-node-title wh-struct-level-indent-3">
+                                      {childShelves.length > 0 ? (
+                                        <button
+                                          onClick={() => toggleExpand(lvl.id)}
+                                          className="wh-struct-expand-btn"
+                                        >
+                                          <span className="material-symbols-outlined text-[18px]">
+                                            {isLevelExpanded ? "expand_more" : "chevron_right"}
+                                          </span>
+                                        </button>
+                                      ) : (
+                                        <div className="w-6 flex items-center justify-center">
+                                          <span className="material-symbols-outlined text-slate-300 text-[16px]">
+                                            horizontal_rule
+                                          </span>
+                                        </div>
+                                      )}
+                                      <span className="material-symbols-outlined text-slate-400 text-[18px]">layers</span>
+                                      <span className="font-medium text-slate-700 text-xs">{lvl.name}</span>
+                                    </div>
+
+                                    <div>
+                                      <span className="wh-struct-code-badge">{lvl.code}</span>
+                                    </div>
+
+                                    <div>
+                                      <span className="wh-struct-type-tag pallet">{lvl.typeTag}</span>
+                                    </div>
+
+                                    <div className="font-mono text-xs font-semibold text-slate-600 text-right">
+                                      {lvl.maxCap}
+                                    </div>
+
+                                    {/* Action Buttons with EDIT Pencil Icon & Add Shelf */}
+                                    <div className="wh-struct-action-buttons">
+                                      <button
+                                        onClick={() => handleOpenAddModal("shelf", lvl.id)}
+                                        title="Add Shelf Bin to Level"
+                                        className="wh-struct-icon-btn"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">add</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleOpenEditModal(lvl)}
+                                        title="Edit Level"
+                                        className="wh-struct-icon-btn"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteNode(lvl.id)}
+                                        title="Delete Level"
+                                        className="wh-struct-icon-btn danger"
+                                      >
+                                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                                      </button>
+                                    </div>
                                   </div>
-                                  <span className="material-symbols-outlined text-slate-400 text-[18px]">layers</span>
-                                  <span className="font-medium text-slate-700 text-xs">{lvl.name}</span>
-                                </div>
 
-                                <div>
-                                  <span className="wh-struct-code-badge">{lvl.code}</span>
-                                </div>
+                                  {/* SHELF ROWS (CHILDREN OF LEVEL) */}
+                                  {isLevelExpanded &&
+                                    childShelves.map((shf) => (
+                                      <div key={shf.id} className="wh-struct-row bg-slate-50/80">
+                                        <div className="wh-struct-node-title wh-struct-level-indent-4">
+                                          <div className="w-6 flex items-center justify-center">
+                                            <span className="material-symbols-outlined text-emerald-400 text-[14px]">
+                                              subdirectory_arrow_right
+                                            </span>
+                                          </div>
+                                          <span className="material-symbols-outlined text-emerald-600 text-[18px]">grid_view</span>
+                                          <span className="font-medium text-slate-800 text-xs">{shf.name}</span>
+                                        </div>
 
-                                <div>
-                                  <span className="wh-struct-type-tag pallet">{lvl.typeTag}</span>
-                                </div>
+                                        <div>
+                                          <span className="wh-struct-code-badge">{shf.code}</span>
+                                        </div>
 
-                                <div className="font-mono text-xs font-semibold text-slate-600 text-right">
-                                  {lvl.maxCap}
-                                </div>
+                                        <div>
+                                          <span className="wh-struct-type-tag bin">{shf.typeTag}</span>
+                                        </div>
 
-                                {/* Action Buttons with EDIT Pencil Icon */}
-                                <div className="wh-struct-action-buttons">
-                                  <button
-                                    onClick={() => handleOpenEditModal(lvl)}
-                                    title="Edit Level"
-                                    className="wh-struct-icon-btn"
-                                  >
-                                    <span className="material-symbols-outlined text-[16px]">edit</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteNode(lvl.id)}
-                                    title="Delete Level"
-                                    className="wh-struct-icon-btn danger"
-                                  >
-                                    <span className="material-symbols-outlined text-[16px]">delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                                        <div className="font-mono text-xs font-semibold text-slate-600 text-right">
+                                          {shf.maxCap}
+                                        </div>
+
+                                        <div className="wh-struct-action-buttons">
+                                          <button
+                                            onClick={() => handleOpenEditModal(shf)}
+                                            title="Edit Shelf"
+                                            className="wh-struct-icon-btn"
+                                          >
+                                            <span className="material-symbols-outlined text-[16px]">edit</span>
+                                          </button>
+                                          <button
+                                            onClick={() => handleDeleteNode(shf.id)}
+                                            title="Delete Shelf"
+                                            className="wh-struct-icon-btn danger"
+                                          >
+                                            <span className="material-symbols-outlined text-[16px]">delete</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                </React.Fragment>
+                              );
+                            })}
                         </React.Fragment>
                       );
                     })}
@@ -470,10 +580,10 @@ export default function WarehouseStructureManagementPage() {
             <form onSubmit={handleAddStructure}>
               <div className="wh-struct-modal-body">
                 
-                {/* Parent Selection if Rack or Level */}
+                {/* Parent Selection if Rack, Level, or Shelf */}
                 {addType !== "floor" && (
                   <div className="wh-struct-field">
-                    <label>PARENT {addType === "rack" ? "FLOOR" : "RACK"}</label>
+                    <label>PARENT {addType === "rack" ? "FLOOR" : addType === "level" ? "RACK" : "LEVEL"}</label>
                     <select
                       value={parentSelection}
                       onChange={(e) => setParentSelection(e.target.value)}
@@ -488,11 +598,19 @@ export default function WarehouseStructureManagementPage() {
                                 {f.name} ({f.code})
                               </option>
                             ))
-                        : nodes
+                        : addType === "level"
+                        ? nodes
                             .filter((n) => n.levelType === "rack")
                             .map((r) => (
                               <option key={r.id} value={r.id}>
                                 {r.name} ({r.code})
+                              </option>
+                            ))
+                        : nodes
+                            .filter((n) => n.levelType === "level")
+                            .map((l) => (
+                              <option key={l.id} value={l.id}>
+                                {l.name} ({l.code})
                               </option>
                             ))}
                     </select>
@@ -582,10 +700,10 @@ export default function WarehouseStructureManagementPage() {
             <form onSubmit={handleUpdateStructure}>
               <div className="wh-struct-modal-body">
                 
-                {/* Parent Selection if Rack or Level */}
+                {/* Parent Selection if Rack, Level, or Shelf */}
                 {addType !== "floor" && (
                   <div className="wh-struct-field">
-                    <label>PARENT {addType === "rack" ? "FLOOR" : "RACK"}</label>
+                    <label>PARENT {addType === "rack" ? "FLOOR" : addType === "level" ? "RACK" : "LEVEL"}</label>
                     <select
                       value={parentSelection}
                       onChange={(e) => setParentSelection(e.target.value)}
@@ -600,11 +718,19 @@ export default function WarehouseStructureManagementPage() {
                                 {f.name} ({f.code})
                               </option>
                             ))
-                        : nodes
+                        : addType === "level"
+                        ? nodes
                             .filter((n) => n.levelType === "rack")
                             .map((r) => (
                               <option key={r.id} value={r.id}>
                                 {r.name} ({r.code})
+                              </option>
+                            ))
+                        : nodes
+                            .filter((n) => n.levelType === "level")
+                            .map((l) => (
+                              <option key={l.id} value={l.id}>
+                                {l.name} ({l.code})
                               </option>
                             ))}
                     </select>
