@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import "../styles/warehouse-stock.css";
+import { StockDiscrepancyModal } from "../components/StockDiscrepancyModal";
+import { NewMaterialReceiptModal } from "../components/NewMaterialReceiptModal";
 
 export type StockItem = {
   id: string;
@@ -19,6 +21,7 @@ export type StockItem = {
   weight?: string;
   qcStatus?: string;
   inspector?: string;
+  image?: string;
 };
 
 export default function WarehouseStockPage() {
@@ -31,6 +34,8 @@ export default function WarehouseStockPage() {
   const [isMoveMaterialOpen, setIsMoveMaterialOpen] = useState(false);
   const [isMoveFGOpen, setIsMoveFGOpen] = useState(false);
   const [isAdjustStockOpen, setIsAdjustStockOpen] = useState(false);
+  const [isDiscrepancyModalOpen, setIsDiscrepancyModalOpen] = useState(false);
+  const [isNewReceiptModalOpen, setIsNewReceiptModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<StockItem | null>(null);
 
   // Form State for Material Movement Modal
@@ -62,6 +67,7 @@ export default function WarehouseStockPage() {
       totalValue: "Rs 450,000",
       batchNo: "B-40291",
       weight: "1.2kg/unit",
+      image: "/images/fabrics/FAB-001.jpg",
     },
     {
       id: "item-2",
@@ -77,6 +83,7 @@ export default function WarehouseStockPage() {
       totalValue: "Rs 12,000",
       batchNo: "B-10822",
       weight: "0.1kg/gross",
+      image: "https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?w=150&auto=format&fit=crop&q=80",
     },
     {
       id: "item-3",
@@ -93,6 +100,7 @@ export default function WarehouseStockPage() {
       batchNo: "FG-2026-08",
       qcStatus: "QC Verified (Grade A • Passed)",
       inspector: "J. Doe (ID: 8492)",
+      image: "/images/products/casual-shirt.jpg",
     },
     {
       id: "item-4",
@@ -108,6 +116,7 @@ export default function WarehouseStockPage() {
       totalValue: "Rs 25,000",
       batchNo: "B-99201",
       weight: "0.3kg/unit",
+      image: "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=150&auto=format&fit=crop&q=80",
     },
     {
       id: "item-5",
@@ -123,6 +132,7 @@ export default function WarehouseStockPage() {
       totalValue: "Rs 620,000",
       batchNo: "B-33109",
       weight: "2.5kg/roll",
+      image: "/images/fabrics/FAB-002.png",
     },
   ]);
 
@@ -216,7 +226,7 @@ export default function WarehouseStockPage() {
 
   return (
     <div className="wh-stock-page">
-      
+
       {/* ── HEADER CARD WITH ACTIONS ── */}
       <div className="wh-stock-header-card">
         <div className="wh-stock-header-top">
@@ -235,7 +245,10 @@ export default function WarehouseStockPage() {
               <span className="material-symbols-outlined text-[18px]">download</span>
               <span>Export CSV</span>
             </button>
-            <button className="wh-stock-btn-primary">
+            <button
+              onClick={() => setIsNewReceiptModalOpen(true)}
+              className="wh-stock-btn-primary"
+            >
               <span className="material-symbols-outlined text-[18px]">add_circle</span>
               <span>New Receipt</span>
             </button>
@@ -245,7 +258,7 @@ export default function WarehouseStockPage() {
 
       {/* ── KPI BENTO GRID CARDS ── */}
       <div className="wh-stock-kpi-grid">
-        
+
         {/* Total Stock Value */}
         <div className="wh-stock-kpi-card">
           <div className="wh-stock-kpi-header">
@@ -297,7 +310,17 @@ export default function WarehouseStockPage() {
           </div>
           <div className="wh-stock-kpi-value text-red-700">12 <span className="text-xs text-red-500 font-semibold">SKUs</span></div>
           <div className="wh-stock-kpi-footer text-red-600">
-            <span className="underline cursor-pointer font-bold hover:text-red-800">Review immediately</span>
+            <button
+              type="button"
+              onClick={() => {
+                const lowItem = stockItems.find((it) => it.status === "Low Stock") || stockItems[0];
+                setSelectedItem(lowItem);
+                setIsDiscrepancyModalOpen(true);
+              }}
+              className="underline cursor-pointer font-bold hover:text-red-800 bg-transparent border-none p-0 text-red-600"
+            >
+              Review immediately
+            </button>
           </div>
         </div>
 
@@ -305,7 +328,7 @@ export default function WarehouseStockPage() {
 
       {/* ── TOOLBAR & FILTERS CARD ── */}
       <div className="wh-stock-toolbar-card">
-        
+
         {/* Tab Buttons */}
         <div className="wh-stock-tabs">
           <button
@@ -330,7 +353,7 @@ export default function WarehouseStockPage() {
 
         {/* Dropdowns & Search */}
         <div className="wh-stock-filter-controls">
-          
+
           {/* Category Dropdown */}
           <select
             value={selectedCategory}
@@ -380,7 +403,7 @@ export default function WarehouseStockPage() {
               <tr>
                 <th>ITEM &amp; SKU</th>
                 <th>CATEGORY</th>
-                <th className="text-right">CURRENT STOCK</th>
+                <th>CURRENT STOCK</th>
                 <th>LOCATION</th>
                 <th>CAPACITY</th>
                 <th>STATUS</th>
@@ -398,12 +421,26 @@ export default function WarehouseStockPage() {
               ) : (
                 filteredItems.map((item) => (
                   <tr key={item.id}>
-                    
+
                     {/* Item & SKU */}
                     <td>
-                      <div className="font-bold text-slate-900">{item.name}</div>
-                      <div className="mt-0.5">
-                        <span className="wh-stock-sku-badge">{item.sku}</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg border border-slate-200 overflow-hidden shrink-0 bg-slate-100 flex items-center justify-center shadow-xs">
+                          <img
+                            src={item.image || "/images/products/place-holder.png"}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/images/products/place-holder.png";
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900">{item.name}</div>
+                          <div className="mt-0.5">
+                            <span className="wh-stock-sku-badge">{item.sku}</span>
+                          </div>
+                        </div>
                       </div>
                     </td>
 
@@ -411,7 +448,7 @@ export default function WarehouseStockPage() {
                     <td className="font-semibold text-slate-600">{item.category} ({item.type === "raw" ? "Raw" : "Finished"})</td>
 
                     {/* Current Stock */}
-                    <td className="text-right font-mono font-bold text-slate-900">
+                    <td className="font-mono font-bold text-slate-900">
                       {item.currentStock.toLocaleString()} <span className="text-xs text-slate-500 font-normal">{item.unit}</span>
                     </td>
 
@@ -427,9 +464,8 @@ export default function WarehouseStockPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${
-                              item.capacityPct < 30 ? "bg-red-500" : "bg-blue-600"
-                            }`}
+                            className={`h-full rounded-full ${item.capacityPct < 30 ? "bg-red-500" : "bg-blue-600"
+                              }`}
                             style={{ width: `${item.capacityPct}%` }}
                           ></div>
                         </div>
@@ -440,13 +476,12 @@ export default function WarehouseStockPage() {
                     {/* Status */}
                     <td>
                       <span
-                        className={`wh-stock-status-pill ${
-                          item.status === "In Stock"
+                        className={`wh-stock-status-pill ${item.status === "In Stock"
                             ? "instock"
                             : item.status === "Low Stock"
-                            ? "lowstock"
-                            : "reserved"
-                        }`}
+                              ? "lowstock"
+                              : "reserved"
+                          }`}
                       >
                         {item.status}
                       </span>
@@ -458,7 +493,7 @@ export default function WarehouseStockPage() {
                     {/* Action Buttons */}
                     <td className="text-center">
                       <div className="flex items-center justify-center gap-1">
-                        
+
                         {/* Move Stock Button */}
                         <button
                           onClick={() => handleOpenMoveModal(item)}
@@ -492,7 +527,7 @@ export default function WarehouseStockPage() {
       {isMoveMaterialOpen && selectedItem && (
         <div className="wh-stock-modal-overlay">
           <div className="wh-stock-modal">
-            
+
             {/* Header */}
             <div className="wh-stock-modal-header">
               <div className="flex items-center gap-3">
@@ -509,11 +544,18 @@ export default function WarehouseStockPage() {
 
             <form onSubmit={handleMoveSubmit}>
               <div className="wh-stock-modal-body">
-                
+
                 {/* Selected Item Info Card */}
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex items-start gap-4">
-                  <div className="w-14 h-14 bg-white rounded-lg border border-slate-200 flex items-center justify-center shrink-0 text-slate-400">
-                    <span className="material-symbols-outlined text-2xl">precision_manufacturing</span>
+                  <div className="w-14 h-14 bg-slate-100 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                    <img
+                      src={selectedItem.image || "/images/products/place-holder.png"}
+                      alt={selectedItem.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/images/products/place-holder.png";
+                      }}
+                    />
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
@@ -531,7 +573,7 @@ export default function WarehouseStockPage() {
 
                 {/* Movement Configuration Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-                  
+
                   {/* Current Location Box */}
                   <div className="flex flex-col gap-2">
                     <label className="text-[11px] font-extrabold text-slate-500 uppercase flex items-center gap-1.5">
@@ -666,7 +708,7 @@ export default function WarehouseStockPage() {
       {isMoveFGOpen && selectedItem && (
         <div className="wh-stock-modal-overlay">
           <div className="wh-stock-modal">
-            
+
             {/* Header */}
             <div className="wh-stock-modal-header">
               <div className="flex items-center gap-3">
@@ -683,13 +725,23 @@ export default function WarehouseStockPage() {
 
             <form onSubmit={handleMoveSubmit}>
               <div className="wh-stock-modal-body">
-                
+
                 {/* 2 Column Info & QC Section */}
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                  
+
                   {/* Item Info Card */}
-                  <div className="md:col-span-7 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col justify-between">
-                    <div>
+                  <div className="md:col-span-7 bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center gap-3.5">
+                    <div className="w-14 h-14 bg-slate-100 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                      <img
+                        src={selectedItem.image || "/images/products/place-holder.png"}
+                        alt={selectedItem.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/images/products/place-holder.png";
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-mono text-xs font-bold text-slate-600">{selectedItem.sku}</span>
                         <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase">
@@ -697,9 +749,9 @@ export default function WarehouseStockPage() {
                         </span>
                       </div>
                       <h4 className="font-bold text-slate-900 text-base m-0">{selectedItem.name}</h4>
-                    </div>
-                    <div className="mt-3 text-xs text-slate-500 font-medium border-t border-slate-200 pt-2">
-                      Batch: {selectedItem.batchNo || "FG-2026-08"} • Finishing Line 04
+                      <div className="mt-1 text-xs text-slate-500 font-medium">
+                        Batch: {selectedItem.batchNo || "FG-2026-08"} • Finishing Line 04
+                      </div>
                     </div>
                   </div>
 
@@ -848,14 +900,26 @@ export default function WarehouseStockPage() {
 
             <form onSubmit={handleAdjustSubmit}>
               <div className="wh-stock-modal-body">
-                
+
                 {/* Target Item Summary */}
-                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-slate-900 text-base">{selectedItem.name}</div>
-                    <div className="text-xs font-mono text-slate-600 mt-0.5">{selectedItem.sku}</div>
+                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex justify-between items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-slate-100 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                      <img
+                        src={selectedItem.image || "/images/products/place-holder.png"}
+                        alt={selectedItem.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/images/products/place-holder.png";
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-base">{selectedItem.name}</div>
+                      <div className="text-xs font-mono text-slate-600 mt-0.5">{selectedItem.sku}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <div className="text-[10px] text-slate-400 font-bold uppercase">SYSTEM STOCK</div>
                     <div className="font-mono text-lg font-extrabold text-blue-700">{selectedItem.currentStock} {selectedItem.unit}</div>
                   </div>
@@ -868,33 +932,30 @@ export default function WarehouseStockPage() {
                     <button
                       type="button"
                       onClick={() => setAdjustType("add")}
-                      className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${
-                        adjustType === "add"
+                      className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${adjustType === "add"
                           ? "bg-blue-50 border-blue-500 text-blue-700 shadow-xs"
                           : "bg-white border-slate-200 text-slate-600"
-                      }`}
+                        }`}
                     >
                       + Add Stock
                     </button>
                     <button
                       type="button"
                       onClick={() => setAdjustType("reduce")}
-                      className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${
-                        adjustType === "reduce"
+                      className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${adjustType === "reduce"
                           ? "bg-red-50 border-red-500 text-red-700 shadow-xs"
                           : "bg-white border-slate-200 text-slate-600"
-                      }`}
+                        }`}
                     >
                       - Reduce Stock
                     </button>
                     <button
                       type="button"
                       onClick={() => setAdjustType("reset")}
-                      className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${
-                        adjustType === "reset"
+                      className={`py-2.5 text-xs font-bold rounded-xl border transition-all ${adjustType === "reset"
                           ? "bg-amber-50 border-amber-500 text-amber-700 shadow-xs"
                           : "bg-white border-slate-200 text-slate-600"
-                      }`}
+                        }`}
                     >
                       Set Exact Count
                     </button>
@@ -907,8 +968,8 @@ export default function WarehouseStockPage() {
                     {adjustType === "add"
                       ? "QUANTITY TO ADD"
                       : adjustType === "reduce"
-                      ? "QUANTITY TO DEDUCT"
-                      : "NEW EXACT COUNT"}
+                        ? "QUANTITY TO DEDUCT"
+                        : "NEW EXACT COUNT"}
                   </label>
                   <input
                     type="number"
@@ -960,6 +1021,25 @@ export default function WarehouseStockPage() {
           </div>
         </div>
       )}
+
+      {/* ── STITCH DESIGN: REVIEW IMMEDIATELY - MULTI-SKU DISCREPANCY RESOLUTION MODAL ── */}
+      <StockDiscrepancyModal
+        isOpen={isDiscrepancyModalOpen}
+        onClose={() => setIsDiscrepancyModalOpen(false)}
+        onSaveBatchResolutions={(resolutions, notes) => {
+          console.log("Batch Resolutions saved:", resolutions, notes);
+          setIsDiscrepancyModalOpen(false);
+        }}
+      />
+
+      {/* ── STITCH DESIGN: NEW MATERIAL RECEIPT MODAL ── */}
+      <NewMaterialReceiptModal
+        isOpen={isNewReceiptModalOpen}
+        onClose={() => setIsNewReceiptModalOpen(false)}
+        onProcessReceipt={(receiptData) => {
+          console.log("Receipt processed:", receiptData);
+        }}
+      />
 
     </div>
   );

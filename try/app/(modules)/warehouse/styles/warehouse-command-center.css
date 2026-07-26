@@ -1,0 +1,557 @@
+/* --- Warehouse Logistics Command Center - Advanced Operations View Styles --- */
+
+.wh-advanced-command-canvas {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    color: #191c1e;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Glass Card & Shadows */
+.wh-glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(198, 198, 205, 0.5);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.wh-glass-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    border-color: rgba(118, 119, 125, 0.4);
+}
+
+/* Page Header */
+.wh-cmd-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.wh-cmd-title-group h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #191c1e;
+    letter-spacing: -0.02em;
+}
+
+.wh-cmd-title-group p {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    color: #45464d;
+}
+
+.wh-live-status-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #45464d;
+}
+
+.wh-pulse-green {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+/* Section 1: Summary Cards Bento Grid */
+.wh-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (min-width: 640px) {
+    .wh-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1024px) {
+    .wh-summary-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.wh-sum-card-inner {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 140px;
+}
+
+.wh-sum-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.wh-sum-card-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #45464d;
+}
+
+.wh-sum-icon-box {
+    padding: 8px;
+    background-color: #eceef0;
+    border-radius: 8px;
+    color: #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.wh-glass-card:hover .wh-sum-icon-box {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.wh-sum-card-val {
+    font-size: 28px;
+    font-weight: 700;
+    color: #191c1e;
+    letter-spacing: -0.02em;
+    line-height: 1;
+}
+
+.wh-sum-card-val.error {
+    color: #ba1a1a;
+}
+
+.wh-trend-up-green {
+    font-size: 12px;
+    font-weight: 500;
+    color: #16a34a;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wh-progress-container {
+    width: 100%;
+    background-color: #e6e8ea;
+    border-radius: 9999px;
+    height: 6px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.wh-progress-bar-fill {
+    background-color: #000000;
+    height: 100%;
+    border-radius: 9999px;
+}
+
+/* Pending Dispatches Alert Box */
+.wh-pending-card {
+    border-color: rgba(186, 26, 26, 0.3) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.wh-pending-corner-bg {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 96px;
+    height: 96px;
+    background-color: rgba(186, 26, 26, 0.05);
+    border-bottom-left-radius: 9999px;
+    pointer-events: none;
+    transition: transform 0.3s ease;
+}
+
+.wh-pending-card:hover .wh-pending-corner-bg {
+    transform: scale(1.1);
+}
+
+.wh-sum-icon-box.error {
+    background-color: #ffdad6;
+    color: #ba1a1a;
+}
+
+.wh-trend-error {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(186, 26, 26, 0.8);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Section 2: Charts Section */
+.wh-charts-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 24px;
+}
+
+@media (min-width: 1024px) {
+    .wh-charts-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.wh-chart-line-card {
+    grid-column: span 1 / span 1;
+    padding: 24px;
+}
+
+@media (min-width: 1024px) {
+    .wh-chart-line-card {
+        grid-column: span 2 / span 2;
+    }
+}
+
+.wh-chart-doughnut-card {
+    grid-column: span 1 / span 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.wh-chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.wh-chart-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #191c1e;
+}
+
+.wh-chart-sub {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    color: #45464d;
+}
+
+/* SVG Line Chart Replacement for Bulletproof Rendering */
+.wh-svg-chart-wrapper {
+    height: 256px;
+    width: 100%;
+    position: relative;
+}
+
+.wh-doughnut-legend-list {
+    margin-top: 24px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.wh-legend-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px;
+}
+
+.wh-legend-label-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #191c1e;
+}
+
+.wh-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.wh-legend-dot.black {
+    background-color: #000000;
+}
+
+.wh-legend-dot.grey {
+    background-color: #515f74;
+}
+
+.wh-legend-dot.light {
+    background-color: #c6c6cd;
+}
+
+.wh-legend-pct {
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #191c1e;
+}
+
+/* Section 3 & 4: Lists & Tables */
+.wh-tables-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 24px;
+}
+
+@media (min-width: 1024px) {
+    .wh-tables-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.wh-table-card {
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.wh-table-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(198, 198, 205, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+}
+
+.wh-table-card-header h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #191c1e;
+}
+
+.wh-view-all-btn {
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #000000;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+
+}
+
+.wh-view-all-btn:hover {
+    color: #3f465c;
+    text-decoration: underline;
+}
+
+/* Traceability Items */
+.wh-trace-list {
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+}
+
+.wh-trace-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(198, 198, 205, 0.2);
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.wh-trace-item:last-child {
+    border-bottom: none;
+}
+
+.wh-trace-item:hover {
+    background-color: rgba(242, 244, 246, 0.5);
+}
+
+.wh-trace-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.wh-trace-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background-color: #eceef0;
+    overflow: hidden;
+    border: 1px solid rgba(198, 198, 205, 0.3);
+    flex-shrink: 0;
+}
+
+.wh-trace-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.wh-trace-item:hover .wh-trace-thumb img {
+    transform: scale(1.1);
+}
+
+.wh-trace-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #191c1e;
+    transition: color 0.2s;
+}
+
+.wh-trace-item:hover .wh-trace-name {
+    color: #000000;
+}
+
+.wh-trace-sub {
+    font-size: 12px;
+    font-weight: 500;
+    color: #45464d;
+    margin-top: 2px;
+}
+
+/* Status Badges */
+.wh-badge-low-stock {
+    padding: 4px 10px;
+    background-color: rgba(255, 218, 214, 0.5);
+    color: #ba1a1a;
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 6px;
+    border: 1px solid rgba(186, 26, 26, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wh-badge-instock {
+    padding: 4px 10px;
+    background-color: #f0fdf4;
+    color: #166534;
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 6px;
+    border: 1px solid #bbf7d0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wh-badge-reserved {
+    padding: 4px 10px;
+    background-color: #eceef0;
+    color: #45464d;
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 6px;
+    border: 1px solid rgba(198, 198, 205, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.wh-badge-pending {
+    padding: 4px 10px;
+    background-color: #fef3c7;
+    color: #92400e;
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 6px;
+    border: 1px solid #fde68a;
+    display: inline-block;
+}
+
+.wh-pulse-red-small {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #ba1a1a;
+    box-shadow: 0 0 0 2px rgba(186, 26, 26, 0.2);
+}
+
+.wh-dot-green-small {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #166534;
+}
+
+.wh-dot-grey-small {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #76777d;
+}
+
+/* Logistics Queue Table */
+.wh-queue-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    background-color: #ffffff;
+}
+
+.wh-queue-table th {
+    padding: 12px 20px;
+    font-family: monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(69, 70, 77, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(198, 198, 205, 0.3);
+}
+
+.wh-queue-table td {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(198, 198, 205, 0.2);
+    font-size: 13px;
+    color: #191c1e;
+    vertical-align: middle;
+}
+
+.wh-queue-table tr:hover {
+    background-color: rgba(242, 244, 246, 0.5);
+}
+
+.wh-queue-table tr:last-child td {
+    border-bottom: none;
+}
+
+.wh-queue-icon-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #e6e8ea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #515f74;
+    flex-shrink: 0;
+}
