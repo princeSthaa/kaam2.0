@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useCallback } from 'react';
 import Script from 'next/script';
+export { adToBs } from './dateUtils';
+
 
 interface NepaliInputElement extends HTMLInputElement {
   nepaliDatePicker?: (options?: any) => void;
