@@ -379,10 +379,7 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
         fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => [])
       ]).then(([custs, ords, plans, planProducts]) => {
         const plannedOrderNos = new Set<string>();
-        const plannedSourceIds = new Set<string>();
-
         (plans || []).forEach((p: any) => {
-          if (p.sourceId) plannedSourceIds.add(String(p.sourceId));
           const prods = p.productionPlanProducts || p.products || [];
           prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
         });
@@ -395,17 +392,14 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
           try {
             const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
             drafts.forEach((d: any) => {
-              if (d.sourceId) plannedSourceIds.add(String(d.sourceId));
               (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
             });
           } catch {}
         }
 
         const combined = custs.map(c => {
-          if (plannedSourceIds.has(String(c.id))) {
-            return { ...c, orderCount: 0, totalQty: 0, orders: [], highestPriority: "Normal" };
-          }
-
+          // A customer remains available whenever they have another unplanned order.
+          // Planning one order must not hide later orders for the same customer.
           const cOrders = ords.filter(o => o.customerId === c.id && !plannedOrderNos.has(String(o.orderNumber)));
           const mappedOrders: any[] = [];
           

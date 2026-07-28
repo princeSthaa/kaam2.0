@@ -21,14 +21,14 @@ namespace backend.Model
         public string Name { get; set; } = string.Empty;
 
         [ForeignKey(nameof(MaterialType))]
-        public Guid MaterialTypeId { get; set; }
+        public Guid? MaterialTypeId { get; set; }
 
-        public virtual MaterialType MaterialType { get; set; } = null!;
+        public virtual MaterialType? MaterialType { get; set; }
 
         [ForeignKey(nameof(MaterialCategory))]
-        public Guid MaterialCategoryId { get; set; }
+        public Guid? MaterialCategoryId { get; set; }
 
-        public virtual MaterialCategory MaterialCategory { get; set; } = null!;
+        public virtual MaterialCategory? MaterialCategory { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal AvailableQty { get; set; }

@@ -2,8 +2,9 @@ import { Order } from "../dto/order.dto";
 
 const API_BASE_URL = 'http://localhost:5083/api';
 
-export async function fetchOrders(): Promise<Order[]> {
-  const res = await fetch(`${API_BASE_URL}/order`, { cache: 'no-store' });
+export async function fetchOrders(customerId?: string): Promise<Order[]> {
+  const query = customerId ? `?customerId=${encodeURIComponent(customerId)}` : "";
+  const res = await fetch(`${API_BASE_URL}/order${query}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch orders');
   const text = await res.text();
   return text ? JSON.parse(text) : (null as any);

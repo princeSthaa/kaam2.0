@@ -4,7 +4,9 @@ export interface Customer {
   email: string;
   phone: string;
   address: string;
-  company: string;
+  company?: string;
+  type?: string;
+  panVat?: string;
   createdAt?: string;
   updatedAt?: string;
 }

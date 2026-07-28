@@ -79,6 +79,8 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
   const customerIdParam = searchParams.get("customerId");
   const outletIdParam = searchParams.get("outletId");
   const selectedSourceId = kind === "customer" ? customerIdParam : outletIdParam;
+  // When supplied from CRM, limit the demand catalog to the order just created.
+  const selectedOrderNumber = searchParams.get("orderNumber");
 
   const [liveCustomers, setLiveCustomers] = useState<Customer[]>([]);
   const [liveOrders, setLiveOrders] = useState<Order[]>([]);
@@ -88,11 +90,11 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
   useEffect(() => {
     if (kind === "customer") {
       fetchCustomers().then(setLiveCustomers).catch(console.error);
-      fetchOrders().then(setLiveOrders).catch(console.error);
+      fetchOrders(selectedSourceId || undefined).then(setLiveOrders).catch(console.error);
       fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).then(setExistingPlans).catch(console.error);
       fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).then(setExistingPlanProducts).catch(console.error);
     }
-  }, [kind]);
+  }, [kind, selectedSourceId]);
 
   // Retrieve source detail
   const sourceDetail = useMemo<any>(() => {
@@ -121,10 +123,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
     if (!selectedSourceId) return [];
 
     const plannedOrderNos = new Set<string>();
-    const plannedSourceIds = new Set<string>();
-
     existingPlans.forEach((p: any) => {
-      if (p.sourceId) plannedSourceIds.add(String(p.sourceId));
       const prods = p.productionPlanProducts || p.products || [];
       prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
     });
@@ -137,26 +136,36 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
       try {
         const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
         drafts.forEach((d: any) => {
-          if (d.sourceId) plannedSourceIds.add(String(d.sourceId));
           (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
         });
       } catch {}
     }
 
     if (kind === "customer") {
-      if (plannedSourceIds.has(String(selectedSourceId))) {
-        return [];
-      }
-      const custOrders = liveOrders.filter(o => o.customerId === selectedSourceId && !plannedOrderNos.has(String(o.orderNumber)));
+      const custOrders = liveOrders.filter(o =>
+        o.customerId === selectedSourceId &&
+        !plannedOrderNos.has(String(o.orderNumber)) &&
+        (!selectedOrderNumber || o.orderNumber === selectedOrderNumber)
+      );
       if (custOrders.length > 0) {
         const itemsList: any[] = [];
         custOrders.forEach((o) => {
           const orderItems = o.orderItems || o.items;
           if (orderItems && orderItems.length > 0) {
             orderItems.forEach((item: any, index: number) => {
-              const qty = Number(item.quantity) || 10;
+              const sizeRows = Array.isArray(item.orderItemSizes) ? item.orderItemSizes : [];
+              const sizes = sizeRows.reduce((result: Record<string, number>, sizeRow: any) => {
+                const size = String(sizeRow.size || "").trim();
+                const quantity = Number(sizeRow.quantity) || 0;
+                if (size && quantity > 0) result[size] = quantity;
+                return result;
+              }, {});
+              const qty = sizeRows.length
+                ? (Object.values(sizes) as number[]).reduce((sum, quantity) => sum + quantity, 0)
+                : Number(item.quantity) || 0;
               itemsList.push({
                 id: `${o.id || o.orderNumber}-${index}`,
+                orderId: o.id,
                 orderNo: o.orderNumber,
                 customerId: o.customerId,
                 productId: item.productId || item.product?.id || "PRD-001",
@@ -168,7 +177,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
                 priority: "Normal",
                 productImage: resolveMediaUrl(item.product?.imagePath, "product"),
                 productionNotes: o.status,
-                sizes: { M: Math.floor(qty / 2), L: Math.ceil(qty / 2) }
+                sizes,
               });
             });
           }
@@ -179,7 +188,7 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
     } else {
       return [];
     }
-  }, [selectedSourceId, kind, liveOrders, existingPlans]);
+  }, [selectedSourceId, selectedOrderNumber, kind, liveOrders, existingPlans, existingPlanProducts]);
 
   // Basket state
   const [basket, setBasket] = useState<any[]>([]);

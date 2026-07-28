@@ -22,6 +22,19 @@ namespace backend.Controller.Customer
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CustomerDto customerDto)
         {
+            if (customerDto.CreatedAt == default)
+            {
+                customerDto.CreatedAt = DateTime.UtcNow;
+            }
+            if (customerDto.UpdatedAt == default)
+            {
+                customerDto.UpdatedAt = DateTime.UtcNow;
+            }
+            if (string.IsNullOrWhiteSpace(customerDto.Type))
+            {
+                customerDto.Type = "Retail";
+            }
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -31,10 +44,10 @@ namespace backend.Controller.Customer
 
             if (!created)
             {
-                return BadRequest();
+                return BadRequest("Failed to create customer record.");
             }
 
-            return Ok(created);
+            return Ok(customerDto);
         }
 
         // <crudgen:actions>

@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import "../styles/production-plans.css";
 
 export default function ProductionDraftsPage() {
+  const router = useRouter();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -137,7 +139,17 @@ export default function ProductionDraftsPage() {
     }
   };
 
-  const activatePlan = async (id: string) => {
+  const activatePlan = async (plan: any) => {
+    const id = String(plan.planNo || plan.planId || plan.id);
+    const isCustomerDraft = String(plan.demandType || "").toLowerCase().includes("customer");
+
+    // Customer drafts need a final review before activation. Reopen them in
+    // the customer-plan form so the user can save another draft or confirm it.
+    if (isCustomerDraft) {
+      router.push(`/production/plans/CreateCustomerPlan?editPlanId=${encodeURIComponent(String(plan.id))}`);
+      return;
+    }
+
     if (!window.confirm(`Activate draft plan ${id} into active production workflow?`)) return;
 
     try {
@@ -403,10 +415,10 @@ export default function ProductionDraftsPage() {
                       <button
                         type="button"
                         className="btn btn-success btn-sm font-bold"
-                        onClick={() => activatePlan(planNo)}
-                        title="Activate plan into production workflow"
+                        onClick={() => activatePlan(plan)}
+                        title={String(plan.demandType || "").toLowerCase().includes("customer") ? "Review customer draft before saving" : "Activate plan into production workflow"}
                       >
-                        Activate
+                        {String(plan.demandType || "").toLowerCase().includes("customer") ? "Review & Activate" : "Activate"}
                       </button>
                       <button
                         type="button"

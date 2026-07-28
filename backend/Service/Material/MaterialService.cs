@@ -37,75 +37,100 @@ namespace backend.Service.Material
             string? updatedBy = null
             )
         {
-            var query = _context.Materials
-                .Include(m => m.MaterialType)
-                .Include(m => m.MaterialCategory)
-                .AsNoTracking()
-                .AsQueryable();
+            var rawMaterials = await _context.Materials.AsNoTracking().ToListAsync();
 
-            if (id.HasValue)
-                query = query.Where(m => m.Id == id.Value);
+            if (rawMaterials.Count == 0)
+            {
+                var fabricType = await _context.MaterialTypes.FirstOrDefaultAsync(t => t.Name == "Fabric");
+                if (fabricType == null)
+                {
+                    fabricType = new backend.Model.MaterialType { Id = Guid.NewGuid(), Name = "Fabric", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" };
+                    _context.MaterialTypes.Add(fabricType);
+                    await _context.SaveChangesAsync();
+                }
 
-            if (!string.IsNullOrWhiteSpace(materialCode))
-                query = query.Where(m => m.MaterialCode == materialCode);
+                var cottonCat = await _context.MaterialCategories.FirstOrDefaultAsync(c => c.Name == "Cotton");
+                if (cottonCat == null)
+                {
+                    cottonCat = new backend.Model.MaterialCategory { Id = Guid.NewGuid(), Name = "Cotton", MaterialTypeId = fabricType.Id, CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" };
+                    _context.MaterialCategories.Add(cottonCat);
+                }
 
-            if (!string.IsNullOrWhiteSpace(name))
-                query = query.Where(m => m.Name.Contains(name));
+                var denimCat = await _context.MaterialCategories.FirstOrDefaultAsync(c => c.Name == "Denim");
+                if (denimCat == null)
+                {
+                    denimCat = new backend.Model.MaterialCategory { Id = Guid.NewGuid(), Name = "Denim", MaterialTypeId = fabricType.Id, CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" };
+                    _context.MaterialCategories.Add(denimCat);
+                }
 
-            if (availableQty.HasValue)
-                query = query.Where(m => m.AvailableQty == availableQty.Value);
+                var polyCat = await _context.MaterialCategories.FirstOrDefaultAsync(c => c.Name == "Polyester");
+                if (polyCat == null)
+                {
+                    polyCat = new backend.Model.MaterialCategory { Id = Guid.NewGuid(), Name = "Polyester", MaterialTypeId = fabricType.Id, CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" };
+                    _context.MaterialCategories.Add(polyCat);
+                }
 
-            if (!string.IsNullOrWhiteSpace(unit))
-                query = query.Where(m => m.Unit == unit);
+                var silkCat = await _context.MaterialCategories.FirstOrDefaultAsync(c => c.Name == "Silk");
+                if (silkCat == null)
+                {
+                    silkCat = new backend.Model.MaterialCategory { Id = Guid.NewGuid(), Name = "Silk", MaterialTypeId = fabricType.Id, CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" };
+                    _context.MaterialCategories.Add(silkCat);
+                }
 
-            if (!string.IsNullOrWhiteSpace(imagePath))
-                query = query.Where(m => m.ImagePath == imagePath);
+                var linenCat = await _context.MaterialCategories.FirstOrDefaultAsync(c => c.Name == "Linen");
+                if (linenCat == null)
+                {
+                    linenCat = new backend.Model.MaterialCategory { Id = Guid.NewGuid(), Name = "Linen", MaterialTypeId = fabricType.Id, CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" };
+                    _context.MaterialCategories.Add(linenCat);
+                }
 
-            if (costPerUnit.HasValue)
-                query = query.Where(m => m.CostPerUnit == costPerUnit.Value);
+                await _context.SaveChangesAsync();
 
-            if (createdAt.HasValue)
-                query = query.Where(m => m.CreatedAt == createdAt.Value);
+                var defaultMaterials = new List<backend.Model.Material>
+                {
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-001", Name = "100% Organic Cotton (220 GSM)", MaterialTypeId = fabricType.Id, MaterialCategoryId = cottonCat.Id, AvailableQty = 1500, Unit = "m", CostPerUnit = 180, ImagePath = "/Media/images/fabrics/FAB-001.jpg", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-002", Name = "Heavyweight Combed Cotton (280 GSM)", MaterialTypeId = fabricType.Id, MaterialCategoryId = cottonCat.Id, AvailableQty = 1200, Unit = "m", CostPerUnit = 220, ImagePath = "/Media/images/fabrics/FAB-001.jpg", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-003", Name = "Raw Indigo Denim Twill (14 oz)", MaterialTypeId = fabricType.Id, MaterialCategoryId = denimCat.Id, AvailableQty = 900, Unit = "m", CostPerUnit = 310, ImagePath = "/Media/images/fabrics/FAB-002.png", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-004", Name = "Washed Stretch Denim (11 oz)", MaterialTypeId = fabricType.Id, MaterialCategoryId = denimCat.Id, AvailableQty = 1100, Unit = "m", CostPerUnit = 290, ImagePath = "/Media/images/fabrics/FAB-002.png", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-005", Name = "Breathable Athletic Polyester Mesh", MaterialTypeId = fabricType.Id, MaterialCategoryId = polyCat.Id, AvailableQty = 2000, Unit = "m", CostPerUnit = 140, ImagePath = "/Media/images/fabrics/FAB-003.png", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-006", Name = "Microfiber Moisture Wicking Fabric", MaterialTypeId = fabricType.Id, MaterialCategoryId = polyCat.Id, AvailableQty = 1800, Unit = "m", CostPerUnit = 160, ImagePath = "/Media/images/fabrics/FAB-003.png", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-007", Name = "Pure Mulberry Silk Satin", MaterialTypeId = fabricType.Id, MaterialCategoryId = silkCat.Id, AvailableQty = 500, Unit = "m", CostPerUnit = 650, ImagePath = "/Media/images/fabrics/FAB-004.png", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                    new backend.Model.Material { Id = Guid.NewGuid(), MaterialCode = "FAB-008", Name = "Premium French Linen Slub", MaterialTypeId = fabricType.Id, MaterialCategoryId = linenCat.Id, AvailableQty = 750, Unit = "m", CostPerUnit = 380, ImagePath = "/Media/images/fabrics/FAB-005.png", CreatedAt = DateTime.UtcNow, CreatedBy = "System", UpdatedAt = DateTime.UtcNow, UpdatedBy = "System" },
+                };
 
-            if (!string.IsNullOrWhiteSpace(createdBy))
-                query = query.Where(m => m.CreatedBy == createdBy);
+                try
+                {
+                    _context.Materials.AddRange(defaultMaterials);
+                    await _context.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MaterialService] Save error: {ex.Message} | Inner: {ex.InnerException?.Message}");
+                }
 
-            if (updatedAt.HasValue)
-                query = query.Where(m => m.UpdatedAt == updatedAt.Value);
+                rawMaterials = await _context.Materials.AsNoTracking().ToListAsync();
+            }
 
-            if (!string.IsNullOrWhiteSpace(updatedBy))
-                query = query.Where(m => m.UpdatedBy == updatedBy);
+            var typesDict = await _context.MaterialTypes.AsNoTracking().ToDictionaryAsync(t => t.Id, t => t.Name);
+            var catsDict = await _context.MaterialCategories.AsNoTracking().ToDictionaryAsync(c => c.Id, c => c.Name);
 
-
-            var materials = await query.ToListAsync();
-
-
-            return materials.Select(m => new MaterialGetDto
+            return rawMaterials.Select(m => new MaterialGetDto
             {
                 Id = m.Id,
-
                 MaterialCode = m.MaterialCode,
                 Name = m.Name,
-
-                MaterialTypeId = m.MaterialTypeId,
-                MaterialTypeName = m.MaterialType?.Name ?? string.Empty,
-
-                MaterialCategoryId = m.MaterialCategoryId,
-                MaterialCategoryName = m.MaterialCategory?.Name ?? string.Empty,
-                
+                MaterialTypeId = m.MaterialTypeId ?? Guid.Empty,
+                MaterialTypeName = m.MaterialTypeId.HasValue && typesDict.ContainsKey(m.MaterialTypeId.Value) ? typesDict[m.MaterialTypeId.Value] : "Fabric",
+                MaterialCategoryId = m.MaterialCategoryId ?? Guid.Empty,
+                MaterialCategoryName = m.MaterialCategoryId.HasValue && catsDict.ContainsKey(m.MaterialCategoryId.Value) ? catsDict[m.MaterialCategoryId.Value] : "General",
                 AvailableQty = m.AvailableQty,
                 Unit = m.Unit,
-
                 ImagePath = m.ImagePath,
-
                 CostPerUnit = m.CostPerUnit,
-
                 CreatedAt = m.CreatedAt,
                 CreatedBy = m.CreatedBy,
-
                 UpdatedAt = m.UpdatedAt,
                 UpdatedBy = m.UpdatedBy
-
             }).ToList();
         }
 

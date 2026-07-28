@@ -9,6 +9,7 @@ import { Customer } from "../../dto/customer.dto";
 import { createOrder } from "../../api/order.api";
 import { fetchProducts, fetchFabrics, resolveMediaUrl, Product, Fabric } from "../../api/catalog.api";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
+import { bsToAd } from "@/app/components/ui/dateUtils";
 
 type StepControlProps = {
   children: React.ReactNode;
@@ -158,7 +159,7 @@ function FabricModalReact({ isOpen, onClose, onSelect, fabrics }: { isOpen: bool
 
   if (!isOpen) return null;
 
-  const getCat = (f: Fabric) => f.category || (f as any).type || "General";
+  const getCat = (f: Fabric) => f.category || (f as any).materialCategoryName || (f as any).type || "General";
   const categories = Array.from(new Set(fabrics.map(getCat)));
 
   return (
@@ -180,7 +181,7 @@ function FabricModalReact({ isOpen, onClose, onSelect, fabrics }: { isOpen: bool
                       const catFabrics = fabrics.filter((f) => getCat(f) === cat);
                       return (
                         <div key={cat} className="col-md-4 col-sm-6 mb-4">
-                          <div className="border rounded fabric-cat-col text-center bg-white shadow-sm" style={{ cursor: "pointer", transition: "transform 0.2s", overflow: "hidden" }} onClick={() => setSelectedCategory(cat)}>
+                          <div className="border rounded fabric-cat-col text-center bg-white shadow-sm" style={{ cursor: "pointer", transition: "transform 0.2s", overflow: "hidden" }} onClick={() => { setSelectedCategory(cat); setSearch(""); }}>
                             <div className="d-flex" style={{ width: "100%", background: "#eee" }}>
                               {catFabrics.slice(0, 4).map((f) => (
                                 <img key={f.id} src={resolveMediaUrl(f.imagePath, "fabric")} alt={f.name} style={{ flex: 1, height: "100px", objectFit: "cover", minWidth: 0 }} />
@@ -478,23 +479,26 @@ export default function CrmCreateOrderPage() {
     selectedProductRows.forEach(row => {
       if (row.productId) {
         row.fabrics.forEach(fab => {
-          for (const [size, qty] of Object.entries(fab.quantities)) {
-            if (qty > 0) {
-              const multiplier = sizeMultipliers[size] || 1.0;
-              const unitPrice = Math.round(150 * 1.5 * multiplier);
+          const orderItemSizes = Object.entries(fab.quantities)
+            .filter(([, qty]) => qty > 0)
+            .map(([size, quantity]) => ({ size, quantity }));
+          if (!orderItemSizes.length) return;
 
-              items.push({
-                // orderId: "", // Backend sets this
-                productId: row.productId,
-                fabricId: fab.fabricId,
-                quantity: qty,
-                unitPrice: unitPrice,
-                totalPrice: qty * unitPrice,
-                discount: 0,
-                createdAt: new Date().toISOString()
-              });
-            }
-          }
+          const quantity = orderItemSizes.reduce((sum, size) => sum + size.quantity, 0);
+          const unitPrice = Math.round(orderItemSizes.reduce(
+            (sum, size) => sum + Math.round(150 * 1.5 * (sizeMultipliers[size.size] || 1.0)) * size.quantity,
+            0,
+          ) / quantity);
+
+          items.push({
+            productId: row.productId,
+            quantity,
+            unitPrice,
+            totalPrice: unitPrice * quantity,
+            discount: 0,
+            createdAt: new Date().toISOString(),
+            orderItemSizes,
+          });
         });
       }
     });
@@ -506,13 +510,14 @@ export default function CrmCreateOrderPage() {
 
     let dueDateIso = new Date().toISOString();
     if (globalDeliveryDate) {
-      const parts = globalDeliveryDate.split('-');
+      const adDeliveryDate = bsToAd(globalDeliveryDate);
+      const parts = adDeliveryDate.split('-');
       if (parts.length === 3 && parts[0].length === 4) {
         dueDateIso = `${parts[0]}-${parts[1]}-${parts[2]}T00:00:00Z`;
       } else if (parts.length === 3) {
         dueDateIso = `${parts[2]}-${parts[1]}-${parts[0]}T00:00:00Z`;
       } else {
-        dueDateIso = new Date(globalDeliveryDate).toISOString();
+        dueDateIso = new Date(adDeliveryDate).toISOString();
       }
     }
 
@@ -768,7 +773,8 @@ export default function CrmCreateOrderPage() {
                     <div className="delivery-date-row">
                       <NepaliDatePicker
                         className="form-control form-control-sm nepali-date"
-                        placeholder="DD-MM-YYYY"
+                        placeholder="YYYY-MM-DD"
+                        enableNepaliPicker
                         value={globalDeliveryDate}
                         onChange={(e) => setGlobalDeliveryDate(e.target.value)}
                       />

@@ -25,21 +25,22 @@ export default function CrmCreateCustomerPage() {
     
     const formData = new FormData(e.currentTarget);
     const data = {
-      name: formData.get("name") as string,
-      company: formData.get("company") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
-      address: formData.get("address") as string,
-      // Customer type or PAN VAT aren't in our core model yet, but could be added later
+      name: (formData.get("name") as string) || "",
+      company: (formData.get("company") as string) || "",
+      email: (formData.get("email") as string) || "",
+      phone: (formData.get("phone") as string) || "",
+      address: (formData.get("address") as string) || "",
+      type: (formData.get("type") as string) || "Retail",
+      panVat: (formData.get("panvat") as string) || "",
     };
 
     try {
       await createCustomer(data);
       router.push("/crm/customers");
       router.refresh();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to create customer");
+      alert(err?.message || "Failed to create customer");
     } finally {
       setLoading(false);
     }

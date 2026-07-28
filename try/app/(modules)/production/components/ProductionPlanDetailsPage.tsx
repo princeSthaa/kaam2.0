@@ -105,25 +105,44 @@ export function ProductionPlanDetailsPage() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(planId)}`)
+    const hydratePlan = async (data: any) => {
+      const [products, stages, sizes] = await Promise.all([
+        fetch("http://localhost:5083/api/production-plan-product").then(res => res.ok ? res.json() : []),
+        fetch("http://localhost:5083/api/production-plan-stage").then(res => res.ok ? res.json() : []),
+        fetch("http://localhost:5083/api/production-plan-product-size").then(res => res.ok ? res.json() : []),
+      ]);
+      const productRows = products
+        .filter((product: any) => String(product.productionPlanId) === String(data.id))
+        .map((product: any) => ({
+          ...product,
+          productionPlanProductSizes: sizes.filter((size: any) => String(size.productionPlanProductId) === String(product.id)),
+        }));
+      return {
+        ...data,
+        productionPlanProducts: productRows,
+        productionPlanStages: stages.filter((stage: any) => String(stage.productionPlanId) === String(data.id)),
+      };
+    };
+
+    fetch(`http://localhost:5083/api/production-plans/by-plan-id/${encodeURIComponent(planId)}`)
       .then((res) => {
         if (!res.ok) throw new Error("Plan not found");
         return res.json();
       })
-      .then((data) => {
-        setPlan(data);
+      .then(async (data) => {
+        setPlan(await hydratePlan(data));
         setLoading(false);
       })
       .catch((err) => {
         // Fallback: fetch all plans and filter
         fetch("http://localhost:5083/api/production-plans")
           .then((res) => (res.ok ? res.json() : []))
-          .then((plans: any[]) => {
+          .then(async (plans: any[]) => {
             const found = plans.find(
               (p) => String(p.id) === String(planId) || String(p.planId) === String(planId) || String(p.planNo) === String(planId)
             );
             if (found) {
-              setPlan(found);
+              setPlan(await hydratePlan(found));
             } else {
               setError("Production plan not found.");
             }

@@ -46,3 +46,25 @@ export function adToBs(adStr: string): string {
 
   return `${bsYear}-${mStr}-${dStr}`;
 }
+
+/** Converts a BS date string to an AD date string for API storage. */
+export function bsToAd(bsStr: string): string {
+  if (!bsStr) return "";
+  const datePart = String(bsStr).split("T")[0].trim();
+  const year = parseInt(datePart.split("-")[0], 10);
+  if (isNaN(year) || year < 2070 || year > 2100) return datePart;
+
+  if (typeof window !== "undefined" && (window as any).NepaliFunctions) {
+    try {
+      const adVal = (window as any).NepaliFunctions.BS2AD(datePart, "YYYY-MM-DD", "YYYY-MM-DD");
+      if (adVal) return typeof adVal === "string" ? adVal : `${adVal.year}-${String(adVal.month).padStart(2, "0")}-${String(adVal.day).padStart(2, "0")}`;
+    } catch {
+      // Use the deterministic fallback below if the picker library rejects the date.
+    }
+  }
+
+  const [bsYear, bsMonth, bsDay] = datePart.split("-").map(Number);
+  const adYear = bsYear - (bsMonth > 9 || (bsMonth === 9 && bsDay >= 1) ? 57 : 56);
+  const adMonth = ((bsMonth + 2) % 12) + 1;
+  return `${adYear}-${String(adMonth).padStart(2, "0")}-${String(bsDay).padStart(2, "0")}`;
+}

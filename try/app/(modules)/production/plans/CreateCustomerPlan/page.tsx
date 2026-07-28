@@ -211,7 +211,7 @@ export default function CreateCustomerPlanPage() {
       try {
         const bsVal = (window as any).NepaliFunctions.AD2BS(datePart, "YYYY-MM-DD", "YYYY-MM-DD");
         if (bsVal) return typeof bsVal === "string" ? bsVal : `${bsVal.year}-${String(bsVal.month).padStart(2, '0')}-${String(bsVal.day).padStart(2, '0')}`;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const parts = datePart.split("-");
@@ -242,7 +242,7 @@ export default function CreateCustomerPlanPage() {
       try {
         const adVal = (window as any).NepaliFunctions.BS2AD(datePart, "YYYY-MM-DD", "YYYY-MM-DD");
         if (adVal) return typeof adVal === "string" ? adVal : `${adVal.year}-${String(adVal.month).padStart(2, '0')}-${String(adVal.day).padStart(2, '0')}`;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const parts = datePart.split("-");
@@ -265,7 +265,7 @@ export default function CreateCustomerPlanPage() {
     if (tempData?.basket && Object.keys(productStages).length === 0) {
       const initialStages: Record<string, any[]> = {};
       const initialDates: Record<string, any> = {};
-      
+
       const defaultStart = new Date();
       defaultStart.setDate(defaultStart.getDate() + 1);
       const defaultEnd = new Date(defaultStart);
@@ -275,9 +275,9 @@ export default function CreateCustomerPlanPage() {
         const rawReq = item.deliveryDate || item.requiredDate || defaultEnd.toISOString().split("T")[0];
         const cleanReq = String(rawReq).split("T")[0];
         initialDates[item.id] = {
-           start: adToBs(defaultStart.toISOString().split("T")[0]),
-           end: adToBs(defaultEnd.toISOString().split("T")[0]),
-           required: adToBs(cleanReq)
+          start: adToBs(defaultStart.toISOString().split("T")[0]),
+          end: adToBs(defaultEnd.toISOString().split("T")[0]),
+          required: adToBs(cleanReq)
         };
 
         initialStages[item.id] = [
@@ -286,11 +286,11 @@ export default function CreateCustomerPlanPage() {
           { stageId: "STG-003", stageName: "Stitching / Sewing", workCenter: "Line 1 - Main Sewing Floor A", workCenterId: "wc-002", operator: "Gopal Shrestha", startOffset: 5, endOffset: 12 },
           { stageId: "STG-004", stageName: "Finishing", workCenter: "Line 1 - QC & Steam Finishing", workCenterId: "wc-004", operator: "Nabina Thapa", startOffset: 13, endOffset: 14 }
         ].map(s => {
-           const start = new Date(defaultStart);
-           start.setDate(start.getDate() + s.startOffset);
-           const end = new Date(defaultStart);
-           end.setDate(end.getDate() + s.endOffset);
-           return { ...s, plannedStartDate: adToBs(start.toISOString().split("T")[0]), plannedEndDate: adToBs(end.toISOString().split("T")[0]) };
+          const start = new Date(defaultStart);
+          start.setDate(start.getDate() + s.startOffset);
+          const end = new Date(defaultStart);
+          end.setDate(end.getDate() + s.endOffset);
+          return { ...s, plannedStartDate: adToBs(start.toISOString().split("T")[0]), plannedEndDate: adToBs(end.toISOString().split("T")[0]) };
         });
       });
       setProductDates(initialDates);
@@ -304,9 +304,11 @@ export default function CreateCustomerPlanPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       if (editPlanId) {
-        fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(editPlanId)}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((data) => {
+        Promise.all([
+          fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(editPlanId)}`).then((res) => (res.ok ? res.json() : null)),
+          fetch("http://localhost:5083/api/production-plan-product").then((res) => (res.ok ? res.json() : [])),
+        ])
+          .then(([data, allProducts]) => {
             if (data) {
               setPlanNo(data.planId || data.planNo || editPlanId);
               setPlanName(data.planName || "");
@@ -318,7 +320,9 @@ export default function CreateCustomerPlanPage() {
               setMaterialWarehouse(data.materialWarehouse || "Central Raw Material Hub");
               setProductionNotes(data.productionNotes || "");
 
-              const prods = data.productionPlanProducts || data.products || [];
+              const prods = data.productionPlanProducts?.length
+                ? data.productionPlanProducts
+                : allProducts.filter((product: any) => String(product.productionPlanId) === String(data.id));
               const mappedBasket = prods.map((p: any, i: number) => ({
                 id: p.id || `edit-prod-${i}`,
                 productId: p.productId || "PRD-001",
@@ -365,8 +369,8 @@ export default function CreateCustomerPlanPage() {
           setPlanNo(generatedPlanNo);
           setPlanDate(bsDateStr);
 
-          const sourceName = parsed.kind === "customer" 
-            ? parsed.sourceDetail?.customerName 
+          const sourceName = parsed.kind === "customer"
+            ? parsed.sourceDetail?.customerName
             : parsed.sourceDetail?.name;
           setPlanName(`Production Plan - ${sourceName || "Stock"} (${bsDateStr})`);
 
@@ -489,8 +493,8 @@ export default function CreateCustomerPlanPage() {
     setIsSubmitting(true);
     setValidationError("");
 
-    const sourceName = tempData.kind === "customer" 
-      ? tempData.sourceDetail?.customerName 
+    const sourceName = tempData.kind === "customer"
+      ? tempData.sourceDetail?.customerName
       : tempData.sourceDetail?.name;
 
     const basketItems = tempData.basket;
@@ -502,32 +506,41 @@ export default function CreateCustomerPlanPage() {
       .sort();
     const earliestRequiredDate = requiredDates[0] || new Date().toISOString();
     const globalStartDate = Object.values(productDates).map(d => new Date(d.start).getTime()).sort()[0] || Date.now();
-    const globalEndDate = Object.values(productDates).map(d => new Date(d.end).getTime()).sort((a,b)=>b-a)[0] || Date.now();
+    const globalEndDate = Object.values(productDates).map(d => new Date(d.end).getTime()).sort((a, b) => b - a)[0] || Date.now();
 
     const userPlanNo = planNo || `PP-${Date.now()}`;
-    const planDbId = `PP-DB-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    // The API stores plans, stages, and plan-products as Guid keys.
+    const planDbId = crypto.randomUUID();
+
+    const isGuid = (value: unknown): value is string =>
+      typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
     const finalStages = basketItems.flatMap((prod: any) => {
       const pStages = productStages[prod.id] || [];
-      return pStages.map((stage: any, sIdx: number) => {
+      return pStages.flatMap((stage: any, sIdx: number) => {
         let wcId = stage.workCenterId;
-        const matchedWc = availableWorkCenters.find((w: any) => 
+        // Only persisted work centers can be used in a production-plan stage.
+        // `availableWorkCenters` also contains UI fallbacks, which do not exist
+        // in the database and would violate the stage foreign-key constraint.
+        const matchedWc = backendWorkCenters.find((w: any) =>
           w.id === wcId || w.name === stage.workCenter || w.id === stage.workCenter
         );
         if (matchedWc) {
           wcId = matchedWc.id;
-        } else if (availableWorkCenters.length > 0) {
-          wcId = availableWorkCenters[0].id;
         } else {
-          wcId = defaultWorkCentersList[0]?.id || "wc-001";
+          wcId = "";
         }
+
+        // The backend has no work centers seeded yet. Do not send the UI's
+        // placeholder IDs (for example, "wc-001") to a Guid field.
+        if (!isGuid(wcId)) return [];
 
         const startISO = stage.plannedStartDate ? new Date(bsToAd(stage.plannedStartDate)).toISOString() : new Date().toISOString();
         const endISO = stage.plannedEndDate ? new Date(bsToAd(stage.plannedEndDate)).toISOString() : new Date().toISOString();
         const serialNo = String(sIdx + 1).padStart(2, "0");
 
-        return {
-          id: `STG-${Date.now()}-${sIdx}-${Math.random().toString(36).substring(2, 7)}`,
+        return [{
+          id: crypto.randomUUID(),
           stageId: `STG-${serialNo}`,
           stageName: stage.stageName ? stage.stageName : `${prod.productName || 'Product'} - Stage ${sIdx + 1}`,
           workCenterId: wcId,
@@ -539,15 +552,15 @@ export default function CreateCustomerPlanPage() {
           rejectedQty: 0,
           operatorName: stage.operator || "",
           createdAt: new Date(Date.now() + sIdx * 100).toISOString()
-        };
+        }];
       });
     });
 
-    const validPriority = priority === "Critical" ? "Critical" 
-      : priority === "High" ? "High" 
-      : priority === "Low" ? "Low" 
-      : priority === "Urgent" ? "Urgent" 
-      : "Medium";
+    const validPriority = priority === "Critical" ? "Critical"
+      : priority === "High" ? "High"
+        : priority === "Low" ? "Low"
+          : priority === "Urgent" ? "Urgent"
+            : "Medium";
 
     const mapSizeEnum = (s: string) => {
       const u = (s || "").toUpperCase().trim();
@@ -577,8 +590,9 @@ export default function CreateCustomerPlanPage() {
       progress: 0,
       blocked: false,
       createdAt: new Date().toISOString(),
+      sourceOrderIds: [...new Set(basketItems.map((item: any) => item.orderId).filter(isGuid))],
       productionPlanProducts: basketItems.map((item: any, idx: number) => {
-        const prodDbId = `PPP-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${idx}`;
+        const prodDbId = crypto.randomUUID();
         const itemStart = productDates[item.id]?.start ? new Date(bsToAd(productDates[item.id].start)).toISOString() : new Date(globalStartDate).toISOString();
         const itemEnd = productDates[item.id]?.end ? new Date(bsToAd(productDates[item.id].end)).toISOString() : new Date(globalEndDate).toISOString();
         const itemReq = productDates[item.id]?.required ? new Date(bsToAd(productDates[item.id].required)).toISOString() : new Date().toISOString();
@@ -603,7 +617,7 @@ export default function CreateCustomerPlanPage() {
           productionNotes: item.productionNotes || productionNotes || "Created from planning basket.",
           createdAt: new Date().toISOString(),
           productionPlanProductSizes: Object.entries(item.sizes || {}).map(([size, quantity], sIdx) => ({
-            id: `PS-${Date.now()}-${sIdx}-${Math.random().toString(36).substring(2, 7)}-${size}`,
+            id: crypto.randomUUID(),
             productionPlanProductId: prodDbId,
             size: mapSizeEnum(size),
             quantity: Number(quantity),
@@ -630,7 +644,7 @@ export default function CreateCustomerPlanPage() {
       }
       setIsSubmitting(false);
       router.push(isDraft ? "/production/drafts" : "/production/plans");
-    } catch(err: any) {
+    } catch (err: any) {
       console.error(err);
       setValidationError(err.message || "Failed to save to backend.");
       setIsSubmitting(false);
@@ -708,7 +722,7 @@ export default function CreateCustomerPlanPage() {
                 <h2>1. General Production Information</h2>
                 <p>Define identification details and priority for this plan.</p>
               </div>
-              
+
               <div className="ccp-form-grid-2">
                 <div className="ccp-form-group">
                   <label htmlFor="planNo" className="ccp-label">Plan Code / No</label>
@@ -720,10 +734,10 @@ export default function CreateCustomerPlanPage() {
                 </div>
                 <div className="ccp-form-group full">
                   <label htmlFor="planName" className="ccp-label">Production Plan Name <span style={{ color: "#dc2626" }}>*</span></label>
-                  <input 
-                    type="text" 
-                    id="planName" 
-                    className="ccp-input" 
+                  <input
+                    type="text"
+                    id="planName"
+                    className="ccp-input"
                     placeholder="Enter descriptive name for the production plan"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
@@ -732,10 +746,10 @@ export default function CreateCustomerPlanPage() {
                 </div>
                 <div className="ccp-form-group">
                   <label htmlFor="leadPlanner" className="ccp-label">Lead Planner / Supervisor <span style={{ color: "#dc2626" }}>*</span></label>
-                  <input 
-                    type="text" 
-                    id="leadPlanner" 
-                    className="ccp-input" 
+                  <input
+                    type="text"
+                    id="leadPlanner"
+                    className="ccp-input"
                     placeholder="E.g. Ramesh Shrestha"
                     value={leadPlanner}
                     onChange={(e) => setLeadPlanner(e.target.value)}
@@ -744,8 +758,8 @@ export default function CreateCustomerPlanPage() {
                 </div>
                 <div className="ccp-form-group">
                   <label htmlFor="priority" className="ccp-label">Production Priority</label>
-                  <select 
-                    id="priority" 
+                  <select
+                    id="priority"
                     className="ccp-select"
                     value={priority}
                     onChange={(e) => setPriority(e.target.value)}
@@ -765,12 +779,12 @@ export default function CreateCustomerPlanPage() {
                 <h2>2. Facilities & Logistics</h2>
                 <p>Assign assembly line, inventory sources, and output storage locations.</p>
               </div>
-              
+
               <div className="ccp-form-grid-2">
                 <div className="ccp-form-group">
                   <label htmlFor="productionLine" className="ccp-label">Primary Assembly Line</label>
-                  <select 
-                    id="productionLine" 
+                  <select
+                    id="productionLine"
                     className="ccp-select"
                     value={productionLine}
                     onChange={(e) => setProductionLine(e.target.value)}
@@ -784,8 +798,8 @@ export default function CreateCustomerPlanPage() {
                 </div>
                 <div className="ccp-form-group">
                   <label htmlFor="materialWarehouse" className="ccp-label">Raw Material Hub</label>
-                  <select 
-                    id="materialWarehouse" 
+                  <select
+                    id="materialWarehouse"
                     className="ccp-select"
                     value={materialWarehouse}
                     onChange={(e) => setMaterialWarehouse(e.target.value)}
@@ -797,8 +811,8 @@ export default function CreateCustomerPlanPage() {
                 </div>
                 <div className="ccp-form-group full">
                   <label htmlFor="outputDestination" className="ccp-label">Finished Output Destination</label>
-                  <select 
-                    id="outputDestination" 
+                  <select
+                    id="outputDestination"
                     className="ccp-select"
                     value={outputDestination}
                     onChange={(e) => setOutputDestination(e.target.value)}
@@ -826,8 +840,8 @@ export default function CreateCustomerPlanPage() {
 
                   return (
                     <div key={item.id} style={{ border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden", backgroundColor: isExpanded ? "#f8fafc" : "#ffffff", transition: "all 0.2s" }}>
-                      <div 
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", cursor: "pointer", borderBottom: isExpanded ? "1px solid #e2e8f0" : "none" }} 
+                      <div
+                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", cursor: "pointer", borderBottom: isExpanded ? "1px solid #e2e8f0" : "none" }}
                         onClick={() => setExpandedProductId(isExpanded ? null : item.id)}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -848,24 +862,24 @@ export default function CreateCustomerPlanPage() {
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "16px" }}>
                             <div>
                               <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Planned Start (BS)</label>
-                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.start)} 
-                                onChange={(e: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, start: bsToAd(e.target.value) }}))}
-                                onDateChange={(bsVal: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, start: bsToAd(bsVal) }}))} />
+                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.start)}
+                                onChange={(e: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, start: bsToAd(e.target.value) } }))}
+                                onDateChange={(bsVal: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, start: bsToAd(bsVal) } }))} />
                             </div>
                             <div>
                               <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Planned End (BS)</label>
-                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.end)} 
-                                onChange={(e: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, end: bsToAd(e.target.value) }}))}
-                                onDateChange={(bsVal: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, end: bsToAd(bsVal) }}))} />
+                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.end)}
+                                onChange={(e: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, end: bsToAd(e.target.value) } }))}
+                                onDateChange={(bsVal: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, end: bsToAd(bsVal) } }))} />
                             </div>
                             <div>
                               <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Required By (BS)</label>
-                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.required)} 
-                                onChange={(e: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, required: bsToAd(e.target.value) }}))}
-                                onDateChange={(bsVal: any) => setProductDates(prev => ({...prev, [item.id]: { ...pd, required: bsToAd(bsVal) }}))} />
+                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.required)}
+                                onChange={(e: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, required: bsToAd(e.target.value) } }))}
+                                onDateChange={(bsVal: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, required: bsToAd(bsVal) } }))} />
                             </div>
                           </div>
-                          
+
                           <div>
                             <div style={{ ...S_stage.flexBetween, marginBottom: 10, marginTop: 16 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", fontFamily: "JetBrains Mono, monospace", display: "flex", alignItems: "center", gap: 6 }}>
@@ -944,9 +958,9 @@ export default function CreateCustomerPlanPage() {
                 <h2>4. Production Instructions / Notes</h2>
                 <p>Add special instructions for cutting, packing, or tailoring departments.</p>
               </div>
-              <textarea 
-                className="ccp-textarea" 
-                rows={3} 
+              <textarea
+                className="ccp-textarea"
+                rows={3}
                 placeholder="E.g. Pack sizes individually. Ensure double stitches on all stress points."
                 value={productionNotes}
                 onChange={(e) => setProductionNotes(e.target.value)}
@@ -962,7 +976,7 @@ export default function CreateCustomerPlanPage() {
                 <h3>Source Account</h3>
                 <p>{tempData.kind === "customer" ? "Customer Profile" : "Outlet Profile"}</p>
               </div>
-              
+
               <div style={{ backgroundColor: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <div style={{ width: 36, height: 36, borderRadius: "8px", backgroundColor: "#eff6ff", color: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -1034,8 +1048,8 @@ export default function CreateCustomerPlanPage() {
                 <div className="ccp-sidebar-title">
                   <h3>Material Checklist</h3>
                 </div>
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="ccp-btn ccp-btn-outline"
                   style={{ padding: "4px 10px", fontSize: "11px" }}
                   onClick={handleCheckMaterials}
@@ -1111,7 +1125,7 @@ export default function CreateCustomerPlanPage() {
                   </>
                 )}
               </button>
-              
+
               <button
                 type="button"
                 className="ccp-btn ccp-btn-outline ccp-btn-full"
@@ -1122,7 +1136,7 @@ export default function CreateCustomerPlanPage() {
                 Save as Draft
               </button>
 
-              <Link 
+              <Link
                 href={tempData.kind === "customer" ? `/production/demands/customer?customerId=${tempData.selectedSourceId}` : `/production/demands/outlet?outletId=${tempData.selectedSourceId}`}
                 className="ccp-btn ccp-btn-ghost ccp-btn-full"
               >

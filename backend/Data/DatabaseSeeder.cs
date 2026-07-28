@@ -155,7 +155,7 @@ namespace backend.Data
                     {
                         Id = orderId,
                         OrderNumber = $"ORD-{i:D4}",
-                        Customer = customers[i - 1],
+                        Customer = customers.Count > 0 ? customers[(i - 1) % customers.Count] : null!,
                         Status = backend.Model.Enums.OrderStatus.Pending,
                         TotalAmount = 5000 + (i * 100),
                         DueDate = DateTime.UtcNow.AddDays(i),
@@ -297,107 +297,244 @@ namespace backend.Data
                 context.SaveChanges();
             }
 
-            // 1. Seed MaterialTypes & MaterialCategories first
-            if (!context.MaterialTypes.Any())
+            // 1. Seed MaterialTypes & MaterialCategories safely
+            var fabricType = context.MaterialTypes.FirstOrDefault(t => t.Name == "Fabric");
+            if (fabricType == null)
             {
-                var fabricType = new MaterialType
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Fabric"
-                };
-
-                var threadType = new MaterialType
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Thread"
-                };
-
-                var accessoryType = new MaterialType
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "Accessory"
-                };
-
-                var categories = new List<MaterialCategory>
-                {
-                    new MaterialCategory { Id = Guid.NewGuid(), Name = "Cotton", MaterialTypeId = fabricType.Id },
-                    new MaterialCategory { Id = Guid.NewGuid(), Name = "Polyester", MaterialTypeId = threadType.Id },
-                    new MaterialCategory { Id = Guid.NewGuid(), Name = "Trims & Fasteners", MaterialTypeId = accessoryType.Id }
-                };
-
-                context.MaterialTypes.AddRange(fabricType, threadType, accessoryType);
-                context.MaterialCategories.AddRange(categories);
-                context.SaveChanges();
+                fabricType = new MaterialType { Id = Guid.NewGuid(), Name = "Fabric" };
+                context.MaterialTypes.Add(fabricType);
             }
 
-           // 2. Seed Materials
-            if (!context.Materials.Any())
+            var threadType = context.MaterialTypes.FirstOrDefault(t => t.Name == "Thread");
+            if (threadType == null)
             {
-                // Retrieve existing types & categories
-                var fabricType = context.MaterialTypes.First(t => t.Name == "Fabric");
-                var threadType = context.MaterialTypes.First(t => t.Name == "Thread");
-                var accessoryType = context.MaterialTypes.First(t => t.Name == "Accessory");
+                threadType = new MaterialType { Id = Guid.NewGuid(), Name = "Thread" };
+                context.MaterialTypes.Add(threadType);
+            }
 
-                var cottonCat = context.MaterialCategories.First(c => c.Name == "Cotton");
-                var polyCat = context.MaterialCategories.First(c => c.Name == "Polyester");
-                var trimCat = context.MaterialCategories.First(c => c.Name == "Trims & Fasteners");
+            var accessoryType = context.MaterialTypes.FirstOrDefault(t => t.Name == "Accessory");
+            if (accessoryType == null)
+            {
+                accessoryType = new MaterialType { Id = Guid.NewGuid(), Name = "Accessory" };
+                context.MaterialTypes.Add(accessoryType);
+            }
 
-                var materials = new List<Material>
+            context.SaveChanges();
+
+            // Seed MaterialCategories
+            var cottonCat = context.MaterialCategories.FirstOrDefault(c => c.Name == "Cotton");
+            if (cottonCat == null)
+            {
+                cottonCat = new MaterialCategory { Id = Guid.NewGuid(), Name = "Cotton", MaterialTypeId = fabricType.Id };
+                context.MaterialCategories.Add(cottonCat);
+            }
+
+            var denimCat = context.MaterialCategories.FirstOrDefault(c => c.Name == "Denim");
+            if (denimCat == null)
+            {
+                denimCat = new MaterialCategory { Id = Guid.NewGuid(), Name = "Denim", MaterialTypeId = fabricType.Id };
+                context.MaterialCategories.Add(denimCat);
+            }
+
+            var polyCat = context.MaterialCategories.FirstOrDefault(c => c.Name == "Polyester");
+            if (polyCat == null)
+            {
+                polyCat = new MaterialCategory { Id = Guid.NewGuid(), Name = "Polyester", MaterialTypeId = fabricType.Id };
+                context.MaterialCategories.Add(polyCat);
+            }
+
+            var silkCat = context.MaterialCategories.FirstOrDefault(c => c.Name == "Silk");
+            if (silkCat == null)
+            {
+                silkCat = new MaterialCategory { Id = Guid.NewGuid(), Name = "Silk", MaterialTypeId = fabricType.Id };
+                context.MaterialCategories.Add(silkCat);
+            }
+
+            var linenCat = context.MaterialCategories.FirstOrDefault(c => c.Name == "Linen");
+            if (linenCat == null)
+            {
+                linenCat = new MaterialCategory { Id = Guid.NewGuid(), Name = "Linen", MaterialTypeId = fabricType.Id };
+                context.MaterialCategories.Add(linenCat);
+            }
+
+            var trimCat = context.MaterialCategories.FirstOrDefault(c => c.Name == "Trims & Fasteners");
+            if (trimCat == null)
+            {
+                trimCat = new MaterialCategory { Id = Guid.NewGuid(), Name = "Trims & Fasteners", MaterialTypeId = accessoryType.Id };
+                context.MaterialCategories.Add(trimCat);
+            }
+
+            context.SaveChanges();
+
+            // 2. Seed Materials
+            context.Materials.RemoveRange(context.Materials);
+            context.SaveChanges();
+
+                var freshMaterials = new List<Material>
                 {
                     new Material
                     {
                         Id = Guid.NewGuid(),
-                        MaterialCode = "MAT-001",
-                        Name = "Dyed Cotton",
+                        MaterialCode = "FAB-001",
+                        Name = "100% Organic Cotton (220 GSM)",
                         MaterialTypeId = fabricType.Id,
                         MaterialCategoryId = cottonCat.Id,
-                        AvailableQty = 1000,
+                        AvailableQty = 1500,
                         Unit = "m",
-                        CostPerUnit = 150,
-                        ImagePath = "/Media/images/materials/Fabric/Cotton/MAT-001.jpg"
+                        CostPerUnit = 180,
+                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
                     },
-
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "FAB-002",
+                        Name = "Heavyweight Combed Cotton (280 GSM)",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = cottonCat.Id,
+                        AvailableQty = 1200,
+                        Unit = "m",
+                        CostPerUnit = 220,
+                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    },
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "FAB-003",
+                        Name = "Raw Indigo Denim Twill (14 oz)",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = denimCat.Id,
+                        AvailableQty = 900,
+                        Unit = "m",
+                        CostPerUnit = 310,
+                        ImagePath = "/Media/images/fabrics/FAB-002.png",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    },
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "FAB-004",
+                        Name = "Washed Stretch Denim (11 oz)",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = denimCat.Id,
+                        AvailableQty = 1100,
+                        Unit = "m",
+                        CostPerUnit = 290,
+                        ImagePath = "/Media/images/fabrics/FAB-002.png",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    },
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "FAB-005",
+                        Name = "Breathable Athletic Polyester Mesh",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = polyCat.Id,
+                        AvailableQty = 2000,
+                        Unit = "m",
+                        CostPerUnit = 140,
+                        ImagePath = "/Media/images/fabrics/FAB-003.png",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    },
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "FAB-006",
+                        Name = "Microfiber Moisture Wicking Fabric",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = polyCat.Id,
+                        AvailableQty = 1800,
+                        Unit = "m",
+                        CostPerUnit = 160,
+                        ImagePath = "/Media/images/fabrics/FAB-003.png",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    },
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "FAB-007",
+                        Name = "Pure Mulberry Silk Satin",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = silkCat.Id,
+                        AvailableQty = 500,
+                        Unit = "m",
+                        CostPerUnit = 650,
+                        ImagePath = "/Media/images/fabrics/FAB-004.png",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    },
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "FAB-008",
+                        Name = "Premium French Linen Slub",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = linenCat.Id,
+                        AvailableQty = 750,
+                        Unit = "m",
+                        CostPerUnit = 380,
+                        ImagePath = "/Media/images/fabrics/FAB-005.png",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
+                    },
                     new Material
                     {
                         Id = Guid.NewGuid(),
                         MaterialCode = "MAT-002",
-                        Name = "Dyed Thread",
+                        Name = "Polyester Sewing Thread",
                         MaterialTypeId = threadType.Id,
                         MaterialCategoryId = polyCat.Id,
                         AvailableQty = 5000,
                         Unit = "spool",
                         CostPerUnit = 25,
-                        ImagePath = "/Media/images/materials/Thread/Polyester/MAT-002.png"
+                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
                     },
-
                     new Material
                     {
                         Id = Guid.NewGuid(),
                         MaterialCode = "MAT-003",
-                        Name = "Buttons",
+                        Name = "Brass Metallic Buttons",
                         MaterialTypeId = accessoryType.Id,
                         MaterialCategoryId = trimCat.Id,
                         AvailableQty = 10000,
                         Unit = "pcs",
                         CostPerUnit = 5,
-                        ImagePath = "/Media/images/materials/Accessory/Trims & Fasteners/MAT-003.png"
-                    },
-
-                    new Material
-                    {
-                        Id = Guid.NewGuid(),
-                        MaterialCode = "MAT-004",
-                        Name = "Zipper",
-                        MaterialTypeId = accessoryType.Id,
-                        MaterialCategoryId = trimCat.Id,
-                        AvailableQty = 2000,
-                        Unit = "pcs",
-                        CostPerUnit = 15,
-                        ImagePath = "/Media/images/materials/Accessory/Trims & Fasteners/MAT-004.png"
+                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "System",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "System"
                     }
                 };
 
-                context.Materials.AddRange(materials);
+                context.Materials.AddRange(freshMaterials);
                 context.SaveChanges();
 
                 // 3. Seed BOMs
@@ -414,7 +551,7 @@ namespace backend.Data
                             {
                                 Id = Guid.NewGuid(),
                                 ProductId = product.Id,
-                                MaterialId = materials[0].Id,
+                                MaterialId = freshMaterials[0].Id,
                                 QtyPerUnit = 1.5m,
                                 WastagePercent = 5
                             });
@@ -423,7 +560,7 @@ namespace backend.Data
                             {
                                 Id = Guid.NewGuid(),
                                 ProductId = product.Id,
-                                MaterialId = materials[1].Id,
+                                MaterialId = freshMaterials[1].Id,
                                 QtyPerUnit = 0.5m,
                                 WastagePercent = 2
                             });
@@ -433,7 +570,6 @@ namespace backend.Data
                     context.BillOfMaterials.AddRange(boms);
                     context.SaveChanges();
                 }
-            }
        
             // Seed MaterialRequests
             if (!context.MaterialRequests.Any())

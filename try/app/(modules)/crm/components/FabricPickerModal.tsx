@@ -24,7 +24,7 @@ export function FabricPickerModal({ isOpen, onClose, onSelect, fabrics }: Fabric
 
   if (!isOpen) return null;
 
-  const getCat = (f: Fabric) => f.category || (f as any).type || "General";
+  const getCat = (f: Fabric) => f.category || (f as any).materialCategoryName || (f as any).type || "General";
   const categories = Array.from(new Set(fabrics.map(getCat)));
 
   const handleCategoryClick = (cat: string) => {
