@@ -32,12 +32,12 @@
     box-sizing: border-box;
 }
 
-.plans-page {
+/* .plans-page {
     min-height: calc(100vh - 72px);
     background: var(--bg);
     padding: 28px;
     color: var(--text);
-}
+} */
 
 .plans-page-header {
     display: flex;
@@ -532,6 +532,7 @@
 }
 
 @media print {
+
     .plans-page-header,
     .plans-list-card {
         display: none !important;
@@ -837,7 +838,8 @@
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.05);
 }
 
-.variant-breakdown-table th, .pp-table th {
+.variant-breakdown-table th,
+.pp-table th {
     background: #f8fafc;
     color: #475569;
     font-weight: 700;
@@ -846,7 +848,8 @@
     letter-spacing: 0.05em;
 }
 
-.variant-breakdown-table td, .pp-table td {
+.variant-breakdown-table td,
+.pp-table td {
     padding: 14px 12px;
 }
 
@@ -966,7 +969,7 @@
         width: 100% !important;
     }
 
-    .pp-header-actions .btn, 
+    .pp-header-actions .btn,
     .pp-header-actions a,
     .pp-header-actions button {
         width: 100% !important;
@@ -987,7 +990,7 @@
     }
 
     /* Summary Grids & Cards */
-    .pp-detail-summary-grid, 
+    .pp-detail-summary-grid,
     .selected-info-card {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         gap: 10px !important;
@@ -1020,7 +1023,8 @@
     }
 
     .horizontal-product-shelf .rack-nav-btn {
-        display: none !important; /* Users can swipe scroll natively */
+        display: none !important;
+        /* Users can swipe scroll natively */
     }
 
     .horizontal-product-scroll {
@@ -1132,4 +1136,4 @@
     .product-size-editor-head strong {
         align-self: flex-start !important;
     }
-}
+}
