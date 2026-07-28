@@ -9,6 +9,10 @@ using backend.Dto.OrderItemSize;
 using backend.Dto.Order;
 using backend.Model.Enums;
 using Microsoft.EntityFrameworkCore;
+using backend.Dto.Product;
+using backend.Dto.Fabric;
+using backend.Dto.OrderItemMaterial;
+using backend.Dto.Material;
 
 namespace backend.Service.Order
 {
@@ -21,7 +25,7 @@ namespace backend.Service.Order
             _context = context;
         }
 
-        public async Task<List<OrderDto>> GetAllAsync(
+        public async Task<List<OrderGetDto>> GetAllAsync(
             Guid? id = null,
             string? orderNumber = null,
             OrderStatus? status = null,
@@ -40,7 +44,9 @@ namespace backend.Service.Order
                 .Include(o => o.OrderItems)
                     .ThenInclude(i => i.Product)
                 .Include(o => o.OrderItems)
-                    .ThenInclude(i => i.Fabric)
+                    .ThenInclude(i => i.OrderItemMaterials)
+                        .ThenInclude(m => m.Material)
+                            .ThenInclude(m => m.MaterialCategory)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -57,19 +63,21 @@ namespace backend.Service.Order
 
             var orders = await query.ToListAsync();
 
-            return orders.Select(o => new OrderDto
+            return orders.Select(MapOrderToDto).ToList();
+        }
+
+        public static OrderGetDto MapOrderToDto(backend.Model.Order order)
+        {
+            return new OrderGetDto
             {
-                Id = o.Id,
-                OrderNumber = o.OrderNumber,
-                Status = o.Status,
-                TotalAmount = o.TotalAmount,
-                DueDate = o.DueDate,
-                CreatedAt = o.CreatedAt,
-                CreatedBy = o.CreatedBy,
-                UpdatedAt = o.UpdatedAt,
-                UpdatedBy = o.UpdatedBy,
-                CustomerId = o.CustomerId,
-                OrderItems = o.OrderItems.Select(i => new OrderItemDto
+                Id = order.Id,
+                OrderNumber = order.OrderNumber,
+                Status = order.Status,
+                TotalAmount = order.TotalAmount,
+                DueDate = order.DueDate,
+                CustomerId = order.CustomerId,
+                ProductionPlanId = order.ProductionPlanId,
+                OrderItems = order.OrderItems.Select(i => new OrderItemGetDto
                 {
                     Id = i.Id,
                     Quantity = i.Quantity,
@@ -77,28 +85,43 @@ namespace backend.Service.Order
                     TotalPrice = i.TotalPrice,
                     Discount = i.Discount,
                     ProductId = i.ProductId,
-                    FabricId = i.FabricId,
-                    CreatedAt = i.CreatedAt,
-                    CreatedBy = i.CreatedBy,
-                    UpdatedAt = i.UpdatedAt,
-                    UpdatedBy = i.UpdatedBy,
+                    Product = i.Product == null ? null : new OrderProductGetDto
+                    {
+                        Id = i.Product.Id,
+                        Name = i.Product.Name,
+                        ImagePath = i.Product.ImagePath
+                    },
+                    OrderItemMaterials = i.OrderItemMaterials.Select(m => new OrderItemMaterialGetDto
+                    {
+                        Id = m.Id,
+                        MaterialId = m.MaterialId,
+                        RequiredQuantity = m.RequiredQuantity,
+                        Unit = m.Unit,
+
+                        Material = m.Material == null ? null : new OrderMaterialGetDto
+                        {
+                            Id = m.Material.Id,
+                            Name = m.Material.Name,
+                            ImagePath = m.Material.ImagePath,
+                            Unit = m.Material.Unit,
+                            MaterialCategoryName = m.Material.MaterialCategory?.Name
+                        },
+
+                        OrderItemId = m.OrderItemId
+                    }).ToList(),
+
                     OrderId = i.OrderId,
-                    Sizes = i.OrderItemSizes.Select(s => new OrderItemSizeDto
+                    OrderItemSizes = i.OrderItemSizes.Select(s => new OrderItemSizeGetDto
                     {
                         Id = s.Id,
                         Size = s.Size,
-                        Quantity = s.Quantity,
-                        CreatedAt = s.CreatedAt,
-                        CreatedBy = s.CreatedBy,
-                        UpdatedAt = s.UpdatedAt,
-                        UpdatedBy = s.UpdatedBy,
-                        OrderItemId = s.OrderItemId
+                        Quantity = s.Quantity
                     }).ToList()
                 }).ToList()
-            }).ToList();
+            };
         }
 
-        public async Task<OrderDto?> GetByIdAsync(Guid id)
+        public async Task<OrderGetDto?> GetByIdAsync(Guid id)
         {
             var results = await GetAllAsync(id: id);
             return results.FirstOrDefault();
@@ -111,8 +134,11 @@ namespace backend.Service.Order
                 orderDto.Id = Guid.NewGuid();
             }
 
-            if (orderDto.CreatedAt == default) orderDto.CreatedAt = DateTime.UtcNow;
-            if (orderDto.UpdatedAt == default) orderDto.UpdatedAt = DateTime.UtcNow;
+            if (orderDto.CreatedAt == default)
+                orderDto.CreatedAt = DateTime.UtcNow;
+
+            if (orderDto.UpdatedAt == default)
+                orderDto.UpdatedAt = DateTime.UtcNow;
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertOrder
@@ -128,19 +154,25 @@ namespace backend.Service.Order
                     @CustomerId = {orderDto.CustomerId}
             ");
 
-            if (orderDto.OrderItems != null && orderDto.OrderItems.Count > 0)
+            if (orderDto.OrderItems != null && orderDto.OrderItems.Any())
             {
                 foreach (var item in orderDto.OrderItems)
                 {
-                    if (item.Id == Guid.Empty) item.Id = Guid.NewGuid();
-                    item.OrderId = orderDto.Id;
-                    if (item.CreatedAt == default) item.CreatedAt = DateTime.UtcNow;
-                    if (item.UpdatedAt == default) item.UpdatedAt = DateTime.UtcNow;
+                    if (item.Id == Guid.Empty)
+                        item.Id = Guid.NewGuid();
 
-                    // Calculate total quantity from sizes if sizes are provided
-                    if (item.Sizes != null && item.Sizes.Count > 0)
+                    item.OrderId = orderDto.Id;
+
+                    if (item.CreatedAt == default)
+                        item.CreatedAt = DateTime.UtcNow;
+
+                    if (item.UpdatedAt == default)
+                        item.UpdatedAt = DateTime.UtcNow;
+
+                    // Calculate total quantity from sizes
+                    if (item.OrderItemSizes != null && item.OrderItemSizes.Any())
                     {
-                        item.Quantity = item.Sizes.Sum(s => s.Quantity);
+                        item.Quantity = item.OrderItemSizes.Sum(s => s.Quantity);
                     }
 
                     await _context.Database.ExecuteSqlInterpolatedAsync($@"
@@ -155,18 +187,24 @@ namespace backend.Service.Order
                             @UpdatedAt = {item.UpdatedAt},
                             @UpdatedBy = {item.UpdatedBy},
                             @ProductId = {item.ProductId},
-                            @FabricId = {item.FabricId},
                             @OrderId = {item.OrderId}
                     ");
 
-                    if (item.Sizes != null && item.Sizes.Count > 0)
+                    // Insert Sizes
+                    if (item.OrderItemSizes != null && item.OrderItemSizes.Any())
                     {
-                        foreach (var size in item.Sizes)
+                        foreach (var size in item.OrderItemSizes)
                         {
-                            if (size.Id == Guid.Empty) size.Id = Guid.NewGuid();
+                            if (size.Id == Guid.Empty)
+                                size.Id = Guid.NewGuid();
+
                             size.OrderItemId = item.Id;
-                            if (size.CreatedAt == default) size.CreatedAt = DateTime.UtcNow;
-                            if (size.UpdatedAt == default) size.UpdatedAt = DateTime.UtcNow;
+
+                            if (size.CreatedAt == default)
+                                size.CreatedAt = DateTime.UtcNow;
+
+                            if (size.UpdatedAt == default)
+                                size.UpdatedAt = DateTime.UtcNow;
 
                             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                                 EXEC sp_InsertOrderItemSize
@@ -178,6 +216,37 @@ namespace backend.Service.Order
                                     @UpdatedAt = {size.UpdatedAt},
                                     @UpdatedBy = {size.UpdatedBy},
                                     @OrderItemId = {size.OrderItemId}
+                            ");
+                        }
+                    }
+
+                    // Insert Materials
+                    if (item.OrderItemMaterials != null && item.OrderItemMaterials.Any())
+                    {
+                        foreach (var material in item.OrderItemMaterials)
+                        {
+                            if (material.Id == Guid.Empty)
+                                material.Id = Guid.NewGuid();
+
+                            material.OrderItemId = item.Id;
+
+                            if (material.CreatedAt == default)
+                                material.CreatedAt = DateTime.UtcNow;
+
+                            if (material.UpdatedAt == default)
+                                material.UpdatedAt = DateTime.UtcNow;
+
+                            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                                EXEC sp_InsertOrderItemMaterial
+                                    @Id = {material.Id},
+                                    @RequiredQuantity = {material.RequiredQuantity},
+                                    @Unit = {material.Unit},
+                                    @CreatedAt = {material.CreatedAt},
+                                    @CreatedBy = {material.CreatedBy},
+                                    @UpdatedAt = {material.UpdatedAt},
+                                    @UpdatedBy = {material.UpdatedBy},
+                                    @MaterialId = {material.MaterialId},
+                                    @OrderItemId = {material.OrderItemId}
                             ");
                         }
                     }

@@ -9,6 +9,9 @@ namespace backend.Service.Product
 {
     public interface IProductService
     {
+
+        Task<bool> CreateAsync(ProductDto productDto);
+
         // <crudgen:method-signatures>
         Task<List<ProductDto>> GetAllAsync(
             Guid? id = null,
@@ -21,8 +24,6 @@ namespace backend.Service.Product
         );
 
         Task<ProductDto?> GetByIdAsync(Guid id);
-
-        Task<bool> CreateAsync(ProductDto productDto);
 
         Task<bool> UpdateAsync(Guid id, ProductDto productDto);
 

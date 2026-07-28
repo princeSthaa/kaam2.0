@@ -8,6 +8,8 @@ namespace backend.Service.Customer
 {
     public interface ICustomerService
     {
+        Task<bool> CreateAsync(CustomerDto customerDto);
+        
         // <crudgen:method-signatures>
         Task<List<CustomerDto>> GetAllAsync(
             Guid? id = null,
@@ -26,7 +28,6 @@ namespace backend.Service.Customer
 
         Task<CustomerDto?> GetByIdAsync(Guid id);
 
-        Task<bool> CreateAsync(CustomerDto customerDto);
 
         Task<bool> UpdateAsync(Guid id, CustomerDto customerDto);
 

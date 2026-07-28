@@ -53,9 +53,10 @@ namespace backend.Service.Product
             string? updatedBy = null
         )
         {
-            var products = await _context.Products
-                .FromSqlInterpolated($@"
+            return await _context.Database
+                .SqlQuery<ProductDto>($@"
                     EXEC sp_GetProducts
+
                         @Id = {id},
                         @Name = {name},
                         @ImagePath = {imagePath},
@@ -64,20 +65,7 @@ namespace backend.Service.Product
                         @UpdatedAt = {updatedAt},
                         @UpdatedBy = {updatedBy}
                 ")
-                .AsNoTracking()
                 .ToListAsync();
-
-            return products.Select(p => new ProductDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                ImagePath = p.ImagePath,
-                Sizes = p.Sizes ?? new List<ProductSize>(),
-                CreatedAt = p.CreatedAt,
-                CreatedBy = p.CreatedBy,
-                UpdatedAt = p.UpdatedAt,
-                UpdatedBy = p.UpdatedBy
-            }).ToList();
         }
 
         public async Task<ProductDto?> GetByIdAsync(Guid id)
@@ -88,10 +76,11 @@ namespace backend.Service.Product
 
         public async Task<bool> UpdateAsync(Guid id, ProductDto productDto)
         {
-            var sizesJson = JsonSerializer.Serialize(productDto.Sizes.Select(s => s.ToString()).ToList());
+            var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateProduct
+
                     @Id = {productDto.Id},
                     @Name = {productDto.Name},
                     @ImagePath = {productDto.ImagePath},

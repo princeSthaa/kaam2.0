@@ -8,8 +8,10 @@ namespace backend.Model
     public class MaterialIssue
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public string MaterialId { get; set; } = string.Empty;
+        [Column(TypeName = "decimal(18,2)")]
         public decimal IssueQuantity { get; set; }
         public string TargetDestination { get; set; } = string.Empty;
         public string IssuedTo { get; set; } = string.Empty;

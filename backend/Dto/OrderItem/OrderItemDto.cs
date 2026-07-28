@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using backend.Dto.Fabric;
 using backend.Dto.OrderItemSize;
-using backend.Dto.Product;
+using backend.Dto.OrderItemMaterial;
 
 namespace backend.Dto.OrderItem
 {
@@ -18,14 +18,6 @@ namespace backend.Dto.OrderItem
         public decimal UnitPrice { get; set; }
 
         public Guid ProductId { get; set; }
-        
-        [NotMapped]
-        public ProductDto? Product { get; set; }
-
-        public Guid FabricId { get; set; }
-
-        [NotMapped]
-        public FabricDto? Fabric { get; set; }
 
         public decimal TotalPrice { get; set; }
 
@@ -41,9 +33,12 @@ namespace backend.Dto.OrderItem
         public string UpdatedBy { get; set; } = string.Empty;
 
         public Guid OrderId { get; set; }
+        [NotMapped]
+        public List<OrderItemSizeDto> OrderItemSizes { get; set; } = new();
 
         [NotMapped]
-        public List<OrderItemSizeDto> Sizes { get; set; } = new List<OrderItemSizeDto>();
+        public List<OrderItemMaterialDto> OrderItemMaterials { get; set; } = new();
+
         // </crudgen:properties>
     }
 }

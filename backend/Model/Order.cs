@@ -10,9 +10,11 @@ namespace backend.Model
     public class Order
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public string OrderNumber { get; set; } = string.Empty;
         public OrderStatus Status { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
         public DateTime DueDate { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -21,6 +23,8 @@ namespace backend.Model
         public string UpdatedBy { get; set; } = string.Empty;
         public Guid CustomerId { get; set; }
         public virtual Customer Customer { get; set; } = null!;
+        public Guid? ProductionPlanId { get; set; }
+        public virtual ProductionPlan? ProductionPlan { get; set; }
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
         // </crudgen:properties>
     }

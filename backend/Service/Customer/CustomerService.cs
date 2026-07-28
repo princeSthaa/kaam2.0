@@ -21,6 +21,33 @@ namespace backend.Service.Customer
             _context = context;
         }
 
+        public async Task<bool> CreateAsync(CustomerDto customerDto)
+        {
+            if (customerDto.Id == Guid.Empty)
+            {
+                customerDto.Id = Guid.NewGuid();
+            }
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_InsertCustomer
+
+                    @Id = {customerDto.Id},
+                    @Name = {customerDto.Name},
+                    @Email = {customerDto.Email},
+                    @Phone = {customerDto.Phone},
+                    @Address = {customerDto.Address},
+                    @Type = {customerDto.Type},
+                    @Company = {customerDto.Company},
+                    @PanVat = {customerDto.PanVat},
+                    @CreatedAt = {customerDto.CreatedAt},
+                    @CreatedBy = {customerDto.CreatedBy},
+                    @UpdatedAt = {customerDto.UpdatedAt},
+                    @UpdatedBy = {customerDto.UpdatedBy}
+            ");
+
+            return true;
+        }
+
         // <crudgen:methods>
         public async Task<List<CustomerDto>> GetAllAsync(
             Guid? id = null,
@@ -61,33 +88,6 @@ namespace backend.Service.Customer
         {
             var results = await GetAllAsync(id: id);
             return results.FirstOrDefault();
-        }
-
-        public async Task<bool> CreateAsync(CustomerDto customerDto)
-        {
-            if (customerDto.Id == Guid.Empty)
-            {
-                customerDto.Id = Guid.NewGuid();
-            }
-
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertCustomer
-
-                    @Id = {customerDto.Id},
-                    @Name = {customerDto.Name},
-                    @Email = {customerDto.Email},
-                    @Phone = {customerDto.Phone},
-                    @Address = {customerDto.Address},
-                    @Type = {customerDto.Type},
-                    @Company = {customerDto.Company},
-                    @PanVat = {customerDto.PanVat},
-                    @CreatedAt = {customerDto.CreatedAt},
-                    @CreatedBy = {customerDto.CreatedBy},
-                    @UpdatedAt = {customerDto.UpdatedAt},
-                    @UpdatedBy = {customerDto.UpdatedBy}
-            ");
-
-            return true;
         }
 
         public async Task<bool> UpdateAsync(Guid id, CustomerDto customerDto)

@@ -8,6 +8,7 @@ namespace backend.Model.Enums
         Pending,
         Processing,
         Completed,
-        Cancelled
+        Cancelled,
+        Planned
     }
 }

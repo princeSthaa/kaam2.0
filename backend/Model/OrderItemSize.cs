@@ -8,6 +8,7 @@ namespace backend.Model
     [Table("OrderItemSizes")]
     public class OrderItemSize
     {
+        [Key]
         public Guid Id { get; set; }
         public ProductSize Size { get; set; }
         public int Quantity { get; set; }

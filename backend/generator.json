@@ -21,7 +21,7 @@
     }
   ],
   "Entities": [
-    {
+    { 
       "Name": "Customer",
       "Annotations": [ "Table(\"Customers\")"],
       "Properties": [
@@ -34,7 +34,8 @@
         { "Name": "Company", "Type": "string" },
         { "Name": "PanVat", "Type": "string" }
       ],
-      "Children": [ "Order" ]
+      "Children": [ "Order" ],
+      "SkipMethods": ["Create"]
     },
     { "Name": "Order", "Parent": "Customer", "Annotations": [ "Table(\"Orders\")" ],
       "Properties": [
@@ -54,10 +55,27 @@
         { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
         { "Name": "Quantity", "Type": "int" },
         { "Name": "UnitPrice", "Type": "decimal" },
-        { "Name": "Product", "Type": "Product" },
-        { "Name": "Fabric", "Type": "Fabric" },
+        { "Name": "ProductId", "Type": "Guid" },
         { "Name": "TotalPrice", "Type": "decimal" },
         { "Name": "Discount", "Type": "decimal" }
+      ],
+      "Children":["OrderItemSize", "OrderItemMaterial"]
+    },
+    {
+      "Name": "OrderItemSize",
+      "Parent": "OrderItem",
+      "Properties": [
+        { "Name": "Id", "Type":"Guid", "IsPrimaryKey": true},
+        { "Name": "Size", "Type": "ProductSize" },
+        { "Name": "Quantity", "Type": "int" }
+      ]
+    },
+    { "Name": "OrderItemMaterial", "Parent": "OrderItem", "Annotations": [ "Table(\"OrderItemMaterials\")"],
+      "Properties":[
+        { "Name":"Id","Type":"Guid","IsPrimaryKey":true },
+        { "Name":"Material","Type":"Material" },
+        { "Name":"RequiredQuantity","Type":"decimal" },
+        { "Name":"Unit","Type":"string" }
       ]
     },
     {
@@ -72,25 +90,14 @@
       "SkipMethods": ["Create"]
     },
     {
-      "Name": "Fabric",
-      "Annotations": [ "Table(\"Fabrics\")" ],
-      "Properties": [
-        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
-        { "Name": "Name", "Type": "string", "Required": true },
-        { "Name": "Category", "Type": "string" },
-        { "Name": "ImagePath", "Type": "string", "Format": "image"},
-        {"Name": "UnitPrice", "Type": "decimal"}
-      ],
-      "SkipMethods": ["Create"]
-    },
-    {
       "Name": "WorkCenter",
       "Annotations": ["Table(\"WorkCenters\")"],
       "Properties": [
         {"Name": "Id","Type": "Guid","IsPrimaryKey": true},
         { "Name": "Name","Type": "string", "Required": true },
         { "Name": "Type", "Type": "string" },
-        { "Name": "Status", "Type": "string" }
+        { "Name": "Status", "Type": "string" },
+        { "Name": "ProductionLine", "Type": "string"}
       ]
     },
     {
@@ -177,17 +184,38 @@
       ]
     },
     {
+      "Name": "MaterialType",
+      "Annotations": [ "Table(\"MaterialTypes\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true }
+      ],
+      "Children": [ "MaterialCategory" ]
+    },
+    {
+      "Name": "MaterialCategory",
+      "Parent": "MaterialType",
+      "Annotations": [ "Table(\"MaterialCategories\")" ],
+      "Properties": [
+        { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
+        { "Name": "Name", "Type": "string", "Required": true }
+      ]
+    },
+    {
       "Name": "Material",
       "Annotations": [ "Table(\"Materials\")" ],
       "Properties": [
         { "Name": "Id", "Type": "Guid", "IsPrimaryKey": true },
         { "Name": "MaterialCode", "Type": "string", "Required": true },
         { "Name": "Name", "Type": "string", "Required": true },
-        { "Name": "Type", "Type": "string" },
+        { "Name": "MaterialType", "Type": "MaterialType" },
+        { "Name": "MaterialCategory", "Type": "MaterialCategory" },
         { "Name": "AvailableQty", "Type": "decimal" },
         { "Name": "Unit", "Type": "string" },
+        { "Name": "ImagePath", "Type": "string", "Format": "image"},
         { "Name": "CostPerUnit", "Type": "decimal" }
-      ]
+      ],
+      "SkipMethods":["GetAll"]
     },
     {
       "Name": "BillOfMaterial",

@@ -2,6 +2,25 @@ using backend.Data;
 using backend.Model;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using backend.Service.Customer;
+using backend.Service.Order;
+using backend.Service.OrderItem;
+using backend.Service.Product;
+using backend.Service.WorkCenter;
+using backend.Service.ProductionPlan;
+using backend.Service.ProductionPlanProduct;
+using backend.Service.ProductionPlanProductSize;
+using backend.Service.ProductionPlanStage;
+using backend.Service.Material;
+using backend.Service.BillOfMaterial;
+using backend.Service.Warehouse;
+using backend.Service.WarehouseRoom;
+using backend.Service.WarehouseShelf;
+using backend.Service.Inventory;
+using backend.Service.Outlet;
+using backend.Service.OutletDemand;
+using backend.Service.Transaction;
+using backend.Service.ActivityLog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,159 +45,32 @@ builder.Services.AddSwaggerGen();
 
 // Configure EF Core SQL Server Database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=Kaam2Db;Trusted_Connection=True;MultipleActiveResultSets=true"));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")
+    ));
 
 // Register Services
-builder.Services.AddScoped<backend.Service.Customer.ICustomerService, backend.Service.Customer.CustomerService>();
-builder.Services.AddScoped<backend.Service.Order.IOrderService, backend.Service.Order.OrderService>();
-builder.Services.AddScoped<backend.Service.OrderItem.IOrderItemService, backend.Service.OrderItem.OrderItemService>();
-builder.Services.AddScoped<backend.Service.Product.IProductService, backend.Service.Product.ProductService>();
-builder.Services.AddScoped<backend.Service.Fabric.IFabricService, backend.Service.Fabric.FabricService>();
-builder.Services.AddScoped<backend.Service.WorkCenter.IWorkCenterService, backend.Service.WorkCenter.WorkCenterService>();
-builder.Services.AddScoped<backend.Service.ProductionPlan.IProductionPlanService, backend.Service.ProductionPlan.ProductionPlanService>();
-builder.Services.AddScoped<backend.Service.ProductionPlanProduct.IProductionPlanProductService, backend.Service.ProductionPlanProduct.ProductionPlanProductService>();
-builder.Services.AddScoped<backend.Service.ProductionPlanProductSize.IProductionPlanProductSizeService, backend.Service.ProductionPlanProductSize.ProductionPlanProductSizeService>();
-builder.Services.AddScoped<backend.Service.ProductionPlanStage.IProductionPlanStageService, backend.Service.ProductionPlanStage.ProductionPlanStageService>();
-builder.Services.AddScoped<backend.Service.Material.IMaterialService, backend.Service.Material.MaterialService>();
-builder.Services.AddScoped<backend.Service.BillOfMaterial.IBillOfMaterialService, backend.Service.BillOfMaterial.BillOfMaterialService>();
-builder.Services.AddScoped<backend.Service.Warehouse.IWarehouseService, backend.Service.Warehouse.WarehouseService>();
-builder.Services.AddScoped<backend.Service.WarehouseRoom.IWarehouseRoomService, backend.Service.WarehouseRoom.WarehouseRoomService>();
-builder.Services.AddScoped<backend.Service.WarehouseShelf.IWarehouseShelfService, backend.Service.WarehouseShelf.WarehouseShelfService>();
-builder.Services.AddScoped<backend.Service.Inventory.IInventoryService, backend.Service.Inventory.InventoryService>();
-builder.Services.AddScoped<backend.Service.Outlet.IOutletService, backend.Service.Outlet.OutletService>();
-builder.Services.AddScoped<backend.Service.OutletDemand.IOutletDemandService, backend.Service.OutletDemand.OutletDemandService>();
-builder.Services.AddScoped<backend.Service.Transaction.ITransactionService, backend.Service.Transaction.TransactionService>();
-builder.Services.AddScoped<backend.Service.ActivityLog.IActivityLogService, backend.Service.ActivityLog.ActivityLogService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IOrderItemService, OrderItemService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IWorkCenterService, WorkCenterService>();
+builder.Services.AddScoped<IProductionPlanService, ProductionPlanService>();
+builder.Services.AddScoped<IProductionPlanProductService, ProductionPlanProductService>();
+builder.Services.AddScoped<IProductionPlanProductSizeService, ProductionPlanProductSizeService>();
+builder.Services.AddScoped<IProductionPlanStageService, ProductionPlanStageService>();
+builder.Services.AddScoped<IMaterialService, MaterialService>();
+builder.Services.AddScoped<IBillOfMaterialService, BillOfMaterialService>();
+builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<IWarehouseRoomService, WarehouseRoomService>();
+builder.Services.AddScoped<IWarehouseShelfService, WarehouseShelfService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IOutletService, OutletService>();
+builder.Services.AddScoped<IOutletDemandService, OutletDemandService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 
 var app = builder.Build();
-
-// Seed Database
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.Migrate();
-    try
-    {
-        dbContext.Database.ExecuteSqlRaw("IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('WorkCenters') AND name = 'ProductionLine') ALTER TABLE WorkCenters ADD ProductionLine NVARCHAR(MAX) NULL;");
-        dbContext.Database.ExecuteSqlRaw("UPDATE WorkCenters SET ProductionLine = '' WHERE ProductionLine IS NULL;");
-
-        dbContext.Database.ExecuteSqlRaw(@"
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MaterialRequests')
-            CREATE TABLE MaterialRequests (
-                Id NVARCHAR(450) PRIMARY KEY,
-                MaterialId NVARCHAR(MAX) NOT NULL,
-                MaterialName NVARCHAR(MAX) NULL,
-                RequestedQuantity DECIMAL(18,2) NOT NULL,
-                SupplierName NVARCHAR(MAX) NOT NULL,
-                Urgency NVARCHAR(MAX) NULL,
-                RequiredDate DATETIME2 NULL,
-                Notes NVARCHAR(MAX) NULL,
-                RequestedBy NVARCHAR(MAX) NULL,
-                Status NVARCHAR(MAX) NULL,
-                CreatedAt DATETIME2 NOT NULL,
-                CreatedBy NVARCHAR(MAX) NULL,
-                UpdatedAt DATETIME2 NOT NULL,
-                UpdatedBy NVARCHAR(MAX) NULL
-            );
-
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MaterialIssues')
-            CREATE TABLE MaterialIssues (
-                Id NVARCHAR(450) PRIMARY KEY,
-                MaterialId NVARCHAR(MAX) NOT NULL,
-                IssueQuantity DECIMAL(18,2) NOT NULL,
-                TargetDestination NVARCHAR(MAX) NOT NULL,
-                IssuedTo NVARCHAR(MAX) NULL,
-                Notes NVARCHAR(MAX) NULL,
-                Status NVARCHAR(MAX) NULL,
-                CreatedAt DATETIME2 NOT NULL,
-                CreatedBy NVARCHAR(MAX) NULL,
-                UpdatedAt DATETIME2 NOT NULL,
-                UpdatedBy NVARCHAR(MAX) NULL
-            );
-
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MaterialInspections')
-            CREATE TABLE MaterialInspections (
-                Id NVARCHAR(450) PRIMARY KEY,
-                MaterialId NVARCHAR(MAX) NOT NULL,
-                MaterialName NVARCHAR(MAX) NULL,
-                SupplierName NVARCHAR(MAX) NULL,
-                ReceivedQuantity DECIMAL(18,2) NOT NULL,
-                InspectionStatus NVARCHAR(MAX) NOT NULL,
-                Notes NVARCHAR(MAX) NULL,
-                InspectorName NVARCHAR(MAX) NULL,
-                CreatedAt DATETIME2 NOT NULL,
-                CreatedBy NVARCHAR(MAX) NULL,
-                UpdatedAt DATETIME2 NOT NULL,
-                UpdatedBy NVARCHAR(MAX) NULL
-            );
-
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FinishedGoodsHandovers')
-            CREATE TABLE FinishedGoodsHandovers (
-                Id NVARCHAR(450) PRIMARY KEY,
-                ProductId NVARCHAR(MAX) NULL,
-                ProductName NVARCHAR(MAX) NOT NULL,
-                SKU NVARCHAR(MAX) NULL,
-                Quantity INT NOT NULL,
-                SourceFactoryLine NVARCHAR(MAX) NULL,
-                Location NVARCHAR(MAX) NULL,
-                AcceptedBy NVARCHAR(MAX) NULL,
-                Status NVARCHAR(MAX) NULL,
-                CreatedAt DATETIME2 NOT NULL,
-                CreatedBy NVARCHAR(MAX) NULL,
-                UpdatedAt DATETIME2 NOT NULL,
-                UpdatedBy NVARCHAR(MAX) NULL
-            );
-
-            IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'CustomerReturns')
-            CREATE TABLE CustomerReturns (
-                Id NVARCHAR(450) PRIMARY KEY,
-                OrderNumber NVARCHAR(MAX) NOT NULL,
-                CustomerName NVARCHAR(MAX) NOT NULL,
-                ProductId NVARCHAR(MAX) NULL,
-                ReturnedQuantity INT NOT NULL,
-                Reason NVARCHAR(MAX) NULL,
-                Notes NVARCHAR(MAX) NULL,
-                ProcessedBy NVARCHAR(MAX) NULL,
-                CreatedAt DATETIME2 NOT NULL,
-                CreatedBy NVARCHAR(MAX) NULL,
-                UpdatedAt DATETIME2 NOT NULL,
-                UpdatedBy NVARCHAR(MAX) NULL
-            );
-        ");
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Migration note: {ex.Message}");
-    }
-    
-    // Execute all Stored Procedure scripts from Sql directory
-    var sqlDir = Path.Combine(Directory.GetCurrentDirectory(), "Sql");
-    if (Directory.Exists(sqlDir))
-    {
-        foreach (var file in Directory.GetFiles(sqlDir, "*.sql"))
-        {
-            try
-            {
-                var sql = File.ReadAllText(file);
-                // Split by GO since EF doesn't support GO batches directly
-                var batches = sql.Split(new[] { "GO\r\n", "GO\n", "GO " }, StringSplitOptions.RemoveEmptyEntries);
-                foreach (var batch in batches)
-                {
-                    if (!string.IsNullOrWhiteSpace(batch))
-                    {
-                        dbContext.Database.ExecuteSqlRaw(batch);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error executing {file}: {ex.Message}");
-            }
-        }
-    }
-
-    backend.Data.DatabaseSeeder.Seed(dbContext);
-}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

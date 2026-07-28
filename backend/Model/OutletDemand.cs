@@ -9,6 +9,7 @@ namespace backend.Model
     public class OutletDemand
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public string DemandNumber { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;

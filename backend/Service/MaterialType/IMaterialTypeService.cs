@@ -1,31 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using backend.Dto.Fabric;
+using backend.Dto.MaterialType;
 using backend.Model;
 
-namespace backend.Service.Fabric
+namespace backend.Service.MaterialType
 {
-    public interface IFabricService
+    public interface IMaterialTypeService
     {
         // <crudgen:method-signatures>
-        Task<List<FabricDto>> GetAllAsync(
+        Task<List<MaterialTypeGetDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? category = null,
-            string? imagePath = null,
-            decimal? unitPrice = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null
         );
 
-        Task<FabricDto?> GetByIdAsync(Guid id);
+        Task<MaterialTypeGetDto?> GetByIdAsync(Guid id);
 
-        Task<bool> CreateAsync(FabricDto fabricDto);
+        Task<bool> CreateAsync(MaterialTypeDto materialTypeDto);
 
-        Task<bool> UpdateAsync(Guid id, FabricDto fabricDto);
+        Task<bool> UpdateAsync(Guid id, MaterialTypeDto materialTypeDto);
 
         Task<bool> DeleteAsync(Guid id);
 

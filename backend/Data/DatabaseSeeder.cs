@@ -84,60 +84,7 @@ namespace backend.Data
                 }
             }
             if (prodsUpdated) context.SaveChanges();
-            
-            // Seed Fabrics
-            var fabricImgFiles = new[] { "FAB-001.jpg", "FAB-002.png", "FAB-003.png", "FAB-004.png", "FAB-005.png" };
-            if (!context.Fabrics.Any())
-            {
-                if (System.IO.File.Exists("Data/Store/fabrics.json"))
-                {
-                    var fabricsJson = System.IO.File.ReadAllText("Data/Store/fabrics.json");
-                    var fabricsData = System.Text.Json.JsonSerializer.Deserialize<List<Fabric>>(fabricsJson, new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    if (fabricsData != null) context.Fabrics.AddRange(fabricsData);
-                }
-                else
-                {
-                    var fabs = new List<Fabric>();
-                    for (int i = 1; i <= 5; i++)
-                    {
-                        var imgName = fabricImgFiles[(i - 1) % fabricImgFiles.Length];
-                        fabs.Add(new Fabric
-                        {
-                            Id = Guid.NewGuid(),
-                            Name = $"Fabric {i}",
-                            Category = "Cotton Blend",
-                            UnitPrice = 250,
-                            ImagePath = $"/Media/images/fabrics/{imgName}"
-                        });
-                    }
-                    context.Fabrics.AddRange(fabs);
-                }
-                context.SaveChanges();
-            }
-
-            // Ensure all existing fabrics have valid relative Media/images/fabrics paths
-            var existingFabs = context.Fabrics.ToList();
-            bool fabsUpdated = false;
-            for (int i = 0; i < existingFabs.Count; i++)
-            {
-                if (!string.IsNullOrWhiteSpace(existingFabs[i].ImagePath))
-                {
-                    var relative = backend.Helpers.ImagePathHelper.ToRelativePath(existingFabs[i].ImagePath);
-                    if (existingFabs[i].ImagePath != relative)
-                    {
-                        existingFabs[i].ImagePath = relative;
-                        fabsUpdated = true;
-                    }
-                }
-                if (string.IsNullOrWhiteSpace(existingFabs[i].ImagePath) || !existingFabs[i].ImagePath.StartsWith("/Media/images/fabrics/"))
-                {
-                    var imgName = fabricImgFiles[i % fabricImgFiles.Length];
-                    existingFabs[i].ImagePath = $"/Media/images/fabrics/{imgName}";
-                    fabsUpdated = true;
-                }
-            }
-            if (fabsUpdated) context.SaveChanges();
-
+        
             // Ensure all existing ProductionPlanProducts have relative ProductImage paths
             var existingPlanProds = context.ProductionPlanProducts.ToList();
             bool planProdsUpdated = false;
@@ -166,30 +113,43 @@ namespace backend.Data
             if (!context.Orders.Any())
             {
                 var products = context.Products.ToList();
-                var fabrics = context.Fabrics.ToList();
+                var materials = context.Materials.ToList();
                 var orders = new List<Order>();
 
                 for (int i = 1; i <= 25; i++)
                 {
                     var orderId = Guid.NewGuid();
                     var prod = products.Count > 0 ? products[(i - 1) % products.Count] : null;
-                    var fab = fabrics.Count > 0 ? fabrics[(i - 1) % fabrics.Count] : null;
+
+                    if (prod == null)
+                        continue;
 
                     var orderItems = new List<OrderItem>();
-                    if (prod != null)
+
+                    var orderItemId = Guid.NewGuid();
+
+                    orderItems.Add(new OrderItem
                     {
-                        orderItems.Add(new OrderItem
-                        {
-                            Id = Guid.NewGuid(),
-                            OrderId = orderId,
-                            ProductId = prod.Id,
-                            Product = prod,
-                            FabricId = fab != null ? fab.Id : Guid.Empty,
-                            Quantity = 50 * ((i % 5) + 1),
-                            UnitPrice = 500,
-                            TotalPrice = 500 * 50 * ((i % 5) + 1)
-                        });
-                    }
+                        Id = orderItemId,
+                        OrderId = orderId,
+                        ProductId = prod.Id,
+                        Product = prod,
+                        Quantity = 50 * ((i % 5) + 1),
+                        UnitPrice = 500,
+                        TotalPrice = 500 * 50 * ((i % 5) + 1),
+
+                        OrderItemMaterials = materials
+                            .Take(2)
+                            .Select(m => new OrderItemMaterial
+                            {
+                                Id = Guid.NewGuid(),
+                                MaterialId = m.Id,
+                                RequiredQuantity = 10,
+                                Unit = m.Unit,
+                                OrderItemId = orderItemId
+                            })
+                            .ToList()
+                    });
 
                     orders.Add(new Order
                     {
@@ -202,6 +162,7 @@ namespace backend.Data
                         OrderItems = orderItems
                     });
                 }
+                
                 context.Orders.AddRange(orders);
                 context.SaveChanges();
             }
@@ -336,37 +297,144 @@ namespace backend.Data
                 context.SaveChanges();
             }
 
-            // Seed Materials
+            // 1. Seed MaterialTypes & MaterialCategories first
+            if (!context.MaterialTypes.Any())
+            {
+                var fabricType = new MaterialType
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Fabric"
+                };
+
+                var threadType = new MaterialType
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Thread"
+                };
+
+                var accessoryType = new MaterialType
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Accessory"
+                };
+
+                var categories = new List<MaterialCategory>
+                {
+                    new MaterialCategory { Id = Guid.NewGuid(), Name = "Cotton", MaterialTypeId = fabricType.Id },
+                    new MaterialCategory { Id = Guid.NewGuid(), Name = "Polyester", MaterialTypeId = threadType.Id },
+                    new MaterialCategory { Id = Guid.NewGuid(), Name = "Trims & Fasteners", MaterialTypeId = accessoryType.Id }
+                };
+
+                context.MaterialTypes.AddRange(fabricType, threadType, accessoryType);
+                context.MaterialCategories.AddRange(categories);
+                context.SaveChanges();
+            }
+
+           // 2. Seed Materials
             if (!context.Materials.Any())
             {
+                // Retrieve existing types & categories
+                var fabricType = context.MaterialTypes.First(t => t.Name == "Fabric");
+                var threadType = context.MaterialTypes.First(t => t.Name == "Thread");
+                var accessoryType = context.MaterialTypes.First(t => t.Name == "Accessory");
+
+                var cottonCat = context.MaterialCategories.First(c => c.Name == "Cotton");
+                var polyCat = context.MaterialCategories.First(c => c.Name == "Polyester");
+                var trimCat = context.MaterialCategories.First(c => c.Name == "Trims & Fasteners");
+
                 var materials = new List<Material>
                 {
-                    new Material { Id = Guid.NewGuid(), MaterialCode = "MAT-001", Name = "Dyed Cotton", Type = "Fabric", AvailableQty = 1000, Unit = "m", CostPerUnit = 150 },
-                    new Material { Id = Guid.NewGuid(), MaterialCode = "MAT-002", Name = "Dyed Thread", Type = "Thread", AvailableQty = 5000, Unit = "spool", CostPerUnit = 25 },
-                    new Material { Id = Guid.NewGuid(), MaterialCode = "MAT-003", Name = "Buttons", Type = "Accessory", AvailableQty = 10000, Unit = "pcs", CostPerUnit = 5 },
-                    new Material { Id = Guid.NewGuid(), MaterialCode = "MAT-004", Name = "Zipper", Type = "Accessory", AvailableQty = 2000, Unit = "pcs", CostPerUnit = 15 }
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "MAT-001",
+                        Name = "Dyed Cotton",
+                        MaterialTypeId = fabricType.Id,
+                        MaterialCategoryId = cottonCat.Id,
+                        AvailableQty = 1000,
+                        Unit = "m",
+                        CostPerUnit = 150,
+                        ImagePath = "/Media/images/materials/Fabric/Cotton/MAT-001.jpg"
+                    },
+
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "MAT-002",
+                        Name = "Dyed Thread",
+                        MaterialTypeId = threadType.Id,
+                        MaterialCategoryId = polyCat.Id,
+                        AvailableQty = 5000,
+                        Unit = "spool",
+                        CostPerUnit = 25,
+                        ImagePath = "/Media/images/materials/Thread/Polyester/MAT-002.png"
+                    },
+
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "MAT-003",
+                        Name = "Buttons",
+                        MaterialTypeId = accessoryType.Id,
+                        MaterialCategoryId = trimCat.Id,
+                        AvailableQty = 10000,
+                        Unit = "pcs",
+                        CostPerUnit = 5,
+                        ImagePath = "/Media/images/materials/Accessory/Trims & Fasteners/MAT-003.png"
+                    },
+
+                    new Material
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialCode = "MAT-004",
+                        Name = "Zipper",
+                        MaterialTypeId = accessoryType.Id,
+                        MaterialCategoryId = trimCat.Id,
+                        AvailableQty = 2000,
+                        Unit = "pcs",
+                        CostPerUnit = 15,
+                        ImagePath = "/Media/images/materials/Accessory/Trims & Fasteners/MAT-004.png"
+                    }
                 };
+
                 context.Materials.AddRange(materials);
                 context.SaveChanges();
 
-                // Seed BOMs
+                // 3. Seed BOMs
                 if (!context.BillOfMaterials.Any())
                 {
                     var boms = new List<BillOfMaterial>();
                     var allProds = context.Products.ToList();
+
                     if (allProds.Any())
                     {
-                        for (int i = 0; i < allProds.Count; i++)
+                        foreach (var product in allProds)
                         {
-                            var prodId = allProds[i].Id;
-                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid(), ProductId = prodId, MaterialId = materials[0].Id, QtyPerUnit = 1.5m, WastagePercent = 5 });
-                            boms.Add(new BillOfMaterial { Id = Guid.NewGuid(), ProductId = prodId, MaterialId = materials[1].Id, QtyPerUnit = 0.5m, WastagePercent = 2 });
+                            boms.Add(new BillOfMaterial
+                            {
+                                Id = Guid.NewGuid(),
+                                ProductId = product.Id,
+                                MaterialId = materials[0].Id,
+                                QtyPerUnit = 1.5m,
+                                WastagePercent = 5
+                            });
+
+                            boms.Add(new BillOfMaterial
+                            {
+                                Id = Guid.NewGuid(),
+                                ProductId = product.Id,
+                                MaterialId = materials[1].Id,
+                                QtyPerUnit = 0.5m,
+                                WastagePercent = 2
+                            });
                         }
                     }
+
                     context.BillOfMaterials.AddRange(boms);
+                    context.SaveChanges();
                 }
             }
-
+       
             // Seed MaterialRequests
             if (!context.MaterialRequests.Any())
             {

@@ -9,9 +9,11 @@ namespace backend.Model
     public class Transaction
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public DateTime Timestamp { get; set; }
         public string TransactionType { get; set; } = string.Empty;
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Amount { get; set; }
         public string PaymentMethod { get; set; } = string.Empty;
         public string ReferenceEntity { get; set; } = string.Empty;

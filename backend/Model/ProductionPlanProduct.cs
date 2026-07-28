@@ -10,6 +10,7 @@ namespace backend.Model
     public class ProductionPlanProduct
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public string LineId { get; set; } = string.Empty;
         public string OrderNo { get; set; } = string.Empty;

@@ -14,4 +14,11 @@ namespace backend.Dto.OrderItemSize
         public string UpdatedBy { get; set; } = string.Empty;
         public Guid OrderItemId { get; set; }
     }
+
+    public class OrderItemSizeGetDto
+    {
+        public Guid Id { get; set; }
+        public ProductSize Size { get; set; }
+        public int Quantity { get; set; }
+    }
 }

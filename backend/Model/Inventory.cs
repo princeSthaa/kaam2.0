@@ -9,10 +9,12 @@ namespace backend.Model
     public class Inventory
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public string SKU { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Quantity { get; set; }
         public string Location { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;

@@ -9,6 +9,7 @@ namespace backend.Model
     public class WarehouseShelf
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public string Code { get; set; } = string.Empty;
         public string Capacity { get; set; } = string.Empty;

@@ -10,6 +10,7 @@ namespace backend.Model
     public class ProductionPlanProductSize
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public ProductSize Size { get; set; }
         public int Quantity { get; set; }

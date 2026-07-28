@@ -19,6 +19,24 @@ namespace backend.Controller.Customer
             _CustomerService = CustomerService;
         }
 
+        [HttpPost]
+        public async Task<IActionResult> Create([FromBody] CustomerDto customerDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var created = await _CustomerService.CreateAsync(customerDto);
+
+            if (!created)
+            {
+                return BadRequest();
+            }
+
+            return Ok(created);
+        }
+
         // <crudgen:actions>
         [HttpGet("{id}")] 
         public async Task<ActionResult<CustomerDto>> GetById(Guid id)
@@ -65,24 +83,6 @@ namespace backend.Controller.Customer
             );
 
             return Ok(items);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CustomerDto customerDto)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var created = await _CustomerService.CreateAsync(customerDto);
-
-            if (!created)
-            {
-                return BadRequest();
-            }
-
-            return Ok();
         }
 
         [HttpPut("{id}")]

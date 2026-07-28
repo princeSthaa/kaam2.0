@@ -114,6 +114,79 @@ namespace backend.Controller.ProductionPlan
             return Ok(items);
         }
 
+        [HttpPost("check-materials")]
+        public async Task<ActionResult<MaterialCheckResponseDto>> CheckMaterials(
+            [FromBody] MaterialCheckRequestDto request)
+        {
+            if (request.Products.Count == 0)
+            {
+                return BadRequest("At least one product is required to check material availability.");
+            }
+
+            var response = new MaterialCheckResponseDto();
+            var requestedProducts = new Dictionary<Guid, int>();
+
+            foreach (var product in request.Products)
+            {
+                if (!Guid.TryParse(product.ProductId, out var productId))
+                {
+                    response.Warnings.Add($"Invalid product ID: {product.ProductId}.");
+                    continue;
+                }
+
+                if (product.Quantity <= 0)
+                {
+                    response.Warnings.Add($"Product {product.ProductId} must have a quantity greater than zero.");
+                    continue;
+                }
+
+                requestedProducts[productId] = requestedProducts.GetValueOrDefault(productId) + product.Quantity;
+            }
+
+            if (requestedProducts.Count == 0)
+            {
+                return Ok(response);
+            }
+
+            var boms = await _context.BillOfMaterials
+                .AsNoTracking()
+                .Where(bom => requestedProducts.Keys.Contains(bom.ProductId))
+                .Include(bom => bom.Material)
+                .ToListAsync();
+
+            foreach (var productId in requestedProducts.Keys)
+            {
+                if (!boms.Any(bom => bom.ProductId == productId))
+                {
+                    response.Warnings.Add($"No bill of materials is configured for product {productId}.");
+                }
+            }
+
+            response.Materials = boms
+                .GroupBy(bom => new { bom.MaterialId, bom.Material.MaterialCode, bom.Material.Name, bom.Material.Unit, bom.Material.AvailableQty })
+                .Select(group =>
+                {
+                    var requiredQty = group.Sum(bom =>
+                        requestedProducts[bom.ProductId] * bom.QtyPerUnit * (1 + bom.WastagePercent / 100));
+                    var availableQty = group.Key.AvailableQty;
+
+                    return new MaterialCheckItemDto
+                    {
+                        MaterialId = group.Key.MaterialId.ToString(),
+                        MaterialCode = group.Key.MaterialCode,
+                        MaterialName = group.Key.Name,
+                        Unit = group.Key.Unit,
+                        RequiredQty = requiredQty,
+                        AvailableQty = availableQty,
+                        Status = availableQty >= requiredQty ? "Available" : "Shortage"
+                    };
+                })
+                .OrderBy(item => item.MaterialCode)
+                .ToList();
+
+            return Ok(response);
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ProductionPlanDto productionPlanDto)
         {
@@ -122,7 +195,15 @@ namespace backend.Controller.ProductionPlan
                 return BadRequest(ModelState);
             }
 
-            var created = await _ProductionPlanService.CreateAsync(productionPlanDto);
+            bool created;
+            try
+            {
+                created = await _ProductionPlanService.CreateAsync(productionPlanDto);
+            }
+            catch (InvalidOperationException exception)
+            {
+                return BadRequest(exception.Message);
+            }
 
             if (!created)
             {

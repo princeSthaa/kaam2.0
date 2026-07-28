@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
+using backend.Dto.MaterialCategory;
+using backend.Dto.MaterialType;
 using backend.Dto.Material;
 using backend.Model;
 
@@ -21,46 +23,93 @@ namespace backend.Service.Material
             _context = context;
         }
 
-        // <crudgen:methods>
-        public async Task<List<MaterialDto>> GetAllAsync(
+        public async Task<List<MaterialGetDto>> GetAllAsync(
             Guid? id = null,
             string? materialCode = null,
             string? name = null,
-            string? type = null,
             decimal? availableQty = null,
             string? unit = null,
+            string? imagePath = null,
             decimal? costPerUnit = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null
-        )
+            )
         {
-            return await _context.Database
-                .SqlQuery<MaterialDto>($@"
-                    EXEC sp_GetMaterials
+            var query = _context.Materials
+                .Include(m => m.MaterialType)
+                .Include(m => m.MaterialCategory)
+                .AsNoTracking()
+                .AsQueryable();
 
-                        @Id = {id},
-                        @MaterialCode = {materialCode},
-                        @Name = {name},
-                        @Type = {type},
-                        @AvailableQty = {availableQty},
-                        @Unit = {unit},
-                        @CostPerUnit = {costPerUnit},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
-                ")
-                .ToListAsync();
+            if (id.HasValue)
+                query = query.Where(m => m.Id == id.Value);
+
+            if (!string.IsNullOrWhiteSpace(materialCode))
+                query = query.Where(m => m.MaterialCode == materialCode);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(m => m.Name.Contains(name));
+
+            if (availableQty.HasValue)
+                query = query.Where(m => m.AvailableQty == availableQty.Value);
+
+            if (!string.IsNullOrWhiteSpace(unit))
+                query = query.Where(m => m.Unit == unit);
+
+            if (!string.IsNullOrWhiteSpace(imagePath))
+                query = query.Where(m => m.ImagePath == imagePath);
+
+            if (costPerUnit.HasValue)
+                query = query.Where(m => m.CostPerUnit == costPerUnit.Value);
+
+            if (createdAt.HasValue)
+                query = query.Where(m => m.CreatedAt == createdAt.Value);
+
+            if (!string.IsNullOrWhiteSpace(createdBy))
+                query = query.Where(m => m.CreatedBy == createdBy);
+
+            if (updatedAt.HasValue)
+                query = query.Where(m => m.UpdatedAt == updatedAt.Value);
+
+            if (!string.IsNullOrWhiteSpace(updatedBy))
+                query = query.Where(m => m.UpdatedBy == updatedBy);
+
+
+            var materials = await query.ToListAsync();
+
+
+            return materials.Select(m => new MaterialGetDto
+            {
+                Id = m.Id,
+
+                MaterialCode = m.MaterialCode,
+                Name = m.Name,
+
+                MaterialTypeId = m.MaterialTypeId,
+                MaterialTypeName = m.MaterialType?.Name ?? string.Empty,
+
+                MaterialCategoryId = m.MaterialCategoryId,
+                MaterialCategoryName = m.MaterialCategory?.Name ?? string.Empty,
+                
+                AvailableQty = m.AvailableQty,
+                Unit = m.Unit,
+
+                ImagePath = m.ImagePath,
+
+                CostPerUnit = m.CostPerUnit,
+
+                CreatedAt = m.CreatedAt,
+                CreatedBy = m.CreatedBy,
+
+                UpdatedAt = m.UpdatedAt,
+                UpdatedBy = m.UpdatedBy
+
+            }).ToList();
         }
 
-        public async Task<MaterialDto?> GetByIdAsync(Guid id)
-        {
-            var results = await GetAllAsync(id: id);
-            return results.FirstOrDefault();
-        }
-
+        // <crudgen:methods>
         public async Task<bool> CreateAsync(MaterialDto materialDto)
         {
             if (materialDto.Id == Guid.Empty)
@@ -74,14 +123,16 @@ namespace backend.Service.Material
                     @Id = {materialDto.Id},
                     @MaterialCode = {materialDto.MaterialCode},
                     @Name = {materialDto.Name},
-                    @Type = {materialDto.Type},
                     @AvailableQty = {materialDto.AvailableQty},
                     @Unit = {materialDto.Unit},
+                    @ImagePath = {materialDto.ImagePath},
                     @CostPerUnit = {materialDto.CostPerUnit},
                     @CreatedAt = {materialDto.CreatedAt},
                     @CreatedBy = {materialDto.CreatedBy},
                     @UpdatedAt = {materialDto.UpdatedAt},
-                    @UpdatedBy = {materialDto.UpdatedBy}
+                    @UpdatedBy = {materialDto.UpdatedBy},
+                    @MaterialTypeId = {materialDto.MaterialTypeId},
+                    @MaterialCategoryId = {materialDto.MaterialCategoryId}
             ");
 
             return true;
@@ -96,14 +147,16 @@ namespace backend.Service.Material
                     @Id = {materialDto.Id},
                     @MaterialCode = {materialDto.MaterialCode},
                     @Name = {materialDto.Name},
-                    @Type = {materialDto.Type},
                     @AvailableQty = {materialDto.AvailableQty},
                     @Unit = {materialDto.Unit},
+                    @ImagePath = {materialDto.ImagePath},
                     @CostPerUnit = {materialDto.CostPerUnit},
                     @CreatedAt = {materialDto.CreatedAt},
                     @CreatedBy = {materialDto.CreatedBy},
                     @UpdatedAt = {materialDto.UpdatedAt},
-                    @UpdatedBy = {materialDto.UpdatedBy}
+                    @UpdatedBy = {materialDto.UpdatedBy},
+                    @MaterialTypeId = {materialDto.MaterialTypeId},
+                    @MaterialCategoryId = {materialDto.MaterialCategoryId}
             ");
 
             return true;

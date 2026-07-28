@@ -105,36 +105,139 @@ namespace backend.Service.ProductionPlan
                 productionPlanDto.Id = Guid.NewGuid();
             }
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertProductionPlan
+            var sourceOrderIds = productionPlanDto.SourceOrderIds
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
 
-                    @Id = {productionPlanDto.Id},
-                    @PlanId = {productionPlanDto.PlanId},
-                    @BatchId = {productionPlanDto.BatchId},
-                    @PlanName = {productionPlanDto.PlanName},
-                    @DemandType = {productionPlanDto.DemandType},
-                    @SourceId = {productionPlanDto.SourceId},
-                    @SourceName = {productionPlanDto.SourceName},
-                    @Priority = {productionPlanDto.Priority},
-                    @Status = {productionPlanDto.Status},
-                    @PlannedStartDate = {productionPlanDto.PlannedStartDate},
-                    @PlannedCompletionDate = {productionPlanDto.PlannedCompletionDate},
-                    @Quantity = {productionPlanDto.Quantity},
-                    @EstimatedCost = {productionPlanDto.EstimatedCost},
-                    @Supervisor = {productionPlanDto.Supervisor},
-                    @ProductionLine = {productionPlanDto.ProductionLine},
-                    @MaterialWarehouse = {productionPlanDto.MaterialWarehouse},
-                    @ProductionNotes = {productionPlanDto.ProductionNotes},
-                    @PlanDate = {productionPlanDto.PlanDate},
-                    @OutputDestination = {productionPlanDto.OutputDestination},
-                    @RequiredDate = {productionPlanDto.RequiredDate},
-                    @Progress = {productionPlanDto.Progress},
-                    @Blocked = {productionPlanDto.Blocked},
-                    @CreatedAt = {productionPlanDto.CreatedAt},
-                    @CreatedBy = {productionPlanDto.CreatedBy},
-                    @UpdatedAt = {productionPlanDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanDto.UpdatedBy}
-            ");
+            var sourceOrders = sourceOrderIds.Count == 0
+                ? new List<backend.Model.Order>()
+                : await _context.Orders.Where(order => sourceOrderIds.Contains(order.Id)).ToListAsync();
+
+            if (sourceOrders.Count != sourceOrderIds.Count)
+            {
+                throw new InvalidOperationException("One or more selected orders no longer exist.");
+            }
+
+            if (sourceOrders.Any(order => order.ProductionPlanId.HasValue || order.Status is OrderStatus.Completed or OrderStatus.Cancelled))
+            {
+                throw new InvalidOperationException("A selected order is already planned, completed, or cancelled.");
+            }
+
+            var plan = new backend.Model.ProductionPlan
+            {
+                Id = productionPlanDto.Id,
+                PlanId = productionPlanDto.PlanId,
+                BatchId = productionPlanDto.BatchId,
+                PlanName = productionPlanDto.PlanName,
+                DemandType = productionPlanDto.DemandType,
+                SourceId = productionPlanDto.SourceId,
+                SourceName = productionPlanDto.SourceName,
+                Priority = productionPlanDto.Priority,
+                Status = productionPlanDto.Status,
+                PlannedStartDate = productionPlanDto.PlannedStartDate,
+                PlannedCompletionDate = productionPlanDto.PlannedCompletionDate,
+                Quantity = productionPlanDto.Quantity,
+                EstimatedCost = productionPlanDto.EstimatedCost,
+                Supervisor = productionPlanDto.Supervisor,
+                ProductionLine = productionPlanDto.ProductionLine,
+                MaterialWarehouse = productionPlanDto.MaterialWarehouse,
+                ProductionNotes = productionPlanDto.ProductionNotes,
+                PlanDate = productionPlanDto.PlanDate,
+                OutputDestination = productionPlanDto.OutputDestination,
+                RequiredDate = productionPlanDto.RequiredDate,
+                Progress = productionPlanDto.Progress,
+                Blocked = productionPlanDto.Blocked,
+                CreatedAt = productionPlanDto.CreatedAt,
+                CreatedBy = productionPlanDto.CreatedBy,
+                UpdatedAt = productionPlanDto.UpdatedAt,
+                UpdatedBy = productionPlanDto.UpdatedBy
+            };
+
+            foreach (var productDto in productionPlanDto.ProductionPlanProducts)
+            {
+                var productId = productDto.Id == Guid.Empty ? Guid.NewGuid() : productDto.Id;
+                var product = new backend.Model.ProductionPlanProduct
+                {
+                    Id = productId,
+                    ProductionPlanId = plan.Id,
+                    LineId = productDto.LineId,
+                    OrderNo = productDto.OrderNo,
+                    ProductId = productDto.ProductId,
+                    ProductCode = productDto.ProductCode,
+                    ProductName = productDto.ProductName,
+                    Category = productDto.Category,
+                    Variant = productDto.Variant,
+                    Quantity = productDto.Quantity,
+                    RequiredDate = productDto.RequiredDate,
+                    Status = productDto.Status,
+                    ProductImage = productDto.ProductImage,
+                    PlannedStartDate = productDto.PlannedStartDate,
+                    PlannedCompletionDate = productDto.PlannedCompletionDate,
+                    Priority = productDto.Priority,
+                    ProductionNotes = productDto.ProductionNotes,
+                    CreatedAt = productDto.CreatedAt,
+                    CreatedBy = productDto.CreatedBy,
+                    UpdatedAt = productDto.UpdatedAt,
+                    UpdatedBy = productDto.UpdatedBy
+                };
+
+                foreach (var sizeDto in productDto.ProductionPlanProductSizes)
+                {
+                    product.ProductionPlanProductSizes.Add(new backend.Model.ProductionPlanProductSize
+                    {
+                        Id = sizeDto.Id == Guid.Empty ? Guid.NewGuid() : sizeDto.Id,
+                        ProductionPlanProductId = productId,
+                        Size = sizeDto.Size,
+                        Quantity = sizeDto.Quantity,
+                        CreatedAt = sizeDto.CreatedAt,
+                        CreatedBy = sizeDto.CreatedBy,
+                        UpdatedAt = sizeDto.UpdatedAt,
+                        UpdatedBy = sizeDto.UpdatedBy
+                    });
+                }
+
+                plan.ProductionPlanProducts.Add(product);
+            }
+
+            foreach (var stageDto in productionPlanDto.ProductionPlanStages)
+            {
+                plan.ProductionPlanStages.Add(new backend.Model.ProductionPlanStage
+                {
+                    Id = stageDto.Id == Guid.Empty ? Guid.NewGuid() : stageDto.Id,
+                    ProductionPlanId = plan.Id,
+                    StageId = stageDto.StageId,
+                    StageName = stageDto.StageName,
+                    WorkCenterId = stageDto.WorkCenterId,
+                    OperatorName = stageDto.OperatorName,
+                    PlannedStartDate = stageDto.PlannedStartDate,
+                    PlannedEndDate = stageDto.PlannedEndDate,
+                    Status = stageDto.Status,
+                    CompletedQty = stageDto.CompletedQty,
+                    RejectedQty = stageDto.RejectedQty,
+                    ActualStartDate = stageDto.ActualStartDate,
+                    ActualEndDate = stageDto.ActualEndDate,
+                    Remarks = stageDto.Remarks,
+                    CreatedAt = stageDto.CreatedAt,
+                    CreatedBy = stageDto.CreatedBy,
+                    UpdatedAt = stageDto.UpdatedAt,
+                    UpdatedBy = stageDto.UpdatedBy
+                });
+            }
+
+            var now = DateTime.UtcNow;
+            foreach (var sourceOrder in sourceOrders)
+            {
+                sourceOrder.ProductionPlanId = plan.Id;
+                sourceOrder.Status = OrderStatus.Planned;
+                sourceOrder.UpdatedAt = now;
+                sourceOrder.UpdatedBy = string.IsNullOrWhiteSpace(productionPlanDto.CreatedBy)
+                    ? "Production Planning"
+                    : productionPlanDto.CreatedBy;
+            }
+
+            _context.ProductionPlans.Add(plan);
+            await _context.SaveChangesAsync();
 
             return true;
         }

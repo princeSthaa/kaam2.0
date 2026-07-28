@@ -9,7 +9,7 @@ namespace backend.Service.OrderItem
     public interface IOrderItemService
     {
         // <crudgen:method-signatures>
-        Task<List<OrderItemDto>> GetAllAsync(
+        Task<List<OrderItemGetDto>> GetAllAsync(
             Guid? id = null,
             int? quantity = null,
             decimal? unitPrice = null,
@@ -22,7 +22,7 @@ namespace backend.Service.OrderItem
             Guid? orderId = null
         );
 
-        Task<OrderItemDto?> GetByIdAsync(Guid id);
+        Task<OrderItemGetDto?> GetByIdAsync(Guid id);
 
         Task<bool> CreateAsync(OrderItemDto orderItemDto);
 

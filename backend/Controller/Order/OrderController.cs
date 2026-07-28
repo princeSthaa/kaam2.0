@@ -22,7 +22,7 @@ namespace backend.Controller.Order
 
         // <crudgen:actions>
         [HttpGet("{id}")] 
-        public async Task<ActionResult<OrderDto>> GetById(Guid id)
+        public async Task<ActionResult<OrderGetDto>> GetById(Guid id)
         {
             var item = await _OrderService.GetByIdAsync(id);
 
@@ -35,7 +35,7 @@ namespace backend.Controller.Order
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<OrderDto>>> GetAll(
+        public async Task<ActionResult<List<OrderGetDto>>> GetAll(
             [FromQuery] Guid? id = null,
             [FromQuery] string? orderNumber = null,
             [FromQuery] OrderStatus? status = null,

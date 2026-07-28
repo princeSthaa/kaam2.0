@@ -36,7 +36,7 @@ namespace backend.Dto.BillOfMaterial
 
         public Guid MaterialId { get; set; }
         [NotMapped]
-        public MaterialDto? Material { get; set; }
+        public MaterialGetDto? Material { get; set; }
 
         public decimal QtyPerUnit { get; set; }
 

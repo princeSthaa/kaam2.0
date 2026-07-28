@@ -19,28 +19,14 @@ namespace backend.Controller.Material
             _MaterialService = MaterialService;
         }
 
-        // <crudgen:actions>
-        [HttpGet("{id}")] 
-        public async Task<ActionResult<MaterialDto>> GetById(Guid id)
-        {
-            var item = await _MaterialService.GetByIdAsync(id);
-
-            if (item == null)
-            {
-                return NotFound($"Material with ID {id} not found.");
-            }
-
-            return Ok(item);
-        }
-
         [HttpGet]
-        public async Task<ActionResult<List<MaterialDto>>> GetAll(
+        public async Task<ActionResult<List<MaterialGetDto>>> GetAll(
             [FromQuery] Guid? id = null,
             [FromQuery] string? materialCode = null,
             [FromQuery] string? name = null,
-            [FromQuery] string? type = null,
             [FromQuery] decimal? availableQty = null,
             [FromQuery] string? unit = null,
+            [FromQuery] string? imagePath = null,
             [FromQuery] decimal? costPerUnit = null,
             [FromQuery] DateTime? createdAt = null,
             [FromQuery] string? createdBy = null,
@@ -52,9 +38,9 @@ namespace backend.Controller.Material
                 id,
                 materialCode,
                 name,
-                type,
                 availableQty,
                 unit,
+                imagePath,
                 costPerUnit,
                 createdAt,
                 createdBy,
@@ -65,6 +51,7 @@ namespace backend.Controller.Material
             return Ok(items);
         }
 
+        // <crudgen:actions>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] MaterialDto materialDto)
         {

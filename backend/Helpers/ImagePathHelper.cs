@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Http;
 using backend.Dto.Product;
+using backend.Dto.OrderItem;
 using backend.Dto.Fabric;
 using backend.Dto.ProductionPlanProduct;
 using backend.Dto.ProductionPlan;
@@ -79,7 +80,7 @@ namespace backend.Helpers
             }
         }
 
-        public static void ResolveFabricImage(FabricDto? dto, HttpRequest? request)
+        public static void ResolveOrderProductImage(OrderProductGetDto? dto, HttpRequest? request)
         {
             if (dto != null && !string.IsNullOrWhiteSpace(dto.ImagePath))
             {
@@ -120,7 +121,7 @@ namespace backend.Helpers
             }
         }
 
-        public static void ResolveOrderImages(OrderDto? dto, HttpRequest? request)
+        public static void ResolveOrderImages(OrderGetDto? dto, HttpRequest? request)
         {
             if (dto?.OrderItems != null)
             {
@@ -128,7 +129,7 @@ namespace backend.Helpers
                 {
                     if (item.Product != null)
                     {
-                        ResolveProductImage(item.Product, request);
+                        ResolveOrderProductImage(item.Product, request);
                     }
                 }
             }

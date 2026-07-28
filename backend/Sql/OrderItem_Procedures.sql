@@ -39,17 +39,38 @@ CREATE OR ALTER PROCEDURE sp_InsertOrderItem
     @UpdatedAt DATETIME2,
     @UpdatedBy NVARCHAR(MAX),
     @ProductId NVARCHAR(MAX),
-    @FabricId NVARCHAR(MAX),
     @OrderId NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO [OrderItems] (
-        [Id], [Quantity], [UnitPrice], [TotalPrice], [Discount], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy], [ProductId], [FabricId], [OrderId]
+    INSERT INTO OrderItems
+    (
+        Id,
+        Quantity,
+        UnitPrice,
+        TotalPrice,
+        Discount,
+        CreatedAt,
+        CreatedBy,
+        UpdatedAt,
+        UpdatedBy,
+        ProductId,
+        OrderId
     )
-    VALUES (
-        @Id, @Quantity, @UnitPrice, @TotalPrice, @Discount, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy, @ProductId, @FabricId, @OrderId
+    VALUES
+    (
+        @Id,
+        @Quantity,
+        @UnitPrice,
+        @TotalPrice,
+        @Discount,
+        @CreatedAt,
+        @CreatedBy,
+        @UpdatedAt,
+        @UpdatedBy,
+        @ProductId,
+        @OrderId
     );
 END
 GO
@@ -65,26 +86,24 @@ CREATE OR ALTER PROCEDURE sp_UpdateOrderItem
     @UpdatedAt DATETIME2,
     @UpdatedBy NVARCHAR(MAX),
     @ProductId NVARCHAR(MAX),
-    @FabricId NVARCHAR(MAX),
     @OrderId NVARCHAR(MAX)
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE [OrderItems]
+    UPDATE OrderItems
     SET
-        [Quantity] = @Quantity,
-        [UnitPrice] = @UnitPrice,
-        [TotalPrice] = @TotalPrice,
-        [Discount] = @Discount,
-        [CreatedAt] = @CreatedAt,
-        [CreatedBy] = @CreatedBy,
-        [UpdatedAt] = @UpdatedAt,
-        [UpdatedBy] = @UpdatedBy,
-        [ProductId] = @ProductId,
-        [FabricId] = @FabricId,
-        [OrderId] = @OrderId
-    WHERE [Id] = @Id;
+        Quantity = @Quantity,
+        UnitPrice = @UnitPrice,
+        TotalPrice = @TotalPrice,
+        Discount = @Discount,
+        CreatedAt = @CreatedAt,
+        CreatedBy = @CreatedBy,
+        UpdatedAt = @UpdatedAt,
+        UpdatedBy = @UpdatedBy,
+        ProductId = @ProductId,
+        OrderId = @OrderId
+    WHERE Id = @Id;
 END
 GO
 

@@ -1,9 +1,6 @@
-CREATE OR ALTER PROCEDURE sp_GetFabrics
+CREATE OR ALTER PROCEDURE sp_GetMaterialTypes
     @Id UNIQUEIDENTIFIER = NULL,
     @Name NVARCHAR(MAX) = NULL,
-    @Category NVARCHAR(MAX) = NULL,
-    @ImagePath NVARCHAR(MAX) = NULL,
-    @UnitPrice DECIMAL(18,2) = NULL,
     @CreatedAt DATETIME2 = NULL,
     @CreatedBy NVARCHAR(MAX) = NULL,
     @UpdatedAt DATETIME2 = NULL,
@@ -12,13 +9,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT * FROM [Fabrics]
+    SELECT * FROM [MaterialTypes]
     WHERE
         (@Id IS NULL OR [Id] = @Id)
         AND (@Name IS NULL OR [Name] = @Name)
-        AND (@Category IS NULL OR [Category] = @Category)
-        AND (@ImagePath IS NULL OR [ImagePath] = @ImagePath)
-        AND (@UnitPrice IS NULL OR [UnitPrice] = @UnitPrice)
         AND (@CreatedAt IS NULL OR [CreatedAt] = @CreatedAt)
         AND (@CreatedBy IS NULL OR [CreatedBy] = @CreatedBy)
         AND (@UpdatedAt IS NULL OR [UpdatedAt] = @UpdatedAt)
@@ -26,12 +20,9 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE sp_InsertFabric
-    @Id UNIQUEIDENTIFIER,
+CREATE OR ALTER PROCEDURE sp_InsertMaterialType
+    @Id UNIQUEIDENTIFIER = NULL,
     @Name NVARCHAR(MAX),
-    @Category NVARCHAR(MAX),
-    @ImagePath NVARCHAR(MAX),
-    @UnitPrice DECIMAL(18,2),
     @CreatedAt DATETIME2,
     @CreatedBy NVARCHAR(MAX),
     @UpdatedAt DATETIME2,
@@ -40,21 +31,21 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    INSERT INTO [Fabrics] (
-        [Id], [Name], [Category], [ImagePath], [UnitPrice], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
+    IF @Id IS NULL OR @Id = '00000000-0000-0000-0000-000000000000'
+        SET @Id = NEWID();
+
+    INSERT INTO [MaterialTypes] (
+        [Id], [Name], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
     )
     VALUES (
-        @Id, @Name, @Category, @ImagePath, @UnitPrice, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
+        @Id, @Name, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
     );
 END
 GO
 
-CREATE OR ALTER PROCEDURE sp_UpdateFabric
+CREATE OR ALTER PROCEDURE sp_UpdateMaterialType
     @Id UNIQUEIDENTIFIER,
     @Name NVARCHAR(MAX),
-    @Category NVARCHAR(MAX),
-    @ImagePath NVARCHAR(MAX),
-    @UnitPrice DECIMAL(18,2),
     @CreatedAt DATETIME2,
     @CreatedBy NVARCHAR(MAX),
     @UpdatedAt DATETIME2,
@@ -63,12 +54,9 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    UPDATE [Fabrics]
+    UPDATE [MaterialTypes]
     SET
         [Name] = @Name,
-        [Category] = @Category,
-        [ImagePath] = @ImagePath,
-        [UnitPrice] = @UnitPrice,
         [CreatedAt] = @CreatedAt,
         [CreatedBy] = @CreatedBy,
         [UpdatedAt] = @UpdatedAt,
@@ -77,12 +65,12 @@ BEGIN
 END
 GO
 
-CREATE OR ALTER PROCEDURE sp_DeleteFabric
+CREATE OR ALTER PROCEDURE sp_DeleteMaterialType
     @Id UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DELETE FROM [Fabrics] WHERE [Id] = @Id;
+    DELETE FROM [MaterialTypes] WHERE [Id] = @Id;
 END
 GO

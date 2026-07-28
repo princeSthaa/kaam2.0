@@ -9,14 +9,16 @@ namespace backend.Model
     public class OrderItem
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public int Quantity { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
         public Guid ProductId { get; set; }
         public virtual Product Product { get; set; } = null!;
-        public Guid FabricId { get; set; }
-        public virtual Fabric Fabric { get; set; } = null!;
+        [Column(TypeName = "decimal(18,2)")]
         public decimal TotalPrice { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Discount { get; set; }
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
@@ -25,6 +27,7 @@ namespace backend.Model
         public Guid OrderId { get; set; }
         public virtual Order Order { get; set; } = null!;
         public virtual ICollection<OrderItemSize> OrderItemSizes { get; set; } = new List<OrderItemSize>();
+        public virtual ICollection<OrderItemMaterial> OrderItemMaterials { get; set; } = new List<OrderItemMaterial>();
         // </crudgen:properties>
     }
 }

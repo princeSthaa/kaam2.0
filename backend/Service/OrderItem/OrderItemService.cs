@@ -22,7 +22,7 @@ namespace backend.Service.OrderItem
         }
 
         // <crudgen:methods>
-        public async Task<List<OrderItemDto>> GetAllAsync(
+        public async Task<List<OrderItemGetDto>> GetAllAsync(
             Guid? id = null,
             int? quantity = null,
             decimal? unitPrice = null,
@@ -36,7 +36,7 @@ namespace backend.Service.OrderItem
         )
         {
             return await _context.Database
-                .SqlQuery<OrderItemDto>($@"
+                .SqlQuery<OrderItemGetDto>($@"
                     EXEC sp_GetOrderItems
 
                         @Id = {id},
@@ -53,7 +53,7 @@ namespace backend.Service.OrderItem
                 .ToListAsync();
         }
 
-        public async Task<OrderItemDto?> GetByIdAsync(Guid id)
+        public async Task<OrderItemGetDto?> GetByIdAsync(Guid id)
         {
             var results = await GetAllAsync(id: id);
             return results.FirstOrDefault();
@@ -79,7 +79,6 @@ namespace backend.Service.OrderItem
                     @UpdatedAt = {orderItemDto.UpdatedAt},
                     @UpdatedBy = {orderItemDto.UpdatedBy},
                     @ProductId = {orderItemDto.ProductId},
-                    @FabricId = {orderItemDto.FabricId},
                     @OrderId = {orderItemDto.OrderId}
             ");
 
@@ -102,7 +101,6 @@ namespace backend.Service.OrderItem
                     @UpdatedAt = {orderItemDto.UpdatedAt},
                     @UpdatedBy = {orderItemDto.UpdatedBy},
                     @ProductId = {orderItemDto.ProductId},
-                    @FabricId = {orderItemDto.FabricId},
                     @OrderId = {orderItemDto.OrderId}
             ");
 

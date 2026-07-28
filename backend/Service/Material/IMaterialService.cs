@@ -8,23 +8,21 @@ namespace backend.Service.Material
 {
     public interface IMaterialService
     {
-        // <crudgen:method-signatures>
-        Task<List<MaterialDto>> GetAllAsync(
+        Task<List<MaterialGetDto>> GetAllAsync(
             Guid? id = null,
             string? materialCode = null,
             string? name = null,
-            string? type = null,
             decimal? availableQty = null,
             string? unit = null,
+            string? imagePath = null,
             decimal? costPerUnit = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null
         );
-
-        Task<MaterialDto?> GetByIdAsync(Guid id);
-
+        
+        // <crudgen:method-signatures>
         Task<bool> CreateAsync(MaterialDto materialDto);
 
         Task<bool> UpdateAsync(Guid id, MaterialDto materialDto);

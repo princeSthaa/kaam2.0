@@ -14,6 +14,7 @@ namespace backend.Service.WorkCenter
             string? name = null,
             string? type = null,
             string? status = null,
+            string? productionLine = null,
             DateTime? createdAt = null,
             string? createdBy = null,
             DateTime? updatedAt = null,

@@ -49,6 +49,7 @@ namespace backend.Dto.Order
         public string UpdatedBy { get; set; } = string.Empty;
 
         public Guid CustomerId { get; set; }
+        public Guid? ProductionPlanId { get; set; }
         [NotMapped]
         public List<OrderItemDto> OrderItems { get; set; } = new List<OrderItemDto>();
 

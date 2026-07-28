@@ -9,6 +9,7 @@ namespace backend.Model
     public class Customer
     {
         // <crudgen:properties>
+        [Key]
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;

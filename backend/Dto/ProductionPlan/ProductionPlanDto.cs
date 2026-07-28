@@ -84,6 +84,9 @@ namespace backend.Dto.ProductionPlan
         public string UpdatedBy { get; set; } = string.Empty;
 
         [NotMapped]
+        public List<Guid> SourceOrderIds { get; set; } = new List<Guid>();
+
+        [NotMapped]
         public List<ProductionPlanProductDto> ProductionPlanProducts { get; set; } = new List<ProductionPlanProductDto>();
 
         [NotMapped]
