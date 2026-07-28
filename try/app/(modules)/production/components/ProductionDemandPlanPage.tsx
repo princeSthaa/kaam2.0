@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { MaterialIcon } from "@/app/components/ui/MaterialIcon";
+import { adToBs } from "@/app/components/ui/dateUtils";
 import { fetchCustomers } from "../../crm/api/customer.api";
 import { Customer } from "../../crm/dto/customer.dto";
 import { Order } from "../../crm/dto/order.dto";
@@ -69,21 +70,7 @@ function normalizeSizeRows(sizes: Record<string, number> | Array<{ size: string;
 }
 
 export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) {
-  // Convert AD (Gregorian) date string "YYYY-MM-DD" to BS (Nepali) date string "YYYY-MM-DD"
-  const adToBs = (adStr: string): string => {
-    if (!adStr) return "";
-    const datePart = String(adStr).split('T')[0].trim();
-    if (!datePart) return "";
-    const year = parseInt(datePart.split("-")[0], 10);
-    if (!isNaN(year) && year >= 2070 && year <= 2100) return datePart;
-    if (typeof window === "undefined" || !(window as any).NepaliFunctions) return datePart;
-    try {
-      const bsVal = (window as any).NepaliFunctions.AD2BS(datePart, "YYYY-MM-DD", "YYYY-MM-DD");
-      return typeof bsVal === "string" ? bsVal : `${bsVal.year}-${String(bsVal.month).padStart(2, "0")}-${String(bsVal.day).padStart(2, "0")}`;
-    } catch (e) {
-      return datePart;
-    }
-  };
+
 
   const searchParams = useSearchParams();
   const router = useRouter();
