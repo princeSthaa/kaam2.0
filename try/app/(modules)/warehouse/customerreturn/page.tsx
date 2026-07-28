@@ -1,10 +1,20 @@
+"use client";
 /* Path: C:\Code\Kaam2\try\app\(modules)\warehouse\customerreturn\page.tsx */
 
-import React from "react";
+import React, { useState } from "react";
 import "../styles/customerreturns.css";
 import LogReturnModal from "../components/LogNewReturnModal";
+import InspectReturnModal from "../components/InspectReturnModal";
+import SwapProductModal from "../components/SwapProductModal";
+import BulkRestockModal from "../components/BulkRestockModal";
+import BulkScrapModal from "../components/BulkScrapModal"; // 1. Imported the new bulk scrap modal
 
 export default function CustomerReturnsPage() {
+    const [isInspectModalOpen, setIsInspectModalOpen] = useState(false);
+    const [isSwapModalOpen, setIsSwapModalOpen] = useState(false);
+    const [isBulkRestockModalOpen, setIsBulkRestockModalOpen] = useState(false);
+    const [isBulkScrapModalOpen, setIsBulkScrapModalOpen] = useState(false); // 2. Added state for bulk scrap
+
     return (
         <div className="max-w-7xl mx-auto space-y-6">
 
@@ -235,7 +245,7 @@ export default function CustomerReturnsPage() {
                                     </div>
                                 </div>
                                 <div className="mt-4 flex gap-3">
-                                    <button className="flex-1 py-2 bg-white border border-gray-300 rounded-md text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm">Inspect</button>
+                                    <button className="flex-1 py-2 bg-white border border-gray-300 rounded-md text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm" onClick={() => setIsInspectModalOpen(true)}>Inspect</button>
                                     <button className="flex-1 py-2 bg-white border border-gray-300 rounded-md text-red-600 text-xs font-medium hover:bg-red-50 hover:border-red-200 transition-colors shadow-sm">Scrap</button>
                                 </div>
                             </div>
@@ -255,7 +265,7 @@ export default function CustomerReturnsPage() {
                                     </div>
                                 </div>
                                 <div className="mt-4 flex gap-3">
-                                    <button className="flex-1 py-2 bg-white border border-gray-300 rounded-md text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm">Inspect</button>
+                                    <button className="flex-1 py-2 bg-white border border-gray-300 rounded-md text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm" onClick={() => setIsInspectModalOpen(true)}>Inspect</button>
                                     <button className="flex-1 py-2 bg-white border border-gray-300 rounded-md text-gray-700 text-xs font-medium hover:bg-gray-50 transition-colors shadow-sm">Restock</button>
                                 </div>
                             </div>
@@ -265,11 +275,28 @@ export default function CustomerReturnsPage() {
                     {/* Quick Actions Panel */}
                     <div className="bg-gray-900 rounded-xl p-5 shadow-sm text-white shrink-0">
                         <h3 className="text-lg font-semibold mb-4 text-white">Disposition Actions</h3>
-                        <button className="w-full py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-md flex items-center justify-center gap-2 transition-colors mb-3">
+
+                        <button
+                            onClick={() => setIsSwapModalOpen(true)}
+                            className="w-full py-2.5 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 text-blue-100 rounded-md flex items-center justify-center gap-2 transition-colors mb-3"
+                        >
+                            <span className="material-symbols-outlined text-[18px]">swap_horizontal_circle</span>
+                            <span className="text-sm font-medium">Process Swap</span>
+                        </button>
+
+                        <button
+                            onClick={() => setIsBulkRestockModalOpen(true)}
+                            className="w-full py-2.5 bg-white/10 hover:bg-white/20 border border-white/10 rounded-md flex items-center justify-center gap-2 transition-colors mb-3"
+                        >
                             <span className="material-symbols-outlined text-[18px]">inventory_2</span>
                             <span className="text-sm font-medium">Bulk Restock</span>
                         </button>
-                        <button className="w-full py-2.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-100 rounded-md flex items-center justify-center gap-2 transition-colors">
+
+                        {/* 3. Added onClick for BulkScrapModal here */}
+                        <button
+                            onClick={() => setIsBulkScrapModalOpen(true)}
+                            className="w-full py-2.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-100 rounded-md flex items-center justify-center gap-2 transition-colors"
+                        >
                             <span className="material-symbols-outlined text-[18px]">delete</span>
                             <span className="text-sm font-medium">Bulk Scrap</span>
                         </button>
@@ -277,6 +304,28 @@ export default function CustomerReturnsPage() {
 
                 </div>
             </div>
+
+            {/* Modal Placements */}
+            <InspectReturnModal
+                isOpen={isInspectModalOpen}
+                onClose={() => setIsInspectModalOpen(false)}
+            />
+
+            <SwapProductModal
+                isOpen={isSwapModalOpen}
+                onClose={() => setIsSwapModalOpen(false)}
+            />
+
+            <BulkRestockModal
+                isOpen={isBulkRestockModalOpen}
+                onClose={() => setIsBulkRestockModalOpen(false)}
+            />
+
+            {/* 4. Placed the BulkScrapModal at the bottom */}
+            <BulkScrapModal
+                isOpen={isBulkScrapModalOpen}
+                onClose={() => setIsBulkScrapModalOpen(false)}
+            />
         </div>
     );
 }
