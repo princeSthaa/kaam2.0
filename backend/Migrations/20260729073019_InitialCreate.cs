@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace backend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitMigration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -120,28 +120,6 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MaterialInspections",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MaterialId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MaterialName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SupplierName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ReceivedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    InspectionStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    InspectorName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MaterialInspections", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MaterialIssues",
                 columns: table => new
                 {
@@ -163,35 +141,11 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MaterialRequests",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MaterialId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MaterialName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RequestedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    SupplierName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Urgency = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RequiredDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    RequestedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MaterialRequests", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MaterialTypes",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -275,6 +229,29 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Suppliers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    ContactEmail = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    ContactPhone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    OnTimeDeliveryRate = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    DefectRate = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
+                    Rating = table.Column<decimal>(type: "decimal(3,2)", nullable: false),
+                    TotalOrders = table.Column<int>(type: "int", nullable: false),
+                    LastEvaluatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Suppliers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Transactions",
                 columns: table => new
                 {
@@ -335,55 +312,6 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Orders",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OrderNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CustomerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Orders", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Orders_Customers_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "Customers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MaterialCategories",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MaterialTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MaterialCategories", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MaterialCategories_MaterialTypes_MaterialTypeId",
-                        column: x => x.MaterialTypeId,
-                        principalTable: "MaterialTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "OutletDemands",
                 columns: table => new
                 {
@@ -406,6 +334,39 @@ namespace backend.Migrations
                         principalTable: "Outlets",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Orders",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OrderNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    DueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CustomerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ProductionPlanId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Orders", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Orders_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Orders_ProductionPlans_ProductionPlanId",
+                        column: x => x.ProductionPlanId,
+                        principalTable: "ProductionPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -443,6 +404,95 @@ namespace backend.Migrations
                         principalTable: "ProductionPlans",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MaterialCategories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaterialTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SupplierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaterialCategories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaterialCategories_MaterialTypes_MaterialTypeId",
+                        column: x => x.MaterialTypeId,
+                        principalTable: "MaterialTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MaterialCategories_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MaterialInspections",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MaterialId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaterialName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    SupplierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SupplierName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ReceivedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    InspectionStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    InspectorName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaterialInspections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaterialInspections_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MaterialRequests",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MaterialId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaterialName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RequestedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SupplierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    SupplierName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Urgency = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RequiredDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    RequestedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaterialRequests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaterialRequests_Suppliers_SupplierId",
+                        column: x => x.SupplierId,
+                        principalTable: "Suppliers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(
@@ -543,41 +593,6 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Materials",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MaterialCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MaterialTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MaterialCategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AvailableQty = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Unit = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CostPerUnit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Materials", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Materials_MaterialCategories_MaterialCategoryId",
-                        column: x => x.MaterialCategoryId,
-                        principalTable: "MaterialCategories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Materials_MaterialTypes_MaterialTypeId",
-                        column: x => x.MaterialTypeId,
-                        principalTable: "MaterialTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ProductionPlanProductSizes",
                 columns: table => new
                 {
@@ -599,6 +614,41 @@ namespace backend.Migrations
                         principalTable: "ProductionPlanProducts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Materials",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MaterialCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    MaterialTypeId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    MaterialCategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AvailableQty = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Unit = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    ImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    CostPerUnit = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Materials", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Materials_MaterialCategories_MaterialCategoryId",
+                        column: x => x.MaterialCategoryId,
+                        principalTable: "MaterialCategories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Materials_MaterialTypes_MaterialTypeId",
+                        column: x => x.MaterialTypeId,
+                        principalTable: "MaterialTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -727,6 +777,21 @@ namespace backend.Migrations
                 column: "MaterialTypeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MaterialCategories_SupplierId",
+                table: "MaterialCategories",
+                column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaterialInspections_SupplierId",
+                table: "MaterialInspections",
+                column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MaterialRequests_SupplierId",
+                table: "MaterialRequests",
+                column: "SupplierId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Materials_MaterialCategoryId",
                 table: "Materials",
                 column: "MaterialCategoryId");
@@ -765,6 +830,11 @@ namespace backend.Migrations
                 name: "IX_Orders_CustomerId",
                 table: "Orders",
                 column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_ProductionPlanId",
+                table: "Orders",
+                column: "ProductionPlanId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OutletDemands_OutletId",
@@ -878,16 +948,19 @@ namespace backend.Migrations
                 name: "Products");
 
             migrationBuilder.DropTable(
-                name: "ProductionPlans");
-
-            migrationBuilder.DropTable(
                 name: "Warehouses");
 
             migrationBuilder.DropTable(
                 name: "MaterialTypes");
 
             migrationBuilder.DropTable(
+                name: "Suppliers");
+
+            migrationBuilder.DropTable(
                 name: "Customers");
+
+            migrationBuilder.DropTable(
+                name: "ProductionPlans");
         }
     }
 }

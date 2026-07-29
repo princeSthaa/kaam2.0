@@ -12,6 +12,8 @@ namespace backend.Dto.MaterialInspection
 
         public string MaterialName { get; set; } = string.Empty;
 
+        public int? SupplierId { get; set; }
+
         public string SupplierName { get; set; } = string.Empty;
 
         public decimal ReceivedQuantity { get; set; }

@@ -3,6 +3,7 @@ CREATE OR ALTER PROCEDURE sp_GetMaterialRequests
     @MaterialId NVARCHAR(MAX) = NULL,
     @MaterialName NVARCHAR(MAX) = NULL,
     @RequestedQuantity DECIMAL(18,2) = NULL,
+    @SupplierId INT = NULL,
     @SupplierName NVARCHAR(MAX) = NULL,
     @Urgency NVARCHAR(MAX) = NULL,
     @RequiredDate DATETIME2 = NULL,
@@ -23,6 +24,7 @@ BEGIN
         AND (@MaterialId IS NULL OR [MaterialId] = @MaterialId)
         AND (@MaterialName IS NULL OR [MaterialName] = @MaterialName)
         AND (@RequestedQuantity IS NULL OR [RequestedQuantity] = @RequestedQuantity)
+        AND (@SupplierId IS NULL OR [SupplierId] = @SupplierId)
         AND (@SupplierName IS NULL OR [SupplierName] = @SupplierName)
         AND (@Urgency IS NULL OR [Urgency] = @Urgency)
         AND (@RequiredDate IS NULL OR [RequiredDate] = @RequiredDate)
@@ -41,6 +43,7 @@ CREATE OR ALTER PROCEDURE sp_InsertMaterialRequest
     @MaterialId NVARCHAR(MAX),
     @MaterialName NVARCHAR(MAX),
     @RequestedQuantity DECIMAL(18,2),
+    @SupplierId INT = NULL,
     @SupplierName NVARCHAR(MAX),
     @Urgency NVARCHAR(MAX),
     @RequiredDate DATETIME2,
@@ -56,10 +59,10 @@ BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO [MaterialRequests] (
-        [Id], [MaterialId], [MaterialName], [RequestedQuantity], [SupplierName], [Urgency], [RequiredDate], [Notes], [RequestedBy], [Status], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
+        [Id], [MaterialId], [MaterialName], [RequestedQuantity], [SupplierId], [SupplierName], [Urgency], [RequiredDate], [Notes], [RequestedBy], [Status], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
     )
     VALUES (
-        @Id, @MaterialId, @MaterialName, @RequestedQuantity, @SupplierName, @Urgency, @RequiredDate, @Notes, @RequestedBy, @Status, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
+        @Id, @MaterialId, @MaterialName, @RequestedQuantity, @SupplierId, @SupplierName, @Urgency, @RequiredDate, @Notes, @RequestedBy, @Status, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
     );
 END
 GO
@@ -69,6 +72,7 @@ CREATE OR ALTER PROCEDURE sp_UpdateMaterialRequest
     @MaterialId NVARCHAR(MAX),
     @MaterialName NVARCHAR(MAX),
     @RequestedQuantity DECIMAL(18,2),
+    @SupplierId INT = NULL,
     @SupplierName NVARCHAR(MAX),
     @Urgency NVARCHAR(MAX),
     @RequiredDate DATETIME2,
@@ -88,6 +92,7 @@ BEGIN
         [MaterialId] = @MaterialId,
         [MaterialName] = @MaterialName,
         [RequestedQuantity] = @RequestedQuantity,
+        [SupplierId] = @SupplierId,
         [SupplierName] = @SupplierName,
         [Urgency] = @Urgency,
         [RequiredDate] = @RequiredDate,

@@ -13,6 +13,7 @@ namespace backend.Service.MaterialInspection
             Guid? id = null,
             string? materialId = null,
             string? materialName = null,
+            int? supplierId = null,
             string? supplierName = null,
             decimal? receivedQuantity = null,
             string? inspectionStatus = null,

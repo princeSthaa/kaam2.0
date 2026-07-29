@@ -41,7 +41,8 @@ namespace backend.Dto.MaterialRequest
 
         public decimal RequestedQuantity { get; set; }
 
-        [Required(ErrorMessage = "SupplierName is required.")]
+        public int? SupplierId { get; set; }
+
         public string SupplierName { get; set; } = string.Empty;
 
         public string Urgency { get; set; } = string.Empty;

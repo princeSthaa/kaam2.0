@@ -367,8 +367,12 @@ namespace backend.Data
             context.SaveChanges();
 
             // 2. Seed Materials
-            context.Materials.RemoveRange(context.Materials);
-            context.SaveChanges();
+            if (context.Materials.Any())
+            {
+                context.BillOfMaterials.RemoveRange(context.BillOfMaterials);
+                context.Materials.RemoveRange(context.Materials);
+                context.SaveChanges();
+            }
 
                 var freshMaterials = new List<Material>
                 {
@@ -571,13 +575,76 @@ namespace backend.Data
                     context.SaveChanges();
                 }
        
+            // Seed Suppliers (3)
+            var suppliers = new List<Supplier>();
+            if (!context.Suppliers.Any())
+            {
+                suppliers = new List<Supplier>
+                {
+                    new Supplier
+                    {
+                        Name = "Everest Textiles Ltd",
+                        ContactEmail = "contact@everesttextiles.com",
+                        ContactPhone = "+977-1-4351234",
+                        Address = "Balaju Industrial Area, Kathmandu",
+                        Status = "Active",
+                        OnTimeDeliveryRate = 96.50m,
+                        DefectRate = 1.20m,
+                        Rating = 4.80m,
+                        TotalOrders = 45,
+                        LastEvaluatedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow.AddMonths(-12),
+                        UpdatedAt = DateTime.UtcNow
+                    },
+                    new Supplier
+                    {
+                        Name = "Himalayan Yarns & Fabrics",
+                        ContactEmail = "info@himalayanyarns.com",
+                        ContactPhone = "+977-1-5524321",
+                        Address = "Patan Industrial Estate, Lalitpur",
+                        Status = "Active",
+                        OnTimeDeliveryRate = 92.00m,
+                        DefectRate = 2.50m,
+                        Rating = 4.35m,
+                        TotalOrders = 30,
+                        LastEvaluatedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow.AddMonths(-10),
+                        UpdatedAt = DateTime.UtcNow
+                    },
+                    new Supplier
+                    {
+                        Name = "Nepal Accessories Pvt Ltd",
+                        ContactEmail = "sales@nepalaccessories.com",
+                        ContactPhone = "+977-21-523456",
+                        Address = "Biratnagar Park, Morang",
+                        Status = "Active",
+                        OnTimeDeliveryRate = 98.00m,
+                        DefectRate = 0.80m,
+                        Rating = 4.90m,
+                        TotalOrders = 60,
+                        LastEvaluatedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow.AddMonths(-18),
+                        UpdatedAt = DateTime.UtcNow
+                    }
+                };
+                context.Suppliers.AddRange(suppliers);
+                context.SaveChanges();
+            }
+            else
+            {
+                suppliers = context.Suppliers.ToList();
+            }
+
             // Seed MaterialRequests
             if (!context.MaterialRequests.Any())
             {
+                var s1 = suppliers.FirstOrDefault(s => s.Name == "Everest Textiles Ltd") ?? suppliers.FirstOrDefault();
+                var s3 = suppliers.FirstOrDefault(s => s.Name == "Nepal Accessories Pvt Ltd") ?? suppliers.LastOrDefault();
+
                 context.MaterialRequests.AddRange(new List<MaterialRequest>
                 {
-                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Cotton", RequestedQuantity = 500, SupplierName = "Everest Textiles Ltd", Urgency = "High", RequiredDate = DateTime.UtcNow.AddDays(3), Notes = "Shortage for upcoming production batch", RequestedBy = "Warehouse Manager", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" },
-                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Zipper", RequestedQuantity = 1000, SupplierName = "Nepal Accessories Pvt", Urgency = "Normal", RequiredDate = DateTime.UtcNow.AddDays(5), Notes = "Routine raw material requisition", RequestedBy = "Stock Controller", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Stock Controller", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Stock Controller" }
+                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Cotton", RequestedQuantity = 500, SupplierId = s1?.Id, SupplierName = s1?.Name ?? "Everest Textiles Ltd", Urgency = "High", RequiredDate = DateTime.UtcNow.AddDays(3), Notes = "Shortage for upcoming production batch", RequestedBy = "Warehouse Manager", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" },
+                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Zipper", RequestedQuantity = 1000, SupplierId = s3?.Id, SupplierName = s3?.Name ?? "Nepal Accessories Pvt Ltd", Urgency = "Normal", RequiredDate = DateTime.UtcNow.AddDays(5), Notes = "Routine raw material requisition", RequestedBy = "Stock Controller", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Stock Controller", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Stock Controller" }
                 });
             }
 
@@ -593,11 +660,38 @@ namespace backend.Data
             // Seed MaterialInspections
             if (!context.MaterialInspections.Any())
             {
+                var s2 = suppliers.FirstOrDefault(s => s.Name == "Himalayan Yarns & Fabrics") ?? suppliers.FirstOrDefault();
+                var s3 = suppliers.FirstOrDefault(s => s.Name == "Nepal Accessories Pvt Ltd") ?? suppliers.LastOrDefault();
+
                 context.MaterialInspections.AddRange(new List<MaterialInspection>
                 {
-                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Thread", SupplierName = "Himalayan Yarns", ReceivedQuantity = 1000, InspectionStatus = "Accepted", Notes = "Passed quality test", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" },
-                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Buttons", SupplierName = "Global Buttons", ReceivedQuantity = 250, InspectionStatus = "Purchase Return", Notes = "Corroded batch - returned to supplier", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" }
+                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Thread", SupplierId = s2?.Id, SupplierName = s2?.Name ?? "Himalayan Yarns & Fabrics", ReceivedQuantity = 1000, InspectionStatus = "Accepted", Notes = "Passed quality test", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" },
+                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Buttons", SupplierId = s3?.Id, SupplierName = s3?.Name ?? "Nepal Accessories Pvt Ltd", ReceivedQuantity = 250, InspectionStatus = "Purchase Return", Notes = "Corroded batch - returned to supplier", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" }
                 });
+                context.SaveChanges();
+            }
+
+            // Ensure existing MaterialRequests and MaterialInspections have FK SupplierId populated
+            var unlinkedRequests = context.MaterialRequests.Where(r => r.SupplierId == null).ToList();
+            if (unlinkedRequests.Any() && suppliers.Any())
+            {
+                foreach (var req in unlinkedRequests)
+                {
+                    var match = suppliers.FirstOrDefault(s => s.Name.StartsWith(req.SupplierName.Split(' ')[0])) ?? suppliers.First();
+                    req.SupplierId = match.Id;
+                }
+                context.SaveChanges();
+            }
+
+            var unlinkedInspections = context.MaterialInspections.Where(i => i.SupplierId == null).ToList();
+            if (unlinkedInspections.Any() && suppliers.Any())
+            {
+                foreach (var insp in unlinkedInspections)
+                {
+                    var match = suppliers.FirstOrDefault(s => s.Name.StartsWith(insp.SupplierName.Split(' ')[0])) ?? suppliers.First();
+                    insp.SupplierId = match.Id;
+                }
+                context.SaveChanges();
             }
 
             // Seed FinishedGoodsHandovers

@@ -21,6 +21,9 @@ using backend.Service.Outlet;
 using backend.Service.OutletDemand;
 using backend.Service.Transaction;
 using backend.Service.ActivityLog;
+using backend.Service.Supplier;
+using backend.Service.MaterialRequest;
+using backend.Service.MaterialInspection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,6 +72,9 @@ builder.Services.AddScoped<IOutletService, OutletService>();
 builder.Services.AddScoped<IOutletDemandService, OutletDemandService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IMaterialRequestService, MaterialRequestService>();
+builder.Services.AddScoped<IMaterialInspectionService, MaterialInspectionService>();
 
 var app = builder.Build();
 

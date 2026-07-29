@@ -2,6 +2,7 @@ CREATE OR ALTER PROCEDURE sp_GetMaterialInspections
     @Id UNIQUEIDENTIFIER = NULL,
     @MaterialId NVARCHAR(MAX) = NULL,
     @MaterialName NVARCHAR(MAX) = NULL,
+    @SupplierId INT = NULL,
     @SupplierName NVARCHAR(MAX) = NULL,
     @ReceivedQuantity DECIMAL(18,2) = NULL,
     @InspectionStatus NVARCHAR(MAX) = NULL,
@@ -20,6 +21,7 @@ BEGIN
         (@Id IS NULL OR [Id] = @Id)
         AND (@MaterialId IS NULL OR [MaterialId] = @MaterialId)
         AND (@MaterialName IS NULL OR [MaterialName] = @MaterialName)
+        AND (@SupplierId IS NULL OR [SupplierId] = @SupplierId)
         AND (@SupplierName IS NULL OR [SupplierName] = @SupplierName)
         AND (@ReceivedQuantity IS NULL OR [ReceivedQuantity] = @ReceivedQuantity)
         AND (@InspectionStatus IS NULL OR [InspectionStatus] = @InspectionStatus)
@@ -36,6 +38,7 @@ CREATE OR ALTER PROCEDURE sp_InsertMaterialInspection
     @Id UNIQUEIDENTIFIER,
     @MaterialId NVARCHAR(MAX),
     @MaterialName NVARCHAR(MAX),
+    @SupplierId INT = NULL,
     @SupplierName NVARCHAR(MAX),
     @ReceivedQuantity DECIMAL(18,2),
     @InspectionStatus NVARCHAR(MAX),
@@ -50,10 +53,10 @@ BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO [MaterialInspections] (
-        [Id], [MaterialId], [MaterialName], [SupplierName], [ReceivedQuantity], [InspectionStatus], [Notes], [InspectorName], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
+        [Id], [MaterialId], [MaterialName], [SupplierId], [SupplierName], [ReceivedQuantity], [InspectionStatus], [Notes], [InspectorName], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
     )
     VALUES (
-        @Id, @MaterialId, @MaterialName, @SupplierName, @ReceivedQuantity, @InspectionStatus, @Notes, @InspectorName, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
+        @Id, @MaterialId, @MaterialName, @SupplierId, @SupplierName, @ReceivedQuantity, @InspectionStatus, @Notes, @InspectorName, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
     );
 END
 GO
@@ -62,6 +65,7 @@ CREATE OR ALTER PROCEDURE sp_UpdateMaterialInspection
     @Id UNIQUEIDENTIFIER,
     @MaterialId NVARCHAR(MAX),
     @MaterialName NVARCHAR(MAX),
+    @SupplierId INT = NULL,
     @SupplierName NVARCHAR(MAX),
     @ReceivedQuantity DECIMAL(18,2),
     @InspectionStatus NVARCHAR(MAX),
@@ -79,6 +83,7 @@ BEGIN
     SET
         [MaterialId] = @MaterialId,
         [MaterialName] = @MaterialName,
+        [SupplierId] = @SupplierId,
         [SupplierName] = @SupplierName,
         [ReceivedQuantity] = @ReceivedQuantity,
         [InspectionStatus] = @InspectionStatus,

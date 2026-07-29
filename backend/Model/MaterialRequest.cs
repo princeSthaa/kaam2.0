@@ -14,6 +14,11 @@ namespace backend.Model
         public string MaterialName { get; set; } = string.Empty;
         [Column(TypeName = "decimal(18,2)")]
         public decimal RequestedQuantity { get; set; }
+        
+        [ForeignKey(nameof(Supplier))]
+        public Guid? SupplierId { get; set; }
+        public virtual Supplier? Supplier { get; set; }
+        
         public string SupplierName { get; set; } = string.Empty;
         public string Urgency { get; set; } = string.Empty;
         public DateTime RequiredDate { get; set; }

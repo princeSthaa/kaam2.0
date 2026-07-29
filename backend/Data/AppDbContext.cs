@@ -38,11 +38,24 @@ namespace backend.Data
         public DbSet<MaterialInspection> MaterialInspections { get; set; } = null!;
         public DbSet<FinishedGoodsHandover> FinishedGoodsHandovers { get; set; } = null!;
         public DbSet<CustomerReturn> CustomerReturns { get; set; } = null!;
+        public DbSet<Supplier> Suppliers { get; set; } = null!;
         // </crudgen:dbsets>
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<MaterialRequest>()
+                .HasOne(e => e.Supplier)
+                .WithMany(p => p.MaterialRequests)
+                .HasForeignKey(e => e.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<MaterialInspection>()
+                .HasOne(e => e.Supplier)
+                .WithMany(p => p.MaterialInspections)
+                .HasForeignKey(e => e.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Material>()
                 .HasOne(e => e.MaterialType)
