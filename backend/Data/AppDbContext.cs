@@ -52,10 +52,10 @@ namespace backend.Data
                 .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<MaterialInspection>()
-                .HasOne(e => e.Supplier)
+                .HasOne(e => e.MaterialRequest)
                 .WithMany(p => p.MaterialInspections)
-                .HasForeignKey(e => e.SupplierId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .HasForeignKey(e => e.MaterialRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Material>()
                 .HasOne(e => e.MaterialType)

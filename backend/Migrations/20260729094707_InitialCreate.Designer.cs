@@ -12,7 +12,7 @@ using backend.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260729073019_InitialCreate")]
+    [Migration("20260729094707_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -451,19 +451,15 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("MaterialRequestId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("ReceivedQuantity")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SupplierName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -474,7 +470,7 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("SupplierId");
+                    b.HasIndex("MaterialRequestId");
 
                     b.ToTable("MaterialInspections");
                 });
@@ -1227,6 +1223,12 @@ namespace backend.Migrations
                     b.Property<decimal>("DefectRate")
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("LastEvaluatedAt")
                         .HasColumnType("datetime2");
 
@@ -1241,7 +1243,10 @@ namespace backend.Migrations
                     b.Property<decimal>("Rating")
                         .HasColumnType("decimal(3,2)");
 
-                    b.Property<string>("Status")
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SupplierCode")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
@@ -1521,12 +1526,13 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Model.MaterialInspection", b =>
                 {
-                    b.HasOne("backend.Model.Supplier", "Supplier")
+                    b.HasOne("backend.Model.MaterialRequest", "MaterialRequest")
                         .WithMany("MaterialInspections")
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("MaterialRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("Supplier");
+                    b.Navigation("MaterialRequest");
                 });
 
             modelBuilder.Entity("backend.Model.MaterialRequest", b =>
@@ -1690,6 +1696,11 @@ namespace backend.Migrations
                     b.Navigation("Materials");
                 });
 
+            modelBuilder.Entity("backend.Model.MaterialRequest", b =>
+                {
+                    b.Navigation("MaterialInspections");
+                });
+
             modelBuilder.Entity("backend.Model.MaterialType", b =>
                 {
                     b.Navigation("MaterialCategories");
@@ -1729,8 +1740,6 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Model.Supplier", b =>
                 {
                     b.Navigation("MaterialCategories");
-
-                    b.Navigation("MaterialInspections");
 
                     b.Navigation("MaterialRequests");
                 });

@@ -41,7 +41,7 @@ namespace backend.Dto.MaterialRequest
 
         public decimal RequestedQuantity { get; set; }
 
-        public int? SupplierId { get; set; }
+        public Guid? SupplierId { get; set; }
 
         public string SupplierName { get; set; } = string.Empty;
 

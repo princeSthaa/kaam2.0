@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -7,14 +6,13 @@ namespace backend.Model
     [Table("MaterialRequests")]
     public class MaterialRequest
     {
-        // <crudgen:properties>
         [Key]
         public Guid Id { get; set; }
         public string MaterialId { get; set; } = string.Empty;
         public string MaterialName { get; set; } = string.Empty;
         [Column(TypeName = "decimal(18,2)")]
         public decimal RequestedQuantity { get; set; }
-        
+    
         [ForeignKey(nameof(Supplier))]
         public Guid? SupplierId { get; set; }
         public virtual Supplier? Supplier { get; set; }
@@ -29,6 +27,8 @@ namespace backend.Model
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
-        // </crudgen:properties>
+
+        public virtual ICollection<MaterialInspection> MaterialInspections { get; set; } = new List<MaterialInspection>();
+
     }
 }

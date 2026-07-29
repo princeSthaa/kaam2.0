@@ -39,7 +39,7 @@ namespace backend.Controller.MaterialRequest
             [FromQuery] string? materialId = null,
             [FromQuery] string? materialName = null,
             [FromQuery] decimal? requestedQuantity = null,
-            [FromQuery] int? supplierId = null,
+            [FromQuery] Guid? supplierId = null,
             [FromQuery] string? supplierName = null,
             [FromQuery] string? urgency = null,
             [FromQuery] DateTime? requiredDate = null,

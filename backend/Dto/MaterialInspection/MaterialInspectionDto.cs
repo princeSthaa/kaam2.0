@@ -12,9 +12,7 @@ namespace backend.Dto.MaterialInspection
 
         public string MaterialName { get; set; } = string.Empty;
 
-        public int? SupplierId { get; set; }
-
-        public string SupplierName { get; set; } = string.Empty;
+        public Guid MaterialRequestId { get; set; }
 
         public decimal ReceivedQuantity { get; set; }
 

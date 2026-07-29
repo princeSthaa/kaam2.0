@@ -14,7 +14,7 @@ namespace backend.Service.MaterialRequest
             string? materialId = null,
             string? materialName = null,
             decimal? requestedQuantity = null,
-            int? supplierId = null,
+            Guid? supplierId = null,
             string? supplierName = null,
             string? urgency = null,
             DateTime? requiredDate = null,

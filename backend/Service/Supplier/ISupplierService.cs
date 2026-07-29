@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using backend.Dto.Supplier;
+using backend.Model.Enums;
 
 namespace backend.Service.Supplier
 {
@@ -9,13 +10,15 @@ namespace backend.Service.Supplier
     {
         Task<List<SupplierDto>> GetAllAsync(
             Guid? id = null,
+            string? supplierCode = null,
             string? name = null,
-            string? status = null
+            UserStatus? status = null,
+            bool includeDeleted = false
         );
 
         Task<SupplierDto?> GetByIdAsync(Guid id);
 
-        Task<SupplierDto> CreateAsync(SupplierDto supplierDto);
+        Task<SupplierDto> CreateAsync(SupplierCreateDto supplierDto);
 
         Task<bool> UpdateAsync(Guid id, SupplierDto supplierDto);
 

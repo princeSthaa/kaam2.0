@@ -1,38 +1,17 @@
 Write-Host "=== 1. GET ALL SUPPLIERS ==="
 $all = Invoke-RestMethod -Uri "http://localhost:5083/api/supplier"
 Write-Host "Count: $($all.Count)"
+$s1 = $all[0]
+Write-Host "Supplier 1 ID: $($s1.id), Code: $($s1.supplierCode), Name: $($s1.name)"
 
-Write-Host "=== 2. GET SUPPLIER BY ID 4 ==="
-$s4 = Invoke-RestMethod -Uri "http://localhost:5083/api/supplier/4"
-Write-Host "Supplier 4 Name: $($s4.name), Email: $($s4.contactEmail)"
+Write-Host "=== 2. RECALCULATE METRICS FOR SUPPLIER 1 ==="
+$recalc = Invoke-RestMethod -Uri "http://localhost:5083/api/supplier/$($s1.id)/recalculate-metrics" -Method POST
+Write-Host "Rating: $($recalc.rating), TotalOrders: $($recalc.totalOrders), OnTimeRate: $($recalc.onTimeDeliveryRate)%"
 
-Write-Host "=== 3. UPDATE SUPPLIER 4 ==="
-$updateObj = @{
-    id = 4
-    name = "Sunrise Yarns & Fabrics Ltd"
-    contactEmail = "sales@sunriseyarns.com"
-    contactPhone = "+977-1-4433221"
-    address = "Patan, Lalitpur, Nepal"
-    status = "Active"
-    onTimeDeliveryRate = 95.00
-    defectRate = 1.00
-    rating = 4.70
-    totalOrders = 10
-}
-$updateJson = $updateObj | ConvertTo-Json
-Invoke-RestMethod -Uri "http://localhost:5083/api/supplier/4" -Method PUT -Body $updateJson -ContentType "application/json"
+Write-Host "=== 3. GET MATERIAL REQUESTS ==="
+$requests = Invoke-RestMethod -Uri "http://localhost:5083/api/material-request"
+Write-Host "Requests count: $($requests.Count), First Request SupplierId: $($requests[0].supplierId)"
 
-$s4Updated = Invoke-RestMethod -Uri "http://localhost:5083/api/supplier/4"
-Write-Host "Updated Name: $($s4Updated.name), Rating: $($s4Updated.rating)"
-
-Write-Host "=== 4. RECALCULATE METRICS FOR SUPPLIER 4 ==="
-$recalc = Invoke-RestMethod -Uri "http://localhost:5083/api/supplier/4/recalculate-metrics" -Method POST
-Write-Host "Recalculated Rating: $($recalc.rating), TotalOrders: $($recalc.totalOrders), LastEvaluatedAt: $($recalc.lastEvaluatedAt)"
-
-Write-Host "=== 5. DELETE SUPPLIER 4 ==="
-Invoke-RestMethod -Uri "http://localhost:5083/api/supplier/4" -Method DELETE
-Write-Host "Supplier 4 deleted."
-
-Write-Host "=== 6. VERIFY FINAL COUNT ==="
-$finalList = Invoke-RestMethod -Uri "http://localhost:5083/api/supplier"
-Write-Host "Final Suppliers Count: $($finalList.Count)"
+Write-Host "=== 4. GET MATERIAL INSPECTIONS ==="
+$inspections = Invoke-RestMethod -Uri "http://localhost:5083/api/material-inspection"
+Write-Host "Inspections count: $($inspections.Count), First Inspection MaterialRequestId: $($inspections[0].materialRequestId)"

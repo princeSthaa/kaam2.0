@@ -1,4 +1,5 @@
 using backend.Model;
+using backend.Model.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -583,11 +584,13 @@ namespace backend.Data
                 {
                     new Supplier
                     {
+                        Id = Guid.NewGuid(),
+                        SupplierCode = "SUP-001",
                         Name = "Everest Textiles Ltd",
                         ContactEmail = "contact@everesttextiles.com",
                         ContactPhone = "+977-1-4351234",
                         Address = "Balaju Industrial Area, Kathmandu",
-                        Status = "Active",
+                        Status = UserStatus.Active,
                         OnTimeDeliveryRate = 96.50m,
                         DefectRate = 1.20m,
                         Rating = 4.80m,
@@ -598,11 +601,13 @@ namespace backend.Data
                     },
                     new Supplier
                     {
+                        Id = Guid.NewGuid(),
+                        SupplierCode = "SUP-002",
                         Name = "Himalayan Yarns & Fabrics",
                         ContactEmail = "info@himalayanyarns.com",
                         ContactPhone = "+977-1-5524321",
                         Address = "Patan Industrial Estate, Lalitpur",
-                        Status = "Active",
+                        Status = UserStatus.Active,
                         OnTimeDeliveryRate = 92.00m,
                         DefectRate = 2.50m,
                         Rating = 4.35m,
@@ -613,11 +618,13 @@ namespace backend.Data
                     },
                     new Supplier
                     {
+                        Id = Guid.NewGuid(),
+                        SupplierCode = "SUP-003",
                         Name = "Nepal Accessories Pvt Ltd",
                         ContactEmail = "sales@nepalaccessories.com",
                         ContactPhone = "+977-21-523456",
                         Address = "Biratnagar Park, Morang",
-                        Status = "Active",
+                        Status = UserStatus.Active,
                         OnTimeDeliveryRate = 98.00m,
                         DefectRate = 0.80m,
                         Rating = 4.90m,
@@ -636,16 +643,23 @@ namespace backend.Data
             }
 
             // Seed MaterialRequests
+            var requests = new List<MaterialRequest>();
             if (!context.MaterialRequests.Any())
             {
                 var s1 = suppliers.FirstOrDefault(s => s.Name == "Everest Textiles Ltd") ?? suppliers.FirstOrDefault();
                 var s3 = suppliers.FirstOrDefault(s => s.Name == "Nepal Accessories Pvt Ltd") ?? suppliers.LastOrDefault();
 
-                context.MaterialRequests.AddRange(new List<MaterialRequest>
+                requests = new List<MaterialRequest>
                 {
                     new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Cotton", RequestedQuantity = 500, SupplierId = s1?.Id, SupplierName = s1?.Name ?? "Everest Textiles Ltd", Urgency = "High", RequiredDate = DateTime.UtcNow.AddDays(3), Notes = "Shortage for upcoming production batch", RequestedBy = "Warehouse Manager", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" },
                     new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Zipper", RequestedQuantity = 1000, SupplierId = s3?.Id, SupplierName = s3?.Name ?? "Nepal Accessories Pvt Ltd", Urgency = "Normal", RequiredDate = DateTime.UtcNow.AddDays(5), Notes = "Routine raw material requisition", RequestedBy = "Stock Controller", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Stock Controller", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Stock Controller" }
-                });
+                };
+                context.MaterialRequests.AddRange(requests);
+                context.SaveChanges();
+            }
+            else
+            {
+                requests = context.MaterialRequests.ToList();
             }
 
             // Seed MaterialIssues
@@ -658,39 +672,16 @@ namespace backend.Data
             }
 
             // Seed MaterialInspections
-            if (!context.MaterialInspections.Any())
+            if (!context.MaterialInspections.Any() && requests.Any())
             {
-                var s2 = suppliers.FirstOrDefault(s => s.Name == "Himalayan Yarns & Fabrics") ?? suppliers.FirstOrDefault();
-                var s3 = suppliers.FirstOrDefault(s => s.Name == "Nepal Accessories Pvt Ltd") ?? suppliers.LastOrDefault();
+                var r1 = requests.First();
+                var r2 = requests.Last();
 
                 context.MaterialInspections.AddRange(new List<MaterialInspection>
                 {
-                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Thread", SupplierId = s2?.Id, SupplierName = s2?.Name ?? "Himalayan Yarns & Fabrics", ReceivedQuantity = 1000, InspectionStatus = "Accepted", Notes = "Passed quality test", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" },
-                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Buttons", SupplierId = s3?.Id, SupplierName = s3?.Name ?? "Nepal Accessories Pvt Ltd", ReceivedQuantity = 250, InspectionStatus = "Purchase Return", Notes = "Corroded batch - returned to supplier", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" }
+                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = r1.MaterialId, MaterialName = r1.MaterialName, MaterialRequestId = r1.Id, ReceivedQuantity = 1000, InspectionStatus = "Accepted", Notes = "Passed quality test", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" },
+                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = r2.MaterialId, MaterialName = r2.MaterialName, MaterialRequestId = r2.Id, ReceivedQuantity = 250, InspectionStatus = "Purchase Return", Notes = "Corroded batch - returned to supplier", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" }
                 });
-                context.SaveChanges();
-            }
-
-            // Ensure existing MaterialRequests and MaterialInspections have FK SupplierId populated
-            var unlinkedRequests = context.MaterialRequests.Where(r => r.SupplierId == null).ToList();
-            if (unlinkedRequests.Any() && suppliers.Any())
-            {
-                foreach (var req in unlinkedRequests)
-                {
-                    var match = suppliers.FirstOrDefault(s => s.Name.StartsWith(req.SupplierName.Split(' ')[0])) ?? suppliers.First();
-                    req.SupplierId = match.Id;
-                }
-                context.SaveChanges();
-            }
-
-            var unlinkedInspections = context.MaterialInspections.Where(i => i.SupplierId == null).ToList();
-            if (unlinkedInspections.Any() && suppliers.Any())
-            {
-                foreach (var insp in unlinkedInspections)
-                {
-                    var match = suppliers.FirstOrDefault(s => s.Name.StartsWith(insp.SupplierName.Split(' ')[0])) ?? suppliers.First();
-                    insp.SupplierId = match.Id;
-                }
                 context.SaveChanges();
             }
 

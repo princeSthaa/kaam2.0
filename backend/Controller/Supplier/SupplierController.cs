@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using backend.Dto.Supplier;
 using backend.Service.Supplier;
 using Microsoft.AspNetCore.Mvc;
+using backend.Model.Enums;
 
 namespace backend.Controller.Supplier
 {
@@ -18,11 +22,13 @@ namespace backend.Controller.Supplier
         [HttpGet]
         public async Task<ActionResult<List<SupplierDto>>> GetAll(
             [FromQuery] Guid? id = null,
+            [FromQuery] string? supplierCode = null,
             [FromQuery] string? name = null,
-            [FromQuery] string? status = null
+            [FromQuery] UserStatus? status = null,
+            [FromQuery] bool includeDeleted = false
         )
         {
-            var suppliers = await _supplierService.GetAllAsync(id, name, status);
+            var suppliers = await _supplierService.GetAllAsync(id, supplierCode, name, status, includeDeleted);
             return Ok(suppliers);
         }
 
@@ -38,14 +44,14 @@ namespace backend.Controller.Supplier
         }
 
         [HttpPost]
-        public async Task<ActionResult<SupplierDto>> Create([FromBody] SupplierDto supplierDto)
+        public async Task<ActionResult<SupplierDto>> Create([FromBody] SupplierCreateDto supplierCreateDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var created = await _supplierService.CreateAsync(supplierDto);
+            var created = await _supplierService.CreateAsync(supplierCreateDto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 

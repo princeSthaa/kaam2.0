@@ -1,13 +1,16 @@
 CREATE OR ALTER PROCEDURE sp_GetSuppliers
-    @Id INT = NULL,
+    @Id UNIQUEIDENTIFIER = NULL,
+    @SupplierCode NVARCHAR(50) = NULL,
     @Name NVARCHAR(150) = NULL,
-    @Status NVARCHAR(50) = NULL
+    @Status NVARCHAR(50) = NULL,
+    @IncludeDeleted BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
 
     SELECT 
         [Id],
+        [SupplierCode],
         [Name],
         [ContactEmail],
         [ContactPhone],
@@ -19,17 +22,23 @@ BEGIN
         [TotalOrders],
         [LastEvaluatedAt],
         [CreatedAt],
-        [UpdatedAt]
+        [UpdatedAt],
+        [IsDeleted],
+        [DeletedAt]
     FROM [Suppliers]
     WHERE
         (@Id IS NULL OR [Id] = @Id)
+        AND (@SupplierCode IS NULL OR [SupplierCode] = @SupplierCode)
         AND (@Name IS NULL OR [Name] LIKE '%' + @Name + '%')
         AND (@Status IS NULL OR [Status] = @Status)
+        AND (@IncludeDeleted = 1 OR [IsDeleted] = 0)
     ORDER BY [Name] ASC;
 END
 GO
 
 CREATE OR ALTER PROCEDURE sp_InsertSupplier
+    @Id UNIQUEIDENTIFIER,
+    @SupplierCode NVARCHAR(50),
     @Name NVARCHAR(150),
     @ContactEmail NVARCHAR(150),
     @ContactPhone NVARCHAR(50),
@@ -40,29 +49,27 @@ CREATE OR ALTER PROCEDURE sp_InsertSupplier
     @Rating DECIMAL(3,2),
     @TotalOrders INT,
     @CreatedAt DATETIME2,
-    @UpdatedAt DATETIME2,
-    @InsertedId INT OUTPUT
+    @UpdatedAt DATETIME2
 AS
 BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO [Suppliers] (
-        [Name], [ContactEmail], [ContactPhone], [Address], [Status],
+        [Id], [SupplierCode], [Name], [ContactEmail], [ContactPhone], [Address], [Status],
         [OnTimeDeliveryRate], [DefectRate], [Rating], [TotalOrders],
-        [CreatedAt], [UpdatedAt]
+        [CreatedAt], [UpdatedAt], [IsDeleted]
     )
     VALUES (
-        @Name, @ContactEmail, @ContactPhone, @Address, @Status,
+        @Id, @SupplierCode, @Name, @ContactEmail, @ContactPhone, @Address, @Status,
         @OnTimeDeliveryRate, @DefectRate, @Rating, @TotalOrders,
-        @CreatedAt, @UpdatedAt
+        @CreatedAt, @UpdatedAt, 0
     );
-
-    SET @InsertedId = SCOPE_IDENTITY();
 END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateSupplier
-    @Id INT,
+    @Id UNIQUEIDENTIFIER,
+    @SupplierCode NVARCHAR(50),
     @Name NVARCHAR(150),
     @ContactEmail NVARCHAR(150),
     @ContactPhone NVARCHAR(50),
@@ -80,6 +87,7 @@ BEGIN
 
     UPDATE [Suppliers]
     SET
+        [SupplierCode] = @SupplierCode,
         [Name] = @Name,
         [ContactEmail] = @ContactEmail,
         [ContactPhone] = @ContactPhone,
@@ -91,16 +99,18 @@ BEGIN
         [TotalOrders] = @TotalOrders,
         [LastEvaluatedAt] = @LastEvaluatedAt,
         [UpdatedAt] = @UpdatedAt
-    WHERE [Id] = @Id;
+    WHERE [Id] = @Id AND [IsDeleted] = 0;
 END
 GO
 
 CREATE OR ALTER PROCEDURE sp_DeleteSupplier
-    @Id INT
+    @Id UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    DELETE FROM [Suppliers] WHERE [Id] = @Id;
+    UPDATE [Suppliers]
+    SET [IsDeleted] = 1, [DeletedAt] = SYSUTCDATETIME()
+    WHERE [Id] = @Id;
 END
 GO

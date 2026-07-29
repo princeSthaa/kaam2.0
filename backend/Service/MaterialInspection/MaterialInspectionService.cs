@@ -2,13 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.MaterialInspection;
-using backend.Model;
 
 namespace backend.Service.MaterialInspection
 {
@@ -21,13 +18,11 @@ namespace backend.Service.MaterialInspection
             _context = context;
         }
 
-        // <crudgen:methods>
         public async Task<List<MaterialInspectionDto>> GetAllAsync(
             Guid? id = null,
             string? materialId = null,
             string? materialName = null,
-            int? supplierId = null,
-            string? supplierName = null,
+            Guid? materialRequestId = null,
             decimal? receivedQuantity = null,
             string? inspectionStatus = null,
             string? notes = null,
@@ -45,8 +40,7 @@ namespace backend.Service.MaterialInspection
                         @Id = {id},
                         @MaterialId = {materialId},
                         @MaterialName = {materialName},
-                        @SupplierId = {supplierId},
-                        @SupplierName = {supplierName},
+                        @MaterialRequestId = {materialRequestId},
                         @ReceivedQuantity = {receivedQuantity},
                         @InspectionStatus = {inspectionStatus},
                         @Notes = {notes},
@@ -78,8 +72,7 @@ namespace backend.Service.MaterialInspection
                     @Id = {materialInspectionDto.Id},
                     @MaterialId = {materialInspectionDto.MaterialId},
                     @MaterialName = {materialInspectionDto.MaterialName},
-                    @SupplierId = {materialInspectionDto.SupplierId},
-                    @SupplierName = {materialInspectionDto.SupplierName},
+                    @MaterialRequestId = {materialInspectionDto.MaterialRequestId},
                     @ReceivedQuantity = {materialInspectionDto.ReceivedQuantity},
                     @InspectionStatus = {materialInspectionDto.InspectionStatus},
                     @Notes = {materialInspectionDto.Notes},
@@ -95,15 +88,13 @@ namespace backend.Service.MaterialInspection
 
         public async Task<bool> UpdateAsync(Guid id, MaterialInspectionDto materialInspectionDto)
         {
-
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateMaterialInspection
 
                     @Id = {materialInspectionDto.Id},
                     @MaterialId = {materialInspectionDto.MaterialId},
                     @MaterialName = {materialInspectionDto.MaterialName},
-                    @SupplierId = {materialInspectionDto.SupplierId},
-                    @SupplierName = {materialInspectionDto.SupplierName},
+                    @MaterialRequestId = {materialInspectionDto.MaterialRequestId},
                     @ReceivedQuantity = {materialInspectionDto.ReceivedQuantity},
                     @InspectionStatus = {materialInspectionDto.InspectionStatus},
                     @Notes = {materialInspectionDto.Notes},
@@ -126,7 +117,5 @@ namespace backend.Service.MaterialInspection
 
             return true;
         }
-
-        // </crudgen:methods>
     }
 }

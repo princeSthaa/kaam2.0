@@ -233,18 +233,21 @@ namespace backend.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SupplierCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     ContactEmail = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     ContactPhone = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     Address = table.Column<string>(type: "nvarchar(250)", maxLength: 250, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     OnTimeDeliveryRate = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     DefectRate = table.Column<decimal>(type: "decimal(5,2)", nullable: false),
                     Rating = table.Column<decimal>(type: "decimal(3,2)", nullable: false),
                     TotalOrders = table.Column<int>(type: "int", nullable: false),
                     LastEvaluatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -436,35 +439,6 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MaterialInspections",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    MaterialId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    MaterialName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SupplierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    SupplierName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ReceivedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    InspectionStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    InspectorName = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MaterialInspections", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MaterialInspections_Suppliers_SupplierId",
-                        column: x => x.SupplierId,
-                        principalTable: "Suppliers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MaterialRequests",
                 columns: table => new
                 {
@@ -652,6 +626,34 @@ namespace backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MaterialInspections",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MaterialId = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaterialName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MaterialRequestId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ReceivedQuantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    InspectionStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Notes = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    InspectorName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedBy = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MaterialInspections", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MaterialInspections_MaterialRequests_MaterialRequestId",
+                        column: x => x.MaterialRequestId,
+                        principalTable: "MaterialRequests",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "WarehouseShelves",
                 columns: table => new
                 {
@@ -782,9 +784,9 @@ namespace backend.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MaterialInspections_SupplierId",
+                name: "IX_MaterialInspections_MaterialRequestId",
                 table: "MaterialInspections",
-                column: "SupplierId");
+                column: "MaterialRequestId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MaterialRequests_SupplierId",
@@ -897,9 +899,6 @@ namespace backend.Migrations
                 name: "MaterialIssues");
 
             migrationBuilder.DropTable(
-                name: "MaterialRequests");
-
-            migrationBuilder.DropTable(
                 name: "OrderItemMaterials");
 
             migrationBuilder.DropTable(
@@ -919,6 +918,9 @@ namespace backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "WarehouseShelves");
+
+            migrationBuilder.DropTable(
+                name: "MaterialRequests");
 
             migrationBuilder.DropTable(
                 name: "Materials");

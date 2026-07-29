@@ -1,7 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using backend.Model.Enums;
 
 namespace backend.Model
 {
@@ -9,6 +8,10 @@ namespace backend.Model
     public class Supplier
     {
         public Guid Id { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string SupplierCode { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(150)]
@@ -24,8 +27,7 @@ namespace backend.Model
         [MaxLength(250)]
         public string Address { get; set; } = string.Empty;
 
-        [MaxLength(50)]
-        public string Status { get; set; } = "Active";
+        public UserStatus Status { get; set; } = UserStatus.Active;
 
         [Column(TypeName = "decimal(5,2)")]
         public decimal OnTimeDeliveryRate { get; set; }
@@ -43,8 +45,11 @@ namespace backend.Model
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        public bool IsDeleted { get; set; } = false;
+
+        public DateTime? DeletedAt { get; set; }
+
         public virtual ICollection<MaterialCategory> MaterialCategories { get; set; } = new List<MaterialCategory>();
         public virtual ICollection<MaterialRequest> MaterialRequests { get; set; } = new List<MaterialRequest>();
-        public virtual ICollection<MaterialInspection> MaterialInspections { get; set; } = new List<MaterialInspection>();
     }
 }
