@@ -378,44 +378,50 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
         fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).catch(() => []),
         fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => [])
       ]).then(([custs, ords, plans, planProducts]) => {
-        const plannedOrderNos = new Set<string>();
+        const plannedOrderItemIds = new Set<string>();
         (plans || []).forEach((p: any) => {
           const prods = p.productionPlanProducts || p.products || [];
-          prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
+          prods.forEach((prod: any) => {
+            if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId));
+          });
         });
 
         (planProducts || []).forEach((pp: any) => {
-          if (pp.orderNo) plannedOrderNos.add(String(pp.orderNo));
+          if (pp.orderItemId) plannedOrderItemIds.add(String(pp.orderItemId));
         });
 
         if (typeof window !== "undefined") {
           try {
             const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
             drafts.forEach((d: any) => {
-              (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
+              (d.products || []).forEach((prod: any) => {
+                if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId));
+              });
             });
           } catch {}
         }
 
         const combined = custs.map(c => {
-          // A customer remains available whenever they have another unplanned order.
-          // Planning one order must not hide later orders for the same customer.
-          const cOrders = ords.filter(o => o.customerId === c.id && !plannedOrderNos.has(String(o.orderNumber)));
+          const cOrders = ords.filter(o => o.customerId === c.id);
           const mappedOrders: any[] = [];
           
           cOrders.forEach(o => {
             const orderItems = o.orderItems || (o as any).items;
             if (orderItems && Array.isArray(orderItems)) {
               orderItems.forEach(item => {
-                mappedOrders.push({
-                  id: `${o.id}-${item.product?.name || (item as any).productName || item.productId}-${item.quantity}`,
-                  orderNo: o.orderNumber,
-                  productName: item.product?.name || (item as any).productName || "Garment Item",
-                  variant: (item as any).variant || "Standard Color",
-                  quantity: item.quantity,
-                  deliveryDate: o.dueDate,
-                  priority: (o as any).priority || "Normal",
-                });
+                const isPlanned = plannedOrderItemIds.has(String(item.id));
+                if (!isPlanned) {
+                  mappedOrders.push({
+                    id: `${o.id}-${item.id || item.productId}`,
+                    orderItemId: item.id,
+                    orderNo: o.orderNumber,
+                    productName: item.product?.name || (item as any).productName || "Garment Item",
+                    variant: (item as any).variant || "Standard Color",
+                    quantity: item.quantity,
+                    deliveryDate: o.dueDate,
+                    priority: (o as any).priority || "Normal",
+                  });
+                }
               });
             }
           });

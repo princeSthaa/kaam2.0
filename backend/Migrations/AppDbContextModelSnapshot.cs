@@ -1016,6 +1016,9 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid?>("OrderItemId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("OrderNo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1073,6 +1076,8 @@ namespace backend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
 
                     b.HasIndex("ProductionPlanId");
 
@@ -1627,11 +1632,17 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Model.ProductionPlanProduct", b =>
                 {
+                    b.HasOne("backend.Model.OrderItem", "OrderItem")
+                        .WithMany()
+                        .HasForeignKey("OrderItemId");
+
                     b.HasOne("backend.Model.ProductionPlan", "ProductionPlan")
                         .WithMany("ProductionPlanProducts")
                         .HasForeignKey("ProductionPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("OrderItem");
 
                     b.Navigation("ProductionPlan");
                 });
