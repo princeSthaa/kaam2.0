@@ -1,6 +1,7 @@
 # Backend
 backend/bin/
 backend/obj/
+backend/Migrations/
 
 # Frontend
 frontend/my-app/node_modules/
