@@ -229,7 +229,7 @@ export default function CrmIndexPage() {
       {/* 4 KPI Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Customers Card */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-32 border-l-4 border-l-slate-900">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between min-h-[136px] border-l-4 border-l-slate-900">
           <div className="flex justify-between items-start">
             <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-900">
               <span className="material-symbols-outlined text-xl">group</span>
@@ -238,18 +238,18 @@ export default function CrmIndexPage() {
               +12% Total
             </span>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-slate-900">
+          <div className="mt-3">
+            <div className="text-2xl font-bold text-slate-900 leading-tight">
               {loading ? "..." : stats.totalCust}
             </div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
               Total Customers
             </div>
           </div>
         </div>
 
         {/* Active & Pending Orders */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-32 border-l-4 border-l-amber-500">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between min-h-[136px] border-l-4 border-l-amber-500">
           <div className="flex justify-between items-start">
             <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-700">
               <span className="material-symbols-outlined text-xl">pending_actions</span>
@@ -258,18 +258,18 @@ export default function CrmIndexPage() {
               Unfulfilled
             </span>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-slate-900">
+          <div className="mt-3">
+            <div className="text-2xl font-bold text-slate-900 leading-tight">
               {loading ? "..." : stats.pendingOrd}
             </div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
               Active / Pending Orders
             </div>
           </div>
         </div>
 
         {/* Total CRM Revenue */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-32 border-l-4 border-l-emerald-600">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between min-h-[136px] border-l-4 border-l-emerald-600">
           <div className="flex justify-between items-start">
             <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700">
               <span className="material-symbols-outlined text-xl">payments</span>
@@ -278,18 +278,18 @@ export default function CrmIndexPage() {
               Gross Value
             </span>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-slate-900">
+          <div className="mt-3">
+            <div className="text-2xl font-bold text-slate-900 leading-tight">
               Rs. {loading ? "..." : stats.totalRev.toLocaleString()}
             </div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
               Total Order Pipeline
             </div>
           </div>
         </div>
 
         {/* New Onboarded */}
-        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between h-32 border-l-4 border-l-blue-600">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between min-h-[136px] border-l-4 border-l-blue-600">
           <div className="flex justify-between items-start">
             <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-700">
               <span className="material-symbols-outlined text-xl">person_add</span>
@@ -298,11 +298,11 @@ export default function CrmIndexPage() {
               This Month
             </span>
           </div>
-          <div>
-            <div className="text-2xl font-bold text-slate-900">
+          <div className="mt-3">
+            <div className="text-2xl font-bold text-slate-900 leading-tight">
               {loading ? "..." : stats.newCustomers}
             </div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
               New Onboarded
             </div>
           </div>
