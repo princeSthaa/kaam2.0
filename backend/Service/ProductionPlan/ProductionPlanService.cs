@@ -112,16 +112,33 @@ namespace backend.Service.ProductionPlan
 
             var sourceOrders = sourceOrderIds.Count == 0
                 ? new List<backend.Model.Order>()
-                : await _context.Orders.Where(order => sourceOrderIds.Contains(order.Id)).ToListAsync();
+                : await _context.Orders
+                    .Include(order => order.OrderItems)
+                    .Where(order => sourceOrderIds.Contains(order.Id))
+                    .ToListAsync();
 
             if (sourceOrders.Count != sourceOrderIds.Count)
             {
                 throw new InvalidOperationException("One or more selected orders no longer exist.");
             }
 
-            if (sourceOrders.Any(order => order.ProductionPlanId.HasValue || order.Status is OrderStatus.Completed or OrderStatus.Cancelled))
+            foreach (var order in sourceOrders)
             {
-                throw new InvalidOperationException("A selected order is already planned, completed, or cancelled.");
+                if (order.Status is OrderStatus.Completed or OrderStatus.Cancelled)
+                {
+                    throw new InvalidOperationException($"Order {order.OrderNumber} is already completed or cancelled.");
+                }
+
+                var orderItemIds = order.OrderItems.Select(i => i.Id).ToList();
+                var plannedItemIdsForOrder = await _context.ProductionPlanProducts
+                    .Where(ppp => ppp.OrderItemId.HasValue && orderItemIds.Contains(ppp.OrderItemId.Value))
+                    .Select(ppp => ppp.OrderItemId!.Value)
+                    .ToListAsync();
+
+                if (orderItemIds.Count > 0 && plannedItemIdsForOrder.Count >= orderItemIds.Count)
+                {
+                    throw new InvalidOperationException($"All items in order '{order.OrderNumber}' have already been planned.");
+                }
             }
 
             var plan = new backend.Model.ProductionPlan
@@ -156,13 +173,40 @@ namespace backend.Service.ProductionPlan
 
             foreach (var productDto in productionPlanDto.ProductionPlanProducts)
             {
+                // Auto-resolve OrderItemId if not provided
+                if (!productDto.OrderItemId.HasValue || productDto.OrderItemId == Guid.Empty)
+                {
+                    var matchingUnplannedItem = sourceOrders
+                        .SelectMany(o => o.OrderItems)
+                        .FirstOrDefault(i => i.ProductId.ToString() == productDto.ProductId);
+
+                    if (matchingUnplannedItem != null)
+                    {
+                        productDto.OrderItemId = matchingUnplannedItem.Id;
+                    }
+                }
+
+                if (productDto.OrderItemId.HasValue && productDto.OrderItemId != Guid.Empty)
+                {
+                    bool alreadyPlanned = await _context.ProductionPlanProducts
+                        .AnyAsync(ppp => ppp.OrderItemId == productDto.OrderItemId.Value);
+
+                    if (alreadyPlanned)
+                    {
+                        throw new InvalidOperationException($"Order item '{productDto.OrderItemId}' has already been planned in another production plan.");
+                    }
+                }
+
                 var productId = productDto.Id == Guid.Empty ? Guid.NewGuid() : productDto.Id;
                 var product = new backend.Model.ProductionPlanProduct
                 {
                     Id = productId,
                     ProductionPlanId = plan.Id,
+                    OrderItemId = productDto.OrderItemId,
                     LineId = productDto.LineId,
-                    OrderNo = productDto.OrderNo,
+                    OrderNo = string.IsNullOrWhiteSpace(productDto.OrderNo) && sourceOrders.Count > 0
+                        ? sourceOrders.First().OrderNumber
+                        : productDto.OrderNo,
                     ProductId = productDto.ProductId,
                     ProductCode = productDto.ProductCode,
                     ProductName = productDto.ProductName,
@@ -226,10 +270,30 @@ namespace backend.Service.ProductionPlan
             }
 
             var now = DateTime.UtcNow;
+            var newPlannedProductIds = plan.ProductionPlanProducts.Select(p => p.ProductId).ToList();
+
             foreach (var sourceOrder in sourceOrders)
             {
-                sourceOrder.ProductionPlanId = plan.Id;
-                sourceOrder.Status = OrderStatus.Planned;
+                var existingPlannedProductIds = await _context.ProductionPlanProducts
+                    .Where(ppp => ppp.OrderNo == sourceOrder.OrderNumber || ppp.OrderNo == sourceOrder.Id.ToString())
+                    .Select(ppp => ppp.ProductId)
+                    .ToListAsync();
+
+                var allPlannedForOrder = existingPlannedProductIds.Concat(newPlannedProductIds).Distinct().ToList();
+                var allOrderProductIds = sourceOrder.OrderItems.Select(i => i.ProductId.ToString()).Distinct().ToList();
+
+                bool isFullyPlanned = allOrderProductIds.Count > 0 && allOrderProductIds.All(pid => allPlannedForOrder.Contains(pid));
+
+                if (isFullyPlanned)
+                {
+                    sourceOrder.Status = OrderStatus.Planned;
+                    sourceOrder.ProductionPlanId = plan.Id;
+                }
+                else
+                {
+                    sourceOrder.Status = OrderStatus.Processing;
+                }
+
                 sourceOrder.UpdatedAt = now;
                 sourceOrder.UpdatedBy = string.IsNullOrWhiteSpace(productionPlanDto.CreatedBy)
                     ? "Production Planning"

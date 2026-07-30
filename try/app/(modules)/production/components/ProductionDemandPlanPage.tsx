@@ -122,21 +122,25 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
   const catalogItems = useMemo(() => {
     if (!selectedSourceId) return [];
 
-    const plannedOrderNos = new Set<string>();
+    const plannedOrderItemIds = new Set<string>();
     existingPlans.forEach((p: any) => {
       const prods = p.productionPlanProducts || p.products || [];
-      prods.forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
+      prods.forEach((prod: any) => {
+        if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId));
+      });
     });
 
     existingPlanProducts.forEach((pp: any) => {
-      if (pp.orderNo) plannedOrderNos.add(String(pp.orderNo));
+      if (pp.orderItemId) plannedOrderItemIds.add(String(pp.orderItemId));
     });
 
     if (typeof window !== "undefined") {
       try {
         const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
         drafts.forEach((d: any) => {
-          (d.products || []).forEach((prod: any) => { if (prod.orderNo) plannedOrderNos.add(String(prod.orderNo)); });
+          (d.products || []).forEach((prod: any) => {
+            if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId));
+          });
         });
       } catch {}
     }
@@ -144,7 +148,6 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
     if (kind === "customer") {
       const custOrders = liveOrders.filter(o =>
         o.customerId === selectedSourceId &&
-        !plannedOrderNos.has(String(o.orderNumber)) &&
         (!selectedOrderNumber || o.orderNumber === selectedOrderNumber)
       );
       if (custOrders.length > 0) {
@@ -153,6 +156,9 @@ export function ProductionDemandPlanPageContent({ kind }: { kind: DemandKind }) 
           const orderItems = o.orderItems || o.items;
           if (orderItems && orderItems.length > 0) {
             orderItems.forEach((item: any, index: number) => {
+              const isPlanned = plannedOrderItemIds.has(String(item.id));
+              if (isPlanned) return;
+
               const sizeRows = Array.isArray(item.orderItemSizes) ? item.orderItemSizes : [];
               const sizes = sizeRows.reduce((result: Record<string, number>, sizeRow: any) => {
                 const size = String(sizeRow.size || "").trim();

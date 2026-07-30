@@ -1,5 +1,4 @@
 using backend.Data;
-using backend.Model;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using backend.Service.Customer;
@@ -83,7 +82,6 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        context.Database.Migrate();
         SqlScriptRunner.Run(context);
         DatabaseSeeder.Seed(context);
     }

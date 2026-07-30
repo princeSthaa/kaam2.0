@@ -31,6 +31,9 @@ namespace backend.Model
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
+        [ForeignKey(nameof(OrderItem))]
+        public Guid? OrderItemId { get; set; }
+        public virtual OrderItem? OrderItem { get; set; }
         public Guid ProductionPlanId { get; set; }
         public virtual ProductionPlan ProductionPlan { get; set; } = null!;
         public virtual ICollection<ProductionPlanProductSize> ProductionPlanProductSizes { get; set; } = new List<ProductionPlanProductSize>();

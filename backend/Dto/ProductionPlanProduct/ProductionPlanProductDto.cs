@@ -70,6 +70,8 @@ namespace backend.Dto.ProductionPlanProduct
 
         public string UpdatedBy { get; set; } = string.Empty;
 
+        public Guid? OrderItemId { get; set; }
+
         public Guid ProductionPlanId { get; set; }
         [NotMapped]
         public List<ProductionPlanProductSizeDto> ProductionPlanProductSizes { get; set; } = new List<ProductionPlanProductSizeDto>();
