@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
@@ -89,12 +89,22 @@ function CreateOrderStyles() {
           .dropdown-menu.show { display: block !important; }
           .fabric-modal-body { max-height: 500px; overflow-y: auto; }
           .delivery-type-panel { background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; }
-          .product-select-dropdown { width: 100%; position: relative; }
-          .product-select-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left; height: auto; padding: 8px 12px; background: #fff; border: 1px solid #ced4da; border-radius: 6px; }
-          .product-select-menu { position: absolute; top: 100%; left: 0; right: 0; z-index: 1000; max-height: 300px; overflow-y: auto; background: #fff; border: 1px solid #ced4da; border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-          .product-select-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f1f1f1; background: #fff; border-left: 0; border-right: 0; border-top: 0; width: 100%; text-align: left; transition: background 0.2s; }
-          .product-select-item:hover { background: #f8f9fa; }
-          .product-select-item:last-child { border-bottom: none; }
+          
+          /* Custom Searchable Dropdown Styling */
+          .searchable-select { position: relative; width: 100%; }
+          .searchable-select-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 10px 14px; background: #fff; border: 1px solid #ced4da; border-radius: 8px; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; font-size: 0.95rem; }
+          .searchable-select-btn:focus, .searchable-select-btn:hover { border-color: #0f172a; outline: none; }
+          .searchable-select-menu { position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 1050; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05); overflow: hidden; }
+          .searchable-select-search-box { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; background: #f8fafc; }
+          .searchable-select-search-input { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; outline: none; background: #fff; }
+          .searchable-select-search-input:focus { border-color: #0f172a; box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.1); }
+          .searchable-select-list { max-height: 220px; overflow-y: auto; }
+          .searchable-select-item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 14px; border: none; background: transparent; text-align: left; cursor: pointer; font-size: 0.9rem; color: #1e293b; transition: background-color 0.15s; border-bottom: 1px solid #f8fafc; }
+          .searchable-select-item:last-child { border-bottom: none; }
+          .searchable-select-item:hover { background-color: #f1f5f9; }
+          .searchable-select-item.selected { background-color: #f0fdf4; font-weight: 600; color: #166534; }
+          .searchable-select-no-results { padding: 16px; text-align: center; color: #94a3b8; font-size: 0.85rem; }
+
           .fabric-cat-col:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
           @media (max-width: 700px) {
             .step-indicator { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
@@ -106,43 +116,146 @@ function CreateOrderStyles() {
   );
 }
 
-function ProductSelect({ value, onChange, products }: { value: string; onChange: (val: string) => void; products: any[] }) {
+interface SearchableOption {
+  value: string;
+  label: string;
+  sublabel?: string;
+  image?: string;
+}
+
+function SearchableSelect({
+  options,
+  value,
+  onChange,
+  placeholder = "-- Select --",
+  searchPlaceholder = "Search...",
+}: {
+  options: SearchableOption[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  searchPlaceholder?: string;
+}) {
   const [isOpen, setIsOpen] = useState(false);
-  const selectedProduct = products.find((p) => p.productId === value);
+  const [searchTerm, setSearchTerm] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selectedOption = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const filteredOptions = options.filter((o) => {
+    const term = searchTerm.toLowerCase();
+    const matchesLabel = o.label.toLowerCase().includes(term);
+    const matchesSublabel = o.sublabel ? o.sublabel.toLowerCase().includes(term) : false;
+    return matchesLabel || matchesSublabel;
+  });
 
   return (
-    <div className="product-select-dropdown">
-      <button type="button" className="product-select-btn" onClick={() => setIsOpen(!isOpen)}>
-        {selectedProduct ? (
-          <div className="d-flex align-items-center gap-2">
-            <img src={selectedProduct.imagePath} alt={selectedProduct.name} style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '4px' }} />
-            <span>{selectedProduct.name}</span>
+    <div className="searchable-select" ref={containerRef}>
+      <button
+        type="button"
+        className="searchable-select-btn"
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (!isOpen) setSearchTerm("");
+        }}
+      >
+        {selectedOption ? (
+          <div className="d-flex align-items-center gap-2 overflow-hidden">
+            {selectedOption.image && (
+              <img
+                src={selectedOption.image}
+                alt={selectedOption.label}
+                style={{ width: "32px", height: "32px", objectFit: "cover", borderRadius: "6px", flexShrink: 0 }}
+              />
+            )}
+            <div className="text-truncate">
+              <span className="fw-bold">{selectedOption.label}</span>
+              {selectedOption.sublabel && (
+                <span className="text-muted ms-2 small">({selectedOption.sublabel})</span>
+              )}
+            </div>
           </div>
         ) : (
-          <span className="text-muted">-- Select Product --</span>
+          <span className="text-muted">{placeholder}</span>
         )}
-        <span className="text-muted">&#9662;</span>
+        <span className="text-muted ms-2">&#9662;</span>
       </button>
 
       {isOpen && (
-        <div className="product-select-menu">
-          {products.map((p) => (
-            <button
-              key={p.productId}
-              type="button"
-              className="product-select-item"
-              onClick={() => {
-                onChange(p.productId);
-                setIsOpen(false);
-              }}
-            >
-              <img src={p.imagePath} alt={p.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-              <span>{p.name}</span>
-            </button>
-          ))}
+        <div className="searchable-select-menu">
+          <div className="searchable-select-search-box">
+            <input
+              type="text"
+              className="searchable-select-search-input"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="searchable-select-list">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`searchable-select-item ${option.value === value ? "selected" : ""}`}
+                  onClick={() => {
+                    onChange(option.value);
+                    setIsOpen(false);
+                    setSearchTerm("");
+                  }}
+                >
+                  {option.image && (
+                    <img
+                      src={option.image}
+                      alt={option.label}
+                      style={{ width: "36px", height: "36px", objectFit: "cover", borderRadius: "6px", flexShrink: 0 }}
+                    />
+                  )}
+                  <div className="d-flex flex-column text-truncate">
+                    <span className="fw-semibold">{option.label}</span>
+                    {option.sublabel && <small className="text-muted">{option.sublabel}</small>}
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="searchable-select-no-results">No matching results found</div>
+            )}
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+function ProductSelect({ value, onChange, products }: { value: string; onChange: (val: string) => void; products: any[] }) {
+  const options: SearchableOption[] = products.map((p) => ({
+    value: p.productId,
+    label: p.name,
+    image: p.imagePath,
+  }));
+
+  return (
+    <SearchableSelect
+      options={options}
+      value={value}
+      onChange={onChange}
+      placeholder="-- Select Product --"
+      searchPlaceholder="Search product by name..."
+    />
   );
 }
 
@@ -340,12 +453,12 @@ export default function CrmCreateOrderPage() {
               }
 
               if (totalReq > 0) {
-                let key = matName;
+                let key = `${bom.materialId}_${matName}`;
                 if (!aggregatedMaterials[key]) {
                   aggregatedMaterials[key] = {
-                    materialId: mat.id,
+                    materialId: bom.materialId,
                     name: matName,
-                    unit: mat.unit || mat.unitOfMeasure || "unit",
+                    unit: mat.unit || "units",
                     required: 0,
                   };
                 }
@@ -370,6 +483,14 @@ export default function CrmCreateOrderPage() {
     setEditableBomQuantities(newEditableBoms);
 
   }, [selectedProductRows, bomData, materials, fabricsData]);
+
+  const handleEditableBomChange = (materialId: string, materialName: string, value: string) => {
+    const stateKey = `${materialId}_${materialName}`;
+    setEditableBomQuantities((prev) => ({
+      ...prev,
+      [stateKey]: value,
+    }));
+  };
 
   // ================= Step Validation Logic =================
   const validateAndProceed = (targetStep: number) => {
@@ -448,45 +569,60 @@ export default function CrmCreateOrderPage() {
         if (r.id === rowId) {
           return {
             ...r,
-            fabrics: r.fabrics.map((f) =>
-              f.id === fabricRowId ? { ...f, quantities: { ...f.quantities, [size]: isNaN(qty) ? 0 : Math.max(0, qty) } } : f
-            ),
+            fabrics: r.fabrics.map((f) => {
+              if (f.id === fabricRowId) {
+                return {
+                  ...f,
+                  quantities: {
+                    ...f.quantities,
+                    [size]: isNaN(qty) ? 0 : qty,
+                  },
+                };
+              }
+              return f;
+            }),
           };
         }
         return r;
-      })
+      }),
     );
   };
 
-  const handleEditableBomChange = (materialId: string, name: string, value: string) => {
-    setEditableBomQuantities(prev => ({
-      ...prev,
-      [`${materialId}_${name}`]: value
-    }));
-  };
-
-  // ================= Form Submission =================
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  // ================= Final Submit Handler =================
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (deliveryType === "Single" && !globalDeliveryDate) {
-      setErrorMsg("Please select a Global Delivery Date.");
-      return;
-    }
-
     const items: any[] = [];
-    selectedProductRows.forEach(row => {
-      if (row.productId) {
-        row.fabrics.forEach(fab => {
-          const orderItemSizes = Object.entries(fab.quantities)
-            .filter(([, qty]) => qty > 0)
-            .map(([size, quantity]) => ({ size, quantity }));
-          if (!orderItemSizes.length) return;
 
-          const quantity = orderItemSizes.reduce((sum, size) => sum + size.quantity, 0);
+    selectedProductRows.forEach((row) => {
+      if (row.productId) {
+        const product = productsData.find((p) => p.productId === row.productId);
+        row.fabrics.forEach((fab) => {
+          const orderItemSizes: any[] = [];
+          for (let size in fab.quantities) {
+            let qty = fab.quantities[size];
+            if (qty > 0) {
+              const basePrice = 150;
+              const multiplier = sizeMultipliers[size] || 1.0;
+              const rate = Math.round(basePrice * 1.5 * multiplier);
+
+              orderItemSizes.push({
+                size,
+                fabricId: fab.fabricId,
+                quantity: qty,
+                unitPrice: rate,
+                totalPrice: rate * qty,
+              });
+            }
+          }
+
+          if (orderItemSizes.length === 0) return;
+
+          const quantity = orderItemSizes.reduce((sum, s) => sum + s.quantity, 0);
+
           const unitPrice = Math.round(orderItemSizes.reduce(
-            (sum, size) => sum + Math.round(150 * 1.5 * (sizeMultipliers[size.size] || 1.0)) * size.quantity,
+            (sum, s) => sum + s.unitPrice * s.quantity,
             0,
           ) / quantity);
 
@@ -578,20 +714,17 @@ export default function CrmCreateOrderPage() {
               <WizardStep stepNumber={1} currentStep={currentStep} title="Customer Details">
                 <div className="form-group">
                   <label htmlFor="CustomerId">Select Customer <span className="text-danger">*</span></label>
-                  <select
-                    id="CustomerId"
-                    className="form-control"
+                  <SearchableSelect
+                    options={customers.map((c) => ({
+                      value: c.id || "",
+                      label: c.name || "Customer",
+                      sublabel: c.company || "Retail",
+                    }))}
                     value={customerId}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Choose an existing customer --</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.company || 'Retail'})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setCustomerId(val)}
+                    placeholder="-- Choose an existing customer --"
+                    searchPlaceholder="Search customer by name or company..."
+                  />
                 </div>
                 <div className="form-actions mt-4 text-end">
                   <StepButton onClick={() => validateAndProceed(2)}>Next &rarr;</StepButton>

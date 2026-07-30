@@ -10,6 +10,7 @@ export const topLinks = [
   { label: "CRM", href: "/crm" },
   { label: "Production", href: "/production" },
   { label: "Warehouse", href: "/warehouse" },
+  { label: "SRM", href: "/srm" },
   { label: "Inventory", href: "/inventory" },
   { label: "Privacy", href: "/privacy" },
 ];

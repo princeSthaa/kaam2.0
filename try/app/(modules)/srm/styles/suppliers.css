@@ -1,0 +1,98 @@
+/* SRM Supplier Directory & CRM Hub Styles */
+
+:root {
+  --srm-primary: #000000;
+  --srm-primary-container: #131b2e;
+  --srm-secondary: #515f74;
+  --srm-secondary-container: #d2e1fa;
+  --srm-surface-bg: #f7f9fb;
+  --srm-surface-card: rgba(255, 255, 255, 0.95);
+  --srm-border-light: rgba(198, 198, 205, 0.3);
+  --srm-success: #166534;
+  --srm-success-bg: #f0fdf4;
+  --srm-warning: #92400e;
+  --srm-warning-bg: #fef3c7;
+  --srm-error: #ba1a1a;
+  --srm-error-bg: #ffdad6;
+}
+
+.srm-glass-card {
+  background: var(--srm-surface-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--srm-border-light);
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.04);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.srm-glass-card:hover {
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.08);
+}
+
+.srm-table-row {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.srm-table-row:hover {
+  background-color: rgba(242, 244, 246, 0.7);
+}
+
+.srm-badge-active {
+  background-color: var(--srm-success-bg);
+  color: var(--srm-success);
+}
+
+.srm-badge-warning {
+  background-color: var(--srm-warning-bg);
+  color: var(--srm-warning);
+}
+
+.srm-badge-error {
+  background-color: var(--srm-error-bg);
+  color: var(--srm-error);
+}
+
+.srm-map-canvas {
+  background: radial-gradient(circle at 50% 50%, #e0e3e5 0%, #d5d8da 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.srm-radar-pulse {
+  animation: srmPulse 2.5s infinite ease-out;
+}
+
+@keyframes srmPulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.6);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.srm-modal-backdrop {
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+  z-index: 9999;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.srm-modal-content {
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px) scale(0.97); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
