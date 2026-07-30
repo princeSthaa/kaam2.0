@@ -129,7 +129,7 @@ export default function SuppliersPage() {
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
   const [activeTab, setActiveTab] = useState<"DIRECTORY" | "COMPLIANCE">("DIRECTORY");
-  
+
   // Modals state
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
@@ -255,59 +255,58 @@ export default function SuppliersPage() {
           </button>
         </div>
       </div>
-
       {/* Stats Overview Grid (4 KPI Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Suppliers */}
-        <div className="srm-glass-card p-5 rounded-xl flex flex-col justify-between h-32 border-l-4 border-l-slate-800">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between min-h-[150px]">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Total Suppliers
             </span>
-            <div className="p-2 rounded-lg bg-slate-100 text-slate-800">
-              <span className="material-symbols-outlined text-xl">inventory</span>
+            <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-800">
+              <span className="material-symbols-outlined text-xl">assignment_turned_in</span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{totalCount}</div>
+          <div className="text-4xl font-bold text-slate-900">{totalCount}</div>
         </div>
 
         {/* Active Partners */}
-        <div className="srm-glass-card p-5 rounded-xl flex flex-col justify-between h-32 border-l-4 border-l-emerald-600">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between min-h-[150px]">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Active Partners
             </span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-700">
               <span className="material-symbols-outlined text-xl">check_circle</span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{activeCount}</div>
+          <div className="text-4xl font-bold text-slate-900">{activeCount}</div>
         </div>
 
         {/* Under Review */}
-        <div className="srm-glass-card p-5 rounded-xl flex flex-col justify-between h-32 border-l-4 border-l-amber-500">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between min-h-[150px]">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Under Review
             </span>
-            <div className="p-2 rounded-lg bg-amber-50 text-amber-700">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-700">
               <span className="material-symbols-outlined text-xl">pending</span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{reviewCount}</div>
+          <div className="text-4xl font-bold text-slate-900">{reviewCount}</div>
         </div>
 
         {/* Audit Compliance */}
-        <div className="srm-glass-card p-5 rounded-xl flex flex-col justify-between h-32 border-l-4 border-l-blue-600">
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between min-h-[150px]">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
               Audit Compliance
             </span>
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-700">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-700">
               <span className="material-symbols-outlined text-xl">rule</span>
             </div>
           </div>
-          <div className="text-3xl font-bold text-slate-900">{avgCompliance}%</div>
+          <div className="text-4xl font-bold text-slate-900">{avgCompliance}%</div>
         </div>
       </div>
 
@@ -895,11 +894,10 @@ export default function SuppliersPage() {
                             key={cat}
                             type="button"
                             onClick={() => setNewSupplier({ ...newSupplier, category: cat })}
-                            className={`py-2 px-3 border rounded-lg font-mono font-bold text-xs transition-all ${
-                              (newSupplier.category || "FABRIC") === cat
-                                ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                                : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-                            }`}
+                            className={`py-2 px-3 border rounded-lg font-mono font-bold text-xs transition-all ${(newSupplier.category || "FABRIC") === cat
+                              ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                              : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                              }`}
                           >
                             {cat}
                           </button>
