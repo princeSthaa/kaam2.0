@@ -7,6 +7,8 @@
 @import "../(modules)/crm/styles/index.css";
 @import "../(modules)/production/styles/index.css";
 @import "../(modules)/warehouse/styles/index.css";
+@import "../(modules)/srm/styles/index.css";
+
 
 body {
   margin: 0;

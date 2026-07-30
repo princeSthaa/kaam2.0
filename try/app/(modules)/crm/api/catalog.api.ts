@@ -60,7 +60,7 @@ export async function fetchFabrics(): Promise<Fabric[]> {
       const rawList = Array.isArray(data) ? data : (data?.value || data?.data || []);
       if (Array.isArray(rawList) && rawList.length > 0) {
         // Filter materials that are fabrics (or if type is Fabric, or if all materials are used)
-        const fabricItems = rawList.filter((f: any) => 
+        const fabricItems = rawList.filter((f: any) =>
           !f.materialTypeName || f.materialTypeName.toLowerCase() === 'fabric'
         );
         const listToMap = fabricItems.length > 0 ? fabricItems : rawList;
