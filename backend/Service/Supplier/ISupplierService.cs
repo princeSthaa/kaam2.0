@@ -18,9 +18,9 @@ namespace backend.Service.Supplier
 
         Task<SupplierDto?> GetByIdAsync(Guid id);
 
-        Task<SupplierDto> CreateAsync(SupplierCreateDto supplierDto);
+        Task<SupplierDto> CreateAsync(SupplierCreateDto createDto);
 
-        Task<bool> UpdateAsync(Guid id, SupplierDto supplierDto);
+        Task<bool> UpdateAsync(Guid id, SupplierUpdateDto updateDto);
 
         Task<bool> DeleteAsync(Guid id);
 

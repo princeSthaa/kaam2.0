@@ -49,7 +49,7 @@ namespace backend.Model
 
         public DateTime? DeletedAt { get; set; }
 
-        public virtual ICollection<MaterialCategory> MaterialCategories { get; set; } = new List<MaterialCategory>();
+        public virtual ICollection<SupplierMaterialCategory> SupplierMaterialCategories { get; set; } = new List<SupplierMaterialCategory>();
         public virtual ICollection<MaterialRequest> MaterialRequests { get; set; } = new List<MaterialRequest>();
     }
 }

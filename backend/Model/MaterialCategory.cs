@@ -6,7 +6,6 @@ namespace backend.Model
     [Table("MaterialCategories")]
     public class MaterialCategory
     {
-        // <crudgen:properties>
         [Key]
         public Guid Id { get; set; }
 
@@ -21,6 +20,6 @@ namespace backend.Model
         public Guid MaterialTypeId { get; set; }
         public virtual MaterialType MaterialType { get; set; } = null!;
         public virtual ICollection<Material> Materials { get; set; } = new List<Material>();
-        // </crudgen:properties>
+        public virtual ICollection<SupplierMaterialCategory> SupplierMaterialCategories{ get; set; } = new List<SupplierMaterialCategory>();
     }
 }

@@ -1,8 +1,12 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.Supplier;
+using backend.Model;
 using backend.Model.Enums;
-
 
 namespace backend.Service.Supplier
 {
@@ -23,7 +27,11 @@ namespace backend.Service.Supplier
             bool includeDeleted = false
         )
         {
-            var query = _context.Suppliers.AsQueryable();
+            var query = _context.Suppliers
+                .Include(s => s.SupplierMaterialCategories)
+                    .ThenInclude(sm => sm.MaterialCategory)
+                .Include(s => s.MaterialRequests)
+                .AsQueryable();
 
             if (!includeDeleted)
             {
@@ -52,117 +60,134 @@ namespace backend.Service.Supplier
 
             return await query
                 .OrderBy(s => s.Name)
-                .Select(s => new SupplierDto
-                {
-                    Id = s.Id,
-                    SupplierCode = s.SupplierCode,
-                    Name = s.Name,
-                    ContactEmail = s.ContactEmail,
-                    ContactPhone = s.ContactPhone,
-                    Address = s.Address,
-                    Status = s.Status,
-                    OnTimeDeliveryRate = s.OnTimeDeliveryRate,
-                    DefectRate = s.DefectRate,
-                    Rating = s.Rating,
-                    TotalOrders = s.TotalOrders,
-                    LastEvaluatedAt = s.LastEvaluatedAt,
-                    CreatedAt = s.CreatedAt,
-                    UpdatedAt = s.UpdatedAt,
-                    IsDeleted = s.IsDeleted,
-                    DeletedAt = s.DeletedAt
-                })
+                .Select(s => MapToDto(s))
                 .ToListAsync();
         }
 
         public async Task<SupplierDto?> GetByIdAsync(Guid id)
         {
-            var s = await _context.Suppliers.FirstOrDefaultAsync(x => x.Id == id && !x.IsDeleted);
-            if (s == null) return null;
+            var supplier = await _context.Suppliers
+                .Include(s => s.SupplierMaterialCategories)
+                    .ThenInclude(sm => sm.MaterialCategory)
+                .Include(s => s.MaterialRequests)
+                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
 
-            return new SupplierDto
-            {
-                Id = s.Id,
-                SupplierCode = s.SupplierCode,
-                Name = s.Name,
-                ContactEmail = s.ContactEmail,
-                ContactPhone = s.ContactPhone,
-                Address = s.Address,
-                Status = s.Status,
-                OnTimeDeliveryRate = s.OnTimeDeliveryRate,
-                DefectRate = s.DefectRate,
-                Rating = s.Rating,
-                TotalOrders = s.TotalOrders,
-                LastEvaluatedAt = s.LastEvaluatedAt,
-                CreatedAt = s.CreatedAt,
-                UpdatedAt = s.UpdatedAt,
-                IsDeleted = s.IsDeleted,
-                DeletedAt = s.DeletedAt
-            };
+            if (supplier == null) return null;
+
+            return MapToDto(supplier);
         }
 
-        public async Task<SupplierDto> CreateAsync(SupplierCreateDto dto)
+        public async Task<SupplierDto> CreateAsync(SupplierCreateDto createDto)
         {
-            var count = await _context.Suppliers.CountAsync();
+            // Validate that all specified MaterialCategoryIds exist
+            if (createDto.MaterialCategoryIds != null && createDto.MaterialCategoryIds.Any())
+            {
+                var distinctCategoryIds = createDto.MaterialCategoryIds.Distinct().ToList();
+                var existingCount = await _context.MaterialCategories
+                    .CountAsync(mc => distinctCategoryIds.Contains(mc.Id));
+
+                if (existingCount != distinctCategoryIds.Count)
+                {
+                    throw new ArgumentException("One or more specified Material Category IDs do not exist.");
+                }
+            }
+
+            var supplierId = Guid.NewGuid();
+            var supplierCode = string.IsNullOrWhiteSpace(createDto.SupplierCode)
+                ? $"SUP-{new Random().Next(1000, 9999)}"
+                : createDto.SupplierCode;
 
             var entity = new backend.Model.Supplier
             {
-                SupplierCode = $"SUP-{(count + 1):D5}",
-                Name = dto.Name,
-                ContactEmail = dto.ContactEmail,
-                ContactPhone = dto.ContactPhone,
-                Address = dto.Address,
-                Status = UserStatus.Active,
-                OnTimeDeliveryRate = 0,
-                DefectRate = 0,
-                Rating = 0,
-                TotalOrders = 0,
-                LastEvaluatedAt = null,
+                Id = supplierId,
+                SupplierCode = supplierCode,
+                Name = createDto.Name,
+                ContactEmail = createDto.ContactEmail,
+                ContactPhone = createDto.ContactPhone,
+                Address = createDto.Address,
+                Status = createDto.Status,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 IsDeleted = false
             };
 
+            if (createDto.MaterialCategoryIds != null && createDto.MaterialCategoryIds.Any())
+            {
+                foreach (var catId in createDto.MaterialCategoryIds.Distinct())
+                {
+                    entity.SupplierMaterialCategories.Add(new SupplierMaterialCategory
+                    {
+                        SupplierId = supplierId,
+                        MaterialCategoryId = catId
+                    });
+                }
+            }
+
             _context.Suppliers.Add(entity);
             await _context.SaveChangesAsync();
 
-            return new SupplierDto
-            {
-                Id = entity.Id,
-                SupplierCode = entity.SupplierCode,
-                Name = entity.Name,
-                ContactEmail = entity.ContactEmail,
-                ContactPhone = entity.ContactPhone,
-                Address = entity.Address,
-                Status = entity.Status,
-                OnTimeDeliveryRate = entity.OnTimeDeliveryRate,
-                DefectRate = entity.DefectRate,
-                Rating = entity.Rating,
-                TotalOrders = entity.TotalOrders,
-                LastEvaluatedAt = entity.LastEvaluatedAt,
-                CreatedAt = entity.CreatedAt,
-                UpdatedAt = entity.UpdatedAt,
-                IsDeleted = entity.IsDeleted,
-                DeletedAt = entity.DeletedAt
-            };
+            return (await GetByIdAsync(supplierId))!;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, SupplierDto dto)
+        public async Task<bool> UpdateAsync(Guid id, SupplierUpdateDto updateDto)
         {
-            var entity = await _context.Suppliers.FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
-            if (entity == null) return false;
+            var supplier = await _context.Suppliers
+                .Include(s => s.SupplierMaterialCategories)
+                .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
 
-            entity.SupplierCode = dto.SupplierCode;
-            entity.Name = dto.Name;
-            entity.ContactEmail = dto.ContactEmail;
-            entity.ContactPhone = dto.ContactPhone;
-            entity.Address = dto.Address;
-            entity.Status = dto.Status;
-            entity.OnTimeDeliveryRate = dto.OnTimeDeliveryRate;
-            entity.DefectRate = dto.DefectRate;
-            entity.Rating = dto.Rating;
-            entity.TotalOrders = dto.TotalOrders;
-            entity.LastEvaluatedAt = dto.LastEvaluatedAt;
-            entity.UpdatedAt = DateTime.UtcNow;
+            if (supplier == null) return false;
+
+            if (updateDto.MaterialCategoryIds != null)
+            {
+                var distinctCategoryIds = updateDto.MaterialCategoryIds.Distinct().ToList();
+                if (distinctCategoryIds.Any())
+                {
+                    var existingCount = await _context.MaterialCategories
+                        .CountAsync(mc => distinctCategoryIds.Contains(mc.Id));
+
+                    if (existingCount != distinctCategoryIds.Count)
+                    {
+                        throw new ArgumentException("One or more specified Material Category IDs do not exist.");
+                    }
+                }
+
+                // Remove mappings no longer selected
+                var currentCategoryIds = supplier.SupplierMaterialCategories.Select(sm => sm.MaterialCategoryId).ToList();
+                var toRemove = supplier.SupplierMaterialCategories
+                    .Where(sm => !distinctCategoryIds.Contains(sm.MaterialCategoryId))
+                    .ToList();
+
+                foreach (var item in toRemove)
+                {
+                    supplier.SupplierMaterialCategories.Remove(item);
+                }
+
+                // Add newly selected mappings
+                var toAdd = distinctCategoryIds
+                    .Where(catId => !currentCategoryIds.Contains(catId))
+                    .Select(catId => new SupplierMaterialCategory
+                    {
+                        SupplierId = id,
+                        MaterialCategoryId = catId
+                    });
+
+                foreach (var item in toAdd)
+                {
+                    supplier.SupplierMaterialCategories.Add(item);
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(updateDto.SupplierCode))
+            {
+                supplier.SupplierCode = updateDto.SupplierCode;
+            }
+
+            supplier.Name = updateDto.Name;
+            supplier.ContactEmail = updateDto.ContactEmail;
+            supplier.ContactPhone = updateDto.ContactPhone;
+            supplier.Address = updateDto.Address;
+            supplier.Status = updateDto.Status;
+            supplier.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return true;
@@ -170,11 +195,12 @@ namespace backend.Service.Supplier
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            var entity = await _context.Suppliers.FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
-            if (entity == null) return false;
+            var supplier = await _context.Suppliers.FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
+            if (supplier == null) return false;
 
-            entity.IsDeleted = true;
-            entity.DeletedAt = DateTime.UtcNow;
+            supplier.IsDeleted = true;
+            supplier.DeletedAt = DateTime.UtcNow;
+
             await _context.SaveChangesAsync();
             return true;
         }
@@ -182,17 +208,16 @@ namespace backend.Service.Supplier
         public async Task<SupplierDto?> RecalculateMetricsAsync(Guid id)
         {
             var supplier = await _context.Suppliers
+                .Include(s => s.SupplierMaterialCategories)
+                    .ThenInclude(sm => sm.MaterialCategory)
                 .Include(s => s.MaterialRequests)
-                .ThenInclude(r => r.MaterialInspections)
+                    .ThenInclude(r => r.MaterialInspections)
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
 
             if (supplier == null) return null;
 
             var requests = supplier.MaterialRequests.ToList();
-
-            var inspections = requests
-                .SelectMany(r => r.MaterialInspections)
-                .ToList();
+            var inspections = requests.SelectMany(r => r.MaterialInspections).ToList();
 
             int totalOrders = requests.Count;
 
@@ -206,7 +231,7 @@ namespace backend.Service.Supplier
             decimal defectRate = 0.00m;
             if (inspections.Count > 0)
             {
-                int defectiveCount = inspections.Count(i => 
+                int defectiveCount = inspections.Count(i =>
                     string.Equals(i.InspectionStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(i.InspectionStatus, "Failed", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(i.InspectionStatus, "Purchase Return", StringComparison.OrdinalIgnoreCase));
@@ -227,24 +252,51 @@ namespace backend.Service.Supplier
 
             await _context.SaveChangesAsync();
 
+            return MapToDto(supplier);
+        }
+
+        private static SupplierDto MapToDto(backend.Model.Supplier s)
+        {
             return new SupplierDto
             {
-                Id = supplier.Id,
-                SupplierCode = supplier.SupplierCode,
-                Name = supplier.Name,
-                ContactEmail = supplier.ContactEmail,
-                ContactPhone = supplier.ContactPhone,
-                Address = supplier.Address,
-                Status = supplier.Status,
-                OnTimeDeliveryRate = supplier.OnTimeDeliveryRate,
-                DefectRate = supplier.DefectRate,
-                Rating = supplier.Rating,
-                TotalOrders = supplier.TotalOrders,
-                LastEvaluatedAt = supplier.LastEvaluatedAt,
-                CreatedAt = supplier.CreatedAt,
-                UpdatedAt = supplier.UpdatedAt,
-                IsDeleted = supplier.IsDeleted,
-                DeletedAt = supplier.DeletedAt
+                Id = s.Id,
+                SupplierCode = s.SupplierCode,
+                Name = s.Name,
+                ContactEmail = s.ContactEmail,
+                ContactPhone = s.ContactPhone,
+                Address = s.Address,
+                Status = s.Status,
+                OnTimeDeliveryRate = s.OnTimeDeliveryRate,
+                DefectRate = s.DefectRate,
+                Rating = s.Rating,
+                TotalOrders = s.TotalOrders,
+                LastEvaluatedAt = s.LastEvaluatedAt,
+                CreatedAt = s.CreatedAt,
+                UpdatedAt = s.UpdatedAt,
+                IsDeleted = s.IsDeleted,
+                DeletedAt = s.DeletedAt,
+                MaterialCategories = s.SupplierMaterialCategories
+                    .Where(sm => sm.MaterialCategory != null)
+                    .Select(sm => new SupplierCategoryResponseDto
+                    {
+                        Id = sm.MaterialCategory.Id,
+                        Name = sm.MaterialCategory.Name
+                    })
+                    .ToList(),
+                MaterialRequests = s.MaterialRequests
+                    .Select(mr => new SupplierMaterialRequestResponseDto
+                    {
+                        Id = mr.Id,
+                        MaterialId = mr.MaterialId,
+                        MaterialName = mr.MaterialName,
+                        RequestedQuantity = mr.RequestedQuantity,
+                        Urgency = mr.Urgency,
+                        RequiredDate = mr.RequiredDate,
+                        Notes = mr.Notes,
+                        RequestedBy = mr.RequestedBy,
+                        Status = mr.Status,
+                    })
+                    .ToList()
             };
         }
     }

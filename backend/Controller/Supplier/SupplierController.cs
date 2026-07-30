@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using backend.Dto.Supplier;
+using backend.Model.Enums;
 using backend.Service.Supplier;
 using Microsoft.AspNetCore.Mvc;
-using backend.Model.Enums;
 
 namespace backend.Controller.Supplier
 {
@@ -44,32 +44,46 @@ namespace backend.Controller.Supplier
         }
 
         [HttpPost]
-        public async Task<ActionResult<SupplierDto>> Create([FromBody] SupplierCreateDto supplierCreateDto)
+        public async Task<ActionResult<SupplierDto>> Create([FromBody] SupplierCreateDto createDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var created = await _supplierService.CreateAsync(supplierCreateDto);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            try
+            {
+                var created = await _supplierService.CreateAsync(createDto);
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] SupplierDto supplierDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] SupplierUpdateDto updateDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var updated = await _supplierService.UpdateAsync(id, supplierDto);
-            if (!updated)
+            try
             {
-                return NotFound($"Supplier with ID {id} not found.");
-            }
+                var updated = await _supplierService.UpdateAsync(id, updateDto);
+                if (!updated)
+                {
+                    return NotFound($"Supplier with ID {id} not found.");
+                }
 
-            return NoContent();
+                return NoContent();
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpDelete("{id:guid}")]

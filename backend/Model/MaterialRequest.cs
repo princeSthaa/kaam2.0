@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using backend.Model.Enums;
 
 namespace backend.Model
 {
@@ -22,7 +23,7 @@ namespace backend.Model
         public DateTime RequiredDate { get; set; }
         public string Notes { get; set; } = string.Empty;
         public string RequestedBy { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
+        public MaterialRequestStatus Status { get; set; } = MaterialRequestStatus.Draft;
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }

@@ -642,6 +642,25 @@ namespace backend.Data
                 suppliers = context.Suppliers.ToList();
             }
 
+            // Seed SupplierMaterialCategories
+            if (!context.SupplierMaterialCategories.Any() && suppliers.Any() && context.MaterialCategories.Any())
+            {
+                var cats = context.MaterialCategories.Take(3).ToList();
+                var s1 = suppliers.First();
+                var s2 = suppliers.Skip(1).FirstOrDefault() ?? s1;
+
+                var joins = new List<SupplierMaterialCategory>();
+                if (cats.Count > 0) joins.Add(new SupplierMaterialCategory { SupplierId = s1.Id, MaterialCategoryId = cats[0].Id });
+                if (cats.Count > 1) joins.Add(new SupplierMaterialCategory { SupplierId = s1.Id, MaterialCategoryId = cats[1].Id });
+                if (cats.Count > 2) joins.Add(new SupplierMaterialCategory { SupplierId = s2.Id, MaterialCategoryId = cats[2].Id });
+
+                if (joins.Any())
+                {
+                    context.SupplierMaterialCategories.AddRange(joins);
+                    context.SaveChanges();
+                }
+            }
+
             // Seed MaterialRequests
             var requests = new List<MaterialRequest>();
             if (!context.MaterialRequests.Any())
@@ -651,8 +670,8 @@ namespace backend.Data
 
                 requests = new List<MaterialRequest>
                 {
-                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Cotton", RequestedQuantity = 500, SupplierId = s1?.Id, SupplierName = s1?.Name ?? "Everest Textiles Ltd", Urgency = "High", RequiredDate = DateTime.UtcNow.AddDays(3), Notes = "Shortage for upcoming production batch", RequestedBy = "Warehouse Manager", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" },
-                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Zipper", RequestedQuantity = 1000, SupplierId = s3?.Id, SupplierName = s3?.Name ?? "Nepal Accessories Pvt Ltd", Urgency = "Normal", RequiredDate = DateTime.UtcNow.AddDays(5), Notes = "Routine raw material requisition", RequestedBy = "Stock Controller", Status = "Requested", CreatedAt = DateTime.UtcNow, CreatedBy = "Stock Controller", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Stock Controller" }
+                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Cotton", RequestedQuantity = 500, SupplierId = s1?.Id, SupplierName = s1?.Name ?? "Everest Textiles Ltd", Urgency = "High", RequiredDate = DateTime.UtcNow.AddDays(3), Notes = "Shortage for upcoming production batch", RequestedBy = "Warehouse Manager", Status = MaterialRequestStatus.Draft, CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" },
+                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Zipper", RequestedQuantity = 1000, SupplierId = s3?.Id, SupplierName = s3?.Name ?? "Nepal Accessories Pvt Ltd", Urgency = "Normal", RequiredDate = DateTime.UtcNow.AddDays(5), Notes = "Routine raw material requisition", RequestedBy = "Stock Controller", Status = MaterialRequestStatus.Ordered, CreatedAt = DateTime.UtcNow, CreatedBy = "Stock Controller", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Stock Controller" }
                 };
                 context.MaterialRequests.AddRange(requests);
                 context.SaveChanges();

@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using backend.Model.Enums;
+using backend.Dto.Supplier;
 
 namespace backend.Dto.Supplier
 {
@@ -7,20 +7,17 @@ namespace backend.Dto.Supplier
     {
         public Guid Id { get; set; }
 
-        [Required(ErrorMessage = "Supplier Code is required.")]
         public string SupplierCode { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Supplier Name is required.")]
         public string Name { get; set; } = string.Empty;
 
-        [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string ContactEmail { get; set; } = string.Empty;
 
         public string ContactPhone { get; set; } = string.Empty;
 
         public string Address { get; set; } = string.Empty;
 
-         public UserStatus Status { get; set; } = UserStatus.Active;
+        public UserStatus Status { get; set; } = UserStatus.Active;
 
         public decimal OnTimeDeliveryRate { get; set; }
 
@@ -39,5 +36,9 @@ namespace backend.Dto.Supplier
         public bool IsDeleted { get; set; }
 
         public DateTime? DeletedAt { get; set; }
+
+        public List<SupplierCategoryResponseDto> MaterialCategories { get; set; } = new List<SupplierCategoryResponseDto>();
+
+        public List<SupplierMaterialRequestResponseDto> MaterialRequests { get; set; } = new List<SupplierMaterialRequestResponseDto>();
     }
 }

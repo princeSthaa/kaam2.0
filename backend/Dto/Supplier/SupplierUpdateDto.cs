@@ -5,7 +5,7 @@ using backend.Model.Enums;
 
 namespace backend.Dto.Supplier
 {
-    public class SupplierCreateDto
+    public class SupplierUpdateDto
     {
         public string SupplierCode { get; set; } = string.Empty;
 
