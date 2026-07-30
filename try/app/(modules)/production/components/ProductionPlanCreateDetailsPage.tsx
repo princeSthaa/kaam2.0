@@ -592,6 +592,7 @@ export function ProductionPlanCreateDetailsPage() {
           productionPlanId: planDbId,
           lineId: `${planDbId}-L${idx + 1}`,
           orderNo: item.orderNo || item.demandNo || "ORD-001",
+          orderItemId: item.orderItemId || item.itemId || item.id,
           productId: item.productId || "PRD-001",
           productCode: item.productCode || "PRD-001",
           productName: item.productName || "Product",

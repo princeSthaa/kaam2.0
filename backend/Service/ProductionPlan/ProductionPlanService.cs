@@ -176,9 +176,14 @@ namespace backend.Service.ProductionPlan
                 // Auto-resolve OrderItemId if not provided
                 if (!productDto.OrderItemId.HasValue || productDto.OrderItemId == Guid.Empty)
                 {
+                    var plannedItemIdsInDb = await _context.ProductionPlanProducts
+                        .Where(ppp => ppp.OrderItemId.HasValue)
+                        .Select(ppp => ppp.OrderItemId!.Value)
+                        .ToListAsync();
+
                     var matchingUnplannedItem = sourceOrders
                         .SelectMany(o => o.OrderItems)
-                        .FirstOrDefault(i => i.ProductId.ToString() == productDto.ProductId);
+                        .FirstOrDefault(i => i.ProductId.ToString() == productDto.ProductId && !plannedItemIdsInDb.Contains(i.Id));
 
                     if (matchingUnplannedItem != null)
                     {

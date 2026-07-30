@@ -602,6 +602,7 @@ export default function CreateCustomerPlanPage() {
           productionPlanId: planDbId,
           lineId: `${planDbId}-L${idx + 1}`,
           orderNo: item.orderNo || item.demandNo || "ORD-001",
+          orderItemId: item.orderItemId || item.itemId || (isGuid(item.id) ? item.id : null),
           productId: item.productId || "PRD-001",
           productCode: item.productCode || "PRD-001",
           productName: item.productName || "Product",
