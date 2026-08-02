@@ -1,0 +1,12 @@
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'ProductionPlanProducts')
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.columns 
+        WHERE object_id = OBJECT_ID(N'[ProductionPlanProducts]') 
+        AND name = 'OrderItemId'
+    )
+    BEGIN
+        ALTER TABLE [ProductionPlanProducts] ADD [OrderItemId] UNIQUEIDENTIFIER NULL;
+    END
+END
+GO

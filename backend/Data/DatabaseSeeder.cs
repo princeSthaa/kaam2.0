@@ -3,6 +3,7 @@ using backend.Model.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Data
 {
@@ -10,6 +11,24 @@ namespace backend.Data
     {
         public static void Seed(AppDbContext context)
         {
+            try
+            {
+                context.Database.ExecuteSqlRaw(@"
+                    IF NOT EXISTS (
+                        SELECT 1 FROM sys.columns 
+                        WHERE object_id = OBJECT_ID(N'[ProductionPlanProducts]') 
+                        AND name = 'OrderItemId'
+                    )
+                    BEGIN
+                        ALTER TABLE [ProductionPlanProducts] ADD [OrderItemId] UNIQUEIDENTIFIER NULL;
+                    END
+                ");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Migration note: {ex.Message}");
+            }
+
             var customers = new List<Customer>();
             if (!context.Customers.Any())
             {

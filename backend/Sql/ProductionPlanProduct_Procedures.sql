@@ -19,7 +19,8 @@ CREATE OR ALTER PROCEDURE sp_GetProductionPlanProducts
     @CreatedBy NVARCHAR(MAX) = NULL,
     @UpdatedAt DATETIME2 = NULL,
     @UpdatedBy NVARCHAR(MAX) = NULL,
-    @ProductionPlanId NVARCHAR(MAX) = NULL
+    @ProductionPlanId NVARCHAR(MAX) = NULL,
+    @OrderItemId UNIQUEIDENTIFIER = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -47,6 +48,7 @@ BEGIN
         AND (@UpdatedAt IS NULL OR [UpdatedAt] = @UpdatedAt)
         AND (@UpdatedBy IS NULL OR [UpdatedBy] = @UpdatedBy)
         AND (@ProductionPlanId IS NULL OR [ProductionPlanId] = @ProductionPlanId)
+        AND (@OrderItemId IS NULL OR [OrderItemId] = @OrderItemId)
 END
 GO
 
@@ -71,16 +73,17 @@ CREATE OR ALTER PROCEDURE sp_InsertProductionPlanProduct
     @CreatedBy NVARCHAR(MAX),
     @UpdatedAt DATETIME2,
     @UpdatedBy NVARCHAR(MAX),
-    @ProductionPlanId NVARCHAR(MAX)
+    @ProductionPlanId NVARCHAR(MAX),
+    @OrderItemId UNIQUEIDENTIFIER = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO [ProductionPlanProducts] (
-        [Id], [LineId], [OrderNo], [ProductId], [ProductCode], [ProductName], [Category], [Variant], [Quantity], [RequiredDate], [Status], [ProductImage], [PlannedStartDate], [PlannedCompletionDate], [Priority], [ProductionNotes], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy], [ProductionPlanId]
+        [Id], [LineId], [OrderNo], [ProductId], [ProductCode], [ProductName], [Category], [Variant], [Quantity], [RequiredDate], [Status], [ProductImage], [PlannedStartDate], [PlannedCompletionDate], [Priority], [ProductionNotes], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy], [ProductionPlanId], [OrderItemId]
     )
     VALUES (
-        @Id, @LineId, @OrderNo, @ProductId, @ProductCode, @ProductName, @Category, @Variant, @Quantity, @RequiredDate, @Status, @ProductImage, @PlannedStartDate, @PlannedCompletionDate, @Priority, @ProductionNotes, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy, @ProductionPlanId
+        @Id, @LineId, @OrderNo, @ProductId, @ProductCode, @ProductName, @Category, @Variant, @Quantity, @RequiredDate, @Status, @ProductImage, @PlannedStartDate, @PlannedCompletionDate, @Priority, @ProductionNotes, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy, @ProductionPlanId, @OrderItemId
     );
 END
 GO
@@ -106,7 +109,8 @@ CREATE OR ALTER PROCEDURE sp_UpdateProductionPlanProduct
     @CreatedBy NVARCHAR(MAX),
     @UpdatedAt DATETIME2,
     @UpdatedBy NVARCHAR(MAX),
-    @ProductionPlanId NVARCHAR(MAX)
+    @ProductionPlanId NVARCHAR(MAX),
+    @OrderItemId UNIQUEIDENTIFIER = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -132,7 +136,8 @@ BEGIN
         [CreatedBy] = @CreatedBy,
         [UpdatedAt] = @UpdatedAt,
         [UpdatedBy] = @UpdatedBy,
-        [ProductionPlanId] = @ProductionPlanId
+        [ProductionPlanId] = @ProductionPlanId,
+        [OrderItemId] = @OrderItemId
     WHERE [Id] = @Id;
 END
 GO
@@ -146,4 +151,3 @@ BEGIN
     DELETE FROM [ProductionPlanProducts] WHERE [Id] = @Id;
 END
 GO
-
