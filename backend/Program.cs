@@ -23,6 +23,8 @@ using backend.Service.ActivityLog;
 using backend.Service.Supplier;
 using backend.Service.MaterialRequest;
 using backend.Service.MaterialInspection;
+using backend.Service.MaterialCategory;
+using backend.Service.MaterialType;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +76,8 @@ builder.Services.AddScoped<IActivityLogService, ActivityLogService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<IMaterialRequestService, MaterialRequestService>();
 builder.Services.AddScoped<IMaterialInspectionService, MaterialInspectionService>();
+builder.Services.AddScoped<IMaterialCategoryService, MaterialCategoryService>();
+builder.Services.AddScoped<IMaterialTypeService, MaterialTypeService>();
 
 var app = builder.Build();
 
