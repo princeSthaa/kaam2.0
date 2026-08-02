@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  fetchSuppliers,
+  createSupplier,
+  updateSupplier,
+  deleteSupplier,
+  SupplierDto
+} from "../api/supplier.api";
 
 interface Supplier {
   id: string;
@@ -139,6 +146,34 @@ export default function SuppliersPage() {
     status: "ACTIVE",
   });
 
+  const loadSuppliersFromApi = async () => {
+    try {
+      const data = await fetchSuppliers();
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped: Supplier[] = data.map((s: SupplierDto) => ({
+          id: s.id,
+          name: s.name,
+          code: s.supplierCode || "SUP-AUTO",
+          category: (s.materialCategories?.[0]?.name?.toUpperCase() as any) || "FABRIC",
+          status: s.status === "Blacklisted" ? "BLACKLISTED" : s.status === "Inactive" ? "UNDER REVIEW" : "ACTIVE",
+          lastAudit: s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "Recently",
+          materialsSupplied: `${s.totalOrders || 0} orders`,
+          email: s.contactEmail || "contact@company.com",
+          phone: s.contactPhone || "+977 1-0000000",
+          location: s.address || "Kathmandu, Nepal",
+          complianceScore: s.rating ? Math.round(s.rating) : 90,
+        }));
+        setSuppliers(mapped);
+      }
+    } catch (err) {
+      console.warn("Backend API supplier fetch failed, using initial store:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadSuppliersFromApi();
+  }, []);
+
   // Filtered suppliers calculation
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter((supplier) => {
@@ -165,36 +200,67 @@ export default function SuppliersPage() {
     suppliers.reduce((acc, curr) => acc + curr.complianceScore, 0) / (suppliers.length || 1)
   ).toFixed(1);
 
-  const handleAddSupplierSubmit = (e: React.FormEvent) => {
+  const handleAddSupplierSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSupplier.name || !newSupplier.code) return;
 
-    const created: Supplier = {
-      id: String(Date.now()),
-      name: newSupplier.name,
-      code: newSupplier.code,
-      category: (newSupplier.category as any) || "FABRIC",
-      status: (newSupplier.status as any) || "ACTIVE",
-      lastAudit: new Date().toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-      }),
-      materialsSupplied: newSupplier.materialsSupplied || "0 units",
-      email: newSupplier.email || "supplier@example.com",
-      phone: newSupplier.phone || "+977 1-0000000",
-      location: newSupplier.location || "Kathmandu, Nepal",
-      complianceScore: 90,
-    };
+    try {
+      await createSupplier({
+        supplierCode: newSupplier.code,
+        name: newSupplier.name,
+        contactEmail: newSupplier.email || "",
+        contactPhone: newSupplier.phone || "",
+        address: newSupplier.location || "",
+        status: newSupplier.status === "BLACKLISTED" ? "Blacklisted" : newSupplier.status === "UNDER REVIEW" ? "Inactive" : "Active"
+      });
 
-    setSuppliers([created, ...suppliers]);
+      await loadSuppliersFromApi();
+    } catch (err) {
+      console.error("Failed to create supplier via API:", err);
+      const created: Supplier = {
+        id: String(Date.now()),
+        name: newSupplier.name,
+        code: newSupplier.code,
+        category: (newSupplier.category as any) || "FABRIC",
+        status: (newSupplier.status as any) || "ACTIVE",
+        lastAudit: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "2-digit",
+          year: "numeric",
+        }),
+        materialsSupplied: newSupplier.materialsSupplied || "0 units",
+        email: newSupplier.email || "supplier@example.com",
+        phone: newSupplier.phone || "+977 1-0000000",
+        location: newSupplier.location || "Kathmandu, Nepal",
+        complianceScore: 90,
+      };
+
+      setSuppliers((prev) => [created, ...prev]);
+    }
+
     setIsAddModalOpen(false);
     setNewSupplier({ category: "FABRIC", status: "ACTIVE" });
   };
 
-  const handleEditSupplierSubmit = (e: React.FormEvent) => {
+  const handleEditSupplierSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingSupplier) return;
+
+    try {
+      if (editingSupplier.id.includes("-")) {
+        await updateSupplier(editingSupplier.id, {
+          supplierCode: editingSupplier.code,
+          name: editingSupplier.name,
+          contactEmail: editingSupplier.email,
+          contactPhone: editingSupplier.phone,
+          address: editingSupplier.location,
+          status: editingSupplier.status === "BLACKLISTED" ? "Blacklisted" : editingSupplier.status === "UNDER REVIEW" ? "Inactive" : "Active"
+        });
+        await loadSuppliersFromApi();
+      }
+    } catch (err) {
+      console.error("Failed to update supplier via API:", err);
+    }
 
     setSuppliers(
       suppliers.map((s) => (s.id === editingSupplier.id ? editingSupplier : s))
@@ -837,9 +903,9 @@ export default function SuppliersPage() {
                 </div>
               </div>
               <div className="flex items-center space-x-3">
-                <span className="px-2.5 py-1 bg-slate-100 rounded font-mono text-xs text-slate-700 font-bold border border-slate-200">
+                {/* <span className="px-2.5 py-1 bg-slate-100 rounded font-mono text-xs text-slate-700 font-bold border border-slate-200">
                   ID: K-SRM-8821
-                </span>
+                </span> */}
                 <button
                   onClick={() => setIsAddModalOpen(false)}
                   className="text-slate-400 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"

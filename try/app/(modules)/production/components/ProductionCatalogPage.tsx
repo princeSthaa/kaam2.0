@@ -234,7 +234,7 @@ function CatalogModal({
   };
 
   const createPlanHref = kind === "customer"
-    ? `/production/demands/customer?customerId=${item.id}`
+    ? `/production/openorders?customerId=${item.id}`
     : `/production/demands/outlet?outletId=${item.id}`;
 
   return (
@@ -263,7 +263,7 @@ function CatalogModal({
 
           <div className="customer-detail-action-row mb-4">
             <ActionButton href={createPlanHref} variant="primary" className="w-100">
-              Create Plan
+              {kind === "customer" ? "View Orders" : "Create Plan"}
             </ActionButton>
           </div>
 
@@ -379,15 +379,23 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
         fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => [])
       ]).then(([custs, ords, plans, planProducts]) => {
         const plannedOrderItemIds = new Set<string>();
+        const plannedOrderProductKeys = new Set<string>();
+
         (plans || []).forEach((p: any) => {
           const prods = p.productionPlanProducts || p.products || [];
           prods.forEach((prod: any) => {
-            if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId));
+            if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId).toLowerCase());
+            if (prod.orderNo && prod.productId) {
+              plannedOrderProductKeys.add(`${String(prod.orderNo).toLowerCase()}_${String(prod.productId).toLowerCase()}`);
+            }
           });
         });
 
         (planProducts || []).forEach((pp: any) => {
-          if (pp.orderItemId) plannedOrderItemIds.add(String(pp.orderItemId));
+          if (pp.orderItemId) plannedOrderItemIds.add(String(pp.orderItemId).toLowerCase());
+          if (pp.orderNo && pp.productId) {
+            plannedOrderProductKeys.add(`${String(pp.orderNo).toLowerCase()}_${String(pp.productId).toLowerCase()}`);
+          }
         });
 
         if (typeof window !== "undefined") {
@@ -395,21 +403,38 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
             const drafts = JSON.parse(localStorage.getItem("kaam.productionPlanDrafts.v1") || "[]");
             drafts.forEach((d: any) => {
               (d.products || []).forEach((prod: any) => {
-                if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId));
+                if (prod.orderItemId) plannedOrderItemIds.add(String(prod.orderItemId).toLowerCase());
+                if (prod.orderNo && prod.productId) {
+                  plannedOrderProductKeys.add(`${String(prod.orderNo).toLowerCase()}_${String(prod.productId).toLowerCase()}`);
+                }
               });
             });
           } catch {}
         }
 
         const combined = custs.map(c => {
-          const cOrders = ords.filter(o => o.customerId === c.id);
+          const targetId = String(c.id).toLowerCase();
+          const cOrders = ords.filter(o => {
+            if (String(o.customerId).toLowerCase() !== targetId) return false;
+            const statusStr = String(o.status || "").toLowerCase();
+            if (statusStr === "planned" || statusStr === "completed" || statusStr === "cancelled" || o.status === 4) return false;
+            return true;
+          });
           const mappedOrders: any[] = [];
-          
+
           cOrders.forEach(o => {
             const orderItems = o.orderItems || (o as any).items;
+            const orderNoKey = String(o.orderNumber || o.id || "").toLowerCase();
+
             if (orderItems && Array.isArray(orderItems)) {
               orderItems.forEach(item => {
-                const isPlanned = plannedOrderItemIds.has(String(item.id));
+                const itemIdStr = String(item.id || item.orderItemId || "").toLowerCase();
+                const itemProdIdStr = String(item.productId || "").toLowerCase();
+
+                let isPlanned = false;
+                if (itemIdStr && plannedOrderItemIds.has(itemIdStr)) isPlanned = true;
+                if (orderNoKey && itemProdIdStr && plannedOrderProductKeys.has(`${orderNoKey}_${itemProdIdStr}`)) isPlanned = true;
+
                 if (!isPlanned) {
                   mappedOrders.push({
                     id: `${o.id}-${item.id || item.productId}`,
@@ -717,8 +742,8 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
                         <button type="button" className="btn btn-light w-100" onClick={() => setSelectedItem(c)}>
                           View More
                         </button>
-                        <a className="btn btn-primary w-100" href={`/production/demands/customer?customerId=${c.id}`}>
-                          Create Plan
+                        <a className="btn btn-primary w-100" href={`/production/openorders?customerId=${c.id}`}>
+                          View Orders
                         </a>
                       </div>
                     </div>
