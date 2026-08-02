@@ -22,6 +22,16 @@ function OpenOrdersContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
+  const toggleOrder = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -223,6 +233,7 @@ function OpenOrdersContent() {
               : "Not set";
             const totalQty = orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
             const orderKey = o.orderNumber || o.id || "";
+            const isExpanded = expandedOrders.has(String(orderKey));
 
             return (
               <div
@@ -230,7 +241,10 @@ function OpenOrdersContent() {
                 className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden hover:border-slate-300 transition-all"
               >
                 {/* Order Header Bar */}
-                <div className="p-4 border-b border-slate-200 bg-slate-50/70 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div 
+                  className="p-4 border-b border-slate-200 bg-slate-50/70 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer hover:bg-slate-100/50 transition-colors"
+                  onClick={() => toggleOrder(String(orderKey))}
+                >
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold shrink-0 border border-blue-100">
                       <span className="material-symbols-outlined text-xl">receipt</span>
@@ -268,11 +282,18 @@ function OpenOrdersContent() {
                       <span className="text-slate-400 block font-medium uppercase tracking-wider text-[10px]">Total Amount</span>
                       <span className="font-mono font-bold text-slate-900">Rs. {(o.totalAmount || 0).toLocaleString()}</span>
                     </div>
+                    <div className="flex items-center justify-center pl-2 border-l border-slate-200 ml-2">
+                      <span className="material-symbols-outlined text-slate-400 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)" }}>
+                        expand_more
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Order Products Table */}
-                <div className="overflow-x-auto">
+                {isExpanded && (
+                  <div className="animate-in slide-in-from-top-2 fade-in duration-200">
+                    {/* Order Products Table */}
+                    <div className="overflow-x-auto">
                   <TableShell
                     headers={[
                       "Thumbnail",
@@ -348,6 +369,8 @@ function OpenOrdersContent() {
                     <span className="material-symbols-outlined text-base">arrow_forward</span>
                   </button>
                 </div>
+                  </div>
+                )}
               </div>
             );
           })

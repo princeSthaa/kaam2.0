@@ -734,9 +734,9 @@ export default function MaterialMappingPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-semibold text-slate-700">Unit Price ($)</label>
+                    <label className="font-semibold text-slate-700">Unit Price (Rs)</label>
                     <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl h-11 px-3 focus-within:ring-2 focus-within:ring-slate-900">
-                      <span className="font-mono text-slate-400 mr-2">$</span>
+                      <span className="font-mono text-slate-400 mr-2">Rs</span>
                       <input
                         type="number"
                         step="0.01"
@@ -970,11 +970,11 @@ export default function MaterialMappingPage() {
                       {/* Unit Price */}
                       <div className="space-y-1">
                         <label className="font-mono text-[10px] font-bold text-slate-500 uppercase">
-                          UNIT PRICE ($)
+                          UNIT PRICE (Rs)
                         </label>
                         <div className="relative">
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono">
-                            $
+                            Rs
                           </span>
                           <input
                             type="number"

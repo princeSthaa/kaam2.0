@@ -357,7 +357,11 @@ export default function ProductionDraftsPage() {
                 const planNo = plan.planNo || plan.planId || plan.id;
                 const uniqueKey = `${plan.id || planNo}-${idx}`;
                 const isSelected = selectedPlanIds.has(String(planNo));
-                const rowDate = plan.createdAt || plan.planDate || plan.plannedStartDate || Date.now();
+                const rawDate = plan.createdAt || plan.planDate || plan.plannedStartDate;
+                const isInvalidDefault = rawDate && String(rawDate).startsWith("0001-01-01");
+                const displayDate = rawDate && !isInvalidDefault && !isNaN(new Date(rawDate).getTime())
+                  ? new Date(rawDate).toLocaleDateString()
+                  : "Not Set";
                 const detailsUrl = `/production/plans/${encodeURIComponent(planNo)}`;
 
                 const products = plan.productionPlanProducts || plan.products || [];
@@ -397,7 +401,7 @@ export default function ProductionDraftsPage() {
                     </div>
 
                     <time className="folder-plan-date">
-                      {new Date(rowDate).toLocaleDateString()}
+                      {displayDate}
                     </time>
 
                     <div className="folder-plan-actions" style={{ display: "flex", gap: "6px", alignItems: "center" }}>

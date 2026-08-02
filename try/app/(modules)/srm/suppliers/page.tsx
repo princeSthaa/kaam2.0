@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   fetchSuppliers,
   createSupplier,
@@ -13,14 +13,15 @@ interface Supplier {
   id: string;
   name: string;
   code: string;
-  category: "FABRIC" | "TRIMS" | "HARDWARE" | "PACKAGING";
-  status: "ACTIVE" | "UNDER REVIEW" | "BLACKLISTED";
+  category: "FABRIC" | "TRIMS" | "HARDWARE" | "PACKAGING" | string;
+  status: "ACTIVE" | "UNDER REVIEW" | "BLACKLISTED" | string;
   lastAudit: string;
   materialsSupplied: string;
   email: string;
   phone: string;
   location: string;
   complianceScore: number;
+  materialCategoryIds?: string[];
 }
 
 const INITIAL_SUPPLIERS: Supplier[] = [
@@ -130,6 +131,105 @@ const INITIAL_SUPPLIERS: Supplier[] = [
   },
 ];
 
+function CategoryMultiSelect({ selectedIds, onChange }: { selectedIds: string[], onChange: (ids: string[]) => void }) {
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    fetch("http://localhost:5083/api/material")
+      .then(res => res.json())
+      .then((data: any[]) => {
+        const unique = new Map();
+        if (Array.isArray(data)) {
+          data.forEach(item => {
+            if (item.materialCategoryId && item.materialTypeName) {
+              unique.set(item.materialCategoryId, item.materialTypeName);
+            }
+          });
+        }
+        const catArray = Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
+        setCategories(catArray);
+      })
+      .catch(err => console.error("Failed to fetch material categories:", err));
+  }, []);
+
+  const filtered = categories.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+
+  const toggle = (id: string) => {
+    if (selectedIds.includes(id)) {
+      onChange(selectedIds.filter(x => x !== id));
+    } else {
+      onChange([...selectedIds, id]);
+    }
+  };
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <div 
+        className="w-full min-h-[40px] px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus-within:ring-2 focus-within:ring-slate-900 cursor-pointer flex flex-wrap gap-2 items-center"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {selectedIds.length === 0 && <span className="text-slate-400">Select Categories...</span>}
+        {selectedIds.map(id => {
+          const cat = categories.find(c => c.id === id);
+          return (
+            <span key={id} className="bg-slate-900 text-white px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm">
+              {cat ? cat.name.toUpperCase() : id}
+              <span 
+                className="material-symbols-outlined text-[14px] cursor-pointer hover:text-slate-300" 
+                onClick={(e) => { e.stopPropagation(); toggle(id); }}
+              >
+                close
+              </span>
+            </span>
+          );
+        })}
+      </div>
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 flex flex-col overflow-hidden">
+          <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
+            <input 
+              type="text" 
+              placeholder="Search categories..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full px-3 py-1.5 border border-slate-200 rounded text-slate-900 outline-none text-xs focus:ring-1 focus:ring-slate-900"
+              onClick={e => e.stopPropagation()}
+            />
+          </div>
+          <div className="overflow-y-auto p-1">
+            {filtered.map(cat => (
+              <div 
+                key={cat.id} 
+                className="px-3 py-2 hover:bg-slate-100 rounded cursor-pointer flex items-center gap-2 text-xs font-semibold text-slate-700 transition-colors"
+                onClick={(e) => { e.stopPropagation(); toggle(cat.id); }}
+              >
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${selectedIds.includes(cat.id) ? 'bg-slate-900 border-slate-900 text-white' : 'border-slate-300 bg-white'}`}>
+                  {selectedIds.includes(cat.id) && <span className="material-symbols-outlined text-[12px] font-bold">check</span>}
+                </div>
+                {cat.name}
+              </div>
+            ))}
+            {filtered.length === 0 && <div className="px-3 py-4 text-center text-xs text-slate-500">No categories found</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>(INITIAL_SUPPLIERS);
   const [searchTerm, setSearchTerm] = useState("");
@@ -144,6 +244,7 @@ export default function SuppliersPage() {
   const [newSupplier, setNewSupplier] = useState<Partial<Supplier>>({
     category: "FABRIC",
     status: "ACTIVE",
+    materialCategoryIds: [],
   });
 
   const loadSuppliersFromApi = async () => {
@@ -211,7 +312,8 @@ export default function SuppliersPage() {
         contactEmail: newSupplier.email || "",
         contactPhone: newSupplier.phone || "",
         address: newSupplier.location || "",
-        status: newSupplier.status === "BLACKLISTED" ? "Blacklisted" : newSupplier.status === "UNDER REVIEW" ? "Inactive" : "Active"
+        status: newSupplier.status === "BLACKLISTED" ? "Blacklisted" : newSupplier.status === "UNDER REVIEW" ? "Inactive" : "Active",
+        materialCategoryIds: newSupplier.materialCategoryIds || [],
       });
 
       await loadSuppliersFromApi();
@@ -239,7 +341,7 @@ export default function SuppliersPage() {
     }
 
     setIsAddModalOpen(false);
-    setNewSupplier({ category: "FABRIC", status: "ACTIVE" });
+    setNewSupplier({ category: "FABRIC", status: "ACTIVE", materialCategoryIds: [] });
   };
 
   const handleEditSupplierSubmit = async (e: React.FormEvent) => {
@@ -953,21 +1055,12 @@ export default function SuppliersPage() {
                       />
                     </div>
                     <div className="space-y-1 md:col-span-2">
-                      <label className="font-semibold text-slate-700 block mb-1">CATEGORY</label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        {(["FABRIC", "TRIMS", "HARDWARE", "PACKAGING"] as const).map((cat) => (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setNewSupplier({ ...newSupplier, category: cat })}
-                            className={`py-2 px-3 border rounded-lg font-mono font-bold text-xs transition-all ${(newSupplier.category || "FABRIC") === cat
-                              ? "bg-slate-900 text-white border-slate-900 shadow-sm"
-                              : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
-                              }`}
-                          >
-                            {cat}
-                          </button>
-                        ))}
+                      <label className="font-semibold text-slate-700 block mb-1">CATEGORIES</label>
+                      <div className="relative">
+                        <CategoryMultiSelect 
+                          selectedIds={newSupplier.materialCategoryIds || []} 
+                          onChange={(ids) => setNewSupplier({ ...newSupplier, materialCategoryIds: ids })} 
+                        />
                       </div>
                     </div>
                   </div>
