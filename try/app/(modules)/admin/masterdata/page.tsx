@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/registerskumodal";
+import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
 
 interface MasterDataEntry {
   id: string;
@@ -85,6 +86,7 @@ export default function MasterDataPage() {
   const [notification, setNotification] = useState<string | null>(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [isRegisterSkuModalOpen, setIsRegisterSkuModalOpen] = useState(false);
+  const [isDefineMaterialModalOpen, setIsDefineMaterialModalOpen] = useState(false);
   const [activeActionTitle, setActiveActionTitle] = useState("");
 
   const showToast = (msg: string) => {
@@ -95,6 +97,10 @@ export default function MasterDataPage() {
   const handleActionClick = (actionName: string) => {
     if (actionName === "Register Product SKU") {
       setIsRegisterSkuModalOpen(true);
+      return;
+    }
+    if (actionName === "Define Material Spec") {
+      setIsDefineMaterialModalOpen(true);
       return;
     }
     setActiveActionTitle(actionName);
@@ -114,6 +120,21 @@ export default function MasterDataPage() {
     };
     setLogData((prev) => [newEntry, ...prev]);
     showToast(`Successfully registered Product SKU: ${skuData.baseSku}`);
+  };
+
+  const handleSaveMaterial = (matData: MaterialSpecFormData) => {
+    const newEntry: MasterDataEntry = {
+      id: matData.code || `MAT-${Date.now().toString().slice(-4)}`,
+      type: "Material",
+      name: matData.name,
+      updatedBy: "Admin User",
+      userInitials: "AU",
+      userColor: "bg-slate-200 text-slate-800",
+      status: "Active",
+      timestamp: "Just now",
+    };
+    setLogData((prev) => [newEntry, ...prev]);
+    showToast(`Successfully defined Material Spec: ${matData.name}`);
   };
 
   const handleBulkImport = () => {
@@ -483,6 +504,13 @@ export default function MasterDataPage() {
         isOpen={isRegisterSkuModalOpen}
         onClose={() => setIsRegisterSkuModalOpen(false)}
         onSave={handleSaveSku}
+      />
+
+      {/* DEFINE MATERIAL SPEC MODAL */}
+      <DefineMaterialModal
+        isOpen={isDefineMaterialModalOpen}
+        onClose={() => setIsDefineMaterialModalOpen(false)}
+        onSave={handleSaveMaterial}
       />
     </div>
   );
