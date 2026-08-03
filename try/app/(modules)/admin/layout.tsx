@@ -1,12 +1,5 @@
 import { Sidebar } from "@/app/components/layout/Sidebar";
-import { SidebarSection } from "@/app/components/layout/Sidebar";
-
-export const adminNavigation: SidebarSection = {
-    title: "Admin Menu",
-    links: [
-        { name: "Overview", url: "/admin", icon: "inventory_2" },
-    ],
-};
+import { adminNavigation } from "./navigation";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     return (

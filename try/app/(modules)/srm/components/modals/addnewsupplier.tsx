@@ -42,21 +42,20 @@ export function CategoryMultiSelect({
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5083/api/material")
+    fetch("http://localhost:5083/api/material-type")
       .then((res) => res.json())
       .then((data: any[]) => {
-        const unique = new Map();
         if (Array.isArray(data)) {
-          data.forEach((item) => {
-            if (item.materialCategoryId && item.materialTypeName) {
-              unique.set(item.materialCategoryId, item.materialTypeName);
-            }
-          });
+          const catArray = data
+            .filter((item) => item && (item.id || item.Id) && (item.name || item.Name))
+            .map((item) => ({
+              id: item.id || item.Id,
+              name: item.name || item.Name,
+            }));
+          setCategories(catArray);
         }
-        const catArray = Array.from(unique.entries()).map(([id, name]) => ({ id, name }));
-        setCategories(catArray);
       })
-      .catch((err) => console.error("Failed to fetch material categories:", err));
+      .catch((err) => console.error("Failed to fetch material types/categories:", err));
   }, []);
 
   const filtered = categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));

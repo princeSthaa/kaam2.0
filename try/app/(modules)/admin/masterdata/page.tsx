@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/registerskumodal";
 
 interface MasterDataEntry {
   id: string;
@@ -16,9 +17,9 @@ interface MasterDataEntry {
 
 const INITIAL_LOG_DATA: MasterDataEntry[] = [
   {
-    id: "SUP-8921",
+    id: "SUP-24091",
     type: "Supplier",
-    name: "Global Logistics Inc.",
+    name: "Indigo Textiles & Mills Co.",
     updatedBy: "J. Smith",
     userInitials: "JS",
     userColor: "bg-blue-100 text-blue-900",
@@ -26,9 +27,9 @@ const INITIAL_LOG_DATA: MasterDataEntry[] = [
     timestamp: "10:42 AM",
   },
   {
-    id: "PRD-400A",
+    id: "PRD-JKT-01",
     type: "Product",
-    name: "Industrial Servo Motor V2",
+    name: "Vintage Selvedge Denim Jacket",
     updatedBy: "A. Kumar",
     userInitials: "AK",
     userColor: "bg-purple-100 text-purple-900",
@@ -36,9 +37,9 @@ const INITIAL_LOG_DATA: MasterDataEntry[] = [
     timestamp: "09:15 AM",
   },
   {
-    id: "MAT-9099",
+    id: "MAT-CTN-100",
     type: "Material",
-    name: "High-Tensile Steel Alloy",
+    name: "100% Organic Combed Cotton Knit (180 GSM)",
     updatedBy: "System",
     userInitials: "SYS",
     userColor: "bg-slate-200 text-slate-800",
@@ -46,9 +47,9 @@ const INITIAL_LOG_DATA: MasterDataEntry[] = [
     timestamp: "Yesterday",
   },
   {
-    id: "CUS-102B",
+    id: "CUS-URB-88",
     type: "Customer",
-    name: "EuroTech Manufacturing",
+    name: "Urban Apparel Retail Group",
     updatedBy: "J. Smith",
     userInitials: "JS",
     userColor: "bg-blue-100 text-blue-900",
@@ -56,9 +57,9 @@ const INITIAL_LOG_DATA: MasterDataEntry[] = [
     timestamp: "Yesterday",
   },
   {
-    id: "SUP-8802",
+    id: "SUP-ZIP-402",
     type: "Supplier",
-    name: "Apex Packaging Solutions",
+    name: "Himalayan Zipper & Trims Corp.",
     updatedBy: "M. Rossi",
     userInitials: "MR",
     userColor: "bg-emerald-100 text-emerald-900",
@@ -66,9 +67,9 @@ const INITIAL_LOG_DATA: MasterDataEntry[] = [
     timestamp: "Oct 24",
   },
   {
-    id: "MAT-4410",
+    id: "MAT-DYE-B2",
     type: "Material",
-    name: "Reactive Indigo Dye Batch #B2",
+    name: "Reactive Indigo Dye Concentrate #B2",
     updatedBy: "R. Sharma",
     userInitials: "RS",
     userColor: "bg-amber-100 text-amber-900",
@@ -78,10 +79,12 @@ const INITIAL_LOG_DATA: MasterDataEntry[] = [
 ];
 
 export default function MasterDataPage() {
+  const [logData, setLogData] = useState<MasterDataEntry[]>(INITIAL_LOG_DATA);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("ALL");
   const [notification, setNotification] = useState<string | null>(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [isRegisterSkuModalOpen, setIsRegisterSkuModalOpen] = useState(false);
   const [activeActionTitle, setActiveActionTitle] = useState("");
 
   const showToast = (msg: string) => {
@@ -90,8 +93,27 @@ export default function MasterDataPage() {
   };
 
   const handleActionClick = (actionName: string) => {
+    if (actionName === "Register Product SKU") {
+      setIsRegisterSkuModalOpen(true);
+      return;
+    }
     setActiveActionTitle(actionName);
     setIsActionModalOpen(true);
+  };
+
+  const handleSaveSku = (skuData: RegisterSkuFormData) => {
+    const newEntry: MasterDataEntry = {
+      id: skuData.baseSku || `SKU-${Date.now().toString().slice(-4)}`,
+      type: "Product",
+      name: skuData.productName,
+      updatedBy: "Admin User",
+      userInitials: "AU",
+      userColor: "bg-purple-100 text-purple-900",
+      status: "Active",
+      timestamp: "Just now",
+    };
+    setLogData((prev) => [newEntry, ...prev]);
+    showToast(`Successfully registered Product SKU: ${skuData.baseSku}`);
   };
 
   const handleBulkImport = () => {
@@ -99,7 +121,7 @@ export default function MasterDataPage() {
   };
 
   const filteredLogs = useMemo(() => {
-    return INITIAL_LOG_DATA.filter((item) => {
+    return logData.filter((item) => {
       const matchesSearch =
         item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -107,7 +129,7 @@ export default function MasterDataPage() {
       const matchesType = selectedType === "ALL" || item.type === selectedType;
       return matchesSearch && matchesType;
     });
-  }, [searchTerm, selectedType]);
+  }, [logData, searchTerm, selectedType]);
 
   return (
     <div className="space-y-6 text-[#191c1e] font-sans pb-12">
@@ -455,6 +477,13 @@ export default function MasterDataPage() {
           </div>
         </div>
       )}
+
+      {/* REGISTER PRODUCT SKU MODAL */}
+      <RegisterSkuModal
+        isOpen={isRegisterSkuModalOpen}
+        onClose={() => setIsRegisterSkuModalOpen(false)}
+        onSave={handleSaveSku}
+      />
     </div>
   );
 }
