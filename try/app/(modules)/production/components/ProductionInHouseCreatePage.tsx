@@ -98,9 +98,9 @@ const WORK_CENTERS = ["QC Station 1", "Cutter Auto-B", "Line 4A", "Sewing Floor"
 const formatRs = (v: number) => `Rs. ${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 type Variant = { id: string; fabricId: string; fabricName: string; swatchColor: string; sizes: Record<string, number> };
-type Stage   = { id: string; name: string; workCenter: string; leadHours: string; date: string };
+type Stage = { id: string; name: string; workCenter: string; leadHours: string; date: string };
 type Product = { productId: string; productCode: string; productName: string; productImage: string; plannedStartDate: string; plannedCompletionDate: string; requiredDate: string; variants: Variant[]; stages: Stage[]; productionNotes: string; isExpanded: boolean };
-type MatReq  = { materialCode: string; materialName: string; materialType: string; requiredQty: number; availableQty: number; shortageQty: number; unit: string; cost: number };
+type MatReq = { materialCode: string; materialName: string; materialType: string; requiredQty: number; availableQty: number; shortageQty: number; unit: string; cost: number };
 
 /* ─── Inline styles ─────────────────────────────────────────────── */
 const S = {
@@ -213,8 +213,8 @@ const S = {
     gap: 12,
   }),
   prodIndexBadge: (n: number) => {
-    const colors = ["#dbeafe","#fce7f3","#d1fae5","#fef3c7"];
-    const textColors = ["#1d4ed8","#9d174d","#065f46","#92400e"];
+    const colors = ["#dbeafe", "#fce7f3", "#d1fae5", "#fef3c7"];
+    const textColors = ["#1d4ed8", "#9d174d", "#065f46", "#92400e"];
     return { width: 28, height: 28, borderRadius: "50%", background: colors[n % 4], color: textColors[n % 4], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, flexShrink: 0 };
   },
   prodBody: { padding: "20px", background: "#f8fafc", borderTop: "1px solid #e5e7eb", display: "flex", flexDirection: "column" as const, gap: 20 },
@@ -289,16 +289,16 @@ const S = {
 export function ProductionInHouseCreatePage() {
   const router = useRouter();
 
-  const [planId, setPlanId]     = useState("");
+  const [planId, setPlanId] = useState("");
   const [planName, setPlanName] = useState("");
   const [planDate, setPlanDate] = useState("");
   const [inHouseReason, setInHouseReason] = useState("Seasonal Buffer Stock");
   const [targetWarehouseId, setTargetWarehouseId] = useState("WH-001");
 
   const [productSearch, setProductSearch] = useState("");
-  const [showDropdown, setShowDropdown]   = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const [isSubmitting, setIsSubmitting]   = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [fabricModal, setFabricModal] = useState<{ show: boolean; productId: string | null; variantId: string | null; category: string; search: string }>
     ({ show: false, productId: null, variantId: null, category: "Cotton", search: "" });
@@ -317,7 +317,7 @@ export function ProductionInHouseCreatePage() {
   const filteredProducts = useMemo(() =>
     !productSearch.trim() ? mockProducts
       : mockProducts.filter(p => p.productName.toLowerCase().includes(productSearch.toLowerCase()) || p.productCode.toLowerCase().includes(productSearch.toLowerCase()))
-  , [productSearch]);
+    , [productSearch]);
 
   const handleSelectProduct = (prod: typeof mockProducts[0]) => {
     if (selectedProducts.some(p => p.productId === prod.id)) return;
@@ -329,9 +329,9 @@ export function ProductionInHouseCreatePage() {
       plannedStartDate: today, plannedCompletionDate: endStr, requiredDate: endStr,
       variants: [{ id: `var-${Date.now()}`, fabricId: "RM-FAB-COT-NAVY", fabricName: "Dyed Cotton (Navy Blue)", swatchColor: "#1e3a8a", sizes: { XS: 10, S: 20, M: 40, L: 30, XL: 10, XXL: 0 } }],
       stages: [
-        { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "4",  date: today },
-        { id: "02", name: "Cutting",         workCenter: "Cutter Auto-B",  leadHours: "12", date: today },
-        { id: "03", name: "Stitching",       workCenter: "Line 4A",        leadHours: "48", date: today },
+        { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "4", date: today },
+        { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", leadHours: "12", date: today },
+        { id: "03", name: "Stitching", workCenter: "Line 4A", leadHours: "48", date: today },
       ],
       productionNotes: "",
       isExpanded: true,
@@ -341,7 +341,7 @@ export function ProductionInHouseCreatePage() {
   };
 
   const removeProduct = (id: string) => setSelectedProducts(prev => prev.filter(p => p.productId !== id));
-  const toggleExpand  = (id: string) => setSelectedProducts(prev => prev.map(p => ({ ...p, isExpanded: p.productId === id ? !p.isExpanded : false })));
+  const toggleExpand = (id: string) => setSelectedProducts(prev => prev.map(p => ({ ...p, isExpanded: p.productId === id ? !p.isExpanded : false })));
 
   const updateProductField = (productId: string, field: "plannedStartDate" | "plannedCompletionDate" | "requiredDate" | "productionNotes", value: string) =>
     setSelectedProducts(prev => prev.map(p => p.productId === productId ? { ...p, [field]: value } : p));
@@ -385,15 +385,15 @@ export function ProductionInHouseCreatePage() {
     const today = new Date().toISOString().split("T")[0];
     const presets: Record<string, Stage[]> = {
       standard: [
-        { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "4",  date: today },
-        { id: "02", name: "Cutting",         workCenter: "Cutter Auto-B",  leadHours: "12", date: today },
-        { id: "03", name: "Stitching",       workCenter: "Line 4A",        leadHours: "48", date: today },
+        { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "4", date: today },
+        { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", leadHours: "12", date: today },
+        { id: "03", name: "Stitching", workCenter: "Line 4A", leadHours: "48", date: today },
       ],
       expedited: [
-        { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "2",  date: today },
-        { id: "02", name: "Cutting",         workCenter: "Cutter Auto-B",  leadHours: "6",  date: today },
-        { id: "03", name: "Stitching",       workCenter: "Line 4A",        leadHours: "24", date: today },
-        { id: "04", name: "Finishing",       workCenter: "QC Table",       leadHours: "8",  date: today },
+        { id: "01", name: "Material Check", workCenter: "QC Station 1", leadHours: "2", date: today },
+        { id: "02", name: "Cutting", workCenter: "Cutter Auto-B", leadHours: "6", date: today },
+        { id: "03", name: "Stitching", workCenter: "Line 4A", leadHours: "24", date: today },
+        { id: "04", name: "Finishing", workCenter: "QC Table", leadHours: "8", date: today },
       ],
     };
     if (presets[preset]) setSelectedProducts(prev => prev.map(p => ({ ...p, stages: presets[preset] })));
@@ -416,13 +416,13 @@ export function ProductionInHouseCreatePage() {
   }, [selectedProducts]);
 
   const estimatedCost = useMemo(() => materialsRequirements.reduce((s, r) => s + r.requiredQty * r.cost, 0), [materialsRequirements]);
-  const totalUnits    = useMemo(() => selectedProducts.reduce((s, p) => s + p.variants.reduce((a, v) => a + Object.values(v.sizes).reduce((x, y) => x + y, 0), 0), 0), [selectedProducts]);
+  const totalUnits = useMemo(() => selectedProducts.reduce((s, p) => s + p.variants.reduce((a, v) => a + Object.values(v.sizes).reduce((x, y) => x + y, 0), 0), 0), [selectedProducts]);
 
   const buildPayload = (status: "Draft" | "Active" | "Material Check") => {
     const first = selectedProducts[0] || {};
     const planDbId = `PP-DB-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     const finalStatus = status === "Draft" ? "Draft" : "Active";
-    
+
     return {
       id: planDbId,
       planId: planId,
@@ -498,15 +498,15 @@ export function ProductionInHouseCreatePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft)
       })
-      .then(() => {
-        alert("Draft saved!");
-        router.push("/production/drafts");
-      })
-      .catch(err => {
-        console.error("Error saving draft to backend:", err);
-        alert("Saved locally to drafts.");
-        router.push("/production/drafts");
-      });
+        .then(() => {
+          alert("Draft saved!");
+          router.push("/production/drafts");
+        })
+        .catch(err => {
+          console.error("Error saving draft to backend:", err);
+          alert("Saved locally to drafts.");
+          router.push("/production/drafts");
+        });
     }
   };
 
@@ -515,36 +515,36 @@ export function ProductionInHouseCreatePage() {
     if (!selectedProducts.length) return;
     setIsSubmitting(true);
     const plan = buildPayload("Active");
-    
+
     if (typeof window !== "undefined") {
       fetch("http://localhost:5083/api/production-plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(plan)
       })
-      .then(res => res.json())
-      .then(savedPlan => {
-        setIsSubmitting(false);
-        router.push(`/production/plans`);
-      })
-      .catch(err => {
-        setIsSubmitting(false);
-        console.error("Failed to save in-house production plan to API:", err);
-        alert("Failed to save plan to backend.");
-      });
+        .then(res => res.json())
+        .then(savedPlan => {
+          setIsSubmitting(false);
+          router.push(`/production/plans`);
+        })
+        .catch(err => {
+          setIsSubmitting(false);
+          console.error("Failed to save in-house production plan to API:", err);
+          alert("Failed to save plan to backend.");
+        });
     }
   };
 
   const filteredFabrics = useMemo(() =>
     mockFabrics.filter(f => f.category === fabricModal.category && (!fabricModal.search.trim() || f.name.toLowerCase().includes(fabricModal.search.toLowerCase())))
-  , [fabricModal.category, fabricModal.search]);
+    , [fabricModal.category, fabricModal.search]);
 
   const productColors: Record<string, string> = { "Uniform": "#dbeafe", "Sports Uniform": "#fce7f3", "Retail Garment": "#d1fae5", "Corporate Wear": "#fef3c7" };
-  const productIcons: Record<string, string>  = { "Uniform": "school", "Sports Uniform": "sports_basketball", "Retail Garment": "checkroom", "Corporate Wear": "business_center" };
+  const productIcons: Record<string, string> = { "Uniform": "school", "Sports Uniform": "sports_basketball", "Retail Garment": "checkroom", "Corporate Wear": "business_center" };
 
   const steps = [
     { icon: "settings", label: "Configuration", sub: "Plan details & warehouse" },
-    { icon: "apparel",  label: "Products & Variants", sub: "Fabrics, sizes, routing" },
+    { icon: "apparel", label: "Products & Variants", sub: "Fabrics, sizes, routing" },
     { icon: "inventory", label: "BOM Review", sub: "Materials & stock check" },
   ];
 
@@ -787,9 +787,9 @@ export function ProductionInHouseCreatePage() {
                               {(["plannedStartDate", "plannedCompletionDate", "requiredDate"] as const).map((f, i) => (
                                 <div key={f}>
                                   <label style={S.fieldLabel}>{["Planned Start", "Planned End", "Required By"][i]}</label>
-                                  <NepaliDatePicker style={{ ...S.input, height: 38 }} value={adToBs((prod as any)[f])} 
-                                    onChange={e => updateProductField(prod.productId, f, bsToAd(e.target.value))} 
-                                    onDateChange={bsVal => updateProductField(prod.productId, f, bsToAd(bsVal))} 
+                                  <NepaliDatePicker style={{ ...S.input, height: 38 }} value={adToBs((prod as any)[f])}
+                                    onChange={e => updateProductField(prod.productId, f, bsToAd(e.target.value))}
+                                    onDateChange={bsVal => updateProductField(prod.productId, f, bsToAd(bsVal))}
                                   />
                                 </div>
                               ))}
