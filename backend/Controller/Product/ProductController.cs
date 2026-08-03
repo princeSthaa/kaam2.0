@@ -1,13 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using backend.Dto.Product;
 using backend.Helpers;
-using backend.Model;
-using backend.Model.Enums;
 using backend.Service.Product;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controller.Product
@@ -80,18 +73,16 @@ namespace backend.Controller.Product
                 relativeImagePath = await SaveProductImageFileAsync(createDto.Image);
             }
 
-            var parsedSizes = ProductSizeParser.ParseSizes(createDto.Sizes);
-
             var productDto = new ProductDto
             {
                 Id = Guid.NewGuid(),
+                SKU = string.IsNullOrWhiteSpace(createDto.SKU) ? $"SKU-{Guid.NewGuid().ToString()[..8]}" : createDto.SKU,
                 Name = createDto.Name,
                 ImagePath = relativeImagePath,
-                Sizes = parsedSizes,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = "System",
-                UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = "System"
+                isActive = true,
+                ProductCategoryId = createDto.ProductCategoryId,
+                // CreatedAt = DateTime.UtcNow,
+                // UpdatedAt = DateTime.UtcNow
             };
 
             var created = await _ProductService.CreateAsync(productDto);
@@ -154,12 +145,11 @@ namespace backend.Controller.Product
             }
 
             existing.Name = string.IsNullOrWhiteSpace(updateDto.Name) ? existing.Name : updateDto.Name;
+            if (!string.IsNullOrWhiteSpace(updateDto.SKU)) existing.SKU = updateDto.SKU;
+            if (updateDto.ProductCategoryId.HasValue) existing.ProductCategoryId = updateDto.ProductCategoryId;
+            if (updateDto.isActive.HasValue) existing.isActive = updateDto.isActive.Value;
             existing.ImagePath = relativeImagePath;
-            if (updateDto.Sizes != null)
-            {
-                existing.Sizes = ProductSizeParser.ParseSizes(updateDto.Sizes);
-            }
-            existing.UpdatedAt = DateTime.UtcNow;
+            // existing.UpdatedAt = DateTime.UtcNow;
 
             var updated = await _ProductService.UpdateAsync(id, existing);
 
@@ -231,5 +221,24 @@ namespace backend.Controller.Product
             return $"/Media/images/products/{fileName}";
         }
         #endregion
+    }
+
+    public class ProductCreateDto
+    {
+        public string? SKU { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public IFormFile? Image { get; set; }
+        public Guid? ProductCategoryId { get; set; }
+        public bool isActive { get; set; } = true;
+    }
+
+    public class ProductUpdateDto
+    {
+        public string? SKU { get; set; }
+        public string? Name { get; set; }
+        public string? ImagePath { get; set; }
+        public IFormFile? Image { get; set; }
+        public Guid? ProductCategoryId { get; set; }
+        public bool? isActive { get; set; }
     }
 }

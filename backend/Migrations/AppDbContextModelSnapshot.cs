@@ -331,11 +331,6 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("ImagePath")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -365,11 +360,6 @@ namespace backend.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("MaterialCategoryId");
@@ -388,10 +378,6 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("MaterialTypeId")
                         .HasColumnType("uniqueidentifier");
 
@@ -402,10 +388,6 @@ namespace backend.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -429,21 +411,62 @@ namespace backend.Migrations
 
                     b.Property<string>("InspectionStatus")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("InspectorName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("MaterialId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MaterialName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("MaterialRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("SupplierId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialRequestId")
+                        .IsUnique();
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("MaterialInspections");
+                });
+
+            modelBuilder.Entity("backend.Model.MaterialInspectionItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InspectionStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MaterialInspectionId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Notes")
@@ -462,9 +485,11 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MaterialRequestId");
+                    b.HasIndex("MaterialId");
 
-                    b.ToTable("MaterialInspections");
+                    b.HasIndex("MaterialInspectionId");
+
+                    b.ToTable("MaterialInspectionItems");
                 });
 
             modelBuilder.Entity("backend.Model.MaterialIssue", b =>
@@ -528,24 +553,18 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("MaterialId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MaterialName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Notes")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("RequestNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("RequestedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("RequestedQuantity")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("RequiredDate")
                         .HasColumnType("datetime2");
@@ -556,18 +575,10 @@ namespace backend.Migrations
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("SupplierName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Urgency")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -576,6 +587,30 @@ namespace backend.Migrations
                     b.HasIndex("SupplierId");
 
                     b.ToTable("MaterialRequests");
+                });
+
+            modelBuilder.Entity("backend.Model.MaterialRequestItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MaterialRequestId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal>("RequestedQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialId");
+
+                    b.HasIndex("MaterialRequestId");
+
+                    b.ToTable("MaterialRequestItems");
                 });
 
             modelBuilder.Entity("backend.Model.MaterialType", b =>
@@ -587,10 +622,6 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -598,10 +629,6 @@ namespace backend.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -868,32 +895,121 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ImagePath")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Sizes")
+                    b.Property<Guid>("ProductCategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("SKU")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("isActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductCategoryId");
+
+                    b.HasIndex("SKU")
+                        .IsUnique();
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CategoryCode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("isActive")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Products");
+                    b.HasIndex("CategoryCode")
+                        .IsUnique();
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductMaterialRequirement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MaterialId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("ProductSize")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MaterialId");
+
+                    b.HasIndex("ProductId", "MaterialId", "ProductSize")
+                        .IsUnique();
+
+                    b.ToTable("ProductMaterialRequirements");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductProductionStage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductionStageId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductionStageId");
+
+                    b.HasIndex("ProductId", "ProductionStageId")
+                        .IsUnique();
+
+                    b.ToTable("ProductProductionStage");
                 });
 
             modelBuilder.Entity("backend.Model.ProductionPlan", b =>
@@ -1138,10 +1254,6 @@ namespace backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("OperatorName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1162,23 +1274,11 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("StageId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("StageName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid>("WorkCenterId")
                         .HasColumnType("uniqueidentifier");
@@ -1190,6 +1290,28 @@ namespace backend.Migrations
                     b.HasIndex("WorkCenterId");
 
                     b.ToTable("ProductionPlanStages");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductionStage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("isActive")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ProductionStages");
                 });
 
             modelBuilder.Entity("backend.Model.Supplier", b =>
@@ -1534,12 +1656,38 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Model.MaterialInspection", b =>
                 {
                     b.HasOne("backend.Model.MaterialRequest", "MaterialRequest")
-                        .WithMany("MaterialInspections")
-                        .HasForeignKey("MaterialRequestId")
+                        .WithOne("MaterialInspection")
+                        .HasForeignKey("backend.Model.MaterialInspection", "MaterialRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("backend.Model.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("MaterialRequest");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("backend.Model.MaterialInspectionItem", b =>
+                {
+                    b.HasOne("backend.Model.Material", "Material")
+                        .WithMany()
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Model.MaterialInspection", "MaterialInspection")
+                        .WithMany("Items")
+                        .HasForeignKey("MaterialInspectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Material");
+
+                    b.Navigation("MaterialInspection");
                 });
 
             modelBuilder.Entity("backend.Model.MaterialRequest", b =>
@@ -1550,6 +1698,25 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("backend.Model.MaterialRequestItem", b =>
+                {
+                    b.HasOne("backend.Model.Material", "Material")
+                        .WithMany("MaterialRequestItems")
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Model.MaterialRequest", "MaterialRequest")
+                        .WithMany("Items")
+                        .HasForeignKey("MaterialRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Material");
+
+                    b.Navigation("MaterialRequest");
                 });
 
             modelBuilder.Entity("backend.Model.Order", b =>
@@ -1628,6 +1795,55 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Outlet");
+                });
+
+            modelBuilder.Entity("backend.Model.Product", b =>
+                {
+                    b.HasOne("backend.Model.ProductCategory", "ProductCategory")
+                        .WithMany("Products")
+                        .HasForeignKey("ProductCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProductCategory");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductMaterialRequirement", b =>
+                {
+                    b.HasOne("backend.Model.Material", "Material")
+                        .WithMany("ProductMaterialRequirements")
+                        .HasForeignKey("MaterialId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("backend.Model.Product", "Product")
+                        .WithMany("MaterialRequirements")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Material");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductProductionStage", b =>
+                {
+                    b.HasOne("backend.Model.Product", "Product")
+                        .WithMany("ProductionStages")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Model.ProductionStage", "ProductionStage")
+                        .WithMany("ProductProductionStages")
+                        .HasForeignKey("ProductionStageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("ProductionStage");
                 });
 
             modelBuilder.Entity("backend.Model.ProductionPlanProduct", b =>
@@ -1723,6 +1939,13 @@ namespace backend.Migrations
                     b.Navigation("Orders");
                 });
 
+            modelBuilder.Entity("backend.Model.Material", b =>
+                {
+                    b.Navigation("MaterialRequestItems");
+
+                    b.Navigation("ProductMaterialRequirements");
+                });
+
             modelBuilder.Entity("backend.Model.MaterialCategory", b =>
                 {
                     b.Navigation("Materials");
@@ -1730,9 +1953,16 @@ namespace backend.Migrations
                     b.Navigation("SupplierMaterialCategories");
                 });
 
+            modelBuilder.Entity("backend.Model.MaterialInspection", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("backend.Model.MaterialRequest", b =>
                 {
-                    b.Navigation("MaterialInspections");
+                    b.Navigation("Items");
+
+                    b.Navigation("MaterialInspection");
                 });
 
             modelBuilder.Entity("backend.Model.MaterialType", b =>
@@ -1757,6 +1987,18 @@ namespace backend.Migrations
                     b.Navigation("OutletDemands");
                 });
 
+            modelBuilder.Entity("backend.Model.Product", b =>
+                {
+                    b.Navigation("MaterialRequirements");
+
+                    b.Navigation("ProductionStages");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductCategory", b =>
+                {
+                    b.Navigation("Products");
+                });
+
             modelBuilder.Entity("backend.Model.ProductionPlan", b =>
                 {
                     b.Navigation("ProductionPlanProducts");
@@ -1769,6 +2011,11 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Model.ProductionPlanProduct", b =>
                 {
                     b.Navigation("ProductionPlanProductSizes");
+                });
+
+            modelBuilder.Entity("backend.Model.ProductionStage", b =>
+                {
+                    b.Navigation("ProductProductionStages");
                 });
 
             modelBuilder.Entity("backend.Model.Supplier", b =>

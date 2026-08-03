@@ -1,14 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.MaterialType;
-using backend.Model;
 
 namespace backend.Service.MaterialType
 {
@@ -26,9 +18,7 @@ namespace backend.Service.MaterialType
             Guid? id = null,
             string? name = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -38,9 +28,7 @@ namespace backend.Service.MaterialType
                         @Id = {id},
                         @Name = {name},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
+                        @UpdatedAt = {updatedAt}
                 ")
                 .ToListAsync();
         }
@@ -53,20 +41,17 @@ namespace backend.Service.MaterialType
 
         public async Task<bool> CreateAsync(MaterialTypeDto materialTypeDto)
         {
-            if (materialTypeDto.Id == Guid.Empty)
-            {
-                materialTypeDto.Id = Guid.NewGuid();
-            }
-
+            materialTypeDto.Id = Guid.NewGuid();
+            materialTypeDto.CreatedAt = DateTime.UtcNow;
+            materialTypeDto.UpdatedAt = DateTime.UtcNow;
+            
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertMaterialType
 
                     @Id = {materialTypeDto.Id},
                     @Name = {materialTypeDto.Name},
                     @CreatedAt = {materialTypeDto.CreatedAt},
-                    @CreatedBy = {materialTypeDto.CreatedBy},
-                    @UpdatedAt = {materialTypeDto.UpdatedAt},
-                    @UpdatedBy = {materialTypeDto.UpdatedBy}
+                    @UpdatedAt = {materialTypeDto.UpdatedAt}
             ");
 
             return true;
@@ -81,9 +66,7 @@ namespace backend.Service.MaterialType
                     @Id = {materialTypeDto.Id},
                     @Name = {materialTypeDto.Name},
                     @CreatedAt = {materialTypeDto.CreatedAt},
-                    @CreatedBy = {materialTypeDto.CreatedBy},
-                    @UpdatedAt = {materialTypeDto.UpdatedAt},
-                    @UpdatedBy = {materialTypeDto.UpdatedBy}
+                    @UpdatedAt = {materialTypeDto.UpdatedAt}
             ");
 
             return true;

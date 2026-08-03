@@ -1,14 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.MaterialCategory;
-using backend.Model;
 
 namespace backend.Service.MaterialCategory
 {
@@ -26,9 +18,7 @@ namespace backend.Service.MaterialCategory
             Guid? id = null,
             string? name = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? materialTypeId = null
         )
         {
@@ -39,9 +29,7 @@ namespace backend.Service.MaterialCategory
                         @Id = {id},
                         @Name = {name},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @MaterialTypeId = {materialTypeId}
                 ")
                 .ToListAsync();
@@ -49,26 +37,22 @@ namespace backend.Service.MaterialCategory
 
         public async Task<MaterialCategoryGetDto?> GetByIdAsync(Guid id)
         {
-            var results = await GetAllAsync(id: id);
-            return results.FirstOrDefault();
+            return await GetByIdAsync(id: id);
         }
 
         public async Task<bool> CreateAsync(MaterialCategoryDto materialCategoryDto)
         {
-            if (materialCategoryDto.Id == Guid.Empty)
-            {
-                materialCategoryDto.Id = Guid.NewGuid();
-            }
-
+            materialCategoryDto.Id = Guid.NewGuid();
+            materialCategoryDto.CreatedAt = DateTime.UtcNow;
+            materialCategoryDto.UpdatedAt = DateTime.UtcNow;
+            
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertMaterialCategory
 
                     @Id = {materialCategoryDto.Id},
                     @Name = {materialCategoryDto.Name},
                     @CreatedAt = {materialCategoryDto.CreatedAt},
-                    @CreatedBy = {materialCategoryDto.CreatedBy},
                     @UpdatedAt = {materialCategoryDto.UpdatedAt},
-                    @UpdatedBy = {materialCategoryDto.UpdatedBy},
                     @MaterialTypeId = {materialCategoryDto.MaterialTypeId}
             ");
 
@@ -84,9 +68,7 @@ namespace backend.Service.MaterialCategory
                     @Id = {materialCategoryDto.Id},
                     @Name = {materialCategoryDto.Name},
                     @CreatedAt = {materialCategoryDto.CreatedAt},
-                    @CreatedBy = {materialCategoryDto.CreatedBy},
                     @UpdatedAt = {materialCategoryDto.UpdatedAt},
-                    @UpdatedBy = {materialCategoryDto.UpdatedBy},
                     @MaterialTypeId = {materialCategoryDto.MaterialTypeId}
             ");
 

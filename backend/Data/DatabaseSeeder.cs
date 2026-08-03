@@ -22,11 +22,61 @@ namespace backend.Data
                     BEGIN
                         ALTER TABLE [ProductionPlanProducts] ADD [OrderItemId] UNIQUEIDENTIFIER NULL;
                     END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[Products]') AND name = 'SKU')
+                    BEGIN
+                        ALTER TABLE [Products] ADD [SKU] NVARCHAR(50) NULL;
+                    END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[Products]') AND name = 'isActive')
+                    BEGIN
+                        ALTER TABLE [Products] ADD [isActive] BIT NOT NULL DEFAULT 1;
+                    END
+
+                    IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[Products]') AND name = 'ProductCategoryId')
+                    BEGIN
+                        ALTER TABLE [Products] ADD [ProductCategoryId] UNIQUEIDENTIFIER NULL;
+                    END
                 ");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Migration note: {ex.Message}");
+            }
+
+            if (!context.ProductionStages.Any())
+            {
+                var defaultStages = new[] { "Cutting", "Stitching", "Quality Check", "Ironing & Packaging" };
+                foreach (var stageName in defaultStages)
+                {
+                    context.ProductionStages.Add(new ProductionStage { Id = Guid.NewGuid(), Name = stageName, isActive = true });
+                }
+                context.SaveChanges();
+            }
+
+            if (!context.ProductCategories.Any())
+            {
+                var categories = new[] 
+                {
+                    ("CAT-SHIRTS", "Shirts"),
+                    ("CAT-TROUSERS", "Trousers"),
+                    ("CAT-UNIFORMS", "School & Corporate Uniforms"),
+                    ("CAT-ACCESSORIES", "Accessories")
+                };
+                var now = DateTime.UtcNow;
+                foreach (var (code, name) in categories)
+                {
+                    context.ProductCategories.Add(new ProductCategory 
+                    { 
+                        Id = Guid.NewGuid(), 
+                        CategoryCode = code, 
+                        Name = name, 
+                        isActive = true,
+                        CreatedAt = now,
+                        UpdatedAt = now
+                    });
+                }
+                context.SaveChanges();
             }
 
             var customers = new List<Customer>();
@@ -67,14 +117,23 @@ namespace backend.Data
                 else
                 {
                     var prods = new List<Product>();
+                    var defaultCategory = context.ProductCategories.FirstOrDefault();
+                    var categoryId = defaultCategory?.Id ?? Guid.NewGuid();
+                    var now = DateTime.UtcNow;
+
                     for (int i = 1; i <= 25; i++)
                     {
                         var imgName = prodImgFiles[(i - 1) % prodImgFiles.Length];
                         prods.Add(new Product
                         {
                             Id = Guid.NewGuid(),
+                            SKU = $"SKU-PROD-{i:D3}",
                             Name = $"Product {i}",
-                            ImagePath = $"/Media/images/products/{imgName}"
+                            isActive = true,
+                            ProductCategoryId = categoryId,
+                            ImagePath = $"/Media/images/products/{imgName}",
+                            CreatedAt = now,
+                            UpdatedAt = now
                         });
                     }
                     context.Products.AddRange(prods);
@@ -389,6 +448,9 @@ namespace backend.Data
             // 2. Seed Materials
             if (context.Materials.Any())
             {
+                context.MaterialInspections.RemoveRange(context.MaterialInspections);
+                context.MaterialRequestItems.RemoveRange(context.MaterialRequestItems);
+                context.MaterialRequests.RemoveRange(context.MaterialRequests);
                 context.BillOfMaterials.RemoveRange(context.BillOfMaterials);
                 context.Materials.RemoveRange(context.Materials);
                 context.SaveChanges();
@@ -406,11 +468,9 @@ namespace backend.Data
                         AvailableQty = 1500,
                         Unit = "m",
                         CostPerUnit = 180,
-                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        ImagePath = "/Media/images/materials/Fabric/Cotton/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -422,11 +482,9 @@ namespace backend.Data
                         AvailableQty = 1200,
                         Unit = "m",
                         CostPerUnit = 220,
-                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        ImagePath = "/Media/images/materials/Fabric/Cotton/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -438,11 +496,9 @@ namespace backend.Data
                         AvailableQty = 900,
                         Unit = "m",
                         CostPerUnit = 310,
-                        ImagePath = "/Media/images/fabrics/FAB-002.png",
+                        ImagePath = "/Media/images/materials/Fabric/Denim/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -454,11 +510,9 @@ namespace backend.Data
                         AvailableQty = 1100,
                         Unit = "m",
                         CostPerUnit = 290,
-                        ImagePath = "/Media/images/fabrics/FAB-002.png",
+                        ImagePath = "/Media/images/materials/Fabric/Denim/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -470,11 +524,9 @@ namespace backend.Data
                         AvailableQty = 2000,
                         Unit = "m",
                         CostPerUnit = 140,
-                        ImagePath = "/Media/images/fabrics/FAB-003.png",
+                        ImagePath = "/Media/images/materials/Fabric/Polyester/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -486,11 +538,9 @@ namespace backend.Data
                         AvailableQty = 1800,
                         Unit = "m",
                         CostPerUnit = 160,
-                        ImagePath = "/Media/images/fabrics/FAB-003.png",
+                        ImagePath = "/Media/images/materials/Fabric/Polyester/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -502,11 +552,9 @@ namespace backend.Data
                         AvailableQty = 500,
                         Unit = "m",
                         CostPerUnit = 650,
-                        ImagePath = "/Media/images/fabrics/FAB-004.png",
+                        ImagePath = "/Media/images/materials/Fabric/Silk/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -518,11 +566,9 @@ namespace backend.Data
                         AvailableQty = 750,
                         Unit = "m",
                         CostPerUnit = 380,
-                        ImagePath = "/Media/images/fabrics/FAB-005.png",
+                        ImagePath = "/Media/images/materials/Fabric/Linen/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -534,11 +580,9 @@ namespace backend.Data
                         AvailableQty = 5000,
                         Unit = "spool",
                         CostPerUnit = 25,
-                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        ImagePath = "/Media/images/materials/Thread/Polyester/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     },
                     new Material
                     {
@@ -550,11 +594,9 @@ namespace backend.Data
                         AvailableQty = 10000,
                         Unit = "pcs",
                         CostPerUnit = 5,
-                        ImagePath = "/Media/images/fabrics/FAB-001.jpg",
+                        ImagePath = "/Media/images/materials/Accessory/Trims & Fasteners/MAT-001.jpg",
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     }
                 };
 
@@ -686,18 +728,50 @@ namespace backend.Data
             {
                 var s1 = suppliers.FirstOrDefault(s => s.Name == "Everest Textiles Ltd") ?? suppliers.FirstOrDefault();
                 var s3 = suppliers.FirstOrDefault(s => s.Name == "Nepal Accessories Pvt Ltd") ?? suppliers.LastOrDefault();
+                var m1 = context.Materials.FirstOrDefault();
+                var m2 = context.Materials.OrderBy(m => m.Id).LastOrDefault();
 
-                requests = new List<MaterialRequest>
+                var req1 = new MaterialRequest
                 {
-                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Dyed Cotton", RequestedQuantity = 500, SupplierId = s1?.Id, SupplierName = s1?.Name ?? "Everest Textiles Ltd", Urgency = "High", RequiredDate = DateTime.UtcNow.AddDays(3), Notes = "Shortage for upcoming production batch", RequestedBy = "Warehouse Manager", Status = MaterialRequestStatus.Draft, CreatedAt = DateTime.UtcNow, CreatedBy = "Warehouse Manager", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Warehouse Manager" },
-                    new MaterialRequest { Id = Guid.NewGuid(), MaterialId = Guid.NewGuid().ToString(), MaterialName = "Zipper", RequestedQuantity = 1000, SupplierId = s3?.Id, SupplierName = s3?.Name ?? "Nepal Accessories Pvt Ltd", Urgency = "Normal", RequiredDate = DateTime.UtcNow.AddDays(5), Notes = "Routine raw material requisition", RequestedBy = "Stock Controller", Status = MaterialRequestStatus.Ordered, CreatedAt = DateTime.UtcNow, CreatedBy = "Stock Controller", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Stock Controller" }
+                    Id = Guid.NewGuid(),
+                    RequestNumber = "PR-20260802-001",
+                    SupplierId = s1?.Id,
+                    Status = MaterialRequestStatus.Draft,
+                    RequiredDate = DateTime.UtcNow.AddDays(3),
+                    Notes = "Shortage for upcoming production batch",
+                    RequestedBy = "Warehouse Manager",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "Warehouse Manager",
+                    UpdatedAt = DateTime.UtcNow,
+                    UpdatedBy = "Warehouse Manager",
+                    Items = new List<MaterialRequestItem>()
                 };
+                if (m1 != null) req1.Items.Add(new MaterialRequestItem { Id = Guid.NewGuid(), MaterialId = m1.Id, RequestedQuantity = 500 });
+
+                var req2 = new MaterialRequest
+                {
+                    Id = Guid.NewGuid(),
+                    RequestNumber = "PR-20260802-002",
+                    SupplierId = s3?.Id,
+                    Status = MaterialRequestStatus.Ordered,
+                    RequiredDate = DateTime.UtcNow.AddDays(5),
+                    Notes = "Routine raw material requisition",
+                    RequestedBy = "Stock Controller",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = "Stock Controller",
+                    UpdatedAt = DateTime.UtcNow,
+                    UpdatedBy = "Stock Controller",
+                    Items = new List<MaterialRequestItem>()
+                };
+                if (m2 != null) req2.Items.Add(new MaterialRequestItem { Id = Guid.NewGuid(), MaterialId = m2.Id, RequestedQuantity = 1000 });
+
+                requests = new List<MaterialRequest> { req1, req2 };
                 context.MaterialRequests.AddRange(requests);
                 context.SaveChanges();
             }
             else
             {
-                requests = context.MaterialRequests.ToList();
+                requests = context.MaterialRequests.Include(r => r.Items).ToList();
             }
 
             // Seed MaterialIssues
@@ -713,14 +787,40 @@ namespace backend.Data
             if (!context.MaterialInspections.Any() && requests.Any())
             {
                 var r1 = requests.First();
-                var r2 = requests.Last();
+                var item1 = r1.Items.FirstOrDefault();
 
-                context.MaterialInspections.AddRange(new List<MaterialInspection>
+                if (item1 != null)
                 {
-                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = r1.MaterialId, MaterialName = r1.MaterialName, MaterialRequestId = r1.Id, ReceivedQuantity = 1000, InspectionStatus = "Accepted", Notes = "Passed quality test", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" },
-                    new MaterialInspection { Id = Guid.NewGuid(), MaterialId = r2.MaterialId, MaterialName = r2.MaterialName, MaterialRequestId = r2.Id, ReceivedQuantity = 250, InspectionStatus = "Purchase Return", Notes = "Corroded batch - returned to supplier", InspectorName = "Suresh Quality Audit", CreatedAt = DateTime.UtcNow, CreatedBy = "Suresh Quality Audit", UpdatedAt = DateTime.UtcNow, UpdatedBy = "Suresh Quality Audit" }
-                });
-                context.SaveChanges();
+                    var insp1 = new MaterialInspection
+                    {
+                        Id = Guid.NewGuid(),
+                        MaterialRequestId = r1.Id,
+                        InspectionStatus = "Completed",
+                        Notes = "Passed quality test",
+                        InspectorName = "Suresh Quality Audit",
+                        CreatedAt = DateTime.UtcNow,
+                        CreatedBy = "Suresh Quality Audit",
+                        UpdatedAt = DateTime.UtcNow,
+                        UpdatedBy = "Suresh Quality Audit",
+                        Items = new List<MaterialInspectionItem>
+                        {
+                            new MaterialInspectionItem
+                            {
+                                Id = Guid.NewGuid(),
+                                MaterialId = item1.MaterialId,
+                                ReceivedQuantity = item1.RequestedQuantity,
+                                InspectionStatus = "Approved",
+                                Notes = "Batch verified",
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedBy = "Suresh Quality Audit",
+                                UpdatedAt = DateTime.UtcNow,
+                                UpdatedBy = "Suresh Quality Audit"
+                            }
+                        }
+                    };
+                    context.MaterialInspections.Add(insp1);
+                    context.SaveChanges();
+                }
             }
 
             // Seed FinishedGoodsHandovers

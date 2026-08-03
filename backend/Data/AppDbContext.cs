@@ -34,12 +34,17 @@ namespace backend.Data
         public DbSet<Transaction> Transactions { get; set; } = null!;
         public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
         public DbSet<MaterialRequest> MaterialRequests { get; set; } = null!;
+        public DbSet<MaterialRequestItem> MaterialRequestItems { get; set; } = null!;
         public DbSet<MaterialIssue> MaterialIssues { get; set; } = null!;
         public DbSet<MaterialInspection> MaterialInspections { get; set; } = null!;
+        public DbSet<MaterialInspectionItem> MaterialInspectionItems { get; set; } = null!;
         public DbSet<FinishedGoodsHandover> FinishedGoodsHandovers { get; set; } = null!;
         public DbSet<CustomerReturn> CustomerReturns { get; set; } = null!;
         public DbSet<Supplier> Suppliers { get; set; } = null!;
         public DbSet<SupplierMaterialCategory> SupplierMaterialCategories { get; set; } = null!;
+        public DbSet<ProductionStage> ProductionStages { get; set; } = null!;
+        public DbSet<ProductProductionStage> ProductProductionStages { get; set; } = null!;
+        public DbSet<ProductCategory> ProductCategories { get; set; } = null!;
         // </crudgen:dbsets>
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -67,11 +72,41 @@ namespace backend.Data
                 .HasForeignKey(e => e.SupplierId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            modelBuilder.Entity<MaterialInspection>()
+            modelBuilder.Entity<MaterialRequestItem>()
                 .HasOne(e => e.MaterialRequest)
-                .WithMany(p => p.MaterialInspections)
+                .WithMany(p => p.Items)
                 .HasForeignKey(e => e.MaterialRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MaterialRequestItem>()
+                .HasOne(e => e.Material)
+                .WithMany(p => p.MaterialRequestItems)
+                .HasForeignKey(e => e.MaterialId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<MaterialInspection>()
+                .HasOne(e => e.MaterialRequest)
+                .WithOne(p => p.MaterialInspection)
+                .HasForeignKey<MaterialInspection>(e => e.MaterialRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MaterialInspection>()
+                .HasOne(e => e.Supplier)
+                .WithMany()
+                .HasForeignKey(e => e.SupplierId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<MaterialInspectionItem>()
+                .HasOne(e => e.MaterialInspection)
+                .WithMany(p => p.Items)
+                .HasForeignKey(e => e.MaterialInspectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MaterialInspectionItem>()
+                .HasOne(e => e.Material)
+                .WithMany()
+                .HasForeignKey(e => e.MaterialId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Material>()
                 .HasOne(e => e.MaterialType)
@@ -87,7 +122,6 @@ namespace backend.Data
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("FK_Materials_MaterialCategories_MaterialCategoryId");
 
-            // <crudgen:modelbuilder>
             modelBuilder.Entity<Order>()
                 .HasOne(e => e.Customer)
                 .WithMany(p => p.Orders)
@@ -185,7 +219,19 @@ namespace backend.Data
                 .HasForeignKey(e => e.OutletId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // </crudgen:modelbuilder>
+            modelBuilder.Entity<ProductMaterialRequirement>()
+            .HasOne(e => e.Product)
+            .WithMany(p => p.MaterialRequirements)
+            .HasForeignKey(e => e.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ProductMaterialRequirement>()
+            .HasOne(e => e.Material)
+            .WithMany(p => p.ProductMaterialRequirements)
+            .HasForeignKey(e => e.MaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+        
+        
         }
     }
 }

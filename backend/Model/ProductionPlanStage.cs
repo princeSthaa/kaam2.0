@@ -9,11 +9,12 @@ namespace backend.Model
     [Table("ProductionPlanStages")]
     public class ProductionPlanStage
     {
-        // <crudgen:properties>
         [Key]
         public Guid Id { get; set; }
-        public string StageId { get; set; } = string.Empty;
-        public string StageName { get; set; } = string.Empty;
+
+        public Guid ProductionPlanId { get; set; }
+        public virtual ProductionPlan ProductionPlan { get; set; } = null!;
+
         public Guid WorkCenterId { get; set; }
         public virtual WorkCenter WorkCenter { get; set; } = null!;
         public string OperatorName { get; set; } = string.Empty;
@@ -26,12 +27,8 @@ namespace backend.Model
         public DateTime ActualEndDate { get; set; }
         public string Remarks { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
-        public Guid ProductionPlanId { get; set; }
-        public virtual ProductionPlan ProductionPlan { get; set; } = null!;
-        // </crudgen:properties>
+        
     }
 }
 

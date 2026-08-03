@@ -1,3 +1,27 @@
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ProductionPlanStages]') AND name = 'StageId')
+BEGIN
+    ALTER TABLE [ProductionPlanStages] ADD [StageId] NVARCHAR(50) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ProductionPlanStages]') AND name = 'StageName')
+BEGIN
+    ALTER TABLE [ProductionPlanStages] ADD [StageName] NVARCHAR(100) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ProductionPlanStages]') AND name = 'CreatedBy')
+BEGIN
+    ALTER TABLE [ProductionPlanStages] ADD [CreatedBy] NVARCHAR(100) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ProductionPlanStages]') AND name = 'UpdatedBy')
+BEGIN
+    ALTER TABLE [ProductionPlanStages] ADD [UpdatedBy] NVARCHAR(100) NULL;
+END
+GO
+
 CREATE OR ALTER PROCEDURE sp_GetProductionPlanStages
     @Id NVARCHAR(MAX) = NULL,
     @StageId NVARCHAR(MAX) = NULL,

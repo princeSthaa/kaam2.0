@@ -13,9 +13,7 @@ namespace backend.Service.MaterialCategory
             Guid? id = null,
             string? name = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? materialTypeId = null
         );
 

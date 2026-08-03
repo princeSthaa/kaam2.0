@@ -9,9 +9,7 @@ CREATE OR ALTER PROCEDURE sp_GetMaterials
     @ImagePath NVARCHAR(MAX) = NULL,
     @CostPerUnit DECIMAL(18,2) = NULL,
     @CreatedAt DATETIME2 = NULL,
-    @CreatedBy NVARCHAR(MAX) = NULL,
-    @UpdatedAt DATETIME2 = NULL,
-    @UpdatedBy NVARCHAR(MAX) = NULL
+    @UpdatedAt DATETIME2 = NULL
 AS
 BEGIN
     SET NOCOUNT ON;

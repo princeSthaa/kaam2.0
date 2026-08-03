@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -8,22 +10,24 @@ namespace backend.Model
     {
         [Key]
         public Guid Id { get; set; }
-        public string MaterialId { get; set; } = string.Empty;
-        public string MaterialName { get; set; } = string.Empty;
 
         [ForeignKey(nameof(MaterialRequest))]
         public Guid MaterialRequestId { get; set; }
         public virtual MaterialRequest MaterialRequest { get; set; } = null!;
-            
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal ReceivedQuantity { get; set; }
-        public string InspectionStatus { get; set; } = string.Empty;
+
+        [ForeignKey(nameof(Supplier))]
+        public Guid? SupplierId { get; set; }
+        public virtual Supplier? Supplier { get; set; }
+
+        [MaxLength(50)]
+        public string InspectionStatus { get; set; } = "Pending";
         public string Notes { get; set; } = string.Empty;
         public string InspectorName { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string CreatedBy { get; set; } = string.Empty;
-        public DateTime UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public string UpdatedBy { get; set; } = string.Empty;
-    
+
+        public virtual ICollection<MaterialInspectionItem> Items { get; set; } = new List<MaterialInspectionItem>();
     }
 }

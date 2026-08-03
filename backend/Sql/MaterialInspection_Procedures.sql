@@ -1,9 +1,6 @@
 CREATE OR ALTER PROCEDURE sp_GetMaterialInspections
     @Id UNIQUEIDENTIFIER = NULL,
-    @MaterialId NVARCHAR(MAX) = NULL,
-    @MaterialName NVARCHAR(MAX) = NULL,
     @MaterialRequestId UNIQUEIDENTIFIER = NULL,
-    @ReceivedQuantity DECIMAL(18,2) = NULL,
     @InspectionStatus NVARCHAR(MAX) = NULL,
     @Notes NVARCHAR(MAX) = NULL,
     @InspectorName NVARCHAR(MAX) = NULL,
@@ -18,10 +15,7 @@ BEGIN
     SELECT * FROM [MaterialInspections]
     WHERE
         (@Id IS NULL OR [Id] = @Id)
-        AND (@MaterialId IS NULL OR [MaterialId] = @MaterialId)
-        AND (@MaterialName IS NULL OR [MaterialName] = @MaterialName)
         AND (@MaterialRequestId IS NULL OR [MaterialRequestId] = @MaterialRequestId)
-        AND (@ReceivedQuantity IS NULL OR [ReceivedQuantity] = @ReceivedQuantity)
         AND (@InspectionStatus IS NULL OR [InspectionStatus] = @InspectionStatus)
         AND (@Notes IS NULL OR [Notes] = @Notes)
         AND (@InspectorName IS NULL OR [InspectorName] = @InspectorName)
@@ -34,10 +28,7 @@ GO
 
 CREATE OR ALTER PROCEDURE sp_InsertMaterialInspection
     @Id UNIQUEIDENTIFIER,
-    @MaterialId NVARCHAR(MAX),
-    @MaterialName NVARCHAR(MAX),
     @MaterialRequestId UNIQUEIDENTIFIER,
-    @ReceivedQuantity DECIMAL(18,2),
     @InspectionStatus NVARCHAR(MAX),
     @Notes NVARCHAR(MAX),
     @InspectorName NVARCHAR(MAX),
@@ -50,20 +41,17 @@ BEGIN
     SET NOCOUNT ON;
 
     INSERT INTO [MaterialInspections] (
-        [Id], [MaterialId], [MaterialName], [MaterialRequestId], [ReceivedQuantity], [InspectionStatus], [Notes], [InspectorName], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
+        [Id], [MaterialRequestId], [InspectionStatus], [Notes], [InspectorName], [CreatedAt], [CreatedBy], [UpdatedAt], [UpdatedBy]
     )
     VALUES (
-        @Id, @MaterialId, @MaterialName, @MaterialRequestId, @ReceivedQuantity, @InspectionStatus, @Notes, @InspectorName, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
+        @Id, @MaterialRequestId, @InspectionStatus, @Notes, @InspectorName, @CreatedAt, @CreatedBy, @UpdatedAt, @UpdatedBy
     );
 END
 GO
 
 CREATE OR ALTER PROCEDURE sp_UpdateMaterialInspection
     @Id UNIQUEIDENTIFIER,
-    @MaterialId NVARCHAR(MAX),
-    @MaterialName NVARCHAR(MAX),
     @MaterialRequestId UNIQUEIDENTIFIER,
-    @ReceivedQuantity DECIMAL(18,2),
     @InspectionStatus NVARCHAR(MAX),
     @Notes NVARCHAR(MAX),
     @InspectorName NVARCHAR(MAX),
@@ -77,10 +65,7 @@ BEGIN
 
     UPDATE [MaterialInspections]
     SET
-        [MaterialId] = @MaterialId,
-        [MaterialName] = @MaterialName,
         [MaterialRequestId] = @MaterialRequestId,
-        [ReceivedQuantity] = @ReceivedQuantity,
         [InspectionStatus] = @InspectionStatus,
         [Notes] = @Notes,
         [InspectorName] = @InspectorName,

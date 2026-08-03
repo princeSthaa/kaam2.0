@@ -1,37 +1,24 @@
-using System.ComponentModel.DataAnnotations;
+using System;
+using System.Collections.Generic;
 
 namespace backend.Dto.MaterialInspection
 {
     public class MaterialInspectionDto
     {
-        // <crudgen:properties>
         public Guid Id { get; set; }
-
-        [Required(ErrorMessage = "MaterialId is required.")]
-        public string MaterialId { get; set; } = string.Empty;
-
-        public string MaterialName { get; set; } = string.Empty;
-
         public Guid MaterialRequestId { get; set; }
-
-        public decimal ReceivedQuantity { get; set; }
-
-        [Required(ErrorMessage = "InspectionStatus is required.")]
-        public string InspectionStatus { get; set; } = string.Empty;
-
-        public string Notes { get; set; } = string.Empty;
-
+        public string RequestNumber { get; set; } = string.Empty;
+        public Guid? SupplierId { get; set; }
+        public string SupplierCode { get; set; } = string.Empty;
+        public string SupplierName { get; set; } = string.Empty;
+        public string InspectionStatus { get; set; } = "Pending";
         public string InspectorName { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "CreatedAt is required.")]
+        public string Notes { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-
         public string CreatedBy { get; set; } = string.Empty;
-
         public DateTime UpdatedAt { get; set; }
-
         public string UpdatedBy { get; set; } = string.Empty;
 
-        // </crudgen:properties>
+        public List<MaterialInspectionItemDto> Items { get; set; } = new();
     }
 }

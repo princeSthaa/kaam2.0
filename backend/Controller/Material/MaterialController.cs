@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.Material;
-using backend.Model;
 using backend.Service.Material;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,23 +25,23 @@ namespace backend.Controller.Material
             [FromQuery] string? imagePath = null,
             [FromQuery] decimal? costPerUnit = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] Guid? materialCategoryId = null,
+            [FromQuery] Guid? materialTypeId = null,
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _MaterialService.GetAllAsync(
                 id,
                 materialCode,
                 name,
+                materialTypeId,
+                materialCategoryId,
                 availableQty,
                 unit,
                 imagePath,
                 costPerUnit,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);
@@ -68,6 +64,54 @@ namespace backend.Controller.Material
             }
 
             return Ok();
+        }
+
+        /// <summary>
+        /// Uploads an image file for a material and saves it in Media/images/materials/{typeName}/{categoryName}/{fileName}
+        /// </summary>
+        [HttpPost("upload-image")]
+        public async Task<IActionResult> UploadImage(
+            [FromForm] Microsoft.AspNetCore.Http.IFormFile image,
+            [FromForm] string? typeName = "Fabric",
+            [FromForm] string? categoryName = "General")
+        {
+            if (image == null || image.Length == 0)
+            {
+                return BadRequest("No image file provided.");
+            }
+
+            var safeType = string.IsNullOrWhiteSpace(typeName) ? "Fabric" : typeName.Trim();
+            var safeCategory = string.IsNullOrWhiteSpace(categoryName) ? "General" : categoryName.Trim();
+
+            var targetFolder = System.IO.Path.Combine(
+                System.IO.Directory.GetCurrentDirectory(),
+                "Media",
+                "images",
+                "materials",
+                safeType,
+                safeCategory
+            );
+
+            if (!System.IO.Directory.Exists(targetFolder))
+            {
+                System.IO.Directory.CreateDirectory(targetFolder);
+            }
+
+            var extension = System.IO.Path.GetExtension(image.FileName);
+            if (string.IsNullOrEmpty(extension)) extension = ".jpg";
+
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var filePath = System.IO.Path.Combine(targetFolder, fileName);
+
+            using (var stream = new System.IO.FileStream(filePath, System.IO.FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+
+            var relativePath = $"/Media/images/materials/{safeType}/{safeCategory}/{fileName}";
+            var fullUrl = $"http://localhost:5083{relativePath}";
+
+            return Ok(new { relativePath, fullUrl });
         }
 
         [HttpPut("{id}")]

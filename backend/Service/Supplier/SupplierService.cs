@@ -31,6 +31,7 @@ namespace backend.Service.Supplier
                 .Include(s => s.SupplierMaterialCategories)
                     .ThenInclude(sm => sm.MaterialCategory)
                 .Include(s => s.MaterialRequests)
+                    .ThenInclude(mr => mr.Items)
                 .AsQueryable();
 
             if (!includeDeleted)
@@ -70,6 +71,7 @@ namespace backend.Service.Supplier
                 .Include(s => s.SupplierMaterialCategories)
                     .ThenInclude(sm => sm.MaterialCategory)
                 .Include(s => s.MaterialRequests)
+                    .ThenInclude(mr => mr.Items)
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
 
             if (supplier == null) return null;
@@ -211,13 +213,17 @@ namespace backend.Service.Supplier
                 .Include(s => s.SupplierMaterialCategories)
                     .ThenInclude(sm => sm.MaterialCategory)
                 .Include(s => s.MaterialRequests)
-                    .ThenInclude(r => r.MaterialInspections)
+                    .ThenInclude(r => r.MaterialInspection)
+                        .ThenInclude(mi => mi!.Items)
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
 
             if (supplier == null) return null;
 
             var requests = supplier.MaterialRequests.ToList();
-            var inspections = requests.SelectMany(r => r.MaterialInspections).ToList();
+            var inspectionItems = requests
+                .Where(r => r.MaterialInspection != null)
+                .SelectMany(r => r.MaterialInspection!.Items)
+                .ToList();
 
             int totalOrders = requests.Count;
 
@@ -229,13 +235,13 @@ namespace backend.Service.Supplier
             }
 
             decimal defectRate = 0.00m;
-            if (inspections.Count > 0)
+            if (inspectionItems.Count > 0)
             {
-                int defectiveCount = inspections.Count(i =>
+                int defectiveCount = inspectionItems.Count(i =>
                     string.Equals(i.InspectionStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(i.InspectionStatus, "Failed", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(i.InspectionStatus, "Purchase Return", StringComparison.OrdinalIgnoreCase));
-                defectRate = Math.Round(((decimal)defectiveCount / inspections.Count) * 100m, 2);
+                defectRate = Math.Round(((decimal)defectiveCount / inspectionItems.Count) * 100m, 2);
             }
 
             decimal qualityScore = Math.Max(0m, 100m - defectRate);
@@ -287,14 +293,11 @@ namespace backend.Service.Supplier
                     .Select(mr => new SupplierMaterialRequestResponseDto
                     {
                         Id = mr.Id,
-                        MaterialId = mr.MaterialId,
-                        MaterialName = mr.MaterialName,
-                        RequestedQuantity = mr.RequestedQuantity,
-                        Urgency = mr.Urgency,
+                        MaterialId = mr.Items.FirstOrDefault()?.MaterialId.ToString() ?? string.Empty,
+                        RequestedQuantity = mr.Items.Sum(i => i.RequestedQuantity),
                         RequiredDate = mr.RequiredDate,
                         Notes = mr.Notes,
                         RequestedBy = mr.RequestedBy,
-                        Status = mr.Status,
                     })
                     .ToList()
             };

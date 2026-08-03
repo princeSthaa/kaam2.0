@@ -12,14 +12,14 @@ namespace backend.Service.Material
             Guid? id = null,
             string? materialCode = null,
             string? name = null,
+            Guid? materialTypeId = null,
+            Guid? materialCategoryId = null,
             decimal? availableQty = null,
             string? unit = null,
             string? imagePath = null,
             decimal? costPerUnit = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
         
         // <crudgen:method-signatures>

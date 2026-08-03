@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using backend.Dto.MaterialInspection;
-using backend.Model;
 using backend.Service.MaterialInspection;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,101 +11,77 @@ namespace backend.Controller.MaterialInspection
     [Route("api/material-inspection")]
     public class MaterialInspectionController : ControllerBase
     {
-        private readonly IMaterialInspectionService _MaterialInspectionService;
+        private readonly IMaterialInspectionService _materialInspectionService;
 
-        public MaterialInspectionController(IMaterialInspectionService MaterialInspectionService)
+        public MaterialInspectionController(IMaterialInspectionService materialInspectionService)
         {
-            _MaterialInspectionService = MaterialInspectionService;
-        }
-
-        // <crudgen:actions>
-        [HttpGet("{id}")] 
-        public async Task<ActionResult<MaterialInspectionDto>> GetById(Guid id)
-        {
-            var item = await _MaterialInspectionService.GetByIdAsync(id);
-
-            if (item == null)
-            {
-                return NotFound($"MaterialInspection with ID {id} not found.");
-            }
-
-            return Ok(item);
+            _materialInspectionService = materialInspectionService;
         }
 
         [HttpGet]
         public async Task<ActionResult<List<MaterialInspectionDto>>> GetAll(
-            [FromQuery] Guid? id = null,
-            [FromQuery] string? materialId = null,
-            [FromQuery] string? materialName = null,
             [FromQuery] Guid? materialRequestId = null,
-            [FromQuery] decimal? receivedQuantity = null,
-            [FromQuery] string? inspectionStatus = null,
-            [FromQuery] string? notes = null,
-            [FromQuery] string? inspectorName = null,
-            [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] string? inspectionStatus = null
         )
         {
-            var items = await _MaterialInspectionService.GetAllAsync(
-                id,
-                materialId,
-                materialName,
+            var items = await _materialInspectionService.GetAllAsync(
                 materialRequestId,
-                receivedQuantity,
-                inspectionStatus,
-                notes,
-                inspectorName,
-                createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                inspectionStatus
             );
 
             return Ok(items);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] MaterialInspectionDto materialInspectionDto)
+        [HttpGet("{id}")]
+        public async Task<ActionResult<MaterialInspectionDto>> GetById(Guid id)
         {
-            if (!ModelState.IsValid)
+            var item = await _materialInspectionService.GetByIdAsync(id);
+            if (item == null)
             {
-                return BadRequest(ModelState);
+                return NotFound($"MaterialInspection with ID {id} not found.");
             }
-
-            var created = await _MaterialInspectionService.CreateAsync(materialInspectionDto);
-
-            if (!created)
-            {
-                return BadRequest();
-            }
-
-            return Ok();
+            return Ok(item);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] MaterialInspectionDto materialInspectionDto)
+        public async Task<IActionResult> UpdateInspection(Guid id, [FromBody] UpdateMaterialInspectionDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var updated = await _MaterialInspectionService.UpdateAsync(id, materialInspectionDto);
-
+            var updated = await _materialInspectionService.UpdateInspectionAsync(id, dto);
             if (!updated)
             {
                 return NotFound($"MaterialInspection with ID {id} not found.");
             }
 
-            return NoContent();
+            var updatedDto = await _materialInspectionService.GetByIdAsync(id);
+            return Ok(updatedDto);
+        }
+
+        [HttpPatch("items/{itemId}")]
+        public async Task<IActionResult> UpdateInspectionItem(Guid itemId, [FromBody] UpdateMaterialInspectionItemDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var updated = await _materialInspectionService.UpdateInspectionItemAsync(itemId, dto);
+            if (!updated)
+            {
+                return NotFound($"MaterialInspectionItem with ID {itemId} not found.");
+            }
+
+            return Ok(new { message = "MaterialInspectionItem updated successfully.", itemId });
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleted = await _MaterialInspectionService.DeleteAsync(id);
+            var deleted = await _materialInspectionService.DeleteAsync(id);
 
             if (!deleted)
             {
@@ -115,6 +90,5 @@ namespace backend.Controller.MaterialInspection
 
             return NoContent();
         }
-        // </crudgen:actions>
     }
 }

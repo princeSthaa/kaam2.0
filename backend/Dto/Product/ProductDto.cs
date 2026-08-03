@@ -1,30 +1,29 @@
 using System.ComponentModel.DataAnnotations;
-using backend.Model.Enums;
+using backend.Dto.ProductMaterialRequirement;
+using backend.Dto.ProductProductionStage;
 
 namespace backend.Dto.Product
 {
     public class ProductDto
     {
-        // <crudgen:properties>
         public Guid Id { get; set; }
+
+        [Required(ErrorMessage = "SKU is required.")]
+        public string SKU { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; } = string.Empty;
 
         public string ImagePath { get; set; } = string.Empty;
 
-        public List<ProductSize> Sizes { get; set; } = new List<ProductSize>();
+        public bool isActive { get; set; } = true;
 
-        [Required(ErrorMessage = "CreatedAt is required.")]
-        public DateTime CreatedAt { get; set; }
+        [Required(ErrorMessage = "Product category is required.")]
+        public Guid? ProductCategoryId { get; set; }
 
-        public string CreatedBy { get; set; } = string.Empty;
+        public List<ProductMaterialRequirementDto> MaterialRequirements { get; set; } = new();
 
-        public DateTime UpdatedAt { get; set; }
+        public List<ProductProductionStageDto> ProductionStages { get; set; } = new();
 
-        public string UpdatedBy { get; set; } = string.Empty;
-
-        // </crudgen:properties>
     }
 }
-

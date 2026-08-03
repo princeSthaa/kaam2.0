@@ -25,6 +25,8 @@ using backend.Service.MaterialRequest;
 using backend.Service.MaterialInspection;
 using backend.Service.MaterialCategory;
 using backend.Service.MaterialType;
+using backend.Service.ProductionStage;
+using backend.Service.ProductCategory;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,6 +80,8 @@ builder.Services.AddScoped<IMaterialRequestService, MaterialRequestService>();
 builder.Services.AddScoped<IMaterialInspectionService, MaterialInspectionService>();
 builder.Services.AddScoped<IMaterialCategoryService, MaterialCategoryService>();
 builder.Services.AddScoped<IMaterialTypeService, MaterialTypeService>();
+builder.Services.AddScoped<IProductionStageService, ProductionStageService>();
+builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
 
 var app = builder.Build();
 
@@ -109,6 +113,16 @@ app.UseStaticFiles();
 
 var mediaDir = Path.Combine(builder.Environment.ContentRootPath, "Media");
 if (!Directory.Exists(mediaDir)) Directory.CreateDirectory(mediaDir);
+
+var materialsDir = Path.Combine(mediaDir, "images", "materials");
+if (Directory.Exists(materialsDir))
+{
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(materialsDir),
+        RequestPath = "/Media"
+    });
+}
 
 app.UseStaticFiles(new StaticFileOptions
 {

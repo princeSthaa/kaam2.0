@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.MaterialType;
-using backend.Model;
 using backend.Service.MaterialType;
 using Microsoft.AspNetCore.Mvc;
 
@@ -38,18 +34,14 @@ namespace backend.Controller.MaterialType
             [FromQuery] Guid? id = null,
             [FromQuery] string? name = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _MaterialTypeService.GetAllAsync(
                 id,
                 name,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

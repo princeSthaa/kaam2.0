@@ -255,8 +255,6 @@ namespace backend.Service.ProductionPlan
                 {
                     Id = stageDto.Id == Guid.Empty ? Guid.NewGuid() : stageDto.Id,
                     ProductionPlanId = plan.Id,
-                    StageId = stageDto.StageId,
-                    StageName = stageDto.StageName,
                     WorkCenterId = stageDto.WorkCenterId,
                     OperatorName = stageDto.OperatorName,
                     PlannedStartDate = stageDto.PlannedStartDate,
@@ -268,9 +266,7 @@ namespace backend.Service.ProductionPlan
                     ActualEndDate = stageDto.ActualEndDate,
                     Remarks = stageDto.Remarks,
                     CreatedAt = stageDto.CreatedAt,
-                    CreatedBy = stageDto.CreatedBy,
-                    UpdatedAt = stageDto.UpdatedAt,
-                    UpdatedBy = stageDto.UpdatedBy
+                    UpdatedAt = stageDto.UpdatedAt
                 });
             }
 

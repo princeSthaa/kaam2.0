@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using backend.Dto.MaterialRequest;
-using backend.Model;
 using backend.Service.MaterialRequest;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,107 +11,105 @@ namespace backend.Controller.MaterialRequest
     [Route("api/material-request")]
     public class MaterialRequestController : ControllerBase
     {
-        private readonly IMaterialRequestService _MaterialRequestService;
+        private readonly IMaterialRequestService _materialRequestService;
 
-        public MaterialRequestController(IMaterialRequestService MaterialRequestService)
+        public MaterialRequestController(IMaterialRequestService materialRequestService)
         {
-            _MaterialRequestService = MaterialRequestService;
+            _materialRequestService = materialRequestService;
         }
 
-        // <crudgen:actions>
-        [HttpGet("{id}")] 
+        [HttpGet("{id}")]
         public async Task<ActionResult<MaterialRequestDto>> GetById(Guid id)
         {
-            var item = await _MaterialRequestService.GetByIdAsync(id);
-
+            var item = await _materialRequestService.GetByIdAsync(id);
             if (item == null)
             {
                 return NotFound($"MaterialRequest with ID {id} not found.");
             }
-
             return Ok(item);
         }
 
         [HttpGet]
         public async Task<ActionResult<List<MaterialRequestDto>>> GetAll(
             [FromQuery] Guid? id = null,
-            [FromQuery] string? materialId = null,
-            [FromQuery] string? materialName = null,
-            [FromQuery] decimal? requestedQuantity = null,
             [FromQuery] Guid? supplierId = null,
-            [FromQuery] string? supplierName = null,
-            [FromQuery] string? urgency = null,
-            [FromQuery] DateTime? requiredDate = null,
-            [FromQuery] string? notes = null,
-            [FromQuery] string? requestedBy = null,
             [FromQuery] string? status = null,
-            [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] string? requestNumber = null
         )
         {
-            var items = await _MaterialRequestService.GetAllAsync(
+            var items = await _materialRequestService.GetAllAsync(
                 id,
-                materialId,
-                materialName,
-                requestedQuantity,
                 supplierId,
-                supplierName,
-                urgency,
-                requiredDate,
-                notes,
-                requestedBy,
                 status,
-                createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                requestNumber
             );
 
             return Ok(items);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] MaterialRequestDto materialRequestDto)
+        public async Task<IActionResult> Create([FromBody] CreateMaterialRequestDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var created = await _MaterialRequestService.CreateAsync(materialRequestDto);
-
-            if (!created)
+            try
             {
-                return BadRequest();
+                var createdDto = await _materialRequestService.CreateAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = createdDto.Id }, createdDto);
             }
-
-            return Ok();
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] MaterialRequestDto materialRequestDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] CreateMaterialRequestDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var updated = await _MaterialRequestService.UpdateAsync(id, materialRequestDto);
+            try
+            {
+                var updated = await _materialRequestService.UpdateAsync(id, dto);
 
+                if (!updated)
+                {
+                    return NotFound($"MaterialRequest with ID {id} not found.");
+                }
+
+                var updatedDto = await _materialRequestService.GetByIdAsync(id);
+                return Ok(updatedDto);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/status")]
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateStatusDto dto)
+        {
+            var updated = await _materialRequestService.UpdateStatusAsync(id, dto.Status);
             if (!updated)
             {
                 return NotFound($"MaterialRequest with ID {id} not found.");
             }
 
-            return NoContent();
+            var updatedDto = await _materialRequestService.GetByIdAsync(id);
+            return Ok(updatedDto);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleted = await _MaterialRequestService.DeleteAsync(id);
+            var deleted = await _materialRequestService.DeleteAsync(id);
 
             if (!deleted)
             {
@@ -121,6 +118,5 @@ namespace backend.Controller.MaterialRequest
 
             return NoContent();
         }
-        // </crudgen:actions>
     }
 }

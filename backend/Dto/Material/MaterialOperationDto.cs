@@ -7,14 +7,12 @@ namespace backend.Dto.Material
     {
         [Required]
         public string MaterialId { get; set; } = string.Empty;
-        public string MaterialName { get; set; } = string.Empty;
 
         [Required]
         [Range(0.01, double.MaxValue, ErrorMessage = "Requested quantity must be greater than zero.")]
         public decimal RequestedQuantity { get; set; }
 
-        public string SupplierName { get; set; } = string.Empty;
-        public string Urgency { get; set; } = "Normal";
+        public Guid? SupplierId { get; set; }
         public DateTime? RequiredDate { get; set; }
         public string Notes { get; set; } = string.Empty;
         public string RequestedBy { get; set; } = "Warehouse Manager";

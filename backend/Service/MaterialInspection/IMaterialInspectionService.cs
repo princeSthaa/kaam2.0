@@ -8,25 +8,15 @@ namespace backend.Service.MaterialInspection
     public interface IMaterialInspectionService
     {
         Task<List<MaterialInspectionDto>> GetAllAsync(
-            Guid? id = null,
-            string? materialId = null,
-            string? materialName = null,
             Guid? materialRequestId = null,
-            decimal? receivedQuantity = null,
-            string? inspectionStatus = null,
-            string? notes = null,
-            string? inspectorName = null,
-            DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            string? inspectionStatus = null
         );
 
         Task<MaterialInspectionDto?> GetByIdAsync(Guid id);
 
-        Task<bool> CreateAsync(MaterialInspectionDto materialInspectionDto);
+        Task<bool> UpdateInspectionAsync(Guid id, UpdateMaterialInspectionDto dto);
 
-        Task<bool> UpdateAsync(Guid id, MaterialInspectionDto materialInspectionDto);
+        Task<bool> UpdateInspectionItemAsync(Guid itemId, UpdateMaterialInspectionItemDto dto);
 
         Task<bool> DeleteAsync(Guid id);
     }

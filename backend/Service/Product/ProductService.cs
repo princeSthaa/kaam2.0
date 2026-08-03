@@ -1,15 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.Product;
-using backend.Model;
-using backend.Model.Enums;
+using backend.Dto.ProductMaterialRequirement;
+using backend.Dto.Material;
+using backend.Dto.ProductProductionStage;
+using backend.Dto.ProductionStage;
 
 namespace backend.Service.Product
 {
@@ -22,27 +17,6 @@ namespace backend.Service.Product
             _context = context;
         }
 
-        public async Task<bool> CreateAsync(ProductDto productDto)
-        {
-            productDto.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(productDto.ImagePath);
-            var sizesJson = JsonSerializer.Serialize(productDto.Sizes.Select(s => s.ToString()).ToList());
-
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertProduct
-                    @Id = {productDto.Id},
-                    @Name = {productDto.Name},
-                    @ImagePath = {productDto.ImagePath},
-                    @CreatedAt = {productDto.CreatedAt},
-                    @CreatedBy = {productDto.CreatedBy},
-                    @UpdatedAt = {productDto.UpdatedAt},
-                    @UpdatedBy = {productDto.UpdatedBy},
-                    @SizesJson = {sizesJson}
-            ");
-
-            return true;
-        }
-
-        // <crudgen:methods>
         public async Task<List<ProductDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
@@ -53,57 +27,131 @@ namespace backend.Service.Product
             string? updatedBy = null
         )
         {
-            return await _context.Database
-                .SqlQuery<ProductDto>($@"
-                    EXEC sp_GetProducts
+            var query = _context.Products.AsNoTracking();
 
-                        @Id = {id},
-                        @Name = {name},
-                        @ImagePath = {imagePath},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
-                ")
-                .ToListAsync();
+            if (id.HasValue && id.Value != Guid.Empty)
+                query = query.Where(p => p.Id == id.Value);
+
+            if (!string.IsNullOrWhiteSpace(name))
+                query = query.Where(p => p.Name.Contains(name));
+
+            return await query.Select(p => new ProductDto
+            {
+                Id = p.Id,
+                SKU = p.SKU,
+                Name = p.Name,
+                ImagePath = p.ImagePath,
+                isActive = p.isActive,
+                ProductCategoryId = p.ProductCategoryId,
+            }).ToListAsync();
         }
 
         public async Task<ProductDto?> GetByIdAsync(Guid id)
         {
-            var results = await GetAllAsync(id: id);
-            return results.FirstOrDefault();
+            var product = await _context.Products
+                .AsNoTracking()
+                .Include(p => p.MaterialRequirements)
+                    .ThenInclude(pm => pm.Material)
+                .Include(p => p.ProductionStages)
+                    .ThenInclude(ps => ps.ProductionStage)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null)
+                return null;
+
+            return new ProductDto
+            {
+                Id = product.Id,
+                SKU = product.SKU,
+                Name = product.Name,
+                ImagePath = product.ImagePath,
+                isActive = product.isActive,
+                ProductCategoryId = product.ProductCategoryId,
+
+                MaterialRequirements = product.MaterialRequirements
+                    .Select(m => new ProductMaterialRequirementDto
+                    {
+                        Id = m.Id,
+                        ProductId = m.ProductId,
+                        MaterialId = m.MaterialId,
+                        ProductSize = m.ProductSize,
+                        Quantity = m.Quantity,
+
+                        Material = new MaterialDto
+                        {
+                            Id = m.Material.Id,
+                            MaterialCode = m.Material.MaterialCode,
+                            Name = m.Material.Name,
+                            Unit = m.Material.Unit,
+                            AvailableQty = m.Material.AvailableQty,
+                            CostPerUnit = m.Material.CostPerUnit,
+                            ImagePath = m.Material.ImagePath
+                        }
+                    }).ToList(),
+
+                ProductionStages = product.ProductionStages
+                    .OrderBy(s => s.Sequence)
+                    .Select(s => new ProductProductionStageDto
+                    {
+                        Id = s.Id,
+                        ProductId = s.ProductId,
+                        ProductionStageId = s.ProductionStageId,
+                        Sequence = s.Sequence,
+
+                        ProductionStage = new ProductionStageDto
+                        {
+                            Id = s.ProductionStage.Id,
+                            Name = s.ProductionStage.Name,
+                            isActive = s.ProductionStage.isActive
+                        }
+                    }).ToList()
+            };
+        }
+        public async Task<bool> CreateAsync(ProductDto dto)
+        {
+            var now = DateTime.UtcNow;
+            var entity = new backend.Model.Product
+            {
+                Id = dto.Id == Guid.Empty ? Guid.NewGuid() : dto.Id,
+                SKU = string.IsNullOrWhiteSpace(dto.SKU) ? $"SKU-{Guid.NewGuid().ToString()[..8]}" : dto.SKU,
+                Name = dto.Name,
+                ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(dto.ImagePath),
+                isActive = dto.isActive,
+                ProductCategoryId = dto.ProductCategoryId ?? Guid.Empty,
+                // CreatedAt = dto.CreatedAt == default ? now : dto.CreatedAt,
+                UpdatedAt = now
+            };
+
+            _context.Products.Add(entity);
+            await _context.SaveChangesAsync();
+            return true;
         }
 
-        public async Task<bool> UpdateAsync(Guid id, ProductDto productDto)
+        public async Task<bool> UpdateAsync(Guid id, ProductDto dto)
         {
-            var sizesJson = JsonSerializer.Serialize(productDto.Sizes);
+            var entity = await _context.Products.FindAsync(id);
+            if (entity == null) return false;
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_UpdateProduct
+            entity.Name = dto.Name;
+            if (!string.IsNullOrWhiteSpace(dto.SKU)) entity.SKU = dto.SKU;
+            entity.ImagePath = backend.Helpers.ImagePathHelper.ToRelativePath(dto.ImagePath);
+            entity.isActive = dto.isActive;
+            if (dto.ProductCategoryId.HasValue) entity.ProductCategoryId = dto.ProductCategoryId.Value;
+            entity.UpdatedAt = DateTime.UtcNow;
 
-                    @Id = {productDto.Id},
-                    @Name = {productDto.Name},
-                    @ImagePath = {productDto.ImagePath},
-                    @CreatedAt = {productDto.CreatedAt},
-                    @CreatedBy = {productDto.CreatedBy},
-                    @UpdatedAt = {productDto.UpdatedAt},
-                    @UpdatedBy = {productDto.UpdatedBy},
-                    @SizesJson = {sizesJson}
-            ");
-
+            _context.Products.Update(entity);
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_DeleteProduct
-                    @Id = {id}
-            ");
+            var entity = await _context.Products.FindAsync(id);
+            if (entity == null) return false;
 
+            _context.Products.Remove(entity);
+            await _context.SaveChangesAsync();
             return true;
         }
-
-        // </crudgen:methods>
     }
 }

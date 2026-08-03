@@ -14,9 +14,7 @@ namespace backend.Model
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
         public virtual ICollection<MaterialCategory> MaterialCategories { get; set; } = new List<MaterialCategory>();
         // </crudgen:properties>
     }
