@@ -12,7 +12,7 @@ export const topLinks = [
   { label: "Warehouse", href: "/warehouse" },
   { label: "SRM", href: "/srm" },
   { label: "Inventory", href: "/inventory" },
-  { label: "Privacy", href: "/privacy" },
+  { label: "Admin", href: "/admin" },
 ];
 
 export function AppHeader() {
