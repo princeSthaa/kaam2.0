@@ -1,7 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using backend.Dto.ProductMaterialRequirement;
-using backend.Dto.ProductProductionStage;
-
 
 namespace backend.Dto.Product
 {
@@ -20,8 +17,9 @@ namespace backend.Dto.Product
 
         public bool IsActive { get; set; } = true;
 
-        public List<ProductMaterialRequirementDto> MaterialRequirements { get; set; } = new();
+        public string MaterialRequirements { get; set; } = string.Empty;
 
-        public List<ProductProductionStageDto> ProductionStages { get; set; } = new();
+        public string ProductionStages { get; set; } = string.Empty;
+
     }
 }

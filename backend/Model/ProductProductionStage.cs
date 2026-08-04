@@ -12,11 +12,11 @@ public class ProductProductionStage
 
     [ForeignKey(nameof(Product))]
     public Guid ProductId { get; set; }
-    public Product Product { get; set; } = null!;
+    public virtual Product Product { get; set; } = null!;
 
     [ForeignKey(nameof(ProductionStage))]
     public Guid ProductionStageId { get; set; }
-    public ProductionStage ProductionStage { get; set; } = null!;
+    public virtual ProductionStage ProductionStage { get; set; } = null!;
     [Range(1, int.MaxValue)]
     public int Sequence { get; set; }
 }

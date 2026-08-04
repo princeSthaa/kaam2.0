@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.ProductCategory;
 using backend.Service.ProductCategory;
 using Microsoft.AspNetCore.Mvc;

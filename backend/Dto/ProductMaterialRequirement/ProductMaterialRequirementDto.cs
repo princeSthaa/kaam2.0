@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using backend.Model.Enums;
 using backend.Dto.Product;
-using backend.Dto.Material;
+using backend.Dto.MaterialType;
 
 namespace backend.Dto.ProductMaterialRequirement;
 
@@ -15,9 +15,8 @@ public class ProductMaterialRequirementDto
     public ProductDto? Product { get; set; }
 
     [Required(ErrorMessage = "Material is required.")]
-    public Guid MaterialId { get; set; }
-
-    public MaterialDto? Material { get; set; }
+    public Guid MaterialTypeId { get; set; }
+    public MaterialTypeDto? MaterialType { get; set; }
 
     [Required(ErrorMessage = "Product size is required.")]
     public ProductSize ProductSize { get; set; }
