@@ -226,9 +226,9 @@ namespace backend.Data
             .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<ProductMaterialRequirement>()
-            .HasOne(e => e.Material)
+            .HasOne(e => e.MaterialType)
             .WithMany(p => p.ProductMaterialRequirements)
-            .HasForeignKey(e => e.MaterialId)
+            .HasForeignKey(e => e.MaterialTypeId)
             .OnDelete(DeleteBehavior.Restrict);
         
         

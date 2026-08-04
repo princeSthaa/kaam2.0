@@ -42,17 +42,11 @@ namespace backend.Service.Material
                 ")
                 .ToListAsync();
         }
-        // <crudgen:methods>
         public async Task<bool> CreateAsync(MaterialDto materialDto)
         {
-            if (materialDto.Id == Guid.Empty)
-            {
-                materialDto.Id = Guid.NewGuid();
-            }
-
+            materialDto.Id = Guid.NewGuid();
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertMaterial
-
                     @Id = {materialDto.Id},
                     @MaterialCode = {materialDto.MaterialCode},
                     @Name = {materialDto.Name},
@@ -100,7 +94,5 @@ namespace backend.Service.Material
 
             return true;
         }
-
-        // </crudgen:methods>
     }
 }

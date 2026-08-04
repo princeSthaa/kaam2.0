@@ -965,7 +965,7 @@ namespace backend.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("MaterialId")
+                    b.Property<Guid>("MaterialTypeId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("ProductId")
@@ -979,9 +979,9 @@ namespace backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MaterialId");
+                    b.HasIndex("MaterialTypeId");
 
-                    b.HasIndex("ProductId", "MaterialId", "ProductSize")
+                    b.HasIndex("ProductId", "MaterialTypeId", "ProductSize")
                         .IsUnique();
 
                     b.ToTable("ProductMaterialRequirements");
@@ -1810,9 +1810,9 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Model.ProductMaterialRequirement", b =>
                 {
-                    b.HasOne("backend.Model.Material", "Material")
+                    b.HasOne("backend.Model.MaterialType", "MaterialType")
                         .WithMany("ProductMaterialRequirements")
-                        .HasForeignKey("MaterialId")
+                        .HasForeignKey("MaterialTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1822,7 +1822,7 @@ namespace backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Material");
+                    b.Navigation("MaterialType");
 
                     b.Navigation("Product");
                 });
@@ -1942,8 +1942,6 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Model.Material", b =>
                 {
                     b.Navigation("MaterialRequestItems");
-
-                    b.Navigation("ProductMaterialRequirements");
                 });
 
             modelBuilder.Entity("backend.Model.MaterialCategory", b =>
@@ -1968,6 +1966,8 @@ namespace backend.Migrations
             modelBuilder.Entity("backend.Model.MaterialType", b =>
                 {
                     b.Navigation("MaterialCategories");
+
+                    b.Navigation("ProductMaterialRequirements");
                 });
 
             modelBuilder.Entity("backend.Model.Order", b =>

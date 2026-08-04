@@ -1,5 +1,9 @@
+using System.Text.Json;
 using backend.Dto.Product;
+using backend.Dto.ProductMaterialRequirement;
+using backend.Dto.ProductProductionStage;
 using backend.Helpers;
+using backend.Model.Enums;
 using backend.Service.Product;
 using Microsoft.AspNetCore.Mvc;
 
@@ -55,9 +59,45 @@ namespace backend.Controller.Product
         #endregion
 
         #region Create
-        /// <summary>
-        /// Always creates a NEW Product record with optional picture upload (multipart/form-data)
-        /// </summary>
+
+        // [HttpPost]
+        // [Consumes("multipart/form-data")]
+        // public async Task<IActionResult> Create([FromForm] ProductCreateDto createDto)
+        // {
+        //     try
+        //     {   
+        //         var options = new JsonSerializerOptions
+        //         {
+        //             PropertyNameCaseInsensitive = true
+        //         };
+        //         var requirements =
+        //             JsonSerializer.Deserialize<List<ProductMaterialRequirementDto>>(
+        //                 createDto.MaterialRequirements, 
+        //                 options
+        //             );
+        //         var stages =
+        //             JsonSerializer.Deserialize<List<ProductProductionStageDto>>(
+        //                 createDto.ProductionStages,
+        //                 options
+        //             );
+
+        //         Console.WriteLine($"Requirements count: {requirements?.Count}");
+        //         Console.WriteLine($"Stages count: {stages?.Count}");
+
+        //         return Ok(new
+        //         {
+        //             createDto.Name,
+        //             Requirements = requirements,
+        //             Stages = stages
+        //         });
+        //     }
+        //     catch(Exception ex)
+        //     {
+        //         Console.WriteLine(ex.Message);
+        //         return BadRequest(ex.Message);
+        //     }
+        // }
+
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ProductDto>> Create([FromForm] ProductCreateDto createDto)
@@ -68,23 +108,39 @@ namespace backend.Controller.Product
             }
 
             string relativeImagePath = string.Empty;
+
             if (createDto.Image != null && createDto.Image.Length > 0)
             {
                 relativeImagePath = await SaveProductImageFileAsync(createDto.Image);
             }
-
+            var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                
+            options.Converters.Add(new ProductSizeJsonConverter());
             var productDto = new ProductDto
             {
                 Id = Guid.NewGuid(),
-                SKU = string.IsNullOrWhiteSpace(createDto.SKU) ? $"SKU-{Guid.NewGuid().ToString()[..8]}" : createDto.SKU,
+                SKU = string.IsNullOrWhiteSpace(createDto.SKU)
+                    ? $"SKU-{Guid.NewGuid().ToString()[..8]}"
+                    : createDto.SKU,
+
                 Name = createDto.Name,
                 ImagePath = relativeImagePath,
-                isActive = true,
+                isActive = createDto.IsActive,
                 ProductCategoryId = createDto.ProductCategoryId,
-                // CreatedAt = DateTime.UtcNow,
-                // UpdatedAt = DateTime.UtcNow
-            };
+                
+                MaterialRequirements =
+                    string.IsNullOrWhiteSpace(createDto.MaterialRequirements) ? 
+                    new List<ProductMaterialRequirementDto>()
+                    : JsonSerializer.Deserialize<List<ProductMaterialRequirementDto>> (createDto.MaterialRequirements, options) ?? new List<ProductMaterialRequirementDto>(),
 
+                ProductionStages = string.IsNullOrWhiteSpace(createDto.ProductionStages) ?
+                new List<ProductProductionStageDto>()
+                : JsonSerializer.Deserialize<List<ProductProductionStageDto>> (createDto.ProductionStages, options) ?? new List<ProductProductionStageDto>()
+            };
+        
             var created = await _ProductService.CreateAsync(productDto);
 
             if (!created)
@@ -93,12 +149,10 @@ namespace backend.Controller.Product
             }
 
             ImagePathHelper.ResolveProductImage(productDto, Request);
+
             return CreatedAtAction(nameof(GetById), new { id = productDto.Id }, productDto);
         }
 
-        /// <summary>
-        /// Create product via JSON body
-        /// </summary>
         [HttpPost("json")]
         public async Task<ActionResult<ProductDto>> CreateJson([FromBody] ProductDto productDto)
         {
@@ -146,8 +200,8 @@ namespace backend.Controller.Product
 
             existing.Name = string.IsNullOrWhiteSpace(updateDto.Name) ? existing.Name : updateDto.Name;
             if (!string.IsNullOrWhiteSpace(updateDto.SKU)) existing.SKU = updateDto.SKU;
-            if (updateDto.ProductCategoryId.HasValue) existing.ProductCategoryId = updateDto.ProductCategoryId;
-            if (updateDto.isActive.HasValue) existing.isActive = updateDto.isActive.Value;
+            if (updateDto.ProductCategoryId != Guid.Empty) existing.ProductCategoryId = updateDto.ProductCategoryId;
+            if (updateDto.IsActive) existing.isActive = updateDto.IsActive;
             existing.ImagePath = relativeImagePath;
             // existing.UpdatedAt = DateTime.UtcNow;
 
@@ -221,24 +275,5 @@ namespace backend.Controller.Product
             return $"/Media/images/products/{fileName}";
         }
         #endregion
-    }
-
-    public class ProductCreateDto
-    {
-        public string? SKU { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public IFormFile? Image { get; set; }
-        public Guid? ProductCategoryId { get; set; }
-        public bool isActive { get; set; } = true;
-    }
-
-    public class ProductUpdateDto
-    {
-        public string? SKU { get; set; }
-        public string? Name { get; set; }
-        public string? ImagePath { get; set; }
-        public IFormFile? Image { get; set; }
-        public Guid? ProductCategoryId { get; set; }
-        public bool? isActive { get; set; }
     }
 }

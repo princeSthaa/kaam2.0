@@ -41,6 +41,5 @@ namespace backend.Model
         // This property is used to track the user who created the material 
         public virtual ICollection<MaterialRequestItem> MaterialRequestItems { get; set; } = new List<MaterialRequestItem>();
 
-        public virtual ICollection<ProductMaterialRequirement> ProductMaterialRequirements { get; set; } = new List<ProductMaterialRequirement>();
     }
 }

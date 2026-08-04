@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using backend.Dto.ProductMaterialRequirement;
 using backend.Dto.ProductProductionStage;
+using backend.Dto.ProductCategory;
 
 namespace backend.Dto.Product
 {
@@ -20,10 +21,12 @@ namespace backend.Dto.Product
 
         [Required(ErrorMessage = "Product category is required.")]
         public Guid? ProductCategoryId { get; set; }
+        public ProductCategoryDto? ProductCategory { get; set; }
 
         public List<ProductMaterialRequirementDto> MaterialRequirements { get; set; } = new();
 
         public List<ProductProductionStageDto> ProductionStages { get; set; } = new();
+        
 
     }
 }

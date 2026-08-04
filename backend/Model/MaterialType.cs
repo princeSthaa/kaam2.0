@@ -16,6 +16,7 @@ namespace backend.Model
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public virtual ICollection<MaterialCategory> MaterialCategories { get; set; } = new List<MaterialCategory>();
+        public virtual ICollection<ProductMaterialRequirement> ProductMaterialRequirements { get; set; } = new List<ProductMaterialRequirement>();
         // </crudgen:properties>
     }
 }
