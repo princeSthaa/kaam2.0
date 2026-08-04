@@ -163,7 +163,7 @@ namespace backend.Controller.ProductionPlan
             }
 
             response.Materials = boms
-                .GroupBy(bom => new { bom.MaterialId, bom.Material.MaterialCode, bom.Material.Name, bom.Material.Unit, bom.Material.AvailableQty })
+                .GroupBy(bom => new { bom.MaterialId, bom.Material.MaterialCode, bom.Material.Name, bom.Material.AvailableQty })
                 .Select(group =>
                 {
                     var requiredQty = group.Sum(bom =>
@@ -175,7 +175,6 @@ namespace backend.Controller.ProductionPlan
                         MaterialId = group.Key.MaterialId.ToString(),
                         MaterialCode = group.Key.MaterialCode,
                         MaterialName = group.Key.Name,
-                        Unit = group.Key.Unit,
                         RequiredQty = requiredQty,
                         AvailableQty = availableQty,
                         Status = availableQty >= requiredQty ? "Available" : "Shortage"

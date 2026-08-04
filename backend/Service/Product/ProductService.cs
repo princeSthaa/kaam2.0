@@ -171,9 +171,7 @@ namespace backend.Service.Product
 
             try
             {
-                dto.Id = dto.Id == Guid.Empty 
-                    ? Guid.NewGuid() 
-                    : dto.Id;
+                dto.Id = Guid.NewGuid();
 
                 foreach (var requirement in dto.MaterialRequirements)
                 {

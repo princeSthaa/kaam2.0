@@ -45,13 +45,18 @@ namespace backend.Service.Material
         public async Task<bool> CreateAsync(MaterialDto materialDto)
         {
             materialDto.Id = Guid.NewGuid();
+            materialDto.CreatedAt = DateTime.UtcNow;
+            materialDto.UpdatedAt = DateTime.UtcNow;
+            
+            var count = await _context.Materials.CountAsync();
+            materialDto.MaterialCode = $"MAT-TY-CAT-{(count + 1):D5}";
+
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertMaterial
                     @Id = {materialDto.Id},
                     @MaterialCode = {materialDto.MaterialCode},
                     @Name = {materialDto.Name},
                     @AvailableQty = {materialDto.AvailableQty},
-                    @Unit = {materialDto.Unit},
                     @ImagePath = {materialDto.ImagePath},
                     @CostPerUnit = {materialDto.CostPerUnit},
                     @CreatedAt = {materialDto.CreatedAt},
@@ -73,7 +78,6 @@ namespace backend.Service.Material
                     @MaterialCode = {materialDto.MaterialCode},
                     @Name = {materialDto.Name},
                     @AvailableQty = {materialDto.AvailableQty},
-                    @Unit = {materialDto.Unit},
                     @ImagePath = {materialDto.ImagePath},
                     @CostPerUnit = {materialDto.CostPerUnit},
                     @CreatedAt = {materialDto.CreatedAt},

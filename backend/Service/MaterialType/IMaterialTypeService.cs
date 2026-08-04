@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using backend.Dto.MaterialType;
 using backend.Model;
@@ -12,6 +13,9 @@ namespace backend.Service.MaterialType
         Task<List<MaterialTypeGetDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
+            string? unit = null,
+            string? description = null,
+            bool? isActive = null,
             DateTime? createdAt = null,
             DateTime? updatedAt = null
         );

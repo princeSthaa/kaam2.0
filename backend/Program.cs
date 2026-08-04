@@ -46,8 +46,8 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// builder.Services.AddEndpointsApiExplorer();
+// builder.Services.AddSwaggerGen();
 
 // Configure EF Core SQL Server Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -100,11 +100,11 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
 
 // app.UseHttpsRedirection();
 app.UseCors("AllowNextJs");

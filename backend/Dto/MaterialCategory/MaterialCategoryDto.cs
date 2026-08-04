@@ -9,6 +9,9 @@ namespace backend.Dto.MaterialCategory
 
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; } = string.Empty;
+        public string MaterialCode { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
 
         [Required(ErrorMessage = "CreatedAt is required.")]
         public DateTime CreatedAt { get; set; }

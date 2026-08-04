@@ -33,6 +33,9 @@ namespace backend.Controller.MaterialType
         public async Task<ActionResult<List<MaterialTypeGetDto>>> GetAll(
             [FromQuery] Guid? id = null,
             [FromQuery] string? name = null,
+            [FromQuery] string? unit = null,
+            [FromQuery] string? description = null,
+            [FromQuery] bool? isActive = null,
             [FromQuery] DateTime? createdAt = null,
             [FromQuery] DateTime? updatedAt = null
         )
@@ -40,6 +43,9 @@ namespace backend.Controller.MaterialType
             var items = await _MaterialTypeService.GetAllAsync(
                 id,
                 name,
+                unit,
+                description,
+                isActive,
                 createdAt,
                 updatedAt
             );

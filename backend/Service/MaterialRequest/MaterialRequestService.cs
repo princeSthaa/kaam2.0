@@ -316,7 +316,6 @@ namespace backend.Service.MaterialRequest
                         MaterialCode = i.Material.MaterialCode,
                         Name = i.Material.Name,
                         AvailableQty = i.Material.AvailableQty,
-                        Unit = i.Material.Unit,
                         ImagePath = i.Material.ImagePath,
                         CostPerUnit = i.Material.CostPerUnit
                     }

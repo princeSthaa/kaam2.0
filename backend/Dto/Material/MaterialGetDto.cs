@@ -10,7 +10,6 @@ public class MaterialGetDto
     public Guid MaterialCategoryId { get; set; }
     public string MaterialCategoryName { get; set; } = string.Empty;
     public decimal AvailableQty { get; set; }
-    public string Unit { get; set; } = string.Empty;
     public string ImagePath { get; set; } = string.Empty;
     public decimal CostPerUnit { get; set; }
     

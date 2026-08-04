@@ -26,9 +26,6 @@ namespace backend.Model
         [Column(TypeName = "decimal(18,2)")]
         public decimal AvailableQty { get; set; }
 
-        [Required] [MaxLength(30)]
-        public string Unit { get; set; } = string.Empty;
-
         [MaxLength(500)]
         public string ImagePath { get; set; } = string.Empty;
 

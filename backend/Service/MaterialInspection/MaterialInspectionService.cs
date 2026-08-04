@@ -154,7 +154,6 @@ namespace backend.Service.MaterialInspection
                     MaterialId = item.MaterialId,
                     MaterialCode = item.Material?.MaterialCode ?? string.Empty,
                     MaterialName = item.Material?.Name ?? string.Empty,
-                    Unit = item.Material?.Unit ?? string.Empty,
                     ReceivedQuantity = item.ReceivedQuantity,
                     InspectionStatus = item.InspectionStatus,
                     Notes = item.Notes,

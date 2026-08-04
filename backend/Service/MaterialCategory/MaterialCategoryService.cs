@@ -17,6 +17,9 @@ namespace backend.Service.MaterialCategory
         public async Task<List<MaterialCategoryGetDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
+            string? materialCode = null,
+            string? description = null,
+            bool? isActive = null,
             DateTime? createdAt = null,
             DateTime? updatedAt = null,
             Guid? materialTypeId = null
@@ -28,6 +31,9 @@ namespace backend.Service.MaterialCategory
 
                         @Id = {id},
                         @Name = {name},
+                        @MaterialCode = {materialCode},
+                        @Description = {description},
+                        @IsActive = {isActive},
                         @CreatedAt = {createdAt},
                         @UpdatedAt = {updatedAt},
                         @MaterialTypeId = {materialTypeId}
@@ -37,7 +43,8 @@ namespace backend.Service.MaterialCategory
 
         public async Task<MaterialCategoryGetDto?> GetByIdAsync(Guid id)
         {
-            return await GetByIdAsync(id: id);
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
         }
 
         public async Task<bool> CreateAsync(MaterialCategoryDto materialCategoryDto)
@@ -45,12 +52,19 @@ namespace backend.Service.MaterialCategory
             materialCategoryDto.Id = Guid.NewGuid();
             materialCategoryDto.CreatedAt = DateTime.UtcNow;
             materialCategoryDto.UpdatedAt = DateTime.UtcNow;
+            materialCategoryDto.IsActive = true;
             
+            var count = await _context.MaterialTypes.CountAsync();
+            materialCategoryDto.MaterialCode = $"MAT-CAT-{(count + 1):D5}";
+
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertMaterialCategory
 
                     @Id = {materialCategoryDto.Id},
                     @Name = {materialCategoryDto.Name},
+                    @MaterialCode = {materialCategoryDto.MaterialCode},
+                    @Description = {materialCategoryDto.Description},
+                    @IsActive = {materialCategoryDto.IsActive},
                     @CreatedAt = {materialCategoryDto.CreatedAt},
                     @UpdatedAt = {materialCategoryDto.UpdatedAt},
                     @MaterialTypeId = {materialCategoryDto.MaterialTypeId}
@@ -67,6 +81,9 @@ namespace backend.Service.MaterialCategory
 
                     @Id = {materialCategoryDto.Id},
                     @Name = {materialCategoryDto.Name},
+                    @MaterialCode = {materialCategoryDto.MaterialCode},
+                    @Description = {materialCategoryDto.Description},
+                    @IsActive = {materialCategoryDto.IsActive},
                     @CreatedAt = {materialCategoryDto.CreatedAt},
                     @UpdatedAt = {materialCategoryDto.UpdatedAt},
                     @MaterialTypeId = {materialCategoryDto.MaterialTypeId}
