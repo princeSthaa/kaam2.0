@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
   fetchSuppliers,
   createSupplier,
@@ -145,6 +145,17 @@ export default function AdminSupplierDirectoryPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isMapMaterialModalOpen, setIsMapMaterialModalOpen] = useState(false);
   const [isSupplierMenuOpen, setIsSupplierMenuOpen] = useState(false);
+  const supplierMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (supplierMenuRef.current && !supplierMenuRef.current.contains(e.target as Node)) {
+        setIsSupplierMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const loadSuppliersFromApi = async () => {
     try {
@@ -296,12 +307,8 @@ export default function AdminSupplierDirectoryPage() {
         </div>
         {/* Action Header Buttons */}
         <div className="flex items-center gap-2.5 shrink-0">
-          {/* Supplier Menu Dropdown */}
-          <div
-            className="relative"
-            onMouseEnter={() => setIsSupplierMenuOpen(true)}
-            onMouseLeave={() => setIsSupplierMenuOpen(false)}
-          >
+          {/* Supplier Menu Dropdown (Click Controlled with Click Outside Ref) */}
+          <div className="relative" ref={supplierMenuRef}>
             <button
               type="button"
               onClick={() => setIsSupplierMenuOpen((prev) => !prev)}

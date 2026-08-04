@@ -223,7 +223,7 @@ export default function WarehouseVisualizationPage() {
         {/* Card 1: TOTAL STOCK VALUE */}
         <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
           <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2">TOTAL STOCK VALUE</span>
-          <div className="text-3xl font-extrabold text-slate-900">₹1.2Cr</div>
+          <div className="text-3xl font-extrabold text-slate-900">Rs 1.2Cr</div>
           <div className="text-xs text-emerald-600 font-semibold flex items-center mt-3">
             <span className="material-symbols-outlined text-[16px] mr-1">trending_up</span> +2.4% vs last week
           </div>

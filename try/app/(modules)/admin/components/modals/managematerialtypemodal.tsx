@@ -5,7 +5,6 @@ import React, { useState, useEffect } from "react";
 export interface MaterialTypeItem {
   id?: string | number;
   name: string;
-  code: string;
   defaultUom?: string;
   description?: string;
 }
@@ -16,10 +15,10 @@ interface ManageMaterialTypeModalProps {
 }
 
 const DEFAULT_TYPES: MaterialTypeItem[] = [
-  { id: 1, name: "Fabric", code: "TYP-FAB", defaultUom: "meters", description: "Woven, knitted, or non-woven raw textile rolls" },
-  { id: 2, name: "Trim & Hardware", code: "TYP-TRM", defaultUom: "pcs", description: "Zippers, buttons, rivets, buckles, and thread" },
-  { id: 3, name: "Chemical & Wash", code: "TYP-CHM", defaultUom: "kg", description: "Dyes, enzymes, softeners, and chemical agents" },
-  { id: 4, name: "Packaging Materials", code: "TYP-PKG", defaultUom: "pcs", description: "Cartons, polybags, tags, and barcode stickers" },
+  { id: 1, name: "Fabric", defaultUom: "meters", description: "Woven, knitted, or non-woven raw textile rolls" },
+  { id: 2, name: "Trim & Hardware", defaultUom: "pcs", description: "Zippers, buttons, rivets, buckles, and thread" },
+  { id: 3, name: "Chemical & Wash", defaultUom: "kg", description: "Dyes, enzymes, softeners, and chemical agents" },
+  { id: 4, name: "Packaging Materials", defaultUom: "pcs", description: "Cartons, polybags, tags, and barcode stickers" },
 ];
 
 export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeModalProps) {
@@ -29,7 +28,6 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
 
   // Add Type Form state
   const [newTypeName, setNewTypeName] = useState("");
-  const [newTypeCode, setNewTypeCode] = useState("");
   const [newTypeUom, setNewTypeUom] = useState("meters");
   const [newTypeDesc, setNewTypeDesc] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,7 +70,6 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
     setIsSubmitting(true);
     const typePayload: MaterialTypeItem = {
       name: newTypeName.trim(),
-      code: newTypeCode.trim() || `TYP-${Date.now().toString().slice(-4)}`,
       defaultUom: newTypeUom,
       description: newTypeDesc.trim(),
     };
@@ -98,17 +95,14 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
     } finally {
       setIsSubmitting(false);
       setNewTypeName("");
-      setNewTypeCode("");
       setNewTypeDesc("");
     }
   };
 
   if (!isOpen) return null;
 
-  const filteredTypes = types.filter(
-    (t) =>
-      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.code.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTypes = types.filter((t) =>
+    t.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -157,7 +151,7 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-mono font-bold text-slate-700 mb-1">
                   Type Name *
@@ -168,19 +162,6 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
                   placeholder="e.g. Synthetic Rubber"
                   value={newTypeName}
                   onChange={(e) => setNewTypeName(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono font-bold text-slate-700 mb-1">
-                  Type Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. TYP-RUB"
-                  value={newTypeCode}
-                  onChange={(e) => setNewTypeCode(e.target.value)}
                   className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
                 />
               </div>
@@ -252,7 +233,6 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Code</th>
                     <th className="py-2.5 px-4">Type Name</th>
                     <th className="py-2.5 px-4">Default UOM</th>
                     <th className="py-2.5 px-4">Description</th>
@@ -261,20 +241,19 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
                         Loading material types from {API_URL}...
                       </td>
                     </tr>
                   ) : filteredTypes.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
                         No material types found.
                       </td>
                     </tr>
                   ) : (
                     filteredTypes.map((t, idx) => (
                       <tr key={t.id || idx} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-4 font-mono font-bold text-slate-900">{t.code}</td>
                         <td className="py-2.5 px-4 font-bold text-slate-900">{t.name}</td>
                         <td className="py-2.5 px-4 font-mono">
                           <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold border border-slate-200">

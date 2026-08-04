@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 
 export interface ProductCategoryItem {
   id?: string;
-  categoryCode: string;
   name: string;
   isActive?: boolean;
   createdAt?: string;
@@ -17,11 +16,11 @@ interface ManageProductCategoryModalProps {
 }
 
 const DEFAULT_PRODUCT_CATEGORIES: ProductCategoryItem[] = [
-  { id: "1", categoryCode: "CAT-JKT", name: "Jackets", isActive: true },
-  { id: "2", categoryCode: "CAT-TSH", name: "T-Shirts", isActive: true },
-  { id: "3", categoryCode: "CAT-PNT", name: "Pants", isActive: true },
-  { id: "4", categoryCode: "CAT-HDY", name: "Hoodies", isActive: true },
-  { id: "5", categoryCode: "CAT-SHR", name: "Shirts", isActive: true },
+  { id: "1", name: "Jackets", isActive: true },
+  { id: "2", name: "T-Shirts", isActive: true },
+  { id: "3", name: "Pants", isActive: true },
+  { id: "4", name: "Hoodies", isActive: true },
+  { id: "5", name: "Shirts", isActive: true },
 ];
 
 export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCategoryModalProps) {
@@ -31,7 +30,6 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
 
   // Add Form state
   const [newCatName, setNewCatName] = useState("");
-  const [newCatCode, setNewCatCode] = useState("");
   const [newIsActive, setNewIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -73,7 +71,6 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
     setIsSubmitting(true);
     const categoryPayload: ProductCategoryItem = {
       name: newCatName.trim(),
-      categoryCode: newCatCode.trim() || `CAT-${Date.now().toString().slice(-4)}`,
       isActive: newIsActive,
     };
 
@@ -98,17 +95,14 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
     } finally {
       setIsSubmitting(false);
       setNewCatName("");
-      setNewCatCode("");
       setNewIsActive(true);
     }
   };
 
   if (!isOpen) return null;
 
-  const filteredCategories = categories.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.categoryCode.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -157,7 +151,7 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-mono font-bold text-slate-700 mb-1">
                   Category Name *
@@ -168,19 +162,6 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                   placeholder="e.g. Denim Jackets"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono font-bold text-slate-700 mb-1">
-                  Category Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. CAT-JKT"
-                  value={newCatCode}
-                  onChange={(e) => setNewCatCode(e.target.value)}
                   className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
                 />
               </div>
@@ -234,7 +215,6 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Code</th>
                     <th className="py-2.5 px-4">Category Name</th>
                     <th className="py-2.5 px-4">Status</th>
                   </tr>
@@ -242,20 +222,19 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={2} className="py-6 text-center text-slate-400 font-mono">
                         Loading product categories from {API_URL}...
                       </td>
                     </tr>
                   ) : filteredCategories.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={2} className="py-6 text-center text-slate-400 font-mono">
                         No product categories found.
                       </td>
                     </tr>
                   ) : (
                     filteredCategories.map((cat, idx) => (
                       <tr key={cat.id || idx} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-4 font-mono font-bold text-slate-900">{cat.categoryCode}</td>
                         <td className="py-2.5 px-4 font-bold text-slate-900">{cat.name}</td>
                         <td className="py-2.5 px-4 font-mono">
                           <span

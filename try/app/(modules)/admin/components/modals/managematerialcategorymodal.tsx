@@ -5,7 +5,6 @@ import React, { useState, useEffect } from "react";
 export interface MaterialCategoryItem {
   id?: string | number;
   name: string;
-  code: string;
   description?: string;
   materialType?: string;
 }
@@ -16,11 +15,11 @@ interface ManageMaterialCategoryModalProps {
 }
 
 const DEFAULT_CATEGORIES: MaterialCategoryItem[] = [
-  { id: 1, name: "Cotton", code: "CAT-CTN", description: "100% Organic & Combed Cotton Weaves", materialType: "Fabric" },
-  { id: 2, name: "Denim", code: "CAT-DNM", description: "Indigo Dyed Heavyweight Twill Fabric", materialType: "Fabric" },
-  { id: 3, name: "Zippers & Fasteners", code: "CAT-ZIP", description: "YKK Metallic & Nylon Zippers", materialType: "Trim" },
-  { id: 4, name: "Dyes & Dope Wash", code: "CAT-DYE", description: "Vat & Reactive Indigo Concentrates", materialType: "Chemical" },
-  { id: 5, name: "Master Cartons", code: "CAT-PKG", description: "Corrugated 5-Ply Shipping Boxes", materialType: "Packaging" },
+  { id: 1, name: "Cotton", description: "100% Organic & Combed Cotton Weaves", materialType: "Fabric" },
+  { id: 2, name: "Denim", description: "Indigo Dyed Heavyweight Twill Fabric", materialType: "Fabric" },
+  { id: 3, name: "Zippers & Fasteners", description: "YKK Metallic & Nylon Zippers", materialType: "Trim" },
+  { id: 4, name: "Dyes & Dope Wash", description: "Vat & Reactive Indigo Concentrates", materialType: "Chemical" },
+  { id: 5, name: "Master Cartons", description: "Corrugated 5-Ply Shipping Boxes", materialType: "Packaging" },
 ];
 
 export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialCategoryModalProps) {
@@ -31,7 +30,6 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
 
   // Add Category Form state
   const [newCatName, setNewCatName] = useState("");
-  const [newCatCode, setNewCatCode] = useState("");
   const [newCatDesc, setNewCatDesc] = useState("");
   const [newCatType, setNewCatType] = useState("Fabric");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,7 +74,6 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
     setIsSubmitting(true);
     const categoryPayload: MaterialCategoryItem = {
       name: newCatName.trim(),
-      code: newCatCode.trim() || `CAT-${Date.now().toString().slice(-4)}`,
       description: newCatDesc.trim(),
       materialType: newCatType,
     };
@@ -104,17 +101,14 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
     } finally {
       setIsSubmitting(false);
       setNewCatName("");
-      setNewCatCode("");
       setNewCatDesc("");
     }
   };
 
   if (!isOpen) return null;
 
-  const filteredCategories = categories.filter(
-    (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.code.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCategories = categories.filter((c) =>
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -163,7 +157,7 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
               </h3>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-mono font-bold text-slate-700 mb-1">
                   Category Name *
@@ -174,19 +168,6 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
                   placeholder="e.g. Combed Cotton"
                   value={newCatName}
                   onChange={(e) => setNewCatName(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-mono font-bold text-slate-700 mb-1">
-                  Category Code
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. CAT-CTN"
-                  value={newCatCode}
-                  onChange={(e) => setNewCatCode(e.target.value)}
                   className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
                 />
               </div>
@@ -257,7 +238,6 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                    <th className="py-2.5 px-4">Code</th>
                     <th className="py-2.5 px-4">Category Name</th>
                     <th className="py-2.5 px-4">Type</th>
                     <th className="py-2.5 px-4">Description</th>
@@ -266,20 +246,19 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
                         Loading material categories...
                       </td>
                     </tr>
                   ) : filteredCategories.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
                         No categories found.
                       </td>
                     </tr>
                   ) : (
                     filteredCategories.map((cat, idx) => (
                       <tr key={cat.id || idx} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-4 font-mono font-bold text-slate-900">{cat.code}</td>
                         <td className="py-2.5 px-4 font-bold text-slate-900">{cat.name}</td>
                         <td className="py-2.5 px-4 font-mono">
                           <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold border border-slate-200">

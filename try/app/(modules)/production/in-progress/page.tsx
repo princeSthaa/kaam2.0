@@ -397,10 +397,10 @@ export default function InProgressPage() {
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               In-Progress Production Runs
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-50 text-emerald-800 border border-emerald-200">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            {/* <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-50 text-emerald-800 border border-emerald-200"> */}
+              {/* <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
               LIVE DB SYNC
-            </span>
+            </span> */}
           </div>
           <p className="text-xs text-slate-500 font-medium">
             Real-time shop floor execution, garment stage tracking, and workstation routing.

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/registerskumodal";
 import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
@@ -116,6 +116,17 @@ export default function ProductDirectoryPage() {
   const [isManageProductCategoryModalOpen, setIsManageProductCategoryModalOpen] = useState(false);
   const [isProductMenuOpen, setIsProductMenuOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<ProductDirectoryItem | null>(null);
+  const productMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (productMenuRef.current && !productMenuRef.current.contains(e.target as Node)) {
+        setIsProductMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const showToast = (msg: string) => {
     setNotification(msg);
@@ -200,12 +211,8 @@ export default function ProductDirectoryPage() {
 
         {/* Action Header Buttons */}
         <div className="flex items-center gap-2.5 shrink-0">
-          {/* Product Menu Dropdown (Hover / Click) */}
-          <div
-            className="relative"
-            onMouseEnter={() => setIsProductMenuOpen(true)}
-            onMouseLeave={() => setIsProductMenuOpen(false)}
-          >
+          {/* Product Menu Dropdown (Click Controlled with Click Outside Ref) */}
+          <div className="relative" ref={productMenuRef}>
             <button
               type="button"
               onClick={() => setIsProductMenuOpen((prev) => !prev)}

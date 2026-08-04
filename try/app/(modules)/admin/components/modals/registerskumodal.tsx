@@ -11,9 +11,16 @@ export interface MaterialCompositionItem {
   id: string;
   code: string;
   description: string;
+  materialTypeId?: string;
+  materialTypeName?: string;
   qty: string;
   isExpanded?: boolean;
   sizeBreakdown?: MaterialBreakdownSizeRow[];
+}
+
+export interface MaterialTypeOption {
+  id: string;
+  name: string;
 }
 
 export interface PipelineStageItem {
@@ -43,6 +50,15 @@ interface RegisterSkuModalProps {
   onClose: () => void;
   onSave?: (data: RegisterSkuFormData) => void;
 }
+
+export const DEFAULT_MATERIAL_TYPES: MaterialTypeOption[] = [
+  { id: "mat-type-1", name: "Fabric" },
+  { id: "mat-type-2", name: "Thread" },
+  { id: "mat-type-3", name: "Trim & Hardware" },
+  { id: "mat-type-4", name: "Dye & Chemical" },
+  { id: "mat-type-5", name: "Label & Packaging" },
+  { id: "mat-type-6", name: "Accessory" },
+];
 
 // Preset Garment Materials for searchable dropdown + fetched materials
 const PRESET_GARMENT_MATERIALS = [
@@ -270,29 +286,39 @@ export function RegisterSkuModal({
   const [isAddingMaterial, setIsAddingMaterial] = useState(false);
   const [materialSearchQuery, setMaterialSearchQuery] = useState("");
   const [isMaterialDropdownOpen, setIsMaterialDropdownOpen] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState<{ code: string; name: string } | null>(null);
-  const [materialQty, setMaterialQty] = useState("");
-  const [availableMaterials, setAvailableMaterials] = useState<{ code: string; name: string }[]>(PRESET_GARMENT_MATERIALS);
+  const [selectedMaterialType, setSelectedMaterialType] = useState<MaterialTypeOption | null>(null);
   const materialDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch materials from API if available
+  // Material Types API integration (http://localhost:5083/api/material-type)
+  const [materialTypes, setMaterialTypes] = useState<MaterialTypeOption[]>(DEFAULT_MATERIAL_TYPES);
+  const [selectedMaterialTypeId, setSelectedMaterialTypeId] = useState<string>("");
+  const [isLoadingMaterialTypes, setIsLoadingMaterialTypes] = useState<boolean>(false);
+
+  // Fetch Material Types from API: http://localhost:5083/api/material-type
   useEffect(() => {
+    setIsLoadingMaterialTypes(true);
     fetch("http://localhost:5083/api/material-type")
-      .then((res) => res.json())
-      .then((data: any[]) => {
-        if (Array.isArray(data) && data.length > 0) {
-          const apiMaterials = data.map((item, idx) => ({
-            code: item.code || `MAT-API-${idx + 100}`,
-            name: item.name || item.Name || "Material Item",
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch material types");
+        return res.json();
+      })
+      .then((data: any) => {
+        const list = Array.isArray(data) ? data : data?.value || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const apiTypes: MaterialTypeOption[] = list.map((item: any) => ({
+            id: item.id || item.Id || String(Math.random()),
+            name: item.name || item.Name || "Material Type",
           }));
-          setAvailableMaterials((prev) => {
-            const map = new Map();
-            [...prev, ...apiMaterials].forEach((m) => map.set(m.code, m));
-            return Array.from(map.values());
-          });
+          setMaterialTypes(apiTypes);
+          setSelectedMaterialTypeId(apiTypes[0].id);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("API GET http://localhost:5083/api/material-type failed, fallback to defaults:", err);
+      })
+      .finally(() => {
+        setIsLoadingMaterialTypes(false);
+      });
   }, []);
 
   // Handle click outside for material dropdown
@@ -402,15 +428,33 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
     }));
   };
 
+  const handleUpdateMaterialType = (materialId: string, typeId: string) => {
+    const typeObj = materialTypes.find((t) => t.id === typeId);
+    setFormData((prev) => ({
+      ...prev,
+      materials: prev.materials.map((m) =>
+        m.id === materialId
+          ? {
+              ...m,
+              materialTypeId: typeId,
+              materialTypeName: typeObj?.name || m.materialTypeName,
+            }
+          : m
+      ),
+    }));
+  };
+
   const handleAddMaterialSubmit = () => {
-    if (!selectedMaterial) return;
+    if (!selectedMaterialType) return;
     const rawSizes = formData.selectedSizes.length > 0 ? formData.selectedSizes : ["s", "m", "l", "xl"];
     const activeSizes = ALL_SIZE_ORDER.filter((s) => rawSizes.includes(s));
 
     const newItem: MaterialCompositionItem = {
       id: Date.now().toString(),
-      code: selectedMaterial.code,
-      description: selectedMaterial.name,
+      code: `MAT-${selectedMaterialType.name.slice(0, 3).toUpperCase()}-${Date.now().toString().slice(-4)}`,
+      description: selectedMaterialType.name,
+      materialTypeId: selectedMaterialType.id,
+      materialTypeName: selectedMaterialType.name,
       qty: "",
       isExpanded: true,
       sizeBreakdown: activeSizes.map((sz) => ({
@@ -422,7 +466,7 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
       ...prev,
       materials: [...prev.materials, newItem],
     }));
-    setSelectedMaterial(null);
+    setSelectedMaterialType(null);
     setMaterialSearchQuery("");
     setIsAddingMaterial(false);
   };
@@ -491,10 +535,8 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
     onClose();
   };
 
-  const filteredAvailableMaterials = availableMaterials.filter(
-    (m) =>
-      m.name.toLowerCase().includes(materialSearchQuery.toLowerCase()) ||
-      m.code.toLowerCase().includes(materialSearchQuery.toLowerCase())
+  const filteredMaterialTypes = materialTypes.filter((mt) =>
+    mt.name.toLowerCase().includes(materialSearchQuery.toLowerCase())
   );
 
   const isBomComplete = formData.materials.length > 0;
@@ -701,14 +743,14 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 animate-fadeIn">
                     <div className="relative" ref={materialDropdownRef}>
                       <label className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                        SEARCH & SELECT MATERIAL *
+                        SEARCH &amp; SELECT MATERIAL TYPE *
                       </label>
                       <div
-                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer flex items-center justify-between text-xs hover:border-slate-300 transition-colors"
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer flex items-center justify-between text-xs hover:border-slate-300 transition-colors shadow-sm"
                         onClick={() => setIsMaterialDropdownOpen(!isMaterialDropdownOpen)}
                       >
-                        <span className={selectedMaterial ? "font-semibold text-slate-900" : "text-slate-400"}>
-                          {selectedMaterial ? `${selectedMaterial.code} - ${selectedMaterial.name}` : "Search material..."}
+                        <span className={selectedMaterialType ? "font-semibold text-slate-900" : "text-slate-400"}>
+                          {selectedMaterialType ? selectedMaterialType.name : "Search material type..."}
                         </span>
                         <span className="material-symbols-outlined text-slate-400 text-sm">arrow_drop_down</span>
                       </div>
@@ -728,23 +770,22 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
                             />
                           </div>
                           <div className="overflow-y-auto p-1 divide-y divide-slate-50">
-                            {filteredAvailableMaterials.length === 0 ? (
-                              <div className="p-3 text-slate-400 text-center font-mono">No matching materials found</div>
+                            {filteredMaterialTypes.length === 0 ? (
+                              <div className="p-3 text-slate-400 text-center font-mono">No matching material type found</div>
                             ) : (
-                              filteredAvailableMaterials.map((mat) => (
+                              filteredMaterialTypes.map((mt) => (
                                 <div
-                                  key={mat.code}
+                                  key={mt.id}
                                   className="px-3 py-2 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between text-xs transition-colors"
                                   onClick={() => {
-                                    setSelectedMaterial(mat);
+                                    setSelectedMaterialType(mt);
                                     setIsMaterialDropdownOpen(false);
                                   }}
                                 >
                                   <div>
-                                    <div className="font-bold text-slate-900">{mat.name}</div>
-                                    <div className="text-[10px] font-mono text-slate-400">{mat.code}</div>
+                                    <div className="font-bold text-slate-900">{mt.name}</div>
                                   </div>
-                                  {selectedMaterial?.code === mat.code && (
+                                  {selectedMaterialType?.id === mt.id && (
                                     <span className="material-symbols-outlined text-sm font-bold text-slate-900">check</span>
                                   )}
                                 </div>
@@ -759,7 +800,7 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
                       <button
                         type="button"
                         onClick={handleAddMaterialSubmit}
-                        disabled={!selectedMaterial}
+                        disabled={!selectedMaterialType}
                         className="px-4 py-2 bg-slate-900 text-white rounded-lg font-mono font-bold text-xs hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow transition-all flex items-center gap-1.5"
                       >
                         <span className="material-symbols-outlined text-sm">add</span>
@@ -801,7 +842,23 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
                               </span>
                             </button>
 
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                              {/* Material Type Select/Badge */}
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-[10px] font-bold text-slate-400 uppercase hidden sm:inline">Type:</span>
+                                <select
+                                  value={mat.materialTypeId || (materialTypes[0]?.id ?? "")}
+                                  onChange={(e) => handleUpdateMaterialType(mat.id, e.target.value)}
+                                  className="px-2 py-1 bg-white border border-slate-200 rounded-md font-mono text-[11px] font-bold text-slate-900 focus:ring-1 focus:ring-slate-900 outline-none cursor-pointer shadow-xs"
+                                >
+                                  {materialTypes.map((mt) => (
+                                    <option key={mt.id} value={mt.id}>
+                                      {mt.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
                               <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
                                 Total: {calculatedTotalStr}
                               </span>

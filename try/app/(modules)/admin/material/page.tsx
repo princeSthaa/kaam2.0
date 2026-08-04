@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
 import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/registerskumodal";
@@ -120,6 +120,17 @@ export default function MaterialDirectoryPage() {
   const [isManageTypeModalOpen, setIsManageTypeModalOpen] = useState(false);
   const [isMaterialMenuOpen, setIsMaterialMenuOpen] = useState(false);
   const [viewingMaterial, setViewingMaterial] = useState<MaterialDirectoryItem | null>(null);
+  const materialMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (materialMenuRef.current && !materialMenuRef.current.contains(e.target as Node)) {
+        setIsMaterialMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const showToast = (msg: string) => {
     setNotification(msg);
@@ -202,12 +213,8 @@ export default function MaterialDirectoryPage() {
 
         {/* Action Header Buttons */}
         <div className="flex items-center gap-2.5 shrink-0">
-          {/* Material Menu Dropdown (Hover / Click) */}
-          <div
-            className="relative"
-            onMouseEnter={() => setIsMaterialMenuOpen(true)}
-            onMouseLeave={() => setIsMaterialMenuOpen(false)}
-          >
+          {/* Material Menu Dropdown (Click Controlled with Click Outside Ref) */}
+          <div className="relative" ref={materialMenuRef}>
             <button
               type="button"
               onClick={() => setIsMaterialMenuOpen((prev) => !prev)}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import AddSupplierMappingModal, {
   MaterialMapping,
 } from "../components/modals/addsuppliermappingmodal";
@@ -100,6 +100,17 @@ export default function SuppliedMaterialDirectoryPage() {
   const [isMaterialMenuOpen, setIsMaterialMenuOpen] = useState(false);
   const [isManageCategoryModalOpen, setIsManageCategoryModalOpen] = useState(false);
   const [isManageTypeModalOpen, setIsManageTypeModalOpen] = useState(false);
+  const materialMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (materialMenuRef.current && !materialMenuRef.current.contains(e.target as Node)) {
+        setIsMaterialMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const filteredMappings = useMemo(() => {
     return mappings.filter((item) => {
@@ -183,12 +194,8 @@ export default function SuppliedMaterialDirectoryPage() {
         </div>
         {/* Action Header Buttons */}
         <div className="flex items-center gap-2.5 shrink-0">
-          {/* Material Menu Dropdown (Hover / Click) */}
-          <div
-            className="relative"
-            onMouseEnter={() => setIsMaterialMenuOpen(true)}
-            onMouseLeave={() => setIsMaterialMenuOpen(false)}
-          >
+          {/* Material Menu Dropdown (Click Controlled with Click Outside Ref) */}
+          <div className="relative" ref={materialMenuRef}>
             <button
               type="button"
               onClick={() => setIsMaterialMenuOpen((prev) => !prev)}

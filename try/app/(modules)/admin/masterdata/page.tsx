@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/registerskumodal";
 import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
@@ -91,6 +91,17 @@ export default function MasterDataPage() {
   const [isManageStagesModalOpen, setIsManageStagesModalOpen] = useState(false);
   const [isQuickActionsMenuOpen, setIsQuickActionsMenuOpen] = useState(false);
   const [activeActionTitle, setActiveActionTitle] = useState("");
+  const quickActionsMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (quickActionsMenuRef.current && !quickActionsMenuRef.current.contains(e.target as Node)) {
+        setIsQuickActionsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const showToast = (msg: string) => {
     setNotification(msg);
@@ -200,12 +211,8 @@ export default function MasterDataPage() {
             />
           </div>
 
-          {/* Quick Actions Dropdown Menu */}
-          <div
-            className="relative"
-            onMouseEnter={() => setIsQuickActionsMenuOpen(true)}
-            onMouseLeave={() => setIsQuickActionsMenuOpen(false)}
-          >
+          {/* Quick Actions Dropdown Menu (Click Controlled with Click Outside Ref) */}
+          <div className="relative" ref={quickActionsMenuRef}>
             <button
               type="button"
               onClick={() => setIsQuickActionsMenuOpen((prev) => !prev)}
