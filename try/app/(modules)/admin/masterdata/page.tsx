@@ -4,6 +4,7 @@ import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/registerskumodal";
 import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
+import { ManageProductionStagesModal } from "../components/modals/manageproductionstagesmodal";
 
 interface MasterDataEntry {
   id: string;
@@ -87,6 +88,8 @@ export default function MasterDataPage() {
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [isRegisterSkuModalOpen, setIsRegisterSkuModalOpen] = useState(false);
   const [isDefineMaterialModalOpen, setIsDefineMaterialModalOpen] = useState(false);
+  const [isManageStagesModalOpen, setIsManageStagesModalOpen] = useState(false);
+  const [isQuickActionsMenuOpen, setIsQuickActionsMenuOpen] = useState(false);
   const [activeActionTitle, setActiveActionTitle] = useState("");
 
   const showToast = (msg: string) => {
@@ -101,6 +104,10 @@ export default function MasterDataPage() {
     }
     if (actionName === "Define Material Spec") {
       setIsDefineMaterialModalOpen(true);
+      return;
+    }
+    if (actionName === "Manage Production Stages") {
+      setIsManageStagesModalOpen(true);
       return;
     }
     setActiveActionTitle(actionName);
@@ -163,7 +170,7 @@ export default function MasterDataPage() {
       )}
 
       {/* PAGE HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-slate-200 pb-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-slate-200 pb-4">
         <div>
           <div className="flex items-center space-x-2">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
@@ -178,8 +185,8 @@ export default function MasterDataPage() {
           </p>
         </div>
 
-        {/* Search & Quick Filter */}
-        <div className="flex items-center space-x-3 w-full md:w-auto">
+        {/* Search & Quick Actions Dropdown */}
+        <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
           <div className="relative flex-1 md:w-64">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
               search
@@ -191,6 +198,101 @@ export default function MasterDataPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none transition-all"
             />
+          </div>
+
+          {/* Quick Actions Dropdown Menu */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsQuickActionsMenuOpen(true)}
+            onMouseLeave={() => setIsQuickActionsMenuOpen(false)}
+          >
+            <button
+              type="button"
+              onClick={() => setIsQuickActionsMenuOpen((prev) => !prev)}
+              className="flex items-center justify-center gap-2 bg-slate-900 text-white py-2 px-4 rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-md active:scale-95 whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-base">tune</span>
+              <span>Quick Actions</span>
+              <span className="material-symbols-outlined text-sm">expand_more</span>
+            </button>
+
+            {isQuickActionsMenuOpen && (
+              <div className="absolute right-0 top-full mt-1.5 w-60 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50 animate-fadeIn">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleActionClick("New Supplier Onboarding");
+                    setIsQuickActionsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-xs font-semibold text-slate-900 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-slate-500 text-base">add</span>
+                  <span>New Supplier</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleActionClick("Onboard Customer Account");
+                    setIsQuickActionsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-xs font-semibold text-slate-900 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-slate-500 text-base">person_add</span>
+                  <span>Onboard Customer</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleActionClick("Register Product SKU");
+                    setIsQuickActionsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-xs font-semibold text-slate-900 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-slate-500 text-base">barcode_scanner</span>
+                  <span>Register Product SKU</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleActionClick("Define Material Spec");
+                    setIsQuickActionsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-xs font-semibold text-slate-900 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-slate-500 text-base">precision_manufacturing</span>
+                  <span>Define Material Spec</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleActionClick("Manage Production Stages");
+                    setIsQuickActionsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-xs font-semibold text-slate-900 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-slate-500 text-base">account_tree</span>
+                  <span>Manage Production Stages</span>
+                </button>
+
+                <div className="border-t border-slate-100 my-1"></div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleBulkImport();
+                    setIsQuickActionsMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center gap-3 text-xs font-semibold text-slate-900 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-slate-500 text-base">upload_file</span>
+                  <span>Bulk Import Data (CSV/XLSX)</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -277,60 +379,8 @@ export default function MasterDataPage() {
         </div>
       </div>
 
-      {/* LOWER LAYOUT GRID (QUICK ACTIONS + DATA LOG) */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Quick Actions Panel (1 Col) */}
-        <div className="xl:col-span-1 bg-white rounded-xl border border-slate-200 p-5 shadow-sm h-fit space-y-4">
-          <h2 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3">
-            Quick Actions
-          </h2>
-          <div className="space-y-2.5">
-            <button
-              onClick={() => handleActionClick("New Supplier Onboarding")}
-              className="w-full flex items-center justify-start gap-3 bg-slate-900 text-white py-2.5 px-4 rounded-lg font-semibold text-xs hover:bg-slate-800 transition-colors shadow-sm"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-              <span>New Supplier</span>
-            </button>
-
-            <button
-              onClick={() => handleActionClick("Onboard Customer Account")}
-              className="w-full flex items-center justify-start gap-3 bg-slate-50 border border-slate-200 text-slate-900 py-2.5 px-4 rounded-lg font-semibold text-xs hover:bg-slate-100 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px] text-slate-500">person_add</span>
-              <span>Onboard Customer</span>
-            </button>
-
-            <button
-              onClick={() => handleActionClick("Register Product SKU")}
-              className="w-full flex items-center justify-start gap-3 bg-slate-50 border border-slate-200 text-slate-900 py-2.5 px-4 rounded-lg font-semibold text-xs hover:bg-slate-100 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px] text-slate-500">barcode_scanner</span>
-              <span>Register Product SKU</span>
-            </button>
-
-            <button
-              onClick={() => handleActionClick("Define Material Spec")}
-              className="w-full flex items-center justify-start gap-3 bg-slate-50 border border-slate-200 text-slate-900 py-2.5 px-4 rounded-lg font-semibold text-xs hover:bg-slate-100 transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px] text-slate-500">precision_manufacturing</span>
-              <span>Define Material Spec</span>
-            </button>
-          </div>
-
-          <div className="pt-4 border-t border-slate-100">
-            <button
-              onClick={handleBulkImport}
-              className="w-full flex items-center justify-center gap-2 text-slate-900 font-mono text-xs font-bold hover:underline"
-            >
-              <span className="material-symbols-outlined text-[16px]">upload_file</span>
-              <span>Bulk Import Data (CSV/XLSX)</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Recently Updated Master Data Log (3 Cols) */}
-        <div className="xl:col-span-3 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+      {/* FULL-WIDTH RECENTLY UPDATED MASTER DATA LOG TABLE */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between w-full">
           <div>
             <div className="p-5 border-b border-slate-200 flex flex-wrap justify-between items-center bg-slate-50/50 gap-4">
               <div>
@@ -428,7 +478,6 @@ export default function MasterDataPage() {
             Showing {filteredLogs.length} of {INITIAL_LOG_DATA.length} log entries
           </div>
         </div>
-      </div>
 
       {/* QUICK ACTION MODAL */}
       {isActionModalOpen && (
@@ -511,6 +560,12 @@ export default function MasterDataPage() {
         isOpen={isDefineMaterialModalOpen}
         onClose={() => setIsDefineMaterialModalOpen(false)}
         onSave={handleSaveMaterial}
+      />
+
+      {/* MANAGE PRODUCTION STAGES MODAL */}
+      <ManageProductionStagesModal
+        isOpen={isManageStagesModalOpen}
+        onClose={() => setIsManageStagesModalOpen(false)}
       />
     </div>
   );

@@ -2,11 +2,18 @@
 
 import React, { useState, useEffect, useRef } from "react";
 
+export interface MaterialBreakdownSizeRow {
+  size: string;
+  requiredQty: string;
+}
+
 export interface MaterialCompositionItem {
   id: string;
   code: string;
   description: string;
   qty: string;
+  isExpanded?: boolean;
+  sizeBreakdown?: MaterialBreakdownSizeRow[];
 }
 
 export interface PipelineStageItem {
@@ -237,26 +244,7 @@ export function RegisterSkuModal({
     lifecycleStatus: "active",
     gender: "unisex",
     selectedSizes: ["s", "m", "l", "xl"],
-    materials: [
-      {
-        id: "1",
-        code: "MAT-FAB-001",
-        description: "Fabric - 100% Cotton Denim (14oz Indigo)",
-        qty: "1.8 m",
-      },
-      {
-        id: "2",
-        code: "MAT-THR-042",
-        description: "Thread - Indigo Polyester Topstitch Thread",
-        qty: "150 m",
-      },
-      {
-        id: "3",
-        code: "MAT-ACC-088",
-        description: "Zipper - YKK 8 inch Heavy Brass",
-        qty: "1 pc",
-      },
-    ],
+    materials: [],
     pipelineStages: [
       {
         id: "1",
@@ -320,13 +308,62 @@ export function RegisterSkuModal({
 
   if (!isOpen) return null;
 
+const ALL_SIZE_ORDER = ["xs", "s", "m", "l", "xl", "xxl"];
+
+const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): string => {
+  if (!sizeBreakdown || sizeBreakdown.length === 0) return "0";
+
+  let sum = 0;
+  let unit = "";
+  let hasValidNumber = false;
+
+  sizeBreakdown.forEach((row) => {
+    if (!row.requiredQty) return;
+    const trimmed = row.requiredQty.trim();
+    const match = trimmed.match(/^([\d.]+)\s*(.*)$/);
+    if (match) {
+      const val = parseFloat(match[1]);
+      if (!isNaN(val)) {
+        sum += val;
+        hasValidNumber = true;
+      }
+      if (match[2] && !unit) {
+        unit = match[2];
+      }
+    } else {
+      const val = parseFloat(trimmed);
+      if (!isNaN(val)) {
+        sum += val;
+        hasValidNumber = true;
+      }
+    }
+  });
+
+  if (!hasValidNumber) return "0";
+  const formattedSum = sum % 1 === 0 ? sum.toString() : sum.toFixed(2);
+  return unit ? `${formattedSum} ${unit}` : `${formattedSum}`;
+};
+
   const handleSizeToggle = (size: string) => {
     setFormData((prev) => {
       const exists = prev.selectedSizes.includes(size);
-      const updatedSizes = exists
+      const rawSizes = exists
         ? prev.selectedSizes.filter((s) => s !== size)
         : [...prev.selectedSizes, size];
-      return { ...prev, selectedSizes: updatedSizes };
+      const updatedSizes = ALL_SIZE_ORDER.filter((s) => rawSizes.includes(s));
+
+      const updatedMaterials = prev.materials.map((mat) => {
+        const existingMap = new Map(
+          (mat.sizeBreakdown || []).map((row) => [row.size.toLowerCase(), row.requiredQty])
+        );
+        const newBreakdown = updatedSizes.map((sz) => ({
+          size: sz.toUpperCase(),
+          requiredQty: existingMap.has(sz.toLowerCase()) ? existingMap.get(sz.toLowerCase())! : "",
+        }));
+        return { ...mat, sizeBreakdown: newBreakdown };
+      });
+
+      return { ...prev, selectedSizes: updatedSizes, materials: updatedMaterials };
     });
   };
 
@@ -337,13 +374,49 @@ export function RegisterSkuModal({
     }));
   };
 
+  const handleToggleExpandMaterial = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: prev.materials.map((m) => (m.id === id ? { ...m, isExpanded: !m.isExpanded } : m)),
+    }));
+  };
+
+  const handleUpdateSizeRequiredQty = (
+    materialId: string,
+    size: string,
+    value: string
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      materials: prev.materials.map((m) => {
+        if (m.id === materialId && m.sizeBreakdown) {
+          return {
+            ...m,
+            sizeBreakdown: m.sizeBreakdown.map((row) =>
+              row.size === size ? { ...row, requiredQty: value } : row
+            ),
+          };
+        }
+        return m;
+      }),
+    }));
+  };
+
   const handleAddMaterialSubmit = () => {
     if (!selectedMaterial) return;
+    const rawSizes = formData.selectedSizes.length > 0 ? formData.selectedSizes : ["s", "m", "l", "xl"];
+    const activeSizes = ALL_SIZE_ORDER.filter((s) => rawSizes.includes(s));
+
     const newItem: MaterialCompositionItem = {
       id: Date.now().toString(),
       code: selectedMaterial.code,
       description: selectedMaterial.name,
-      qty: materialQty.trim() || "1 pc",
+      qty: "",
+      isExpanded: true,
+      sizeBreakdown: activeSizes.map((sz) => ({
+        size: sz.toUpperCase(),
+        requiredQty: "",
+      })),
     };
     setFormData((prev) => ({
       ...prev,
@@ -351,7 +424,6 @@ export function RegisterSkuModal({
     }));
     setSelectedMaterial(null);
     setMaterialSearchQuery("");
-    setMaterialQty("");
     setIsAddingMaterial(false);
   };
 
@@ -627,77 +699,60 @@ export function RegisterSkuModal({
                 {/* Searchable Material Select Form */}
                 {isAddingMaterial && (
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3 animate-fadeIn">
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
-                      {/* Searchable Material Dropdown (8 cols) */}
-                      <div className="sm:col-span-8 relative" ref={materialDropdownRef}>
-                        <label className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                          SEARCH & SELECT MATERIAL *
-                        </label>
-                        <div
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg cursor-pointer flex items-center justify-between text-xs"
-                          onClick={() => setIsMaterialDropdownOpen(!isMaterialDropdownOpen)}
-                        >
-                          <span className={selectedMaterial ? "font-semibold text-slate-900" : "text-slate-400"}>
-                            {selectedMaterial ? `${selectedMaterial.code} - ${selectedMaterial.name}` : "Search material..."}
-                          </span>
-                          <span className="material-symbols-outlined text-slate-400 text-sm">arrow_drop_down</span>
-                        </div>
+                    <div className="relative" ref={materialDropdownRef}>
+                      <label className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                        SEARCH & SELECT MATERIAL *
+                      </label>
+                      <div
+                        className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg cursor-pointer flex items-center justify-between text-xs hover:border-slate-300 transition-colors"
+                        onClick={() => setIsMaterialDropdownOpen(!isMaterialDropdownOpen)}
+                      >
+                        <span className={selectedMaterial ? "font-semibold text-slate-900" : "text-slate-400"}>
+                          {selectedMaterial ? `${selectedMaterial.code} - ${selectedMaterial.name}` : "Search material..."}
+                        </span>
+                        <span className="material-symbols-outlined text-slate-400 text-sm">arrow_drop_down</span>
+                      </div>
 
-                        {/* Searchable Options Menu */}
-                        {isMaterialDropdownOpen && (
-                          <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-56 flex flex-col overflow-hidden">
-                            <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
-                              <input
-                                type="text"
-                                placeholder="Type to search fabric, thread, trim..."
-                                value={materialSearchQuery}
-                                onChange={(e) => setMaterialSearchQuery(e.target.value)}
-                                className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-slate-900"
-                                autoFocus
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                            </div>
-                            <div className="overflow-y-auto p-1 divide-y divide-slate-50">
-                              {filteredAvailableMaterials.length === 0 ? (
-                                <div className="p-3 text-slate-400 text-center font-mono">No matching materials found</div>
-                              ) : (
-                                filteredAvailableMaterials.map((mat) => (
-                                  <div
-                                    key={mat.code}
-                                    className="px-3 py-2 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between text-xs transition-colors"
-                                    onClick={() => {
-                                      setSelectedMaterial(mat);
-                                      setIsMaterialDropdownOpen(false);
-                                    }}
-                                  >
-                                    <div>
-                                      <div className="font-bold text-slate-900">{mat.name}</div>
-                                      <div className="text-[10px] font-mono text-slate-400">{mat.code}</div>
-                                    </div>
-                                    {selectedMaterial?.code === mat.code && (
-                                      <span className="material-symbols-outlined text-sm font-bold text-slate-900">check</span>
-                                    )}
-                                  </div>
-                                ))
-                              )}
-                            </div>
+                      {/* Searchable Options Menu */}
+                      {isMaterialDropdownOpen && (
+                        <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-56 flex flex-col overflow-hidden">
+                          <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
+                            <input
+                              type="text"
+                              placeholder="Type to search fabric, thread, trim..."
+                              value={materialSearchQuery}
+                              onChange={(e) => setMaterialSearchQuery(e.target.value)}
+                              className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs outline-none focus:ring-1 focus:ring-slate-900"
+                              autoFocus
+                              onClick={(e) => e.stopPropagation()}
+                            />
                           </div>
-                        )}
-                      </div>
-
-                      {/* Required Qty Input (4 cols) */}
-                      <div className="sm:col-span-4 space-y-1">
-                        <label className="font-mono text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                          REQ. QTY / UNIT *
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 1.8 m"
-                          value={materialQty}
-                          onChange={(e) => setMaterialQty(e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg font-mono text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none"
-                        />
-                      </div>
+                          <div className="overflow-y-auto p-1 divide-y divide-slate-50">
+                            {filteredAvailableMaterials.length === 0 ? (
+                              <div className="p-3 text-slate-400 text-center font-mono">No matching materials found</div>
+                            ) : (
+                              filteredAvailableMaterials.map((mat) => (
+                                <div
+                                  key={mat.code}
+                                  className="px-3 py-2 hover:bg-slate-100 rounded-lg cursor-pointer flex items-center justify-between text-xs transition-colors"
+                                  onClick={() => {
+                                    setSelectedMaterial(mat);
+                                    setIsMaterialDropdownOpen(false);
+                                  }}
+                                >
+                                  <div>
+                                    <div className="font-bold text-slate-900">{mat.name}</div>
+                                    <div className="text-[10px] font-mono text-slate-400">{mat.code}</div>
+                                  </div>
+                                  {selectedMaterial?.code === mat.code && (
+                                    <span className="material-symbols-outlined text-sm font-bold text-slate-900">check</span>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex justify-end pt-1">
@@ -705,52 +760,125 @@ export function RegisterSkuModal({
                         type="button"
                         onClick={handleAddMaterialSubmit}
                         disabled={!selectedMaterial}
-                        className="px-4 py-1.5 bg-slate-900 text-white rounded-lg font-mono font-bold text-xs hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow transition-all"
+                        className="px-4 py-2 bg-slate-900 text-white rounded-lg font-mono font-bold text-xs hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed shadow transition-all flex items-center gap-1.5"
                       >
+                        <span className="material-symbols-outlined text-sm">add</span>
                         Add to BOM
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Material Table */}
-                <div className="border border-slate-200 rounded-lg overflow-hidden">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                      <tr>
-                        <th className="py-2 px-3">Material Name</th>
-                        <th className="py-2 px-3">SKU</th>
-                        <th className="py-2 px-3 text-right">Req. Qty</th>
-                        <th className="py-2 px-3 text-center">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-xs">
-                      {formData.materials.length === 0 ? (
-                        <tr>
-                          <td colSpan={4} className="py-4 text-center text-slate-400 font-mono">
-                            No materials linked in BOM yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        formData.materials.map((mat) => (
-                          <tr key={mat.id} className="hover:bg-slate-50 transition-colors">
-                            <td className="py-2 px-3 font-medium text-slate-900">{mat.description}</td>
-                            <td className="py-2 px-3 font-mono text-slate-500">{mat.code}</td>
-                            <td className="py-2 px-3 font-mono font-bold text-slate-900 text-right">{mat.qty}</td>
-                            <td className="py-2 px-3 text-center">
+                {/* Multi-Material Accordions / Precision Matrix (Stitch 9f8bd0aaaadd446ea129a1abb67faea8) */}
+                <div className="space-y-3">
+                  {formData.materials.length === 0 ? (
+                    <div className="p-4 text-center text-slate-400 font-mono border border-dashed border-slate-200 rounded-lg">
+                      No materials linked in BOM yet. Click &quot;Add Material&quot; to configure.
+                    </div>
+                  ) : (
+                    formData.materials.map((mat) => {
+                      const calculatedTotalStr = calculateTotalQtyString(mat.sizeBreakdown);
+                      return (
+                        <div
+                          key={mat.id}
+                          className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm transition-all"
+                        >
+                          {/* Accordion Header Bar */}
+                          <div className="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100/80 transition-colors border-b border-slate-200/60">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleExpandMaterial(mat.id)}
+                              className="flex items-center gap-3 text-left flex-1"
+                            >
+                              <span className="material-symbols-outlined text-slate-500 text-lg transition-transform">
+                                {mat.isExpanded ? "expand_more" : "chevron_right"}
+                              </span>
+                              <span className="font-bold text-slate-900 text-xs sm:text-sm">
+                                {mat.description}
+                              </span>
+                              <span className="font-mono text-[10px] font-bold text-slate-600 px-2 py-0.5 bg-slate-200/80 rounded">
+                                {mat.code}
+                              </span>
+                            </button>
+
+                            <div className="flex items-center gap-3">
+                              <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+                                Total: {calculatedTotalStr}
+                              </span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMaterial(mat.id)}
-                                className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                                className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded hover:bg-red-50"
+                                title="Remove Material"
                               >
                                 <span className="material-symbols-outlined text-base">delete</span>
                               </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+                            </div>
+                          </div>
+
+                          {/* Size Breakdown Table (Expanded View) */}
+                          {mat.isExpanded && mat.sizeBreakdown && mat.sizeBreakdown.length > 0 && (
+                            <div className="p-3 bg-slate-50 border-t border-slate-200/60 space-y-3">
+                              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+                                <table className="w-full text-left border-collapse text-xs">
+                                  <thead className="bg-slate-50 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                                    <tr>
+                                      <th className="py-2.5 px-4 font-bold text-slate-700">Size Variant</th>
+                                      <th className="py-2.5 px-4 text-right font-bold text-slate-700">Required Quantity</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 font-mono">
+                                    {mat.sizeBreakdown.map((row) => (
+                                      <tr key={row.size} className="hover:bg-slate-50/80 transition-colors">
+                                        <td className="py-2.5 px-4 font-bold text-slate-900 flex items-center gap-2">
+                                          <span className="px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[11px]">
+                                            {row.size}
+                                          </span>
+                                        </td>
+                                        <td className="py-2.5 px-4 text-slate-700 text-right">
+                                          <input
+                                            type="text"
+                                            placeholder="e.g. 1.5 m"
+                                            value={row.requiredQty}
+                                            onChange={(e) =>
+                                              handleUpdateSizeRequiredQty(mat.id, row.size, e.target.value)
+                                            }
+                                            className="w-32 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-right font-mono text-xs focus:ring-2 focus:ring-slate-900 outline-none transition-all shadow-sm"
+                                          />
+                                        </td>
+                                      </tr>
+                                    ))}
+
+                                    {/* Live Updated TOTAL Summary Row */}
+                                    <tr className="bg-slate-100/90 font-bold border-t-2 border-slate-200">
+                                      <td className="py-3 px-4 font-mono text-xs text-slate-900 uppercase tracking-wider">
+                                        TOTAL REQUIRED MATERIAL
+                                      </td>
+                                      <td className="py-3 px-4 text-slate-900 text-right font-mono text-sm">
+                                        {calculatedTotalStr}
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              {/* Save & Done Action */}
+                              <div className="flex justify-end pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleExpandMaterial(mat.id)}
+                                  className="px-3 py-1.5 bg-slate-900 text-white rounded-lg font-mono font-bold text-xs hover:bg-slate-800 transition-all shadow flex items-center gap-1.5"
+                                >
+                                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                                  Save & Done
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 

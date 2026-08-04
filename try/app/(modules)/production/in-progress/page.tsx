@@ -98,7 +98,6 @@ export default function InProgressPage() {
 
           const actualStages = prodStages.length > 0 ? prodStages : (dbStages.length > 0 ? dbStages : defaultStages);
 
-          // PlanStatus enum: Draft=0, Active=1, Cutting=2, Stitching=3, NotStarted=4, Completed=5, OnHold=6, Blocked=7, Cancelled=8
           const enumToStatus = (val: any): string => {
             const v = String(val).toLowerCase();
             if (v === "0" || v === "draft") return "Draft";
@@ -227,7 +226,6 @@ export default function InProgressPage() {
   }, []);
 
   const handleUpdatePlan = (updatedPlan: any) => {
-    // Auto-mark plan as Completed when all stages are done (100%)
     const allStages = (updatedPlan.products || []).flatMap((p: any) => p.stages || []);
     const allCompleted = allStages.length > 0 && allStages.every((s: any) => {
       const st = String(s.status || "").toLowerCase();
@@ -239,9 +237,7 @@ export default function InProgressPage() {
       updatedPlan.progress = 100;
     }
 
-    // Update UI state
     if (updatedPlan.status === "Completed") {
-      // Remove from the in-progress list after a brief delay so user sees the change
       setPlans((prev) =>
         prev.map((p) => (p.id === updatedPlan.id ? updatedPlan : p))
       );
@@ -254,7 +250,6 @@ export default function InProgressPage() {
       );
     }
 
-    // Persist to backend
     if (updatedPlan.planDbId) {
       const payload = {
         ...updatedPlan._originalPlan,
@@ -369,123 +364,244 @@ export default function InProgressPage() {
     });
   }, [plans, searchQuery, statusFilter, demandFilter, priorityFilter, sortBy]);
 
+  const exportSummaryCsv = () => {
+    const csvRows = [
+      ["Plan ID", "Client / Source", "Priority", "Status", "Progress", "Due Date", "Total Items"],
+      ...filteredPlans.map(p => [
+        p.id,
+        `"${p.client}"`,
+        p.priority,
+        p.status,
+        `${p.progress}%`,
+        p.dueDate,
+        p.products.length
+      ])
+    ];
+
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `production_in_progress_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 max-w-7xl mx-auto font-kaam-body text-kaam-on-surface">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-6 text-slate-800 p-4 sm:p-6 max-w-7xl mx-auto font-sans">
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div>
-          <h1 className="font-kaam-display-sm text-2xl font-black tracking-tight text-kaam-on-surface">
-            In-Progress Production Runs
-          </h1>
-          <p className="font-kaam-body-sm text-xs text-kaam-on-surface-variant mt-1">
-            Real-time tracking of active garment production plans and stage routing operations.
+          <div className="flex items-center space-x-3 mb-1">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              In-Progress Production Runs
+            </h1>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold font-mono bg-emerald-50 text-emerald-800 border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              LIVE DB SYNC
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 font-medium">
+            Real-time shop floor execution, garment stage tracking, and workstation routing.
           </p>
         </div>
-      </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
-          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">Active Runs</span>
-          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-primary mt-2">{kpis.activeCount} Plans</strong>
-        </div>
-
-        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
-          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">In-Production Units</span>
-          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-secondary mt-2">{kpis.totalUnits.toLocaleString()} pcs</strong>
-        </div>
-
-        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
-          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">Urgent Priorities</span>
-          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-error mt-2">{kpis.urgentCount} High Priority</strong>
-        </div>
-
-        <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col justify-between">
-          <span className="font-kaam-label-md text-xs text-kaam-on-surface-variant uppercase font-mono">Completion Rate</span>
-          <strong className="font-kaam-display-sm text-2xl font-black text-kaam-tertiary mt-2">{kpis.avgProgress}%</strong>
-        </div>
-      </div>
-
-      {/* Search & Filters */}
-      <div className="bg-kaam-surface-bright border border-kaam-outline-variant p-4 rounded-kaam-DEFAULT shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="relative flex-1 min-w-[240px]">
-          <span 
-            className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-kaam-on-surface-variant pointer-events-none z-10"
-            style={{ fontSize: '18px', color: '#64748b' }}
+        {/* Action Controls */}
+        <div className="flex items-center space-x-2.5 shrink-0">
+          <button
+            onClick={fetchPlans}
+            disabled={loading}
+            className="flex items-center space-x-2 px-3.5 py-2 border border-slate-200 text-slate-700 bg-slate-50 hover:bg-slate-100 font-semibold text-xs rounded-xl transition-all active:scale-95 shadow-xs disabled:opacity-50"
+            title="Refresh Production Data"
           >
-            search
-          </span>
-          <input 
-            type="text" 
-            placeholder="Search plan ID, client, or product..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-sm focus:outline-none focus:border-kaam-secondary py-2 pr-4"
-            style={{ paddingLeft: '42px' }}
-          />
-        </div>
+            <span className={`material-symbols-outlined text-base ${loading ? 'animate-spin' : ''}`}>
+              refresh
+            </span>
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
 
-        <div className="flex items-center gap-3 flex-wrap">
-          {/* Status Filter */}
-          <select 
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-xs font-bold text-kaam-on-surface focus:outline-none"
+          <button
+            onClick={exportSummaryCsv}
+            className="flex items-center space-x-2 px-4 py-2 border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 font-semibold text-xs rounded-xl shadow-xs transition-all active:scale-95"
           >
-            <option value="active">Active Plans (Default)</option>
-            <option value="in-progress">In Progress</option>
-            <option value="on-hold">On Hold</option>
-            <option value="completed">Completed Plans Only</option>
-            <option value="all">All Statuses</option>
-          </select>
-
-          {/* Demand Source Filter */}
-          <select 
-            value={demandFilter}
-            onChange={(e) => setDemandFilter(e.target.value)}
-            className="px-3 py-2 bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-xs font-bold text-kaam-on-surface focus:outline-none"
-          >
-            <option value="all">All Demand Sources</option>
-            <option value="Customer">Customer Order</option>
-            <option value="Outlet">Outlet Replenishment</option>
-            <option value="In-house">In-house Stock</option>
-          </select>
-
-          {/* Priority Filter */}
-          <select 
-            value={priorityFilter}
-            onChange={(e) => setPriorityFilter(e.target.value)}
-            className="px-3 py-2 bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-xs font-bold text-kaam-on-surface focus:outline-none"
-          >
-            <option value="all">All Priorities</option>
-            <option value="urgent">Urgent / Critical</option>
-            <option value="high">High</option>
-            <option value="normal">Normal / Medium</option>
-            <option value="low">Low</option>
-          </select>
-
-          {/* Sort By */}
-          <select 
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT font-kaam-body-sm text-xs font-bold text-kaam-on-surface focus:outline-none"
-          >
-            <option value="date">Sort by Due Date</option>
-            <option value="priority">Sort by Priority</option>
-            <option value="progress">Sort by Progress</option>
-            <option value="quantity">Sort by Quantity</option>
-          </select>
+            <span className="material-symbols-outlined text-base">download</span>
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 
-      {/* Data Table */}
-      <div className="bg-kaam-surface-container-lowest border border-kaam-outline-variant rounded-kaam-DEFAULT overflow-hidden flex flex-col shadow-xs">
-        {loading ? (
-          <div className="p-12 text-center text-kaam-on-surface-variant font-kaam-body-sm bg-kaam-surface-bright">
-            <div className="inline-block animate-spin text-kaam-primary mb-2">
-              <span className="material-symbols-outlined">sync</span>
+      {/* KPI Bento Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Active Runs */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-slate-900 flex flex-col justify-between min-h-[130px] hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+              Active Runs
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-xs">
+              <span className="material-symbols-outlined text-xl">assignment</span>
             </div>
-            <p>Loading real-time production runs...</p>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{kpis.activeCount} <span className="text-xs font-semibold text-slate-400 font-mono">Plans</span></div>
+          </div>
+        </div>
+
+        {/* In-Production Units */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-emerald-600 flex flex-col justify-between min-h-[130px] hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+              In-Production Units
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shadow-xs">
+              <span className="material-symbols-outlined text-xl">inventory_2</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-slate-900 tracking-tight">
+              {kpis.totalUnits.toLocaleString()} <span className="text-xs font-semibold text-emerald-600 font-mono">pcs</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Urgent Priorities */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-red-500 flex flex-col justify-between min-h-[130px] hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+              Urgent Priorities
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shadow-xs">
+              <span className="material-symbols-outlined text-xl">priority_high</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-3xl font-black text-slate-900 tracking-tight">
+              {kpis.urgentCount} <span className="text-xs font-semibold text-red-600 font-mono">High Priority Plans</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Completion Rate */}
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-blue-600 flex flex-col justify-between min-h-[130px] hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-center">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
+              Avg Completion Rate
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shadow-xs">
+              <span className="material-symbols-outlined text-xl">donut_large</span>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-3xl font-black text-slate-900 tracking-tight">{kpis.avgProgress}%</div>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${kpis.avgProgress}%` }}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Control Toolbar (Search & Filter Bar) */}
+      <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-xs space-y-3">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[260px]">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">
+              search
+            </span>
+            <input 
+              type="text" 
+              placeholder="Search by Plan ID, Client, or Garment Name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-slate-900 focus:outline-none transition-all"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900"
+              >
+                <span className="material-symbols-outlined text-xs">close</span>
+              </button>
+            )}
+          </div>
+
+          {/* Filter Dropdowns */}
+          <div className="flex items-center gap-2 flex-wrap text-xs">
+            {/* Status */}
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-slate-900 focus:outline-none cursor-pointer"
+            >
+              <option value="active">Active Plans (Default)</option>
+              <option value="in-progress">In Progress</option>
+              <option value="on-hold">On Hold</option>
+              <option value="completed">Completed Plans</option>
+              <option value="all">All Statuses</option>
+            </select>
+
+            {/* Demand Source */}
+            <select 
+              value={demandFilter}
+              onChange={(e) => setDemandFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-slate-900 focus:outline-none cursor-pointer"
+            >
+              <option value="all">All Sources</option>
+              <option value="Customer">Customer Order</option>
+              <option value="Outlet">Outlet Replenishment</option>
+              <option value="In-house">In-house Stock</option>
+            </select>
+
+            {/* Priority */}
+            <select 
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-slate-900 focus:outline-none cursor-pointer"
+            >
+              <option value="all">All Priorities</option>
+              <option value="urgent">Urgent / Critical</option>
+              <option value="high">High Priority</option>
+              <option value="normal">Normal / Medium</option>
+              <option value="low">Low Priority</option>
+            </select>
+
+            {/* Sort */}
+            <select 
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-slate-900 focus:outline-none cursor-pointer font-mono"
+            >
+              <option value="date">Sort: Due Date</option>
+              <option value="priority">Sort: Priority</option>
+              <option value="progress">Sort: Progress %</option>
+              <option value="quantity">Sort: Quantity</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Counter indicator */}
+        <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono pt-1 border-t border-slate-100">
+          <span>SHOWING {filteredPlans.length} OF {plans.length} PRODUCTION RUNS</span>
+          {statusFilter !== "all" && (
+            <button 
+              onClick={() => { setStatusFilter("all"); setDemandFilter("all"); setPriorityFilter("all"); setSearchQuery(""); }}
+              className="text-slate-700 font-bold hover:underline"
+            >
+              Reset Filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Production Runs Accordion & Table List */}
+      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+        {loading ? (
+          <div className="p-12 text-center text-slate-500 font-sans">
+            <div className="inline-block animate-spin text-slate-900 mb-3">
+              <span className="material-symbols-outlined text-3xl">sync</span>
+            </div>
+            <p className="font-semibold text-xs">Loading active production runs from DB...</p>
           </div>
         ) : filteredPlans.length > 0 ? (
           filteredPlans.map((plan, idx) => (
@@ -498,9 +614,10 @@ export default function InProgressPage() {
             />
           ))
         ) : (
-          <div className="p-12 text-center text-kaam-on-surface-variant font-kaam-body-sm bg-kaam-surface-bright">
-            <span className="material-symbols-outlined text-3xl text-kaam-outline mb-2">inventory_2</span>
-            <p className="font-bold">No active in-progress production plans found.</p>
+          <div className="p-12 text-center text-slate-400 bg-slate-50 space-y-2">
+            <span className="material-symbols-outlined text-4xl text-slate-400 block">inventory_2</span>
+            <p className="font-bold text-slate-700 text-sm">No active in-progress production runs found.</p>
+            <p className="text-xs text-slate-400">Try clearing filters or search terms.</p>
           </div>
         )}
       </div>

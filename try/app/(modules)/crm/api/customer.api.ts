@@ -2,6 +2,24 @@ import { Customer } from "../dto/customer.dto";
 
 const API_BASE_URL = 'http://localhost:5083/api';
 
+async function parseErrorMessage(res: Response): Promise<string> {
+  const errorText = await res.text();
+  try {
+    const json = JSON.parse(errorText);
+    if (json.errors && typeof json.errors === "object") {
+      const messages = Object.values(json.errors).flat();
+      if (messages.length > 0) {
+        return messages.join("\n");
+      }
+    }
+    if (json.title) return json.title;
+    if (json.message) return json.message;
+  } catch {
+    // Return raw text if not JSON
+  }
+  return errorText || `HTTP ${res.status} ${res.statusText}`;
+}
+
 export async function fetchCustomers(): Promise<Customer[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/customer`, { cache: 'no-store' });
@@ -33,9 +51,9 @@ export async function createCustomer(customer: Partial<Customer>): Promise<Custo
   });
 
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error("API Error creating customer:", res.status, errorText);
-    throw new Error(`Failed to create customer: ${errorText}`);
+    const errorMsg = await parseErrorMessage(res);
+    console.error("API Error creating customer:", res.status, errorMsg);
+    throw new Error(errorMsg);
   }
   return res.json();
 }
@@ -47,14 +65,17 @@ export async function updateCustomer(id: string, customer: Partial<Customer>): P
     body: JSON.stringify(customer),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    console.error("API Error updating customer:", res.status, errorText);
-    throw new Error(`Failed to update customer: ${errorText}`);
+    const errorMsg = await parseErrorMessage(res);
+    console.error("API Error updating customer:", res.status, errorMsg);
+    throw new Error(errorMsg);
   }
   return res.json();
 }
 
 export async function deleteCustomer(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/customer/${id}`, { method: 'DELETE' });
-  if (!res.ok) throw new Error('Failed to delete customer');
+  if (!res.ok) {
+    const errorMsg = await parseErrorMessage(res);
+    throw new Error(errorMsg);
+  }
 }

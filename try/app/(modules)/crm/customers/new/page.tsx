@@ -66,11 +66,11 @@ export default function CrmCreateCustomerPage() {
               <div className="text-danger" style={{ gridColumn: "1 / -1" }}></div>
               <FormField name="name" label={<>Full Name <span className="text-danger">*</span></>} placeholder="e.g. Ram Shrestha" required />
               <FormField name="company" label="Company / Business Name" placeholder="e.g. Everest Garments Pvt. Ltd." />
-              <FormField name="email" label="Email Address" placeholder="contact" />
+              <FormField name="email" type="email" label={<>Email Address <span className="text-danger">*</span></>} placeholder="contact@example.com" required />
               <FormField name="phone" label={<>Phone Number <span className="text-danger">*</span></>} placeholder="e.g. 98XXXXXXXX" required />
               <FormField name="panvat" label="PAN / VAT Number" placeholder="9-digit PAN/VAT" />
               <FormField name="type" label="Customer Type" as="select" options={customerTypeOptions} />
-              <FormField name="address" label="Full Address" as="textarea" rows={3} placeholder="Street, City, Province" full />
+              <FormField name="address" label={<>Full Address <span className="text-danger">*</span></>} as="textarea" rows={3} placeholder="Street, City, Province" full required />
             </div>
 
             <div className="form-actions" style={{ marginTop: 30, display: "flex", gap: 15, justifyContent: "flex-end" }}>
