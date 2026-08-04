@@ -103,7 +103,6 @@ namespace backend.Service.Order
                             Id = m.Material.Id,
                             Name = m.Material.Name,
                             ImagePath = m.Material.ImagePath,
-                            Unit = m.Material.Unit,
                             MaterialCategoryName = m.Material.MaterialCategory?.Name
                         },
 

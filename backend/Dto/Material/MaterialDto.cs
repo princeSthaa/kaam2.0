@@ -6,8 +6,6 @@ namespace backend.Dto.Material
     public class MaterialDto
     {
         public Guid Id { get; set; }
-
-        [Required, MaxLength(50)]
         public string MaterialCode { get; set; } = string.Empty;
 
         [Required, MaxLength(200)]
@@ -21,9 +19,6 @@ namespace backend.Dto.Material
     
         [Range(typeof(decimal), "0", "79228162514264337593543950335")]
         public decimal AvailableQty { get; set; }
-
-        [Required, MaxLength(30)]
-        public string Unit { get; set; } = string.Empty;
 
         [MaxLength(500)]
         public string ImagePath { get; set; } = string.Empty;

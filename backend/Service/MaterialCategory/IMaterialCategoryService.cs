@@ -12,6 +12,9 @@ namespace backend.Service.MaterialCategory
         Task<List<MaterialCategoryGetDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
+            string? materialCode = null,
+            string? description = null,
+            bool? isActive = null,
             DateTime? createdAt = null,
             DateTime? updatedAt = null,
             Guid? materialTypeId = null

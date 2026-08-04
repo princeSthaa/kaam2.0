@@ -17,6 +17,9 @@ namespace backend.Service.MaterialType
         public async Task<List<MaterialTypeGetDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
+            string? unit = null,
+            string? description = null,
+            bool? isActive = null,
             DateTime? createdAt = null,
             DateTime? updatedAt = null
         )
@@ -27,6 +30,9 @@ namespace backend.Service.MaterialType
 
                         @Id = {id},
                         @Name = {name},
+                        @Unit = {unit},
+                        @Description = {description},
+                        @IsActive = {isActive},
                         @CreatedAt = {createdAt},
                         @UpdatedAt = {updatedAt}
                 ")
@@ -44,12 +50,20 @@ namespace backend.Service.MaterialType
             materialTypeDto.Id = Guid.NewGuid();
             materialTypeDto.CreatedAt = DateTime.UtcNow;
             materialTypeDto.UpdatedAt = DateTime.UtcNow;
-            
+            materialTypeDto.IsActive = true;
+
+            var count = await _context.MaterialTypes.CountAsync();
+            materialTypeDto.MaterialCode = $"MAT-TY-{(count + 1):D5}";
+
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertMaterialType
 
                     @Id = {materialTypeDto.Id},
                     @Name = {materialTypeDto.Name},
+                    @MaterialCode = {materialTypeDto.MaterialCode},
+                    @Description = {materialTypeDto.Description},
+                    @IsActive = {materialTypeDto.IsActive},
+                    @Unit = {materialTypeDto.Unit},
                     @CreatedAt = {materialTypeDto.CreatedAt},
                     @UpdatedAt = {materialTypeDto.UpdatedAt}
             ");
@@ -65,6 +79,9 @@ namespace backend.Service.MaterialType
 
                     @Id = {materialTypeDto.Id},
                     @Name = {materialTypeDto.Name},
+                    @Description = {materialTypeDto.Description},
+                    @IsActive = {materialTypeDto.IsActive},
+                    @Unit = {materialTypeDto.Unit},
                     @CreatedAt = {materialTypeDto.CreatedAt},
                     @UpdatedAt = {materialTypeDto.UpdatedAt}
             ");

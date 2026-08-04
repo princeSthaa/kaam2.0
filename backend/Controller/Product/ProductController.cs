@@ -59,45 +59,6 @@ namespace backend.Controller.Product
         #endregion
 
         #region Create
-
-        // [HttpPost]
-        // [Consumes("multipart/form-data")]
-        // public async Task<IActionResult> Create([FromForm] ProductCreateDto createDto)
-        // {
-        //     try
-        //     {   
-        //         var options = new JsonSerializerOptions
-        //         {
-        //             PropertyNameCaseInsensitive = true
-        //         };
-        //         var requirements =
-        //             JsonSerializer.Deserialize<List<ProductMaterialRequirementDto>>(
-        //                 createDto.MaterialRequirements, 
-        //                 options
-        //             );
-        //         var stages =
-        //             JsonSerializer.Deserialize<List<ProductProductionStageDto>>(
-        //                 createDto.ProductionStages,
-        //                 options
-        //             );
-
-        //         Console.WriteLine($"Requirements count: {requirements?.Count}");
-        //         Console.WriteLine($"Stages count: {stages?.Count}");
-
-        //         return Ok(new
-        //         {
-        //             createDto.Name,
-        //             Requirements = requirements,
-        //             Stages = stages
-        //         });
-        //     }
-        //     catch(Exception ex)
-        //     {
-        //         Console.WriteLine(ex.Message);
-        //         return BadRequest(ex.Message);
-        //     }
-        // }
-
         [HttpPost]
         [Consumes("multipart/form-data")]
         public async Task<ActionResult<ProductDto>> Create([FromForm] ProductCreateDto createDto)
@@ -112,6 +73,7 @@ namespace backend.Controller.Product
             if (createDto.Image != null && createDto.Image.Length > 0)
             {
                 relativeImagePath = await SaveProductImageFileAsync(createDto.Image);
+                Console.WriteLine($"Saved image path: {relativeImagePath}");
             }
             var options = new JsonSerializerOptions
                 {
@@ -121,7 +83,6 @@ namespace backend.Controller.Product
             options.Converters.Add(new ProductSizeJsonConverter());
             var productDto = new ProductDto
             {
-                Id = Guid.NewGuid(),
                 SKU = string.IsNullOrWhiteSpace(createDto.SKU)
                     ? $"SKU-{Guid.NewGuid().ToString()[..8]}"
                     : createDto.SKU,
