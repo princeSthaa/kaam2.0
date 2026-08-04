@@ -137,8 +137,8 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
               <span className="material-symbols-outlined text-slate-700">category</span>
               Manage Material Categories
             </h2>
-            <p className="font-mono text-xs text-slate-500 mt-0.5">
-              API Endpoint: <span className="font-bold text-slate-700">{API_URL}</span>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Configure and organize material classification categories for inventory & procurement.
             </p>
           </div>
           <button
@@ -161,7 +161,6 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
                 <span className="material-symbols-outlined text-sm">add_circle</span>
                 Add New Material Category
               </h3>
-              <span className="text-[10px] font-mono text-slate-500">POST API Enabled</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -268,7 +267,7 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
                   {loading ? (
                     <tr>
                       <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
-                        Loading categories from {API_URL}...
+                        Loading material categories...
                       </td>
                     </tr>
                   ) : filteredCategories.length === 0 ? (

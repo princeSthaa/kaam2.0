@@ -131,8 +131,8 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
               <span className="material-symbols-outlined text-slate-700">category</span>
               Manage Product Categories
             </h2>
-            <p className="font-mono text-xs text-slate-500 mt-0.5">
-              API Endpoint: <span className="font-bold text-slate-700">{API_URL}</span>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Configure and organize product classification categories for manufacturing and sales catalog.
             </p>
           </div>
           <button
@@ -155,7 +155,6 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                 <span className="material-symbols-outlined text-sm">add_circle</span>
                 Add New Product Category
               </h3>
-              <span className="text-[10px] font-mono text-slate-500">POST API Enabled</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

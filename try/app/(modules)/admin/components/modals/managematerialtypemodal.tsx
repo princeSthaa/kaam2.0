@@ -131,8 +131,8 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
               <span className="material-symbols-outlined text-slate-700">settings_suggest</span>
               Manage Material Types
             </h2>
-            <p className="font-mono text-xs text-slate-500 mt-0.5">
-              API Endpoint: <span className="font-bold text-slate-700">{API_URL}</span>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Configure and organize material types and default units of measurement.
             </p>
           </div>
           <button
@@ -155,7 +155,6 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
                 <span className="material-symbols-outlined text-sm">add_circle</span>
                 Add New Material Type
               </h3>
-              <span className="text-[10px] font-mono text-slate-500">POST API Enabled</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
