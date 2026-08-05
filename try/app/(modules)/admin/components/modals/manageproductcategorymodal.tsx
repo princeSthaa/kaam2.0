@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  fetchProductCategories as apiFetchProductCategories,
+  createProductCategory as apiCreateProductCategory,
+  deleteProductCategory as apiDeleteProductCategory,
+  ProductCategoryDto,
+} from "../../api/productcategory.api";
 
-export interface ProductCategoryItem {
-  id?: string;
-  name: string;
-  isActive?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export interface ProductCategoryItem extends ProductCategoryDto {}
 
 interface ManageProductCategoryModalProps {
   isOpen: boolean;
@@ -16,11 +16,11 @@ interface ManageProductCategoryModalProps {
 }
 
 const DEFAULT_PRODUCT_CATEGORIES: ProductCategoryItem[] = [
-  { id: "1", name: "Jackets", isActive: true },
-  { id: "2", name: "T-Shirts", isActive: true },
-  { id: "3", name: "Pants", isActive: true },
-  { id: "4", name: "Hoodies", isActive: true },
-  { id: "5", name: "Shirts", isActive: true },
+  { id: "1", name: "Jackets", categoryCode: "CAT-00001", isActive: true },
+  { id: "2", name: "T-Shirts", categoryCode: "CAT-00002", isActive: true },
+  { id: "3", name: "Pants", categoryCode: "CAT-00003", isActive: true },
+  { id: "4", name: "Hoodies", categoryCode: "CAT-00004", isActive: true },
+  { id: "5", name: "Shirts", categoryCode: "CAT-00005", isActive: true },
 ];
 
 export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCategoryModalProps) {
@@ -34,17 +34,12 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const API_URL = "http://localhost:5083/api/product-category";
-
-  const fetchCategories = async () => {
+  const loadCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URL);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setCategories(data);
-        }
+      const data = await apiFetchProductCategories();
+      if (Array.isArray(data) && data.length > 0) {
+        setCategories(data);
       }
     } catch (err) {
       console.warn("API GET http://localhost:5083/api/product-category failed, using fallback data:", err);
@@ -55,7 +50,7 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
 
   useEffect(() => {
     if (isOpen) {
-      fetchCategories();
+      loadCategories();
     }
   }, [isOpen]);
 
@@ -69,33 +64,41 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
     if (!newCatName.trim()) return;
 
     setIsSubmitting(true);
-    const categoryPayload: ProductCategoryItem = {
-      name: newCatName.trim(),
-      isActive: newIsActive,
-    };
-
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(categoryPayload),
+      await apiCreateProductCategory({
+        name: newCatName.trim(),
+        isActive: newIsActive,
       });
-
-      if (res.ok) {
-        const created = await res.json();
-        setCategories((prev) => [created || categoryPayload, ...prev]);
-        showToast(`Product category "${newCatName}" added via API!`);
-      } else {
-        setCategories((prev) => [{ ...categoryPayload, id: Date.now().toString() }, ...prev]);
-        showToast(`Product category "${newCatName}" added to local state!`);
-      }
+      await loadCategories();
+      showToast(`Product category "${newCatName}" added successfully!`);
     } catch (err) {
-      setCategories((prev) => [{ ...categoryPayload, id: Date.now().toString() }, ...prev]);
+      console.warn("Create product category API failed, fallback to local:", err);
+      const fallback: ProductCategoryItem = {
+        id: Date.now().toString(),
+        name: newCatName.trim(),
+        isActive: newIsActive,
+      };
+      setCategories((prev) => [fallback, ...prev]);
       showToast(`Product category "${newCatName}" added locally!`);
     } finally {
       setIsSubmitting(false);
       setNewCatName("");
       setNewIsActive(true);
+    }
+  };
+
+  const handleDeleteCategory = async (id?: string) => {
+    if (!id) return;
+    if (!window.confirm("Are you sure you want to delete this product category?")) return;
+
+    try {
+      await apiDeleteProductCategory(id);
+      showToast("Product category deleted successfully!");
+      await loadCategories();
+    } catch (err) {
+      console.warn("Delete product category API failed, removing locally:", err);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+      showToast("Product category removed!");
     }
   };
 
@@ -215,26 +218,31 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                    <th className="py-2.5 px-4">Code</th>
                     <th className="py-2.5 px-4">Category Name</th>
                     <th className="py-2.5 px-4">Status</th>
+                    <th className="py-2.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={2} className="py-6 text-center text-slate-400 font-mono">
-                        Loading product categories from {API_URL}...
+                      <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
+                        Loading product categories from http://localhost:5083/api/product-category...
                       </td>
                     </tr>
                   ) : filteredCategories.length === 0 ? (
                     <tr>
-                      <td colSpan={2} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
                         No product categories found.
                       </td>
                     </tr>
                   ) : (
                     filteredCategories.map((cat, idx) => (
                       <tr key={cat.id || idx} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-4 font-mono text-[11px] text-slate-500 font-medium">
+                          {cat.categoryCode || "—"}
+                        </td>
                         <td className="py-2.5 px-4 font-bold text-slate-900">{cat.name}</td>
                         <td className="py-2.5 px-4 font-mono">
                           <span
@@ -246,6 +254,16 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                           >
                             {cat.isActive !== false ? "Active" : "Inactive"}
                           </span>
+                        </td>
+                        <td className="py-2.5 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory(cat.id)}
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete Product Category"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
                         </td>
                       </tr>
                     ))

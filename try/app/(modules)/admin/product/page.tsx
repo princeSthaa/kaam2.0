@@ -6,6 +6,8 @@ import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/regi
 import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
 import { ManageProductionStagesModal } from "../components/modals/manageproductionstagesmodal";
 import { ManageProductCategoryModal } from "../components/modals/manageproductcategorymodal";
+import { fetchProducts, deleteProduct as apiDeleteProduct, ProductDto } from "../api/product.api";
+import { fetchProductCategories, ProductCategoryDto } from "../api/productcategory.api";
 
 export interface ProductDirectoryItem {
   id: string;
@@ -24,86 +26,10 @@ export interface ProductDirectoryItem {
   adminNotes?: string;
 }
 
-const INITIAL_PRODUCTS: ProductDirectoryItem[] = [
-  {
-    id: "1",
-    baseSku: "JKT-DNM-IND-001",
-    name: "Premium Denim Jacket - Indigo Series",
-    category: "Jackets",
-    gender: "Unisex",
-    uom: "pcs",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    materialsCount: 3,
-    stagesCount: 4,
-    status: "Active",
-    updatedBy: "J. Smith",
-    updatedAt: "10:42 AM",
-    adminNotes: "Standard 14.5oz Indigo Denim jacket with custom topstitching.",
-  },
-  {
-    id: "2",
-    baseSku: "TSH-COT-BLK-042",
-    name: "Heavyweight Crewneck Tee - Charcoal",
-    category: "T-Shirts",
-    gender: "Male",
-    uom: "pcs",
-    sizes: ["XS", "S", "M", "L", "XL"],
-    materialsCount: 2,
-    stagesCount: 3,
-    status: "Active",
-    updatedBy: "A. Kumar",
-    updatedAt: "09:15 AM",
-    adminNotes: "100% Organic Combed Cotton knit fabric 220 GSM.",
-  },
-  {
-    id: "3",
-    baseSku: "PNT-SLV-RAW-008",
-    name: "Selvedge Raw Denim Tapered Pants",
-    category: "Pants",
-    gender: "Male",
-    uom: "pcs",
-    sizes: ["S", "M", "L", "XL"],
-    materialsCount: 4,
-    stagesCount: 5,
-    status: "Review",
-    updatedBy: "M. Rossi",
-    updatedAt: "Yesterday",
-    adminNotes: "Japanese raw selvedge 15oz weave with copper shank buttons.",
-  },
-  {
-    id: "4",
-    baseSku: "HDY-FLC-GRY-102",
-    name: "Oversized Fleece Pullover Hoodie",
-    category: "Hoodies",
-    gender: "Unisex",
-    uom: "pcs",
-    sizes: ["S", "M", "L", "XL", "XXL"],
-    materialsCount: 3,
-    stagesCount: 3,
-    status: "Active",
-    updatedBy: "R. Sharma",
-    updatedAt: "Yesterday",
-    adminNotes: "Heavy brushed fleece interior with double-lined hood.",
-  },
-  {
-    id: "5",
-    baseSku: "SHR-LNN-WHT-055",
-    name: "Relaxed Fit Linen Button-Down Shirt",
-    category: "Shirts",
-    gender: "Female",
-    uom: "pcs",
-    sizes: ["XS", "S", "M", "L"],
-    materialsCount: 2,
-    stagesCount: 3,
-    status: "Draft",
-    updatedBy: "J. Smith",
-    updatedAt: "Oct 24",
-    adminNotes: "Pre-washed 100% French linen fabric for soft texture.",
-  },
-];
-
 export default function ProductDirectoryPage() {
-  const [products, setProducts] = useState<ProductDirectoryItem[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<ProductDirectoryItem[]>([]);
+  const [categoriesList, setCategoriesList] = useState<ProductCategoryDto[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
@@ -117,6 +43,45 @@ export default function ProductDirectoryPage() {
   const [isProductMenuOpen, setIsProductMenuOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<ProductDirectoryItem | null>(null);
   const productMenuRef = useRef<HTMLDivElement>(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [prodsData, catsData] = await Promise.all([
+        fetchProducts().catch(() => []),
+        fetchProductCategories().catch(() => []),
+      ]);
+
+      setCategoriesList(Array.isArray(catsData) ? catsData : []);
+
+      if (Array.isArray(prodsData)) {
+        const mapped: ProductDirectoryItem[] = prodsData.map((p) => ({
+          id: p.id,
+          baseSku: p.sku || "SKU-0000",
+          name: p.name,
+          category: p.productCategory?.name || "Uncategorized",
+          gender: "Unisex",
+          uom: "pcs",
+          sizes: ["S", "M", "L", "XL"],
+          materialsCount: p.materialRequirements ? p.materialRequirements.length : 0,
+          stagesCount: p.productionStages ? p.productionStages.length : 0,
+          status: p.isActive !== false ? "Active" : "Draft",
+          updatedBy: "Admin",
+          updatedAt: "Today",
+          thumbnailUrl: p.imagePath ? `http://localhost:5083${p.imagePath}` : undefined,
+        }));
+        setProducts(mapped);
+      }
+    } catch (err) {
+      console.warn("Failed to load products/categories from API:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -134,35 +99,24 @@ export default function ProductDirectoryPage() {
   };
 
   const handleSaveSku = (skuData: RegisterSkuFormData) => {
-    const newEntry: ProductDirectoryItem = {
-      id: Date.now().toString(),
-      baseSku: skuData.baseSku || `SKU-${Date.now().toString().slice(-4)}`,
-      name: skuData.productName,
-      category: skuData.category ? skuData.category.charAt(0).toUpperCase() + skuData.category.slice(1) : "Garments",
-      gender: skuData.gender ? skuData.gender.charAt(0).toUpperCase() + skuData.gender.slice(1) : "Unisex",
-      uom: skuData.uom || "pcs",
-      sizes: skuData.selectedSizes.map((s) => s.toUpperCase()),
-      materialsCount: skuData.materials.length,
-      stagesCount: skuData.pipelineStages.length,
-      status: (skuData.lifecycleStatus
-        ? skuData.lifecycleStatus.charAt(0).toUpperCase() + skuData.lifecycleStatus.slice(1)
-        : "Active") as any,
-      updatedBy: "Admin User",
-      updatedAt: "Just now",
-      adminNotes: skuData.adminNotes,
-    };
-    setProducts((prev) => [newEntry, ...prev]);
-    showToast(`Successfully registered Product SKU: ${newEntry.baseSku}`);
+    loadData();
+    showToast(`Successfully registered Product SKU: ${skuData.baseSku}`);
   };
 
   const handleSaveMaterial = (matData: MaterialSpecFormData) => {
     showToast(`Successfully defined Material Spec: ${matData.name}`);
   };
 
-  const handleDeleteProduct = (id: string, name: string) => {
+  const handleDeleteProduct = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to remove "${name}" from the catalog?`)) {
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      showToast(`Removed product item "${name}"`);
+      try {
+        await apiDeleteProduct(id);
+        showToast(`Removed product item "${name}"`);
+        loadData();
+      } catch (err) {
+        console.warn("Delete product API failed:", err);
+        showToast(`Failed to remove product item "${name}"`);
+      }
     }
   };
 
@@ -181,7 +135,9 @@ export default function ProductDirectoryPage() {
     });
   }, [products, searchTerm, selectedCategory, selectedStatus]);
 
-  const CATEGORY_OPTIONS = ["ALL", "Jackets", "T-Shirts", "Pants", "Hoodies", "Shirts"];
+  const categoryOptions = useMemo(() => {
+    return ["ALL", ...categoriesList.map((c) => c.name)];
+  }, [categoriesList]);
 
   return (
     <div className="space-y-6 text-[#191c1e] font-sans pb-12 w-full max-w-full">
@@ -381,7 +337,7 @@ export default function ProductDirectoryPage() {
             {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto">
               <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-xs font-mono uppercase">
-                {CATEGORY_OPTIONS.map((cat) => {
+                {categoryOptions.map((cat) => {
                   const isActive = selectedCategory === cat;
                   return (
                     <button
@@ -436,7 +392,13 @@ export default function ProductDirectoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredProducts.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-slate-400 font-mono">
+                      Loading products catalog...
+                    </td>
+                  </tr>
+                ) : filteredProducts.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-10 text-center text-slate-400 font-mono">
                       No product items found matching your filters.

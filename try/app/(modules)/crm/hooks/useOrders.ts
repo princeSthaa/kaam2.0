@@ -11,8 +11,8 @@ export function useOrders() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5083/api/customer-orders");
-      if (!res.ok) throw new Error("Failed to fetch customer orders");
+      const res = await fetch("http://localhost:5083/api/order");
+      if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
       setOrders(data || []);
     } catch (err: any) {

@@ -1,12 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  fetchMaterialTypes as apiFetchMaterialTypes,
+  createMaterialType as apiCreateMaterialType,
+  deleteMaterialType as apiDeleteMaterialType,
+  MaterialTypeDto,
+} from "../../api/materialtype.api";
 
-export interface MaterialTypeItem {
-  id?: string | number;
-  name: string;
+export interface MaterialTypeItem extends MaterialTypeDto {
   defaultUom?: string;
-  description?: string;
 }
 
 interface ManageMaterialTypeModalProps {
@@ -15,10 +18,10 @@ interface ManageMaterialTypeModalProps {
 }
 
 const DEFAULT_TYPES: MaterialTypeItem[] = [
-  { id: 1, name: "Fabric", defaultUom: "meters", description: "Woven, knitted, or non-woven raw textile rolls" },
-  { id: 2, name: "Trim & Hardware", defaultUom: "pcs", description: "Zippers, buttons, rivets, buckles, and thread" },
-  { id: 3, name: "Chemical & Wash", defaultUom: "kg", description: "Dyes, enzymes, softeners, and chemical agents" },
-  { id: 4, name: "Packaging Materials", defaultUom: "pcs", description: "Cartons, polybags, tags, and barcode stickers" },
+  { id: "1", name: "Fabric", defaultUom: "meters", unit: "meters", description: "Woven, knitted, or non-woven raw textile rolls" },
+  { id: "2", name: "Trim & Hardware", defaultUom: "pcs", unit: "pcs", description: "Zippers, buttons, rivets, buckles, and thread" },
+  { id: "3", name: "Chemical & Wash", defaultUom: "kg", unit: "kg", description: "Dyes, enzymes, softeners, and chemical agents" },
+  { id: "4", name: "Packaging Materials", defaultUom: "pcs", unit: "pcs", description: "Cartons, polybags, tags, and barcode stickers" },
 ];
 
 export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeModalProps) {
@@ -33,17 +36,12 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const API_URL = "http://localhost:5083/api/material-type";
-
-  const fetchMaterialTypes = async () => {
+  const loadMaterialTypes = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URL);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setTypes(data);
-        }
+      const data = await apiFetchMaterialTypes();
+      if (Array.isArray(data) && data.length > 0) {
+        setTypes(data);
       }
     } catch (err: any) {
       console.warn("API GET http://localhost:5083/api/material-type failed, fallback to local data:", err);
@@ -54,7 +52,7 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
 
   useEffect(() => {
     if (isOpen) {
-      fetchMaterialTypes();
+      loadMaterialTypes();
     }
   }, [isOpen]);
 
@@ -68,34 +66,45 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
     if (!newTypeName.trim()) return;
 
     setIsSubmitting(true);
-    const typePayload: MaterialTypeItem = {
-      name: newTypeName.trim(),
-      defaultUom: newTypeUom,
-      description: newTypeDesc.trim(),
-    };
-
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(typePayload),
+      const created = await apiCreateMaterialType({
+        name: newTypeName.trim(),
+        unit: newTypeUom,
+        defaultUom: newTypeUom,
+        description: newTypeDesc.trim(),
       });
-
-      if (res.ok) {
-        const created = await res.json();
-        setTypes((prev) => [created || typePayload, ...prev]);
-        showToast(`Material Type "${newTypeName}" created via API!`);
-      } else {
-        setTypes((prev) => [{ ...typePayload, id: Date.now() }, ...prev]);
-        showToast(`Material Type "${newTypeName}" added to directory!`);
-      }
-    } catch (err) {
-      setTypes((prev) => [{ ...typePayload, id: Date.now() }, ...prev]);
+      await loadMaterialTypes();
+      showToast(`Material Type "${newTypeName}" created successfully!`);
+    } catch (err: any) {
+      console.error("Failed to create material type via API:", err);
+      const fallback: MaterialTypeItem = {
+        id: String(Date.now()),
+        name: newTypeName.trim(),
+        defaultUom: newTypeUom,
+        unit: newTypeUom,
+        description: newTypeDesc.trim(),
+      };
+      setTypes((prev) => [fallback, ...prev]);
       showToast(`Material Type "${newTypeName}" added locally!`);
     } finally {
       setIsSubmitting(false);
       setNewTypeName("");
       setNewTypeDesc("");
+    }
+  };
+
+  const handleDeleteType = async (id?: string) => {
+    if (!id) return;
+    if (!window.confirm("Are you sure you want to delete this material type?")) return;
+
+    try {
+      await apiDeleteMaterialType(id);
+      showToast("Material Type deleted successfully!");
+      await loadMaterialTypes();
+    } catch (err) {
+      console.warn("Delete API failed, removing locally:", err);
+      setTypes((prev) => prev.filter((t) => t.id !== id));
+      showToast("Material Type removed!");
     }
   };
 
@@ -233,35 +242,50 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                    <th className="py-2.5 px-4">Code</th>
                     <th className="py-2.5 px-4">Type Name</th>
                     <th className="py-2.5 px-4">Default UOM</th>
                     <th className="py-2.5 px-4">Description</th>
+                    <th className="py-2.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
-                        Loading material types from {API_URL}...
+                      <td colSpan={5} className="py-6 text-center text-slate-400 font-mono">
+                        Loading material types from http://localhost:5083/api/material-type...
                       </td>
                     </tr>
                   ) : filteredTypes.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={5} className="py-6 text-center text-slate-400 font-mono">
                         No material types found.
                       </td>
                     </tr>
                   ) : (
                     filteredTypes.map((t, idx) => (
                       <tr key={t.id || idx} className="hover:bg-slate-50">
+                        <td className="py-2.5 px-4 font-mono text-[11px] text-slate-500 font-medium">
+                          {t.materialCode || "—"}
+                        </td>
                         <td className="py-2.5 px-4 font-bold text-slate-900">{t.name}</td>
                         <td className="py-2.5 px-4 font-mono">
                           <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold border border-slate-200">
-                            {t.defaultUom || "meters"}
+                            {t.unit || t.defaultUom || "meters"}
                           </span>
                         </td>
                         <td className="py-2.5 px-4 text-slate-600 font-mono text-[11px]">
                           {t.description || "—"}
+                        </td>
+                        <td className="py-2.5 px-4 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteType(t.id ? String(t.id) : undefined)}
+                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Delete Material Type"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
                         </td>
                       </tr>
                     ))

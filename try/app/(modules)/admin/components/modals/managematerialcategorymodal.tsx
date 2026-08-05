@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import {
+  fetchMaterialCategories as apiFetchMaterialCategories,
+  createMaterialCategory as apiCreateMaterialCategory,
+  deleteMaterialCategory as apiDeleteMaterialCategory,
+  MaterialCategoryDto,
+} from "../../api/materialcategory.api";
+import { fetchMaterialTypes, MaterialTypeDto } from "../../api/materialtype.api";
 
-export interface MaterialCategoryItem {
-  id?: string | number;
-  name: string;
-  description?: string;
+export interface MaterialCategoryItem extends MaterialCategoryDto {
   materialType?: string;
 }
 
@@ -15,15 +19,16 @@ interface ManageMaterialCategoryModalProps {
 }
 
 const DEFAULT_CATEGORIES: MaterialCategoryItem[] = [
-  { id: 1, name: "Cotton", description: "100% Organic & Combed Cotton Weaves", materialType: "Fabric" },
-  { id: 2, name: "Denim", description: "Indigo Dyed Heavyweight Twill Fabric", materialType: "Fabric" },
-  { id: 3, name: "Zippers & Fasteners", description: "YKK Metallic & Nylon Zippers", materialType: "Trim" },
-  { id: 4, name: "Dyes & Dope Wash", description: "Vat & Reactive Indigo Concentrates", materialType: "Chemical" },
-  { id: 5, name: "Master Cartons", description: "Corrugated 5-Ply Shipping Boxes", materialType: "Packaging" },
+  { id: "1", name: "Cotton", description: "100% Organic & Combed Cotton Weaves", materialType: "Fabric" },
+  { id: "2", name: "Denim", description: "Indigo Dyed Heavyweight Twill Fabric", materialType: "Fabric" },
+  { id: "3", name: "Zippers & Fasteners", description: "YKK Metallic & Nylon Zippers", materialType: "Trim" },
+  { id: "4", name: "Dyes & Dope Wash", description: "Vat & Reactive Indigo Concentrates", materialType: "Chemical" },
+  { id: "5", name: "Master Cartons", description: "Corrugated 5-Ply Shipping Boxes", materialType: "Packaging" },
 ];
 
 export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialCategoryModalProps) {
   const [categories, setCategories] = useState<MaterialCategoryItem[]>(DEFAULT_CATEGORIES);
+  const [materialTypes, setMaterialTypes] = useState<MaterialTypeDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,26 +36,29 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
   // Add Category Form state
   const [newCatName, setNewCatName] = useState("");
   const [newCatDesc, setNewCatDesc] = useState("");
-  const [newCatType, setNewCatType] = useState("Fabric");
+  const [selectedTypeId, setSelectedTypeId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const API_URL = "http://localhost:5083/api/material-category";
-
-  const fetchCategories = async () => {
+  const loadCategoriesAndTypes = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(API_URL);
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          setCategories(data);
+      const [cats, types] = await Promise.all([
+        apiFetchMaterialCategories().catch(() => []),
+        fetchMaterialTypes().catch(() => []),
+      ]);
+      if (Array.isArray(cats) && cats.length > 0) {
+        setCategories(cats);
+      }
+      if (Array.isArray(types) && types.length > 0) {
+        setMaterialTypes(types);
+        if (!selectedTypeId && types[0].id) {
+          setSelectedTypeId(types[0].id);
         }
       }
     } catch (err: any) {
       console.warn("API GET http://localhost:5083/api/material-category failed, fallback to local data:", err);
-      // Fallback to local default data silently or set mild note
     } finally {
       setLoading(false);
     }
@@ -58,7 +66,7 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
 
   useEffect(() => {
     if (isOpen) {
-      fetchCategories();
+      loadCategoriesAndTypes();
     }
   }, [isOpen]);
 
@@ -72,36 +80,43 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
     if (!newCatName.trim()) return;
 
     setIsSubmitting(true);
-    const categoryPayload: MaterialCategoryItem = {
-      name: newCatName.trim(),
-      description: newCatDesc.trim(),
-      materialType: newCatType,
-    };
-
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(categoryPayload),
+      await apiCreateMaterialCategory({
+        name: newCatName.trim(),
+        materialTypeId: selectedTypeId || undefined,
+        description: newCatDesc.trim(),
       });
-
-      if (res.ok) {
-        const created = await res.json();
-        setCategories((prev) => [created || categoryPayload, ...prev]);
-        showToast(`Category "${newCatName}" added successfully via API!`);
-      } else {
-        // Fallback to updating local state if POST endpoint is not yet fully ready
-        setCategories((prev) => [{ ...categoryPayload, id: Date.now() }, ...prev]);
-        showToast(`Category "${newCatName}" added to category directory!`);
-      }
+      await loadCategoriesAndTypes();
+      showToast(`Category "${newCatName}" added successfully!`);
     } catch (err) {
-      // Offline fallback
-      setCategories((prev) => [{ ...categoryPayload, id: Date.now() }, ...prev]);
+      console.warn("Category creation API failed, falling back to local:", err);
+      const fallback: MaterialCategoryItem = {
+        id: String(Date.now()),
+        name: newCatName.trim(),
+        description: newCatDesc.trim(),
+        materialTypeId: selectedTypeId,
+      };
+      setCategories((prev) => [fallback, ...prev]);
       showToast(`Category "${newCatName}" added locally!`);
     } finally {
       setIsSubmitting(false);
       setNewCatName("");
       setNewCatDesc("");
+    }
+  };
+
+  const handleDeleteCategory = async (id?: string) => {
+    if (!id) return;
+    if (!window.confirm("Are you sure you want to delete this material category?")) return;
+
+    try {
+      await apiDeleteMaterialCategory(id);
+      showToast("Category deleted successfully!");
+      await loadCategoriesAndTypes();
+    } catch (err) {
+      console.warn("Delete category API failed, removing locally:", err);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+      showToast("Category removed!");
     }
   };
 
@@ -177,14 +192,24 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
                   Material Type
                 </label>
                 <select
-                  value={newCatType}
-                  onChange={(e) => setNewCatType(e.target.value)}
+                  value={selectedTypeId}
+                  onChange={(e) => setSelectedTypeId(e.target.value)}
                   className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none font-mono"
                 >
-                  <option value="Fabric">Fabric</option>
-                  <option value="Trim">Trim</option>
-                  <option value="Chemical">Chemical</option>
-                  <option value="Packaging">Packaging</option>
+                  {materialTypes.length > 0 ? (
+                    materialTypes.map((t) => (
+                      <option key={t.id || t.name} value={t.id || ""}>
+                        {t.name} {t.unit ? `(${t.unit})` : ""}
+                      </option>
+                    ))
+                  ) : (
+                    <>
+                      <option value="">Fabric</option>
+                      <option value="">Trim</option>
+                      <option value="">Chemical</option>
+                      <option value="">Packaging</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
@@ -238,38 +263,56 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
+                    <th className="py-2.5 px-4">Code</th>
                     <th className="py-2.5 px-4">Category Name</th>
                     <th className="py-2.5 px-4">Type</th>
                     <th className="py-2.5 px-4">Description</th>
+                    <th className="py-2.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
-                        Loading material categories...
+                      <td colSpan={5} className="py-6 text-center text-slate-400 font-mono">
+                        Loading material categories from http://localhost:5083/api/material-category...
                       </td>
                     </tr>
                   ) : filteredCategories.length === 0 ? (
                     <tr>
-                      <td colSpan={3} className="py-6 text-center text-slate-400 font-mono">
+                      <td colSpan={5} className="py-6 text-center text-slate-400 font-mono">
                         No categories found.
                       </td>
                     </tr>
                   ) : (
-                    filteredCategories.map((cat, idx) => (
-                      <tr key={cat.id || idx} className="hover:bg-slate-50">
-                        <td className="py-2.5 px-4 font-bold text-slate-900">{cat.name}</td>
-                        <td className="py-2.5 px-4 font-mono">
-                          <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold border border-slate-200">
-                            {cat.materialType || "Fabric"}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-4 text-slate-600 font-mono text-[11px]">
-                          {cat.description || "—"}
-                        </td>
-                      </tr>
-                    ))
+                    filteredCategories.map((cat, idx) => {
+                      const matchedType = materialTypes.find((t) => t.id === cat.materialTypeId);
+                      return (
+                        <tr key={cat.id || idx} className="hover:bg-slate-50">
+                          <td className="py-2.5 px-4 font-mono text-[11px] text-slate-500 font-medium">
+                            {cat.materialCode || "—"}
+                          </td>
+                          <td className="py-2.5 px-4 font-bold text-slate-900">{cat.name}</td>
+                          <td className="py-2.5 px-4 font-mono">
+                            <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold border border-slate-200">
+                              {matchedType ? matchedType.name : cat.materialType || "General"}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-slate-600 font-mono text-[11px]">
+                            {cat.description || "—"}
+                          </td>
+                          <td className="py-2.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(cat.id ? String(cat.id) : undefined)}
+                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Delete Material Category"
+                            >
+                              <span className="material-symbols-outlined text-base">delete</span>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

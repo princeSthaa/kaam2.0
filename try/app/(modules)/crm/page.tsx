@@ -48,20 +48,20 @@ export default function CrmIndexPage() {
 
   // Compute Summary Statistics
   const stats = useMemo(() => {
-    const totalCust = customers.length || 8;
-    const totalOrd = orders.length || 12;
+    const totalCust = customers.length;
+    const totalOrd = orders.length;
     const pendingOrd = orders.filter(
       (o) => o.status === "Pending" || o.status === "Processing" || !o.status
-    ).length || 5;
+    ).length;
 
-    const totalRev = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0) || 45890;
+    const totalRev = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
     const newCustomers = customers.filter((c) => {
-      if (!c.createdAt) return true;
+      if (!c.createdAt) return false;
       const created = new Date(c.createdAt);
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       return created >= thirtyDaysAgo;
-    }).length || 3;
+    }).length;
 
     return {
       totalCust,
@@ -72,7 +72,7 @@ export default function CrmIndexPage() {
     };
   }, [customers, orders]);
 
-  // Combine real activities + structured activity history
+  // Combine real activities
   const activities: ActivityItem[] = useMemo(() => {
     const list: ActivityItem[] = [];
 
@@ -103,101 +103,21 @@ export default function CrmIndexPage() {
       });
     });
 
-    // Default fallback rich timeline items if activity count is low
-    const fallbackActivities: ActivityItem[] = [
-      {
-        id: "act-1",
-        type: "order",
-        title: "Order ORD-88450 Updated",
-        description: "Status changed to Processing (Payment verified)",
-        timestamp: "2 hours ago",
-        badgeColor: "bg-amber-50 text-amber-700 border-amber-200",
-        icon: "sync",
-      },
-      {
-        id: "act-2",
-        type: "customer",
-        title: "Customer Profile Updated",
-        description: "Kathmandu Textile Corp. updated tax ID & contact info",
-        timestamp: "5 hours ago",
-        badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
-        icon: "edit_note",
-      },
-      {
-        id: "act-3",
-        type: "status",
-        title: "Bulk Order Delivery Scheduled",
-        description: "Order ORD-88219 assigned to Single Delivery dispatch",
-        timestamp: "Yesterday",
-        badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        icon: "local_shipping",
-      },
-      {
-        id: "act-4",
-        type: "audit",
-        title: "Credit Limit Approved",
-        description: "Himalayan Outfitters approved for Rs. 25,000 credit limit",
-        timestamp: "2 days ago",
-        badgeColor: "bg-slate-100 text-slate-800 border-slate-200",
-        icon: "verified",
-      },
-      {
-        id: "act-5",
-        type: "order",
-        title: "New Quotation Generated",
-        description: "Draft order for 500 units Heavyweight Hoodie sent for review",
-        timestamp: "3 days ago",
-        badgeColor: "bg-blue-50 text-blue-700 border-blue-200",
-        icon: "request_quote",
-      },
-      {
-        id: "act-6",
-        type: "customer",
-        title: "Customer Inquiry Logged",
-        description: "Pokhara Traders inquired regarding MOQ for Silk Satin fabric",
-        timestamp: "4 days ago",
-        badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
-        icon: "support_agent",
-      },
-      {
-        id: "act-7",
-        type: "status",
-        title: "Order ORD-87011 Completed",
-        description: "Handover completed and invoice dispatched to customer",
-        timestamp: "5 days ago",
-        badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-        icon: "task_alt",
-      },
-    ];
-
-    const combined = [...list, ...fallbackActivities];
-    return combined;
+    return list;
   }, [customers, orders]);
 
   const visibleActivities = showAllActivities
     ? activities
     : activities.slice(0, INITIAL_ACTIVITIES_LIMIT);
 
-  // Fallback Recent Orders for preview table if database has none
+  // Recent Orders for preview table
   const displayOrders = useMemo(() => {
-    if (orders.length > 0) return orders.slice(0, 5);
-    return [
-      { id: "1", orderNumber: "ORD-88219", customerId: "c1", totalAmount: 12450.0, status: "Pending", createdAt: new Date().toISOString() },
-      { id: "2", orderNumber: "ORD-88450", customerId: "c2", totalAmount: 8500.0, status: "Processing", createdAt: new Date().toISOString() },
-      { id: "3", orderNumber: "ORD-87011", customerId: "c3", totalAmount: 18900.0, status: "Completed", createdAt: new Date().toISOString() },
-      { id: "4", orderNumber: "ORD-89102", customerId: "c4", totalAmount: 3200.0, status: "Pending", createdAt: new Date().toISOString() },
-    ];
+    return orders.slice(0, 5);
   }, [orders]);
 
-  // Fallback Recent Customers list
+  // Recent Customers list
   const displayCustomers = useMemo(() => {
-    if (customers.length > 0) return customers.slice(0, 5);
-    return [
-      { id: "c1", name: "Kathmandu Textile Corp.", company: "Manufacturing", type: "Wholesale", email: "info@ktmtextile.com" },
-      { id: "c2", name: "Himalayan Apparel Ltd.", company: "Retail Chain", type: "Corporate", email: "orders@himalayan.np" },
-      { id: "c3", name: "Pokhara Garment Traders", company: "Distributor", type: "Wholesale", email: "pokhara@garments.com" },
-      { id: "c4", name: "Alpine Sportswear Co.", company: "Export House", type: "Corporate", email: "contact@alpinesports.com" },
-    ];
+    return customers.slice(0, 5);
   }, [customers]);
 
   const getCustomerName = (custRowOrId: any) => {
@@ -467,38 +387,38 @@ export default function CrmIndexPage() {
           </div>
 
           {/* Module Quick Shortcuts */}
-          <div className="bg-slate-900 text-white rounded-2xl p-5 shadow space-y-3">
-            <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold uppercase tracking-wider">
-              <span className="material-symbols-outlined text-base">bolt</span>
+          <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm space-y-3">
+            <div className="flex items-center space-x-2 text-slate-900 text-xs font-bold uppercase tracking-wider">
+              <span className="material-symbols-outlined text-base text-amber-600">bolt</span>
               <span>CRM Module Shortcuts</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <Link
                 href="/crm/customers"
-                className="p-2.5 bg-slate-800 hover:bg-slate-750 rounded-lg border border-slate-700 transition-colors flex items-center space-x-2 font-medium"
+                className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
               >
-                <span className="material-symbols-outlined text-sm text-blue-400">filter_list</span>
+                <span className="material-symbols-outlined text-sm text-blue-600">filter_list</span>
                 <span>Filter Customers</span>
               </Link>
               <Link
                 href="/crm/orders/new"
-                className="p-2.5 bg-slate-800 hover:bg-slate-750 rounded-lg border border-slate-700 transition-colors flex items-center space-x-2 font-medium"
+                className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
               >
-                <span className="material-symbols-outlined text-sm text-emerald-400">add_circle</span>
+                <span className="material-symbols-outlined text-sm text-emerald-600">add_circle</span>
                 <span>Create Order</span>
               </Link>
               <Link
                 href="/crm/customers/new"
-                className="p-2.5 bg-slate-800 hover:bg-slate-750 rounded-lg border border-slate-700 transition-colors flex items-center space-x-2 font-medium"
+                className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
               >
-                <span className="material-symbols-outlined text-sm text-purple-400">person_add</span>
+                <span className="material-symbols-outlined text-sm text-purple-600">person_add</span>
                 <span>New Customer</span>
               </Link>
               <Link
                 href="/crm/audit"
-                className="p-2.5 bg-slate-800 hover:bg-slate-750 rounded-lg border border-slate-700 transition-colors flex items-center space-x-2 font-medium"
+                className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
               >
-                <span className="material-symbols-outlined text-sm text-amber-400">history</span>
+                <span className="material-symbols-outlined text-sm text-amber-600">history</span>
                 <span>Audit Logs</span>
               </Link>
             </div>

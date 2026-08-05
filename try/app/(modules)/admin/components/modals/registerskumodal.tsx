@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { fetchProductCategories, ProductCategoryDto } from "../../api/productcategory.api";
+import { createProduct } from "../../api/product.api";
+import { fetchMaterialTypes } from "../../api/materialtype.api";
 
 export interface MaterialBreakdownSizeRow {
   size: string;
@@ -35,6 +38,7 @@ export interface RegisterSkuFormData {
   productName: string;
   baseSku: string;
   category: string;
+  productCategoryId?: string;
   uom: string;
   lifecycleStatus: string;
   gender: string;
@@ -247,6 +251,14 @@ function SearchableStageSelect({
   );
 }
 
+const DEFAULT_PRODUCT_CATEGORIES: ProductCategoryDto[] = [
+  { id: "cat-1", name: "Jackets & Outerwear", categoryCode: "CAT-001" },
+  { id: "cat-2", name: "Denim & Trousers", categoryCode: "CAT-002" },
+  { id: "cat-3", name: "Shirts & Tops", categoryCode: "CAT-003" },
+  { id: "cat-4", name: "Knitwear & Hoodies", categoryCode: "CAT-004" },
+  { id: "cat-5", name: "Trims & Accessories", categoryCode: "CAT-005" },
+];
+
 export function RegisterSkuModal({
   isOpen,
   onClose,
@@ -256,6 +268,7 @@ export function RegisterSkuModal({
     productName: "Premium Denim Jacket - Indigo Series",
     baseSku: "JKT-DNM-IND-001",
     category: "jackets",
+    productCategoryId: "cat-1",
     uom: "pcs",
     lifecycleStatus: "active",
     gender: "unisex",
@@ -280,6 +293,8 @@ export function RegisterSkuModal({
     adminNotes: "",
   });
 
+  const [productCategories, setProductCategories] = useState<ProductCategoryDto[]>(DEFAULT_PRODUCT_CATEGORIES);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
   // Searchable Material Dropdown state
@@ -289,37 +304,49 @@ export function RegisterSkuModal({
   const [selectedMaterialType, setSelectedMaterialType] = useState<MaterialTypeOption | null>(null);
   const materialDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Material Types API integration (http://localhost:5083/api/material-type)
+  // Material Types API integration
   const [materialTypes, setMaterialTypes] = useState<MaterialTypeOption[]>(DEFAULT_MATERIAL_TYPES);
   const [selectedMaterialTypeId, setSelectedMaterialTypeId] = useState<string>("");
   const [isLoadingMaterialTypes, setIsLoadingMaterialTypes] = useState<boolean>(false);
 
-  // Fetch Material Types from API: http://localhost:5083/api/material-type
+  // Fetch Material Types and Product Categories from API when modal opens
   useEffect(() => {
+    if (!isOpen) return;
+
     setIsLoadingMaterialTypes(true);
-    fetch("http://localhost:5083/api/material-type")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch material types");
-        return res.json();
-      })
-      .then((data: any) => {
-        const list = Array.isArray(data) ? data : data?.value || [];
-        if (Array.isArray(list) && list.length > 0) {
-          const apiTypes: MaterialTypeOption[] = list.map((item: any) => ({
-            id: item.id || item.Id || String(Math.random()),
-            name: item.name || item.Name || "Material Type",
+    fetchMaterialTypes()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const apiTypes: MaterialTypeOption[] = data.map((item) => ({
+            id: item.id || String(Math.random()),
+            name: item.name || "Material Type",
           }));
           setMaterialTypes(apiTypes);
           setSelectedMaterialTypeId(apiTypes[0].id);
         }
       })
       .catch((err) => {
-        console.warn("API GET http://localhost:5083/api/material-type failed, fallback to defaults:", err);
+        console.warn("API GET http://localhost:5083/api/material-type failed:", err);
       })
       .finally(() => {
         setIsLoadingMaterialTypes(false);
       });
-  }, []);
+
+    fetchProductCategories()
+      .then((cats) => {
+        if (Array.isArray(cats) && cats.length > 0) {
+          setProductCategories(cats);
+          setFormData((prev) => ({
+            ...prev,
+            productCategoryId: prev.productCategoryId || cats[0].id || "",
+            category: cats.find((c) => c.id === (prev.productCategoryId || cats[0].id))?.name || cats[0].name || "",
+          }));
+        }
+      })
+      .catch((err) => {
+        console.warn("API GET http://localhost:5083/api/product-category failed:", err);
+      });
+  }, [isOpen]);
 
   // Handle click outside for material dropdown
   useEffect(() => {
@@ -520,15 +547,30 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setSelectedImageFile(file);
       const url = URL.createObjectURL(file);
       setThumbnailPreview(url);
       setFormData((prev) => ({ ...prev, thumbnailUrl: url }));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.productName.trim() || !formData.baseSku.trim()) return;
+
+    try {
+      const catId = formData.productCategoryId || (productCategories[0]?.id ?? "00000000-0000-0000-0000-000000000000");
+      await createProduct({
+        sku: formData.baseSku,
+        name: formData.productName,
+        productCategoryId: catId,
+        isActive: formData.lifecycleStatus === "active",
+        image: selectedImageFile,
+      });
+    } catch (err) {
+      console.warn("Product create API failed, proceeding with local callback:", err);
+    }
+
     if (onSave) {
       onSave(formData);
     }
@@ -620,15 +662,23 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
                     </label>
                     <select
                       id="category"
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      value={formData.productCategoryId || productCategories[0]?.id || ""}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const matchedCat = productCategories.find((c) => c.id === selectedId);
+                        setFormData({
+                          ...formData,
+                          productCategoryId: selectedId,
+                          category: matchedCat ? matchedCat.name : selectedId,
+                        });
+                      }}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none cursor-pointer"
                     >
-                      <option value="jackets">Jackets & Outerwear</option>
-                      <option value="denim">Denim & Trousers</option>
-                      <option value="tops">Shirts & Tops</option>
-                      <option value="knitwear">Knitwear & Hoodies</option>
-                      <option value="trims">Trims & Accessories</option>
+                      {productCategories.map((cat) => (
+                        <option key={cat.id || cat.name} value={cat.id}>
+                          {cat.name} {cat.categoryCode ? `(${cat.categoryCode})` : ""}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
