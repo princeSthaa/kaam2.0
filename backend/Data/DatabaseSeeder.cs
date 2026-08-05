@@ -49,7 +49,7 @@ namespace backend.Data
                 var defaultStages = new[] { "Cutting", "Stitching", "Quality Check", "Ironing & Packaging" };
                 foreach (var stageName in defaultStages)
                 {
-                    context.ProductionStages.Add(new ProductionStage { Id = Guid.NewGuid(), Name = stageName, isActive = true });
+                    context.ProductionStages.Add(new ProductionStage { Id = Guid.NewGuid(), Name = stageName, IsActive = true });
                 }
                 context.SaveChanges();
             }

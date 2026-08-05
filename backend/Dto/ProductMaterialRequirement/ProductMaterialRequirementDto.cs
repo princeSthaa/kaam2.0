@@ -9,15 +9,17 @@ public class ProductMaterialRequirementDto
 {
     public Guid Id { get; set; }
 
+    
     [Required(ErrorMessage = "Product is required.")]
     public Guid ProductId { get; set; }
+    public virtual ProductDto? Product { get; set; }
 
-    public ProductDto? Product { get; set; }
-
+    
     [Required(ErrorMessage = "Material is required.")]
     public Guid MaterialTypeId { get; set; }
     public virtual MaterialTypeDto? MaterialType { get; set; }
 
+    
     [Required(ErrorMessage = "Product size is required.")]
     public ProductSize ProductSize { get; set; }
 

@@ -13,69 +13,78 @@ namespace backend.Service.ProductionStage
             _context = context;
         }
 
-        public async Task<List<ProductionStageDto>> GetAllAsync()
+        public async Task<List<ProductionStageDto>> GetAllAsync(
+            Guid? id = null,
+            string? productionStageCode = null,
+            bool? isActive = null
+        )
         {
-            return await _context.ProductionStages
-                .AsNoTracking()
-                .Select(s => new ProductionStageDto
-                {
-                    Id = s.Id,
-                    Name = s.Name,
-                    isActive = s.isActive
-                })
+            return await _context.Database
+                .SqlQuery<ProductionStageDto>($@"
+                    EXEC sp_GetProductionStages
+
+                        @Id = {id},
+                        @ProductionStageCode = {productionStageCode},
+                        @IsActive = {isActive}
+                ")
                 .ToListAsync();
         }
 
         public async Task<ProductionStageDto?> GetByIdAsync(Guid id)
         {
-            var s = await _context.ProductionStages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
-            if (s == null) return null;
-
-            return new ProductionStageDto
-            {
-                Id = s.Id,
-                Name = s.Name,
-                isActive = s.isActive
-            };
+            var results = await GetAllAsync(id: id);
+            return results.FirstOrDefault();
         }
 
         public async Task<ProductionStageDto> CreateAsync(ProductionStageDto dto)
         {
-            var entity = new backend.Model.ProductionStage
-            {
-                Id = Guid.NewGuid(),
-                Name = dto.Name,
-                Description = dto.Description,
-                isActive = true
-            };
+            var count = await _context.ProductionStages.CountAsync();
+            dto.ProductionStageCode = $"PRO-STA-{(count + 1):D5}";
 
-            _context.ProductionStages.Add(entity);
-            await _context.SaveChangesAsync();
+            dto.Id = Guid.NewGuid();
 
-            dto.Id = entity.Id;
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_InsertProductionStage
+                    @Id={dto.Id},
+                    @ProductionStageCode={dto.ProductionStageCode},
+                    @Name={dto.Name},
+                    @Description={dto.Description},
+                    @Duration={dto.Duration},
+                    @IsActive={true}"
+                );
+
             return dto;
         }
 
         public async Task<bool> UpdateAsync(Guid id, ProductionStageDto dto)
         {
-            var entity = await _context.ProductionStages.FindAsync(id);
-            if (entity == null) return false;
+            var exists = await _context.ProductionStages.AnyAsync(x => x.Id == id);
 
-            entity.Name = dto.Name;
-            entity.isActive = dto.isActive;
+            if (!exists)
+                return false;
 
-            _context.ProductionStages.Update(entity);
-            await _context.SaveChangesAsync();
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_UpdateProductionStage
+                    @Id={id},
+                    @Name={dto.Name},
+                    @Description={dto.Description},
+                    @Duration={dto.Duration},
+                    @IsActive={dto.IsActive}");
+
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            var entity = await _context.ProductionStages.FindAsync(id);
-            if (entity == null) return false;
+            var exists = await _context.ProductionStages.AnyAsync(x => x.Id == id);
 
-            _context.ProductionStages.Remove(entity);
-            await _context.SaveChangesAsync();
+            if (!exists)
+                return false;
+
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_DeleteProductionStage
+                    @Id={id}");
+
             return true;
         }
     }

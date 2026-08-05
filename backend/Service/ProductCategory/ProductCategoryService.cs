@@ -48,11 +48,14 @@ namespace backend.Service.ProductCategory
         public async Task<ProductCategoryCreateDto> CreateAsync(ProductCategoryCreateDto dto)
         {
             var now = DateTime.UtcNow;
+
             var count = await _context.ProductCategories.CountAsync();
+            dto.CategoryCode = $"PRO-CAT-{(count + 1):D5}";
+            
             var entity = new backend.Model.ProductCategory
             {
                 Id =Guid.NewGuid(),
-                CategoryCode = $"CAT-{(count + 1):D5}",
+                CategoryCode = dto.CategoryCode,
                 Name = dto.Name,
                 isActive = true,
                 CreatedAt = now,

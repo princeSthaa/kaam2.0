@@ -15,17 +15,19 @@ namespace backend.Dto.Product
         [Required(ErrorMessage = "Name is required.")]
         public string Name { get; set; } = string.Empty;
 
+
         public string ImagePath { get; set; } = string.Empty;
 
         public bool isActive { get; set; } = true;
 
+
         [Required(ErrorMessage = "Product category is required.")]
         public Guid? ProductCategoryId { get; set; }
-        public ProductCategoryDto? ProductCategory { get; set; }
+        public virtual ProductCategoryDto? ProductCategory { get; set; }
 
-        public List<ProductMaterialRequirementDto> MaterialRequirements { get; set; } = new();
+        public virtual List<ProductMaterialRequirementDto> MaterialRequirements { get; set; } = new();
 
-        public List<ProductProductionStageDto> ProductionStages { get; set; } = new();
+        public virtual List<ProductProductionStageDto> ProductionStages { get; set; } = new();
         
 
     }

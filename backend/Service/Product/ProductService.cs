@@ -32,6 +32,7 @@ namespace backend.Service.Product
                 .Include(p => p.ProductCategory)
                 .Include(p => p.MaterialRequirements)
                     .ThenInclude(m => m.MaterialType)
+                    .ThenInclude(mt => mt.MaterialCategories)
                 .Include(p => p.ProductionStages)
                     .ThenInclude(s => s.ProductionStage)
                 .AsQueryable();
@@ -90,7 +91,7 @@ namespace backend.Service.Product
                             Id = x.ProductionStage.Id,
                             Name = x.ProductionStage.Name,
                             Description = x.ProductionStage.Description,
-                            isActive = x.ProductionStage.isActive
+                            IsActive = x.ProductionStage.IsActive
                         }
 
                     }).ToList()
@@ -156,7 +157,7 @@ namespace backend.Service.Product
                             Id = x.ProductionStage.Id,
                             Name = x.ProductionStage.Name,
                             Description = x.ProductionStage.Description,
-                            isActive = x.ProductionStage.isActive
+                            IsActive = x.ProductionStage.IsActive
                         }
 
                     }).ToList()
@@ -168,7 +169,6 @@ namespace backend.Service.Product
         public async Task<bool> CreateAsync(ProductDto dto)
         {
             await using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
                 dto.Id = Guid.NewGuid();
