@@ -7,7 +7,7 @@ import {
   updateSupplier,
   deleteSupplier,
   SupplierDto
-} from "../../srm/api/supplier.api";
+} from "../api/supplier.api";
 import AddNewSupplierModal, { SupplierFormData, getInitials } from "../components/modals/addnewsupplier";
 import { AddMaterialToSupplierModal } from "../components/modals/addmaterialtosuppliermodal";
 
@@ -26,115 +26,9 @@ interface Supplier {
   materialCategoryIds?: string[];
 }
 
-const INITIAL_SUPPLIERS: Supplier[] = [
-  {
-    id: "1",
-    name: "Indigo Textiles Co.",
-    code: "SUP-24091",
-    category: "FABRIC",
-    status: "ACTIVE",
-    lastAudit: "Oct 12, 2023",
-    materialsSupplied: "14,200 m",
-    email: "contact@indigotextiles.com",
-    phone: "+977 1-4235890",
-    location: "Kathmandu, Nepal",
-    complianceScore: 96,
-  },
-  {
-    id: "2",
-    name: "Global Threads",
-    code: "SUP-19283",
-    category: "TRIMS",
-    status: "UNDER REVIEW",
-    lastAudit: "Nov 05, 2023",
-    materialsSupplied: "8,940 units",
-    email: "info@globalthreads.org",
-    phone: "+977 1-5521098",
-    location: "Lalitpur, Nepal",
-    complianceScore: 82,
-  },
-  {
-    id: "3",
-    name: "Apex Trims Ltd",
-    code: "SUP-88210",
-    category: "HARDWARE",
-    status: "ACTIVE",
-    lastAudit: "Aug 19, 2023",
-    materialsSupplied: "42,100 units",
-    email: "sales@apextrims.com",
-    phone: "+880 2-8812903",
-    location: "Dhaka, Bangladesh",
-    complianceScore: 94,
-  },
-  {
-    id: "4",
-    name: "Loom & Shuttle",
-    code: "SUP-00452",
-    category: "FABRIC",
-    status: "BLACKLISTED",
-    lastAudit: "Dec 01, 2022",
-    materialsSupplied: "0 m",
-    email: "compliance@loomshuttle.io",
-    phone: "+91 11-4902188",
-    location: "Surat, India",
-    complianceScore: 45,
-  },
-  {
-    id: "5",
-    name: "Vanguard Synthetics",
-    code: "SUP-33104",
-    category: "FABRIC",
-    status: "ACTIVE",
-    lastAudit: "Jan 14, 2024",
-    materialsSupplied: "28,500 m",
-    email: "orders@vanguardsyn.com",
-    phone: "+86 20-8349210",
-    location: "Guangzhou, China",
-    complianceScore: 98,
-  },
-  {
-    id: "6",
-    name: "Precision Hardware Corp",
-    code: "SUP-77120",
-    category: "HARDWARE",
-    status: "ACTIVE",
-    lastAudit: "Feb 02, 2024",
-    materialsSupplied: "105,000 units",
-    email: "support@precisionhw.com",
-    phone: "+86 574-8790123",
-    location: "Ningbo, China",
-    complianceScore: 92,
-  },
-  {
-    id: "7",
-    name: "EcoPack Solutions",
-    code: "SUP-66201",
-    category: "PACKAGING",
-    status: "ACTIVE",
-    lastAudit: "Jan 28, 2024",
-    materialsSupplied: "54,000 units",
-    email: "green@ecopack.np",
-    phone: "+977 1-4781200",
-    location: "Bhaktapur, Nepal",
-    complianceScore: 99,
-  },
-  {
-    id: "8",
-    name: "Himalayan Zippers & Fasteners",
-    code: "SUP-41092",
-    category: "TRIMS",
-    status: "UNDER REVIEW",
-    lastAudit: "Mar 10, 2024",
-    materialsSupplied: "12,300 units",
-    email: "zippers@himalayan.com",
-    phone: "+977 1-4439012",
-    location: "Kathmandu, Nepal",
-    complianceScore: 78,
-  },
-];
-
 export default function AdminSupplierDirectoryPage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(INITIAL_SUPPLIERS);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [selectedStatus, setSelectedStatus] = useState("ALL");
@@ -158,26 +52,30 @@ export default function AdminSupplierDirectoryPage() {
   }, []);
 
   const loadSuppliersFromApi = async () => {
+    setLoading(true);
     try {
       const data = await fetchSuppliers();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         const mapped: Supplier[] = data.map((s: SupplierDto) => ({
           id: s.id,
           name: s.name,
-          code: s.supplierCode || "SUP-AUTO",
+          code: s.supplierCode || `SUP-${s.id.slice(0, 4)}`,
           category: (s.materialCategories?.[0]?.name?.toUpperCase() as any) || "FABRIC",
-          status: s.status === "Blacklisted" ? "BLACKLISTED" : s.status === "Inactive" ? "UNDER REVIEW" : "ACTIVE",
-          lastAudit: s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "Recently",
+          status: s.status === 2 || s.status === "Blacklisted" ? "BLACKLISTED" : s.status === 1 || s.status === "Inactive" ? "UNDER REVIEW" : "ACTIVE",
+          lastAudit: s.createdAt ? new Date(s.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "Recently",
           materialsSupplied: `${s.totalOrders || 0} orders`,
-          email: s.contactEmail || "contact@company.com",
-          phone: s.contactPhone || "+977 1-0000000",
+          email: s.contactEmail || "—",
+          phone: s.contactPhone || "—",
           location: s.address || "Kathmandu, Nepal",
-          complianceScore: s.rating ? Math.round(s.rating) : 90,
+          complianceScore: s.rating ? Math.round(Number(s.rating)) : 90,
+          materialCategoryIds: s.materialCategories?.map((c) => c.materialCategoryId) || [],
         }));
         setSuppliers(mapped);
       }
     } catch (err) {
-      console.warn("Backend API supplier fetch failed, using initial store:", err);
+      console.warn("Backend API supplier fetch failed:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -212,43 +110,7 @@ export default function AdminSupplierDirectoryPage() {
   ).toFixed(1);
 
   const handleAddSupplierSubmit = async (formData: SupplierFormData) => {
-    if (!formData.name || !formData.code) return;
-
-    try {
-      await createSupplier({
-        supplierCode: formData.code,
-        name: formData.name,
-        contactEmail: formData.email || "",
-        contactPhone: formData.phone || "",
-        address: formData.location || "",
-        status: "Active",
-        materialCategoryIds: formData.materialCategoryIds || [],
-      });
-
-      await loadSuppliersFromApi();
-    } catch (err) {
-      console.error("Failed to create supplier via API:", err);
-      const created: Supplier = {
-        id: String(Date.now()),
-        name: formData.name,
-        code: formData.code,
-        category: (formData.category as any) || "FABRIC",
-        status: "ACTIVE",
-        lastAudit: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-        }),
-        materialsSupplied: "0 units",
-        email: formData.email || "supplier@example.com",
-        phone: formData.phone || "+977 1-0000000",
-        location: formData.location || "Kathmandu, Nepal",
-        complianceScore: 90,
-      };
-
-      setSuppliers((prev) => [created, ...prev]);
-    }
-
+    await loadSuppliersFromApi();
     setIsAddModalOpen(false);
   };
 
@@ -502,7 +364,13 @@ export default function AdminSupplierDirectoryPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-              {filteredSuppliers.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-400 font-mono">
+                    Loading suppliers directory...
+                  </td>
+                </tr>
+              ) : filteredSuppliers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                     <span className="material-symbols-outlined text-4xl block mb-2">

@@ -7,15 +7,17 @@ import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/regi
 import { ManageProductionStagesModal } from "../components/modals/manageproductionstagesmodal";
 import { ManageMaterialCategoryModal } from "../components/modals/managematerialcategorymodal";
 import { ManageMaterialTypeModal } from "../components/modals/managematerialtypemodal";
+import { fetchMaterials, deleteMaterial as apiDeleteMaterial, MaterialGetDto } from "../api/material.api";
 
 export interface MaterialDirectoryItem {
   id: string;
   code: string;
   name: string;
-  type: "fabric" | "trim" | "chemical" | "packaging";
+  type: "fabric" | "trim" | "chemical" | "packaging" | string;
   unit: string;
   categories: string[];
   pricePerUnit?: string | number;
+  imageUrl?: string;
   weightGsm?: string | number;
   widthInches?: string;
   colorCode?: string;
@@ -26,88 +28,28 @@ export interface MaterialDirectoryItem {
   updatedAt: string;
 }
 
-const INITIAL_MATERIALS: MaterialDirectoryItem[] = [
-  {
-    id: "1",
-    code: "MAT-FAB-001",
-    name: "Primary Fabric - 100% Cotton Denim (14.5oz Indigo)",
-    type: "fabric",
-    unit: "meters",
-    categories: ["Cotton", "Denim", "Woven"],
-    pricePerUnit: "450",
-    weightGsm: "420",
-    widthInches: "58/60\"",
-    colorCode: "TCX 19-4052 (Classic Navy Indigo)",
-    composition: "98% Cotton, 2% Elastane",
-    qualityStandard: "Oeko-Tex Standard 100",
-    mandatoryTests: ["Color Fastness to Washing", "Shrinkage Test", "Tear Resistance"],
-    updatedBy: "J. Smith",
-    updatedAt: "10:42 AM",
-  },
-  {
-    id: "2",
-    code: "MAT-LIN-012",
-    name: "Lining Material - Cotton Pocketing Twill",
-    type: "fabric",
-    unit: "meters",
-    categories: ["Cotton", "Woven"],
-    pricePerUnit: "180",
-    weightGsm: "130",
-    widthInches: "54\"",
-    colorCode: "Bleached Natural White",
-    composition: "100% Combed Cotton",
-    qualityStandard: "ISO 9001 Certified",
-    mandatoryTests: ["Formaldehyde & Chemical Safety", "Shrinkage Test"],
-    updatedBy: "A. Kumar",
-    updatedAt: "09:15 AM",
-  },
-  {
-    id: "3",
-    code: "MAT-TRM-005",
-    name: "Trim - YKK 8 inch Heavy Brass Zipper",
-    type: "trim",
-    unit: "pcs",
-    categories: ["Zippers", "Buckles"],
-    pricePerUnit: "45",
-    colorCode: "Antiqued Brass Finish",
-    composition: "Solid Brass & Cotton Tape",
-    qualityStandard: "YKK Quality Benchmark",
-    mandatoryTests: ["Tensile Strength"],
-    updatedBy: "M. Rossi",
-    updatedAt: "Yesterday",
-  },
-  {
-    id: "4",
-    code: "MAT-DYE-B2",
-    name: "Chemical - Vat Indigo Dye Concentrate #B2",
-    type: "chemical",
-    unit: "kg",
-    categories: ["Indigo Liquid Dye", "Enzyme Wash"],
-    pricePerUnit: "1,200",
-    composition: "High-grade Vat Indigo Dye Extract",
-    qualityStandard: "GOTS 6.0 Organic Chemical Standard",
-    mandatoryTests: ["Formaldehyde & Chemical Safety"],
-    updatedBy: "R. Sharma",
-    updatedAt: "Yesterday",
-  },
-  {
-    id: "5",
-    code: "MAT-PKG-088",
-    name: "Packaging - Master Cartons 5-Ply Corrugated",
-    type: "packaging",
-    unit: "pcs",
-    categories: ["Master Cartons"],
-    pricePerUnit: "85",
-    composition: "Recycled Heavy-Duty Corrugated Board",
-    qualityStandard: "Burst Strength Standard 14 kg/cm2",
-    mandatoryTests: ["Tear Resistance"],
-    updatedBy: "J. Smith",
-    updatedAt: "Oct 24",
-  },
-];
+function MaterialAvatar({ src, name, code }: { src?: string; name: string; code: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-[10px] shrink-0 shadow-sm overflow-hidden border border-slate-200">
+      {src && !hasError ? (
+        <img
+          src={src}
+          alt=""
+          onError={() => setHasError(true)}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span className="uppercase">{code ? code.slice(0, 3) : "MAT"}</span>
+      )}
+    </div>
+  );
+}
 
 export default function MaterialDirectoryPage() {
-  const [materials, setMaterials] = useState<MaterialDirectoryItem[]>(INITIAL_MATERIALS);
+  const [materials, setMaterials] = useState<MaterialDirectoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>("ALL");
   const [notification, setNotification] = useState<string | null>(null);
@@ -121,6 +63,41 @@ export default function MaterialDirectoryPage() {
   const [isMaterialMenuOpen, setIsMaterialMenuOpen] = useState(false);
   const [viewingMaterial, setViewingMaterial] = useState<MaterialDirectoryItem | null>(null);
   const materialMenuRef = useRef<HTMLDivElement>(null);
+
+  const loadMaterials = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchMaterials();
+      if (Array.isArray(data)) {
+        const mapped: MaterialDirectoryItem[] = data.map((m) => ({
+          id: m.id,
+          code: m.materialCode || `MAT-${m.id.slice(0, 4)}`,
+          name: m.name,
+          type: (m.materialType?.name || "fabric").toLowerCase(),
+          unit: "meters",
+          categories: m.materialCategory?.name ? [m.materialCategory.name] : [],
+          pricePerUnit: m.costPerUnit || 0,
+          imageUrl: m.imagePath
+            ? m.imagePath.startsWith("http")
+              ? m.imagePath
+              : `http://localhost:5083${m.imagePath}`
+            : undefined,
+          mandatoryTests: [],
+          updatedBy: "Admin",
+          updatedAt: "Today",
+        }));
+        setMaterials(mapped);
+      }
+    } catch (err) {
+      console.warn("Failed to load materials from API:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMaterials();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -138,35 +115,24 @@ export default function MaterialDirectoryPage() {
   };
 
   const handleSaveMaterial = (matData: MaterialSpecFormData) => {
-    const newEntry: MaterialDirectoryItem = {
-      id: Date.now().toString(),
-      code: matData.code || `MAT-${Date.now().toString().slice(-4)}`,
-      name: matData.name,
-      type: (matData.type || "fabric") as any,
-      unit: matData.unit || "meters",
-      categories: matData.categories || [],
-      pricePerUnit: matData.pricePerUnit,
-      weightGsm: matData.weightGsm,
-      widthInches: matData.widthInches,
-      colorCode: matData.colorCode,
-      composition: matData.composition,
-      qualityStandard: matData.qualityStandard,
-      mandatoryTests: matData.mandatoryTests || [],
-      updatedBy: "Admin User",
-      updatedAt: "Just now",
-    };
-    setMaterials((prev) => [newEntry, ...prev]);
-    showToast(`Successfully defined Material Spec: ${newEntry.name}`);
+    loadMaterials();
+    showToast(`Successfully defined Material Spec: ${matData.name}`);
   };
 
   const handleSaveSku = (skuData: RegisterSkuFormData) => {
     showToast(`Successfully registered Product SKU: ${skuData.baseSku}`);
   };
 
-  const handleDeleteMaterial = (id: string, name: string) => {
+  const handleDeleteMaterial = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to remove material specification "${name}"?`)) {
-      setMaterials((prev) => prev.filter((m) => m.id !== id));
-      showToast(`Removed material spec "${name}"`);
+      try {
+        await apiDeleteMaterial(id);
+        showToast(`Removed material spec "${name}"`);
+        loadMaterials();
+      } catch (err) {
+        console.warn("Delete material API failed:", err);
+        showToast(`Failed to remove material "${name}"`);
+      }
     }
   };
 
@@ -428,7 +394,13 @@ export default function MaterialDirectoryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {filteredMaterials.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-slate-500 font-mono">
+                      Loading materials catalog...
+                    </td>
+                  </tr>
+                ) : filteredMaterials.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-10 text-center text-slate-400 font-mono">
                       No material specifications found matching your criteria.
@@ -440,9 +412,7 @@ export default function MaterialDirectoryPage() {
                       {/* Name & Code */}
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-[10px] shrink-0 shadow-sm">
-                            {mat.code.slice(0, 3)}
-                          </div>
+                          <MaterialAvatar src={mat.imageUrl} name={mat.name} code={mat.code} />
                           <div>
                             <div className="font-bold text-slate-900 text-sm leading-snug">
                               {mat.name}
@@ -558,6 +528,15 @@ export default function MaterialDirectoryPage() {
                 <span className="material-symbols-outlined text-xl">close</span>
               </button>
             </div>
+            {viewingMaterial.imageUrl && (
+              <div className="px-6 pt-2">
+                <img
+                  src={viewingMaterial.imageUrl}
+                  alt={viewingMaterial.name}
+                  className="w-full max-h-48 object-cover rounded-lg border border-slate-200 shadow-sm"
+                />
+              </div>
+            )}
 
             <div className="p-6 space-y-4 text-xs">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono">

@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  fetchProductionStages,
+  createProductionStage,
+  updateProductionStage,
+  deleteProductionStage,
+  ProductionStageDto,
+} from "../../api/productionstage.api";
 
 export interface ProductionStageItem {
   id: string;
@@ -11,81 +18,6 @@ export interface ProductionStageItem {
   isActive: boolean;
   defaultDurationMinutes: number;
 }
-
-const INITIAL_STAGES: ProductionStageItem[] = [
-  {
-    id: "1",
-    code: "STG-001",
-    name: "Cutting",
-    description: "Precision fabric cutting based on graded markers and patterns.",
-    icon: "content_cut",
-    isActive: true,
-    defaultDurationMinutes: 20,
-  },
-  {
-    id: "2",
-    code: "STG-042",
-    name: "Laser Detailing",
-    description: "High-precision laser etching for denim fading and distress patterns.",
-    icon: "lens_blur",
-    isActive: true,
-    defaultDurationMinutes: 15,
-  },
-  {
-    id: "3",
-    code: "STG-002",
-    name: "Stitching",
-    description: "Assembly of cut panels into finished garments using sewing lines.",
-    icon: "precision_manufacturing",
-    isActive: true,
-    defaultDurationMinutes: 45,
-  },
-  {
-    id: "4",
-    code: "STG-088",
-    name: "Chemical Wash",
-    description: "Enzyme and bleach treatments for softening and color reduction.",
-    icon: "science",
-    isActive: false,
-    defaultDurationMinutes: 30,
-  },
-  {
-    id: "5",
-    code: "STG-015",
-    name: "Button Hole & Hardware",
-    description: "Specialized machine operation for cutting buttonholes and applying rivets.",
-    icon: "radio_button_checked",
-    isActive: true,
-    defaultDurationMinutes: 10,
-  },
-  {
-    id: "6",
-    code: "STG-008",
-    name: "Ironing & Pressing",
-    description: "Final steam pressing and form shaping before audit inspection.",
-    icon: "iron",
-    isActive: true,
-    defaultDurationMinutes: 12,
-  },
-  {
-    id: "7",
-    code: "STG-010",
-    name: "Quality Control (QC)",
-    description: "AQL 2.5 defect inspection and measurement compliance verification.",
-    icon: "verified",
-    isActive: true,
-    defaultDurationMinutes: 10,
-  },
-  {
-    id: "8",
-    code: "STG-012",
-    name: "Packaging & Tagging",
-    description: "Hangtag attachment, folding, polybagging, and master carton packing.",
-    icon: "inventory_2",
-    isActive: true,
-    defaultDurationMinutes: 8,
-  },
-];
 
 const AVAILABLE_ICONS = [
   "content_cut",
@@ -113,7 +45,11 @@ export function ManageProductionStagesModal({
   onClose,
   onUpdateStages,
 }: ManageProductionStagesModalProps) {
-  const [stages, setStages] = useState<ProductionStageItem[]>(INITIAL_STAGES);
+  const [stages, setStages] = useState<ProductionStageItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
 
@@ -121,10 +57,39 @@ export function ManageProductionStagesModal({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingStageId, setEditingStageId] = useState<string | null>(null);
   const [stageName, setStageName] = useState("");
-  const [stageCode, setStageCode] = useState("");
   const [stageDesc, setStageDesc] = useState("");
   const [stageIcon, setStageIcon] = useState("content_cut");
   const [stageDuration, setStageDuration] = useState<number>(30);
+
+  const loadStages = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await fetchProductionStages();
+      const mapped: ProductionStageItem[] = data.map((item, index) => ({
+        id: item.id || String(index + 1),
+        code: item.productionStageCode || `STG-${String(index + 1).padStart(3, "0")}`,
+        name: item.name,
+        description: item.description || "",
+        icon: AVAILABLE_ICONS[index % AVAILABLE_ICONS.length] || "content_cut",
+        isActive: item.isActive ?? true,
+        defaultDurationMinutes: parseInt(item.duration || "0") || 30,
+      }));
+      setStages(mapped);
+      if (onUpdateStages) onUpdateStages(mapped);
+    } catch (err: any) {
+      console.error("Failed to load production stages from API:", err);
+      setError(err.message || "Failed to load stages");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadStages();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -144,22 +109,35 @@ export function ManageProductionStagesModal({
     return matchesSearch && matchesStatus;
   });
 
-  const handleToggleStageStatus = (id: string) => {
-    const updated = stages.map((s) => (s.id === id ? { ...s, isActive: !s.isActive } : s));
-    setStages(updated);
-    if (onUpdateStages) onUpdateStages(updated);
+  const handleToggleStageStatus = async (stage: ProductionStageItem) => {
+    try {
+      await updateProductionStage(stage.id, {
+        name: stage.name,
+        description: stage.description,
+        duration: String(stage.defaultDurationMinutes),
+        isActive: !stage.isActive,
+      });
+      await loadStages();
+    } catch (err: any) {
+      console.error("Failed to toggle stage status:", err);
+      setError(err.message || "Failed to toggle status");
+    }
   };
 
-  const handleDeleteStage = (id: string) => {
-    const updated = stages.filter((s) => s.id !== id);
-    setStages(updated);
-    if (onUpdateStages) onUpdateStages(updated);
+  const handleDeleteStage = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this production stage?")) return;
+    try {
+      await deleteProductionStage(id);
+      await loadStages();
+    } catch (err: any) {
+      console.error("Failed to delete production stage:", err);
+      setError(err.message || "Failed to delete stage");
+    }
   };
 
   const handleOpenAddForm = () => {
     setEditingStageId(null);
     setStageName("");
-    setStageCode(`STG-0${stages.length + 10}`);
     setStageDesc("");
     setStageIcon("content_cut");
     setStageDuration(25);
@@ -169,50 +147,45 @@ export function ManageProductionStagesModal({
   const handleOpenEditForm = (stage: ProductionStageItem) => {
     setEditingStageId(stage.id);
     setStageName(stage.name);
-    setStageCode(stage.code);
     setStageDesc(stage.description);
     setStageIcon(stage.icon);
     setStageDuration(stage.defaultDurationMinutes);
     setIsFormOpen(true);
   };
 
-  const handleSaveStageForm = (e: React.FormEvent) => {
+  const handleSaveStageForm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stageName.trim()) return;
 
-    if (editingStageId) {
-      // Edit existing
-      const updated = stages.map((s) =>
-        s.id === editingStageId
-          ? {
-            ...s,
-            name: stageName,
-            code: stageCode,
-            description: stageDesc,
-            icon: stageIcon,
-            defaultDurationMinutes: stageDuration,
-          }
-          : s
-      );
-      setStages(updated);
-      if (onUpdateStages) onUpdateStages(updated);
-    } else {
-      // Create new stage
-      const newStageItem: ProductionStageItem = {
-        id: Date.now().toString(),
-        code: stageCode.toUpperCase() || `STG-${Date.now().toString().slice(-3)}`,
-        name: stageName,
-        description: stageDesc || "Custom production process stage.",
-        icon: stageIcon,
-        isActive: true,
-        defaultDurationMinutes: stageDuration || 30,
-      };
-      const updated = [newStageItem, ...stages];
-      setStages(updated);
-      if (onUpdateStages) onUpdateStages(updated);
-    }
+    try {
+      setIsSaving(true);
+      setError(null);
 
-    setIsFormOpen(false);
+      if (editingStageId) {
+        const existingStage = stages.find((s) => s.id === editingStageId);
+        await updateProductionStage(editingStageId, {
+          name: stageName,
+          description: stageDesc,
+          duration: String(stageDuration),
+          isActive: existingStage ? existingStage.isActive : true,
+        });
+      } else {
+        await createProductionStage({
+          name: stageName,
+          description: stageDesc,
+          duration: String(stageDuration),
+          isActive: true,
+        });
+      }
+
+      setIsFormOpen(false);
+      await loadStages();
+    } catch (err: any) {
+      console.error("Failed to save production stage:", err);
+      setError(err.message || "Failed to save stage");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -281,9 +254,25 @@ export function ManageProductionStagesModal({
           </div>
         </div>
 
+        {/* Error Banner */}
+        {error && (
+          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">error</span>
+              <span>{error}</span>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-500 hover:text-red-800 font-bold text-sm"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         {/* Modal Body / Table View */}
         <div className="flex-1 overflow-y-auto bg-slate-50 p-6 space-y-4">
-          {/* Inline Add/Edit Stage Drawer/Card */}
+          {/* Inline Add/Edit Stage Form Card */}
           {isFormOpen && (
             <form
               onSubmit={handleSaveStageForm}
@@ -319,17 +308,6 @@ export function ManageProductionStagesModal({
                 </div>
 
                 <div className="flex flex-col space-y-1">
-                  <label className="font-semibold text-slate-700 text-xs">Stage Code</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. STG-099"
-                    value={stageCode}
-                    onChange={(e) => setStageCode(e.target.value.toUpperCase())}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none uppercase"
-                  />
-                </div>
-
-                <div className="flex flex-col space-y-1">
                   <label className="font-semibold text-slate-700 text-xs">Stage Icon</label>
                   <select
                     value={stageIcon}
@@ -344,17 +322,6 @@ export function ManageProductionStagesModal({
                   </select>
                 </div>
 
-                <div className="flex flex-col space-y-1 md:col-span-2">
-                  <label className="font-semibold text-slate-700 text-xs">Description</label>
-                  <input
-                    type="text"
-                    placeholder="Brief summary of stage operations..."
-                    value={stageDesc}
-                    onChange={(e) => setStageDesc(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                  />
-                </div>
-
                 <div className="flex flex-col space-y-1">
                   <label className="font-semibold text-slate-700 text-xs">Std Duration (mins)</label>
                   <input
@@ -365,20 +332,38 @@ export function ManageProductionStagesModal({
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
                   />
                 </div>
+
+                <div className="flex flex-col space-y-1 md:col-span-3">
+                  <label className="font-semibold text-slate-700 text-xs">Description</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Brief summary of stage operations..."
+                    value={stageDesc}
+                    onChange={(e) => setStageDesc(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none resize-y min-h-[70px]"
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-3 py-1.5 font-mono text-xs text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-100"
+                  disabled={isSaving}
+                  className="px-3 py-1.5 font-mono text-xs text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 font-mono text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 shadow"
+                  disabled={isSaving}
+                  className="px-4 py-1.5 font-mono text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 shadow disabled:opacity-50 flex items-center gap-1.5"
                 >
+                  {isSaving && (
+                    <span className="material-symbols-outlined text-sm animate-spin">
+                      progress_activity
+                    </span>
+                  )}
                   {editingStageId ? "Update Stage" : "Save New Stage"}
                 </button>
               </div>
@@ -387,92 +372,116 @@ export function ManageProductionStagesModal({
 
           {/* Stages Table */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] font-bold text-slate-500 uppercase">
-                <tr>
-                  <th className="py-3 px-4 w-14 text-center">Icon</th>
-                  <th className="py-3 px-4 w-44">Stage Name</th>
-                  <th className="py-3 px-4">Description</th>
-                  <th className="py-3 px-4 w-28 text-center">Std Time</th>
-                  <th className="py-3 px-4 w-28 text-center">Status</th>
-                  <th className="py-3 px-4 w-24 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredStages.length === 0 ? (
+            {isLoading ? (
+              <div className="p-8 text-center text-slate-500 font-mono text-xs flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined animate-spin text-lg">
+                  progress_activity
+                </span>
+                Loading production stages...
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] font-bold text-slate-500 uppercase">
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400 font-mono">
-                      No production stages match your search query.
-                    </td>
+                    <th className="py-3 px-4 w-14 text-center">Icon</th>
+                    <th className="py-3 px-4 w-44">Stage Name</th>
+                    <th className="py-3 px-4">Description</th>
+                    <th className="py-3 px-4 w-28 text-center">Std Time</th>
+                    <th className="py-3 px-4 w-28 text-center">Status</th>
+                    <th className="py-3 px-4 w-24 text-right">Actions</th>
                   </tr>
-                ) : (
-                  filteredStages.map((stage) => (
-                    <tr
-                      key={stage.id}
-                      className={`hover:bg-slate-50/80 transition-colors ${!stage.isActive ? "opacity-60 bg-slate-50/40" : ""
-                        }`}
-                    >
-                      <td className="py-3 px-4 text-center">
-                        <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center mx-auto">
-                          <span className="material-symbols-outlined text-lg">{stage.icon}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-bold text-slate-900">{stage.name}</div>
-                        <div className="font-mono text-[10px] text-slate-400 font-semibold">{stage.code}</div>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 max-w-xs truncate">{stage.description}</td>
-                      <td className="py-3 px-4 text-center font-mono text-xs font-semibold text-slate-700">
-                        {stage.defaultDurationMinutes} mins
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStageStatus(stage.id)}
-                          className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold transition-all flex items-center justify-center gap-1 mx-auto ${stage.isActive
-                              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-                              : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                            }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${stage.isActive ? "bg-emerald-600" : "bg-slate-500"
-                              }`}
-                          ></span>
-                          {stage.isActive ? "Active" : "Inactive"}
-                        </button>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditForm(stage)}
-                            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                            title="Edit Stage"
-                          >
-                            <span className="material-symbols-outlined text-base">edit</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteStage(stage.id)}
-                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete Stage"
-                          >
-                            <span className="material-symbols-outlined text-base">delete</span>
-                          </button>
-                        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {filteredStages.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-400 font-mono">
+                        No production stages match your search query.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filteredStages.map((stage) => (
+                      <tr
+                        key={stage.id}
+                        className={`hover:bg-slate-50/80 transition-colors ${
+                          !stage.isActive ? "opacity-60 bg-slate-50/40" : ""
+                        }`}
+                      >
+                        <td className="py-3 px-4 text-center">
+                          <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-900 flex items-center justify-center mx-auto">
+                            <span className="material-symbols-outlined text-lg">{stage.icon}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900">{stage.name}</div>
+                          <div className="font-mono text-[10px] text-slate-400 font-semibold">
+                            {stage.code}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
+                          {stage.description}
+                        </td>
+                        <td className="py-3 px-4 text-center font-mono text-xs font-semibold text-slate-700">
+                          {stage.defaultDurationMinutes} mins
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <span
+                              className={`font-mono text-[11px] font-bold ${
+                                stage.isActive ? "text-emerald-700" : "text-slate-400"
+                              }`}
+                            >
+                              {stage.isActive ? "Active" : "Inactive"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStageStatus(stage)}
+                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                stage.isActive ? "bg-emerald-600" : "bg-slate-300"
+                              }`}
+                              title={`Toggle ${stage.isActive ? "Inactive" : "Active"}`}
+                            >
+                              <span
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                  stage.isActive ? "translate-x-4" : "translate-x-0"
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditForm(stage)}
+                              className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                              title="Edit Stage"
+                            >
+                              <span className="material-symbols-outlined text-base">edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteStage(stage.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Delete Stage"
+                            >
+                              <span className="material-symbols-outlined text-base">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
 
         {/* Modal Footer */}
         <div className="px-6 py-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs">
           <span className="font-mono text-slate-500 text-[11px]">
-            Total Manufacturing Stages: <strong className="text-slate-900">{stages.length}</strong> ({stages.filter((s) => s.isActive).length} active)
+            Total Manufacturing Stages: <strong className="text-slate-900">{stages.length}</strong> (
+            {stages.filter((s) => s.isActive).length} active)
           </span>
           <button
             type="button"

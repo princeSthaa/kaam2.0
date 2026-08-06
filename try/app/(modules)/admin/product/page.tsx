@@ -20,10 +20,29 @@ export interface ProductDirectoryItem {
   materialsCount: number;
   stagesCount: number;
   status: "Active" | "Review" | "Draft" | "Archived";
-  updatedBy: string;
-  updatedAt: string;
+  updatedBy?: string;
+  updatedAt?: string;
   thumbnailUrl?: string;
   adminNotes?: string;
+}
+
+function ProductAvatar({ src, name, sku }: { src?: string; name: string; sku: string }) {
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-[11px] shrink-0 shadow-sm overflow-hidden border border-slate-200">
+      {src && !hasError ? (
+        <img
+          src={src}
+          alt=""
+          onError={() => setHasError(true)}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span className="uppercase">{sku ? sku.slice(0, 3) : "PRD"}</span>
+      )}
+    </div>
+  );
 }
 
 export default function ProductDirectoryPage() {
@@ -44,6 +63,37 @@ export default function ProductDirectoryPage() {
   const [viewingProduct, setViewingProduct] = useState<ProductDirectoryItem | null>(null);
   const productMenuRef = useRef<HTMLDivElement>(null);
 
+const SIZE_NAMES = ["XS", "S", "M", "L", "XL", "XXL"];
+
+function extractSizes(materialRequirements?: any[]): string[] {
+  if (!Array.isArray(materialRequirements) || materialRequirements.length === 0) {
+    return ["All Sizes"];
+  }
+
+  const foundSizes = new Set<string>();
+  materialRequirements.forEach((req) => {
+    if (req.productSize !== undefined && req.productSize !== null) {
+      if (typeof req.productSize === "number") {
+        const name = SIZE_NAMES[req.productSize] || String(req.productSize);
+        foundSizes.add(name);
+      } else if (typeof req.productSize === "string") {
+        foundSizes.add(req.productSize.toUpperCase());
+      }
+    }
+  });
+
+  if (foundSizes.size === 0) {
+    return ["S", "M", "L", "XL"];
+  }
+
+  return Array.from(foundSizes).sort((a, b) => {
+    const idxA = SIZE_NAMES.indexOf(a);
+    const idxB = SIZE_NAMES.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    return a.localeCompare(b);
+  });
+}
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -62,13 +112,15 @@ export default function ProductDirectoryPage() {
           category: p.productCategory?.name || "Uncategorized",
           gender: "Unisex",
           uom: "pcs",
-          sizes: ["S", "M", "L", "XL"],
+          sizes: extractSizes(p.materialRequirements),
           materialsCount: p.materialRequirements ? p.materialRequirements.length : 0,
           stagesCount: p.productionStages ? p.productionStages.length : 0,
           status: p.isActive !== false ? "Active" : "Draft",
-          updatedBy: "Admin",
-          updatedAt: "Today",
-          thumbnailUrl: p.imagePath ? `http://localhost:5083${p.imagePath}` : undefined,
+          thumbnailUrl: p.imagePath
+            ? p.imagePath.startsWith("http")
+              ? p.imagePath
+              : `http://localhost:5083${p.imagePath}`
+            : undefined,
         }));
         setProducts(mapped);
       }
@@ -410,9 +462,7 @@ export default function ProductDirectoryPage() {
                       {/* Name & SKU */}
                       <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-mono font-bold text-xs shrink-0 shadow-sm">
-                            {prod.baseSku.slice(0, 3)}
-                          </div>
+                          <ProductAvatar src={prod.thumbnailUrl} name={prod.name} sku={prod.baseSku} />
                           <div>
                             <div className="font-bold text-slate-900 text-sm leading-snug">
                               {prod.name}
@@ -537,6 +587,15 @@ export default function ProductDirectoryPage() {
                 <span className="material-symbols-outlined text-xl">close</span>
               </button>
             </div>
+            {viewingProduct.thumbnailUrl && (
+              <div className="px-6 pt-2">
+                <img
+                  src={viewingProduct.thumbnailUrl}
+                  alt={viewingProduct.name}
+                  className="w-full max-h-48 object-cover rounded-lg border border-slate-200 shadow-sm"
+                />
+              </div>
+            )}
 
             <div className="p-6 space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 font-mono">

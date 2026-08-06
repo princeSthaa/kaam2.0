@@ -1,10 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { fetchMaterialTypes, MaterialTypeDto } from "../../api/materialtype.api";
+import { fetchMaterialCategories, MaterialCategoryDto } from "../../api/materialcategory.api";
+import { createMaterial, uploadMaterialImage } from "../../api/material.api";
 
 export interface MaterialSpecFormData {
     name: string;
     type: string;
+    materialTypeId?: string;
     code: string;
     unit: string;
     categories: string[];
@@ -70,30 +74,97 @@ export function DefineMaterialModal({
     onSave,
 }: DefineMaterialModalProps) {
     const [formData, setFormData] = useState<MaterialSpecFormData>({
-        name: "100% Organic Combed Cotton Knit Fabric",
+        name: "",
         type: "fabric",
-        code: "MAT-COT-150",
+        code: "",
         unit: "meters",
-        categories: ["Cotton", "Organic Cotton", "Knit"],
-        pricePerUnit: "450",
-        weightGsm: "180",
-        widthInches: "58/60\"",
-        colorCode: "TCX 19-4052 (Classic Navy)",
-        composition: "95% Organic Cotton, 5% Elastane",
-        qualityStandard: "Oeko-Tex Standard 100 / GOTS Certified",
-        mandatoryTests: ["Color Fastness to Washing", "Shrinkage Test"],
+        categories: [],
+        pricePerUnit: "",
+        weightGsm: "",
+        widthInches: "",
+        colorCode: "",
+        composition: "",
+        qualityStandard: "",
+        mandatoryTests: [],
     });
 
     const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+    const [apiMaterialTypes, setApiMaterialTypes] = useState<MaterialTypeDto[]>([]);
+    const [apiMaterialCategories, setApiMaterialCategories] = useState<MaterialCategoryDto[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const INITIAL_FORM_DATA: MaterialSpecFormData = {
+        name: "",
+        type: "fabric",
+        code: "",
+        unit: "meters",
+        categories: [],
+        pricePerUnit: "",
+        weightGsm: "",
+        widthInches: "",
+        colorCode: "",
+        composition: "",
+        qualityStandard: "",
+        mandatoryTests: [],
+    };
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        // Reset form state on modal open
+        setFormData(INITIAL_FORM_DATA);
+        setImagePreview(null);
+        setSelectedImageFile(null);
+        setIsSubmitting(false);
+
+        fetchMaterialTypes()
+            .then((types) => {
+                if (Array.isArray(types) && types.length > 0) {
+                    setApiMaterialTypes(types);
+                    setFormData((prev) => ({
+                        ...prev,
+                        materialTypeId: types[0].id || "",
+                        type: types[0].name || "fabric",
+                        unit: types[0].unit || types[0].defaultUom || "meters",
+                    }));
+                }
+            })
+            .catch((err) => console.warn("Failed to load material types from API:", err));
+
+        fetchMaterialCategories()
+            .then((cats) => {
+                if (Array.isArray(cats) && cats.length > 0) {
+                    setApiMaterialCategories(cats);
+                }
+            })
+            .catch((err) => console.warn("Failed to load material categories from API:", err));
+    }, [isOpen]);
+
+    const availableCategories = useMemo(() => {
+        if (apiMaterialCategories.length > 0) {
+            const currentTypeId = formData.materialTypeId;
+            const matched = apiMaterialCategories.filter((cat) => {
+                if (!currentTypeId) return true;
+                return !cat.materialTypeId || cat.materialTypeId === currentTypeId;
+            });
+            const catNames = matched.map((c) => c.name);
+            return catNames.length > 0 ? catNames : apiMaterialCategories.map((c) => c.name);
+        }
+        return CATEGORIES_BY_TYPE[formData.type.toLowerCase()] || CATEGORIES_BY_TYPE["fabric"] || [];
+    }, [apiMaterialCategories, formData.materialTypeId, formData.type]);
 
     if (!isOpen) return null;
 
-    const handleTypeChange = (newType: string) => {
-        const defaultCats = CATEGORIES_BY_TYPE[newType] ? [CATEGORIES_BY_TYPE[newType][0]] : [];
+    const handleTypeChange = (selectedVal: string) => {
+        const matchedType = apiMaterialTypes.find((t) => t.id === selectedVal || t.name === selectedVal);
+        const typeName = matchedType ? matchedType.name : selectedVal;
+        const typeId = matchedType ? matchedType.id : selectedVal;
+
         setFormData((prev) => ({
             ...prev,
-            type: newType,
-            categories: defaultCats,
+            materialTypeId: typeId,
+            type: typeName,
+            unit: matchedType?.unit || matchedType?.defaultUom || prev.unit,
         }));
     };
 
@@ -117,15 +188,54 @@ export function DefineMaterialModal({
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setSelectedImageFile(file);
             const url = URL.createObjectURL(file);
             setImagePreview(url);
             setFormData((prev) => ({ ...prev, imageUrl: url }));
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formData.name.trim() || !formData.type) return;
+
+        setIsSubmitting(true);
+        try {
+            let uploadedImagePath = "";
+            if (selectedImageFile) {
+                try {
+                    const uploadRes = await uploadMaterialImage(
+                        selectedImageFile,
+                        formData.type || "Fabric",
+                        formData.categories[0] || "General"
+                    );
+                    uploadedImagePath = uploadRes.relativePath || uploadRes.fullUrl;
+                } catch (imgErr) {
+                    console.warn("Failed to upload material image:", imgErr);
+                }
+            }
+
+            const targetTypeId = formData.materialTypeId || apiMaterialTypes[0]?.id || "00000000-0000-0000-0000-000000000000";
+            const matchedCategory = apiMaterialCategories.find((c) =>
+                formData.categories.includes(c.name)
+            );
+            const targetCategoryId = matchedCategory?.id || apiMaterialCategories[0]?.id || "00000000-0000-0000-0000-000000000000";
+
+            await createMaterial({
+                name: formData.name.trim(),
+                materialCode: formData.code.trim() || undefined,
+                materialTypeId: targetTypeId,
+                materialCategoryId: targetCategoryId,
+                costPerUnit: parseFloat(String(formData.pricePerUnit)) || 0,
+                availableQty: 0,
+                imagePath: uploadedImagePath || formData.imageUrl || "",
+            });
+        } catch (err) {
+            console.warn("Create material API failed, proceeding with local handler:", err);
+        } finally {
+            setIsSubmitting(false);
+        }
+
         if (onSave) {
             onSave(formData);
         }
@@ -199,32 +309,29 @@ export function DefineMaterialModal({
                                 <select
                                     id="mat-type"
                                     required
-                                    value={formData.type}
+                                    value={formData.materialTypeId || formData.type}
                                     onChange={(e) => handleTypeChange(e.target.value)}
                                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none cursor-pointer"
                                 >
                                     <option value="" disabled>Select type...</option>
-                                    <option value="fabric">Fabric</option>
-                                    <option value="trim">Trim / Hardware</option>
-                                    <option value="chemical">Chemical / Wash</option>
-                                    <option value="packaging">Packaging</option>
+                                    {apiMaterialTypes.length > 0 ? (
+                                        apiMaterialTypes.map((mt) => (
+                                            <option key={mt.id || mt.name} value={mt.id || mt.name}>
+                                                {mt.name} {mt.materialCode ? `(${mt.materialCode})` : ""}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <option value="fabric">Fabric</option>
+                                            <option value="trim">Trim / Hardware</option>
+                                            <option value="chemical">Chemical / Wash</option>
+                                            <option value="packaging">Packaging</option>
+                                        </>
+                                    )}
                                 </select>
                             </div>
 
-                            {/* Material Code */}
-                            <div className="flex flex-col space-y-1">
-                                <label className="font-semibold text-slate-700" htmlFor="mat-code">
-                                    Material Code (SKU)
-                                </label>
-                                <input
-                                    id="mat-code"
-                                    type="text"
-                                    placeholder="e.g., MAT-COT-150"
-                                    value={formData.code}
-                                    onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none uppercase"
-                                />
-                            </div>
+
 
                             {/* Product Unit */}
                             <div className="flex flex-col space-y-1">
@@ -265,15 +372,19 @@ export function DefineMaterialModal({
                                     <option value="" disabled>
                                         + Select category for {formData.type || "material"}...
                                     </option>
-                                    {(CATEGORIES_BY_TYPE[formData.type] || CATEGORIES_BY_TYPE["fabric"]).map((catOpt) => (
-                                        <option
-                                            key={catOpt}
-                                            value={catOpt}
-                                            disabled={formData.categories.includes(catOpt)}
-                                        >
-                                            {catOpt} {formData.categories.includes(catOpt) ? "(Added)" : ""}
-                                        </option>
-                                    ))}
+                                    {availableCategories.map((catOpt) => {
+                                        const catName = typeof catOpt === "string" ? catOpt : (catOpt as any).name;
+                                        const isAdded = formData.categories.includes(catName);
+                                        return (
+                                            <option
+                                                key={catName}
+                                                value={catName}
+                                                disabled={isAdded}
+                                            >
+                                                {catName} {isAdded ? "(Added)" : ""}
+                                            </option>
+                                        );
+                                    })}
                                 </select>
 
                                 {/* Selected Category Tag Chips */}

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { fetchProductCategories, ProductCategoryDto } from "../../api/productcategory.api";
-import { createProduct } from "../../api/product.api";
+import { createProduct, ProductMaterialRequirementItem } from "../../api/product.api";
 import { fetchMaterialTypes } from "../../api/materialtype.api";
+import { fetchProductionStages, ProductionStageDto } from "../../api/productionstage.api";
 
 export interface MaterialBreakdownSizeRow {
   size: string;
@@ -179,9 +180,11 @@ export const getTeamsForStage = (stageName: string): string[] => {
 function SearchableStageSelect({
   value,
   onChange,
+  stageOptions,
 }: {
   value: string;
-  onChange: (val: string) => void;
+  onChange: (stage: ProductionStageDto) => void;
+  stageOptions: ProductionStageDto[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -197,8 +200,9 @@ function SearchableStageSelect({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filtered = MANUFACTURING_STAGE_OPTIONS.filter((s) =>
-    s.toLowerCase().includes(search.toLowerCase())
+  const filtered = stageOptions.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    (s.productionStageCode && s.productionStageCode.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -230,15 +234,20 @@ function SearchableStageSelect({
             ) : (
               filtered.map((stage) => (
                 <div
-                  key={stage}
+                  key={stage.id || stage.name}
                   className="px-2.5 py-1.5 hover:bg-slate-100 rounded cursor-pointer font-semibold text-slate-800 transition-colors flex items-center justify-between"
                   onClick={() => {
                     onChange(stage);
                     setIsOpen(false);
                   }}
                 >
-                  <span>{stage}</span>
-                  {value === stage && (
+                  <div className="flex flex-col">
+                    <span>{stage.name}</span>
+                    {stage.productionStageCode && (
+                      <span className="text-[10px] text-slate-400 font-mono">{stage.productionStageCode}</span>
+                    )}
+                  </div>
+                  {value === stage.name && (
                     <span className="material-symbols-outlined text-xs font-bold text-slate-900">check</span>
                   )}
                 </div>
@@ -309,7 +318,11 @@ export function RegisterSkuModal({
   const [selectedMaterialTypeId, setSelectedMaterialTypeId] = useState<string>("");
   const [isLoadingMaterialTypes, setIsLoadingMaterialTypes] = useState<boolean>(false);
 
-  // Fetch Material Types and Product Categories from API when modal opens
+  // Production Stages API integration
+  const [productionStagesList, setProductionStagesList] = useState<ProductionStageDto[]>([]);
+  const [isLoadingProductionStages, setIsLoadingProductionStages] = useState<boolean>(false);
+
+  // Fetch Material Types, Product Categories, and Production Stages from API when modal opens
   useEffect(() => {
     if (!isOpen) return;
 
@@ -345,6 +358,37 @@ export function RegisterSkuModal({
       })
       .catch((err) => {
         console.warn("API GET http://localhost:5083/api/product-category failed:", err);
+      });
+
+    setIsLoadingProductionStages(true);
+    fetchProductionStages()
+      .then((stages) => {
+        if (Array.isArray(stages) && stages.length > 0) {
+          setProductionStagesList(stages);
+          setFormData((prev) => {
+            const updatedPipeline = prev.pipelineStages.map((ps) => {
+              const matched = stages.find(
+                (s) => s.name.toLowerCase() === ps.stageName.toLowerCase()
+              );
+              if (matched && matched.id) {
+                return {
+                  ...ps,
+                  id: matched.id,
+                  stageName: matched.name,
+                  durationMinutes: parseInt(matched.duration || "0") || ps.durationMinutes,
+                };
+              }
+              return ps;
+            });
+            return { ...prev, pipelineStages: updatedPipeline };
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn("API GET http://localhost:5083/api/production-stage failed:", err);
+      })
+      .finally(() => {
+        setIsLoadingProductionStages(false);
       });
   }, [isOpen]);
 
@@ -501,14 +545,26 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
   // Stage Handlers
   const handleAddStage = () => {
     const existingCount = formData.pipelineStages.length;
-    const nextStageName = MANUFACTURING_STAGE_OPTIONS[existingCount % MANUFACTURING_STAGE_OPTIONS.length];
-    const availableTeams = getTeamsForStage(nextStageName);
+    let stageId = Date.now().toString();
+    let stageName = "Cutting";
+    let duration = 30;
+
+    if (productionStagesList.length > 0) {
+      const selected = productionStagesList[existingCount % productionStagesList.length];
+      stageId = selected.id || stageId;
+      stageName = selected.name;
+      duration = parseInt(selected.duration || "0") || 30;
+    } else {
+      stageName = MANUFACTURING_STAGE_OPTIONS[existingCount % MANUFACTURING_STAGE_OPTIONS.length];
+    }
+
+    const availableTeams = getTeamsForStage(stageName);
 
     const newStage: PipelineStageItem = {
-      id: Date.now().toString(),
-      stageName: nextStageName,
+      id: stageId,
+      stageName: stageName,
       team: availableTeams[0],
-      durationMinutes: 30,
+      durationMinutes: duration,
       priority: "Medium",
     };
     setFormData((prev) => ({
@@ -521,6 +577,25 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
     setFormData((prev) => ({
       ...prev,
       pipelineStages: prev.pipelineStages.filter((s) => s.id !== id),
+    }));
+  };
+
+  const handleSelectBackendStage = (stageIdInForm: string, selectedBackendStage: ProductionStageDto) => {
+    const availableTeams = getTeamsForStage(selectedBackendStage.name);
+    setFormData((prev) => ({
+      ...prev,
+      pipelineStages: prev.pipelineStages.map((s) => {
+        if (s.id === stageIdInForm) {
+          return {
+            ...s,
+            id: selectedBackendStage.id || s.id,
+            stageName: selectedBackendStage.name,
+            durationMinutes: parseInt(selectedBackendStage.duration || "0") || s.durationMinutes,
+            team: availableTeams[0],
+          };
+        }
+        return s;
+      }),
     }));
   };
 
@@ -558,17 +633,64 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
     e.preventDefault();
     if (!formData.productName.trim() || !formData.baseSku.trim()) return;
 
+    const isGuid = (val?: string) => Boolean(val && val.length === 36 && val.includes("-"));
+
     try {
-      const catId = formData.productCategoryId || (productCategories[0]?.id ?? "00000000-0000-0000-0000-000000000000");
-      await createProduct({
+      const validCat = productCategories.find((c) => isGuid(c.id));
+      const catId = isGuid(formData.productCategoryId)
+        ? formData.productCategoryId!
+        : validCat?.id || "";
+
+      const SIZE_MAP: Record<string, number> = {
+        XS: 0,
+        S: 1,
+        M: 2,
+        L: 3,
+        XL: 4,
+        XXL: 5,
+      };
+
+      const materialRequirements: ProductMaterialRequirementItem[] = [];
+      formData.materials.forEach((mat) => {
+        if (isGuid(mat.materialTypeId)) {
+          mat.sizeBreakdown?.forEach((sb) => {
+            const qtyNum = parseFloat(sb.requiredQty) || parseFloat(mat.qty) || 1;
+            const sizeEnum = SIZE_MAP[sb.size.toUpperCase()] ?? 1;
+            materialRequirements.push({
+              materialTypeId: mat.materialTypeId!,
+              productSize: sizeEnum,
+              quantity: qtyNum,
+            });
+          });
+        }
+      });
+
+      const productionStages: ProductProductionStageItem[] = [];
+      formData.pipelineStages.forEach((stg, idx) => {
+        const matched = productionStagesList.find(
+          (bs) => bs.id === stg.id || bs.name.toLowerCase() === stg.stageName.toLowerCase()
+        );
+        if (matched && isGuid(matched.id)) {
+          productionStages.push({
+            productionStageId: matched.id!,
+            sequence: idx + 1,
+          });
+        }
+      });
+
+      const created = await createProduct({
         sku: formData.baseSku,
         name: formData.productName,
         productCategoryId: catId,
         isActive: formData.lifecycleStatus === "active",
         image: selectedImageFile,
+        materialRequirements,
+        productionStages,
       });
+
+      console.log("Product successfully created in backend:", created);
     } catch (err) {
-      console.warn("Product create API failed, proceeding with local callback:", err);
+      console.error("Product create API error:", err);
     }
 
     if (onSave) {
@@ -1024,7 +1146,12 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
                           </label>
                           <SearchableStageSelect
                             value={stage.stageName}
-                            onChange={(newStage) => handleUpdateStage(stage.id, "stageName", newStage)}
+                            stageOptions={
+                              productionStagesList.length > 0
+                                ? productionStagesList
+                                : MANUFACTURING_STAGE_OPTIONS.map((name) => ({ name }))
+                            }
+                            onChange={(newStageObj) => handleSelectBackendStage(stage.id, newStageObj)}
                           />
                         </div>
 

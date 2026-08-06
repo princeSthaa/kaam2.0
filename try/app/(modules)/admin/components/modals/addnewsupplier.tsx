@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createSupplier } from "../../api/supplier.api";
 
 export interface SupplierFormData {
   id?: string;
   name: string;
-  code: string;
+  code?: string;
   category?: string;
   email?: string;
   phone?: string;
@@ -165,9 +166,22 @@ export default function AddNewSupplierModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.code.trim()) return;
+    if (!formData.name.trim()) return;
+
+    try {
+      await createSupplier({
+        name: formData.name.trim(),
+        contactEmail: formData.email?.trim() || "",
+        contactPhone: formData.phone?.trim() || "",
+        address: formData.location?.trim() || "",
+        status: 0,
+        materialCategoryIds: formData.materialCategoryIds || [],
+      });
+    } catch (err) {
+      console.warn("Failed to create supplier via API:", err);
+    }
 
     if (onSave) {
       onSave(formData);
@@ -219,7 +233,7 @@ export default function AddNewSupplierModal({
                 <span className="w-1 h-3 bg-slate-900 rounded-full"></span>
                 CORE IDENTITY
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-1">
                   <label className="font-semibold text-slate-700">BRAND / COMPANY NAME *</label>
                   <input
@@ -232,17 +246,6 @@ export default function AddNewSupplierModal({
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-semibold text-slate-700">SUPPLIER CODE *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="SUP-FAB-2026-X"
-                    value={formData.code}
-                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:ring-2 focus:ring-slate-900 focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1 md:col-span-2">
                   <label className="font-semibold text-slate-700 block mb-1">CATEGORIES</label>
                   <div className="relative">
                     <CategoryMultiSelect

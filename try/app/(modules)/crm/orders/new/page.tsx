@@ -243,8 +243,8 @@ function SearchableSelect({
 
 function ProductSelect({ value, onChange, products }: { value: string; onChange: (val: string) => void; products: any[] }) {
   const options: SearchableOption[] = products.map((p) => ({
-    value: p.productId,
-    label: p.name,
+    value: p.productId || p.id,
+    label: p.name || "Product",
     image: p.imagePath,
   }));
 
@@ -395,10 +395,11 @@ export default function CrmCreateOrderPage() {
     ])
       .then(([prods, fabs, bomsRes, matsRes]) => {
         const mappedProds = prods.map((p) => ({
-          productId: p.id,
+          productId: p.id || (p as any).productId,
+          id: p.id || (p as any).productId,
           name: p.name,
           imagePath: resolveMediaUrl(p.imagePath, "product"),
-          sizes: p.sizes?.length ? p.sizes : ["XS", "S", "M", "L", "XL", "XXL"],
+          sizes: p.sizes && p.sizes.length > 0 ? p.sizes : ["S"],
         }));
         setProductsData(mappedProds);
         setFabricsData(fabs);

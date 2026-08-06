@@ -24,15 +24,50 @@ export function resolveMediaUrl(path?: string, defaultType: "product" | "fabric"
   return `http://localhost:5083/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${path}`;
 }
 
+const SIZE_NAMES = ["XS", "S", "M", "L", "XL", "XXL"];
+
+export function extractProductSizes(product: any): string[] {
+  if (Array.isArray(product.sizes) && product.sizes.length > 0) {
+    return product.sizes;
+  }
+
+  if (Array.isArray(product.materialRequirements) && product.materialRequirements.length > 0) {
+    const foundSizes = new Set<string>();
+    product.materialRequirements.forEach((req: any) => {
+      if (req.productSize !== undefined && req.productSize !== null) {
+        if (typeof req.productSize === "number") {
+          const name = SIZE_NAMES[req.productSize] || String(req.productSize);
+          foundSizes.add(name);
+        } else if (typeof req.productSize === "string") {
+          foundSizes.add(req.productSize.toUpperCase());
+        }
+      }
+    });
+
+    if (foundSizes.size > 0) {
+      return Array.from(foundSizes).sort((a, b) => {
+        const idxA = SIZE_NAMES.indexOf(a);
+        const idxB = SIZE_NAMES.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        return a.localeCompare(b);
+      });
+    }
+  }
+
+  return ["S"];
+}
+
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/product`, { cache: 'no-store' });
     if (res.ok) {
-      const data: Product[] = await res.json();
+      const json = await res.json();
+      const data: any[] = Array.isArray(json) ? json : (json?.value || json?.data || []);
       if (Array.isArray(data)) {
         return data.map(p => ({
           ...p,
-          sizes: p.sizes?.length ? p.sizes : ["XS", "S", "M", "L", "XL", "XXL"],
+          id: p.id || p.productId || String(Math.random()),
+          sizes: extractProductSizes(p),
           imagePath: resolveMediaUrl(p.imagePath, "product")
         }));
       }

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   fetchProductCategories as apiFetchProductCategories,
   createProductCategory as apiCreateProductCategory,
+  updateProductCategory as apiUpdateProductCategory,
   deleteProductCategory as apiDeleteProductCategory,
   ProductCategoryDto,
 } from "../../api/productcategory.api";
@@ -84,6 +85,29 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
       setIsSubmitting(false);
       setNewCatName("");
       setNewIsActive(true);
+    }
+  };
+
+  const handleToggleCategoryStatus = async (cat: ProductCategoryItem) => {
+    const newStatus = cat.isActive === false ? true : false;
+
+    // Optimistic update
+    setCategories((prev) =>
+      prev.map((item) => (item.id === cat.id ? { ...item, isActive: newStatus } : item))
+    );
+
+    if (cat.id) {
+      try {
+        await apiUpdateProductCategory(cat.id, {
+          name: cat.name,
+          categoryCode: cat.categoryCode,
+          isActive: newStatus,
+        });
+        showToast(`Category "${cat.name}" is now ${newStatus ? "Active" : "Inactive"}`);
+      } catch (err) {
+        console.warn("Update product category API failed:", err);
+        showToast(`Updated status for "${cat.name}" locally`);
+      }
     }
   };
 
@@ -245,24 +269,41 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                         </td>
                         <td className="py-2.5 px-4 font-bold text-slate-900">{cat.name}</td>
                         <td className="py-2.5 px-4 font-mono">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                              cat.isActive !== false
-                                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                                : "bg-slate-100 text-slate-600 border-slate-200"
-                            }`}
-                          >
-                            {cat.isActive !== false ? "Active" : "Inactive"}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                cat.isActive !== false
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                                  : "bg-slate-100 text-slate-600 border-slate-200"
+                              }`}
+                            >
+                              {cat.isActive !== false ? "Active" : "Inactive"}
+                            </span>
+                            {/* Visual Slider Switch Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCategoryStatus(cat)}
+                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                cat.isActive !== false ? "bg-emerald-600" : "bg-slate-300"
+                              }`}
+                              title={`Toggle status to ${cat.isActive !== false ? "Inactive" : "Active"}`}
+                            >
+                              <span
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                  cat.isActive !== false ? "translate-x-4" : "translate-x-0"
+                                }`}
+                              />
+                            </button>
+                          </div>
                         </td>
                         <td className="py-2.5 px-4 text-right">
                           <button
                             type="button"
                             onClick={() => handleDeleteCategory(cat.id)}
-                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                             title="Delete Product Category"
                           >
-                            <span className="material-symbols-outlined text-base">delete</span>
+                            <span className="material-symbols-outlined text-base align-middle">delete</span>
                           </button>
                         </td>
                       </tr>
