@@ -1,0 +1,1 @@
+export const API_MAIN_URL = "http://localhost:5083/api";

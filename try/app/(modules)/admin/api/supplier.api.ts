@@ -1,4 +1,8 @@
-const API_BASE_URL = "http://localhost:5083/api/supplier";
+// const API_BASE_URL = "http://localhost:5083/api/supplier";
+
+import { API_MAIN_URL } from "./constant";
+
+const API_BASE_URL = `${API_MAIN_URL}/supplier`;
 
 export interface SupplierCategoryResponseDto {
   id?: string;

@@ -1,6 +1,7 @@
 "use client";
-
+import { API_MAIN_URL } from "../api/constant";
 import { useState, useEffect, useCallback } from "react";
+const API_BASE_URL = `${API_MAIN_URL}/customer`;
 
 export function useCustomers() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -11,7 +12,7 @@ export function useCustomers() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5083/api/customer");
+      const res = await fetch(`${API_BASE_URL}`);
       if (!res.ok) throw new Error("Failed to fetch customers");
       const data = await res.json();
       setCustomers(data || []);

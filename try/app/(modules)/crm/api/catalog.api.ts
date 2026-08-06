@@ -1,4 +1,8 @@
-const API_BASE_URL = 'http://localhost:5083/api';
+import { API_MAIN_URL } from "./constant";
+
+// const API_BASE_URL = 'http://localhost:5083/api';
+
+const API_BASE_URL = `${API_MAIN_URL}/product`;
 
 export type Product = {
   id: string;
@@ -17,11 +21,11 @@ export type Fabric = {
 export function resolveMediaUrl(path?: string, defaultType: "product" | "fabric" = "product"): string {
   if (!path || path === "default.png" || path === "fabric.png" || path.includes("place-holder") || path.includes("denim")) {
     const fallbackFile = defaultType === "fabric" ? "FAB-001.jpg" : "polo-shirt.jpg";
-    return `http://localhost:5083/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${fallbackFile}`;
+    return `${API_MAIN_URL}/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${fallbackFile}`;
   }
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  if (path.startsWith("/")) return `http://localhost:5083${path}`;
-  return `http://localhost:5083/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${path}`;
+  if (path.startsWith("/")) return `${API_MAIN_URL}${path}`;
+  return `${API_MAIN_URL}/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${path}`;
 }
 
 const SIZE_NAMES = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -59,7 +63,7 @@ export function extractProductSizes(product: any): string[] {
 
 export async function fetchProducts(): Promise<Product[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/product`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}`, { cache: 'no-store', credentials: 'include' });
     if (res.ok) {
       const json = await res.json();
       const data: any[] = Array.isArray(json) ? json : (json?.value || json?.data || []);
@@ -81,7 +85,7 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchFabrics(): Promise<Fabric[]> {
   try {
     // Backend endpoint for materials is /api/material
-    const res = await fetch(`${API_BASE_URL}/material`, { cache: 'no-store' });
+    const res = await fetch(`${API_MAIN_URL}/material`, { cache: 'no-store', credentials: 'include' });
     if (res.ok) {
       const data = await res.json();
       const rawList = Array.isArray(data) ? data : (data?.value || data?.data || []);

@@ -62,6 +62,7 @@ export default function MaterialDirectoryPage() {
   const [isManageTypeModalOpen, setIsManageTypeModalOpen] = useState(false);
   const [isMaterialMenuOpen, setIsMaterialMenuOpen] = useState(false);
   const [viewingMaterial, setViewingMaterial] = useState<MaterialDirectoryItem | null>(null);
+  const [editingMaterial, setEditingMaterial] = useState<MaterialDirectoryItem | null>(null);
   const materialMenuRef = useRef<HTMLDivElement>(null);
 
   const loadMaterials = async () => {
@@ -489,8 +490,19 @@ export default function MaterialDirectoryPage() {
                         </button>
                         <button
                           type="button"
+                          onClick={() => {
+                            setEditingMaterial(mat);
+                            setIsDefineMaterialModalOpen(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-amber-600 transition-colors rounded-lg hover:bg-amber-50 inline-flex items-center justify-center"
+                          title="Edit Material Spec"
+                        >
+                          <span className="material-symbols-outlined text-base">edit</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleDeleteMaterial(mat.id, mat.name)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50"
+                          className="p-1.5 text-slate-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50 inline-flex items-center justify-center"
                           title="Delete Material"
                         >
                           <span className="material-symbols-outlined text-base">delete</span>
@@ -621,8 +633,12 @@ export default function MaterialDirectoryPage() {
       {/* MODALS */}
       <DefineMaterialModal
         isOpen={isDefineMaterialModalOpen}
-        onClose={() => setIsDefineMaterialModalOpen(false)}
+        onClose={() => {
+          setIsDefineMaterialModalOpen(false);
+          setEditingMaterial(null);
+        }}
         onSave={handleSaveMaterial}
+        initialData={editingMaterial}
       />
 
       <RegisterSkuModal

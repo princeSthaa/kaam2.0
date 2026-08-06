@@ -26,6 +26,7 @@ interface DefineMaterialModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave?: (data: MaterialSpecFormData) => void;
+    initialData?: MaterialSpecFormData | any | null;
 }
 
 const CATEGORIES_BY_TYPE: Record<string, string[]> = {
@@ -72,6 +73,7 @@ export function DefineMaterialModal({
     isOpen,
     onClose,
     onSave,
+    initialData,
 }: DefineMaterialModalProps) {
     const [formData, setFormData] = useState<MaterialSpecFormData>({
         name: "",
@@ -111,9 +113,26 @@ export function DefineMaterialModal({
     useEffect(() => {
         if (!isOpen) return;
 
-        // Reset form state on modal open
-        setFormData(INITIAL_FORM_DATA);
-        setImagePreview(null);
+        if (initialData) {
+            setFormData({
+                name: initialData.name || "",
+                type: initialData.type || "fabric",
+                code: initialData.code || initialData.materialCode || "",
+                unit: initialData.unit || "meters",
+                categories: initialData.categories || [],
+                pricePerUnit: initialData.pricePerUnit !== undefined ? initialData.pricePerUnit : "",
+                weightGsm: initialData.weightGsm || "",
+                widthInches: initialData.widthInches || "",
+                colorCode: initialData.colorCode || "",
+                composition: initialData.composition || "",
+                qualityStandard: initialData.qualityStandard || "",
+                mandatoryTests: initialData.mandatoryTests || [],
+            });
+            setImagePreview(initialData.imageUrl || null);
+        } else {
+            setFormData(INITIAL_FORM_DATA);
+            setImagePreview(null);
+        }
         setSelectedImageFile(null);
         setIsSubmitting(false);
 
@@ -121,12 +140,14 @@ export function DefineMaterialModal({
             .then((types) => {
                 if (Array.isArray(types) && types.length > 0) {
                     setApiMaterialTypes(types);
-                    setFormData((prev) => ({
-                        ...prev,
-                        materialTypeId: types[0].id || "",
-                        type: types[0].name || "fabric",
-                        unit: types[0].unit || types[0].defaultUom || "meters",
-                    }));
+                    if (!initialData) {
+                        setFormData((prev) => ({
+                            ...prev,
+                            materialTypeId: types[0].id || "",
+                            type: types[0].name || "fabric",
+                            unit: types[0].unit || types[0].defaultUom || "meters",
+                        }));
+                    }
                 }
             })
             .catch((err) => console.warn("Failed to load material types from API:", err));
@@ -138,7 +159,7 @@ export function DefineMaterialModal({
                 }
             })
             .catch((err) => console.warn("Failed to load material categories from API:", err));
-    }, [isOpen]);
+    }, [isOpen, initialData]);
 
     const availableCategories = useMemo(() => {
         if (apiMaterialCategories.length > 0) {
@@ -260,7 +281,7 @@ export function DefineMaterialModal({
                     <div>
                         <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                             <span className="material-symbols-outlined text-slate-900">precision_manufacturing</span>
-                            Define Material Spec
+                            {initialData ? "Edit Material Spec" : "Define Material Spec"}
                         </h2>
                         <p className="text-xs text-slate-500 mt-0.5">
                             Create or update material specifications for procurement and quality control.

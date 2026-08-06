@@ -1,4 +1,7 @@
-const API_BASE_URL = "http://localhost:5083/api/product";
+// const API_BASE_URL = "http://localhost:5083/api/product";
+import { API_MAIN_URL } from "./constant";
+
+const API_BASE_URL = `${API_MAIN_URL}/product`;
 
 export interface ProductCategoryRef {
   id?: string;
@@ -130,14 +133,14 @@ export async function createProduct(payload: CreateProductDto): Promise<ProductD
   const matReqList = Array.isArray(payload.materialRequirements)
     ? payload.materialRequirements
     : typeof payload.materialRequirements === "string" && payload.materialRequirements
-    ? JSON.parse(payload.materialRequirements)
-    : [];
+      ? JSON.parse(payload.materialRequirements)
+      : [];
 
   const stagesList = Array.isArray(payload.productionStages)
     ? payload.productionStages
     : typeof payload.productionStages === "string" && payload.productionStages
-    ? JSON.parse(payload.productionStages)
-    : [];
+      ? JSON.parse(payload.productionStages)
+      : [];
 
   const body = {
     sku: payload.sku || `SKU-${Date.now().toString().slice(-4)}`,

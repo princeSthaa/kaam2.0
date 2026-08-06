@@ -1,4 +1,10 @@
-const API_BASE_URL = "http://localhost:5083/api/production-stage";
+// const API_BASE_URL = "http://localhost:5083/api/production-stage";
+
+
+import { API_MAIN_URL } from "./constant";
+
+const API_BASE_URL = `${API_MAIN_URL}/production-stage`;
+
 
 export interface ProductionStageDto {
   id?: string;

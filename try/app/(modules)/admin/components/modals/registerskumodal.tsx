@@ -54,6 +54,7 @@ interface RegisterSkuModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave?: (data: RegisterSkuFormData) => void;
+  initialData?: RegisterSkuFormData | any | null;
 }
 
 export const DEFAULT_MATERIAL_TYPES: MaterialTypeOption[] = [
@@ -272,6 +273,7 @@ export function RegisterSkuModal({
   isOpen,
   onClose,
   onSave,
+  initialData,
 }: RegisterSkuModalProps) {
   const [formData, setFormData] = useState<RegisterSkuFormData>({
     productName: "Premium Denim Jacket - Indigo Series",
@@ -322,6 +324,29 @@ export function RegisterSkuModal({
   const [productionStagesList, setProductionStagesList] = useState<ProductionStageDto[]>([]);
   const [isLoadingProductionStages, setIsLoadingProductionStages] = useState<boolean>(false);
 
+  // Populate initialData if editing
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialData) {
+      setFormData({
+        productName: initialData.name || initialData.productName || "",
+        baseSku: initialData.baseSku || initialData.sku || "",
+        category: initialData.category || "",
+        productCategoryId: initialData.productCategoryId || "",
+        uom: initialData.uom || "pcs",
+        lifecycleStatus: initialData.status ? initialData.status.toLowerCase() : "active",
+        gender: initialData.gender ? initialData.gender.toLowerCase() : "unisex",
+        selectedSizes: initialData.sizes ? initialData.sizes.map((s: string) => s.toLowerCase()) : ["s", "m", "l", "xl"],
+        materials: initialData.materials || [],
+        pipelineStages: initialData.pipelineStages || [],
+        thumbnailUrl: initialData.thumbnailUrl || initialData.imagePath || undefined,
+        adminNotes: initialData.adminNotes || "",
+      });
+      setThumbnailPreview(initialData.thumbnailUrl || initialData.imagePath || null);
+    }
+  }, [isOpen, initialData]);
+
   // Fetch Material Types, Product Categories, and Production Stages from API when modal opens
   useEffect(() => {
     if (!isOpen) return;
@@ -339,7 +364,7 @@ export function RegisterSkuModal({
         }
       })
       .catch((err) => {
-        console.warn("API GET http://localhost:5083/api/material-type failed:", err);
+        console.warn("API fetchMaterialTypes failed:", err);
       })
       .finally(() => {
         setIsLoadingMaterialTypes(false);
@@ -715,7 +740,7 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
           <div>
             <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <span className="material-symbols-outlined text-slate-900">barcode_scanner</span>
-              Register Product SKU
+              {initialData ? "Edit Product SKU Specification" : "Register Product SKU"}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               Define master data, categorization, material links, and manufacturing pipeline for a new production unit.

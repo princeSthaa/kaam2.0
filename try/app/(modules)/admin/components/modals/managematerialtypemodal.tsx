@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   fetchMaterialTypes as apiFetchMaterialTypes,
   createMaterialType as apiCreateMaterialType,
+  updateMaterialType as apiUpdateMaterialType,
   deleteMaterialType as apiDeleteMaterialType,
   MaterialTypeDto,
 } from "../../api/materialtype.api";
@@ -17,19 +18,13 @@ interface ManageMaterialTypeModalProps {
   onClose: () => void;
 }
 
-const DEFAULT_TYPES: MaterialTypeItem[] = [
-  { id: "1", name: "Fabric", defaultUom: "meters", unit: "meters", description: "Woven, knitted, or non-woven raw textile rolls" },
-  { id: "2", name: "Trim & Hardware", defaultUom: "pcs", unit: "pcs", description: "Zippers, buttons, rivets, buckles, and thread" },
-  { id: "3", name: "Chemical & Wash", defaultUom: "kg", unit: "kg", description: "Dyes, enzymes, softeners, and chemical agents" },
-  { id: "4", name: "Packaging Materials", defaultUom: "pcs", unit: "pcs", description: "Cartons, polybags, tags, and barcode stickers" },
-];
-
 export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeModalProps) {
-  const [types, setTypes] = useState<MaterialTypeItem[]>(DEFAULT_TYPES);
+  const [types, setTypes] = useState<MaterialTypeItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Add Type Form state
+  // Add / Edit Type Form state
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeUom, setNewTypeUom] = useState("meters");
   const [newTypeDesc, setNewTypeDesc] = useState("");
@@ -40,11 +35,12 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
     setLoading(true);
     try {
       const data = await apiFetchMaterialTypes();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setTypes(data);
       }
     } catch (err: any) {
-      console.warn("API GET http://localhost:5083/api/material-type failed, fallback to local data:", err);
+      console.error("Failed to load material types from server:", err);
+      showToast("Failed to load material types from server.");
     } finally {
       setLoading(false);
     }
@@ -61,35 +57,51 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleAddType = async (e: React.FormEvent) => {
+  const handleStartEdit = (item: MaterialTypeItem) => {
+    if (!item.id) return;
+    setEditingId(item.id);
+    setNewTypeName(item.name || "");
+    setNewTypeUom(item.unit || item.defaultUom || "meters");
+    setNewTypeDesc(item.description || "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setNewTypeName("");
+    setNewTypeUom("meters");
+    setNewTypeDesc("");
+  };
+
+  const handleSaveType = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTypeName.trim()) return;
 
     setIsSubmitting(true);
     try {
-      const created = await apiCreateMaterialType({
-        name: newTypeName.trim(),
-        unit: newTypeUom,
-        defaultUom: newTypeUom,
-        description: newTypeDesc.trim(),
-      });
+      if (editingId) {
+        await apiUpdateMaterialType(editingId, {
+          name: newTypeName.trim(),
+          unit: newTypeUom,
+          defaultUom: newTypeUom,
+          description: newTypeDesc.trim(),
+        });
+        showToast(`Material Type "${newTypeName}" updated successfully!`);
+      } else {
+        await apiCreateMaterialType({
+          name: newTypeName.trim(),
+          unit: newTypeUom,
+          defaultUom: newTypeUom,
+          description: newTypeDesc.trim(),
+        });
+        showToast(`Material Type "${newTypeName}" created successfully!`);
+      }
       await loadMaterialTypes();
-      showToast(`Material Type "${newTypeName}" created successfully!`);
+      handleCancelEdit();
     } catch (err: any) {
-      console.error("Failed to create material type via API:", err);
-      const fallback: MaterialTypeItem = {
-        id: String(Date.now()),
-        name: newTypeName.trim(),
-        defaultUom: newTypeUom,
-        unit: newTypeUom,
-        description: newTypeDesc.trim(),
-      };
-      setTypes((prev) => [fallback, ...prev]);
-      showToast(`Material Type "${newTypeName}" added locally!`);
+      console.error("Failed to save material type via API:", err);
+      showToast(`Failed to ${editingId ? "update" : "create"} material type. Please try again.`);
     } finally {
       setIsSubmitting(false);
-      setNewTypeName("");
-      setNewTypeDesc("");
     }
   };
 
@@ -102,9 +114,8 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
       showToast("Material Type deleted successfully!");
       await loadMaterialTypes();
     } catch (err) {
-      console.warn("Delete API failed, removing locally:", err);
-      setTypes((prev) => prev.filter((t) => t.id !== id));
-      showToast("Material Type removed!");
+      console.error("Failed to delete material type via API:", err);
+      showToast("Failed to delete material type.");
     }
   };
 
@@ -148,16 +159,27 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto">
-          {/* Add Type Form Section */}
+          {/* Add / Edit Type Form Section */}
           <form
-            onSubmit={handleAddType}
+            onSubmit={handleSaveType}
             className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3"
           >
             <div className="flex items-center justify-between border-b border-slate-200 pb-2">
               <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">add_circle</span>
-                Add New Material Type
+                <span className="material-symbols-outlined text-sm">
+                  {editingId ? "edit_note" : "add_circle"}
+                </span>
+                {editingId ? "Edit Material Type" : "Add New Material Type"}
               </h3>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="text-[11px] font-mono font-bold text-slate-500 hover:text-slate-900 transition-colors"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -206,14 +228,31 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
               />
             </div>
 
-            <div className="flex justify-end pt-1">
+            <div className="flex justify-end pt-1 gap-2">
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold text-xs hover:bg-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={isSubmitting || !newTypeName.trim()}
                 className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center gap-1.5"
               >
-                <span className="material-symbols-outlined text-sm">add</span>
-                <span>{isSubmitting ? "Saving..." : "Add Material Type"}</span>
+                <span className="material-symbols-outlined text-sm">
+                  {editingId ? "edit" : "add"}
+                </span>
+                <span>
+                  {isSubmitting
+                    ? "Saving..."
+                    : editingId
+                    ? "Update Material Type"
+                    : "Add Material Type"}
+                </span>
               </button>
             </div>
           </form>
@@ -253,7 +292,7 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
                   {loading ? (
                     <tr>
                       <td colSpan={5} className="py-6 text-center text-slate-400 font-mono">
-                        Loading material types from http://localhost:5083/api/material-type...
+                        Loading material types...
                       </td>
                     </tr>
                   ) : filteredTypes.length === 0 ? (
@@ -278,14 +317,24 @@ export function ManageMaterialTypeModal({ isOpen, onClose }: ManageMaterialTypeM
                           {t.description || "—"}
                         </td>
                         <td className="py-2.5 px-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteType(t.id ? String(t.id) : undefined)}
-                            className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                            title="Delete Material Type"
-                          >
-                            <span className="material-symbols-outlined text-base">delete</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(t)}
+                              className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                              title="Edit Material Type"
+                            >
+                              <span className="material-symbols-outlined text-base">edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteType(t.id ? String(t.id) : undefined)}
+                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="Delete Material Type"
+                            >
+                              <span className="material-symbols-outlined text-base">delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

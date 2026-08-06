@@ -1,6 +1,9 @@
+import { API_MAIN_URL } from "./constant";
 import { ProductionPlan, ProductionSummary } from "../dto/production.dto";
 
-const API_BASE_URL = 'http://localhost:5083/api';
+// const API_BASE_URL = 'http://localhost:5083/api';
+
+const API_BASE_URL = `${API_MAIN_URL}/production-plans`;
 
 /**
  * Maps numeric or string backend PlanStatus enum values into standard UI status strings.

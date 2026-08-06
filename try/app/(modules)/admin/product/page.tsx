@@ -61,6 +61,7 @@ export default function ProductDirectoryPage() {
   const [isManageProductCategoryModalOpen, setIsManageProductCategoryModalOpen] = useState(false);
   const [isProductMenuOpen, setIsProductMenuOpen] = useState(false);
   const [viewingProduct, setViewingProduct] = useState<ProductDirectoryItem | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductDirectoryItem | null>(null);
   const productMenuRef = useRef<HTMLDivElement>(null);
 
 const SIZE_NAMES = ["XS", "S", "M", "L", "XL", "XXL"];
@@ -188,7 +189,8 @@ function extractSizes(materialRequirements?: any[]): string[] {
   }, [products, searchTerm, selectedCategory, selectedStatus]);
 
   const categoryOptions = useMemo(() => {
-    return ["ALL", ...categoriesList.map((c) => c.name)];
+    const names = categoriesList.map((c) => c.name).filter(Boolean);
+    return ["ALL", ...Array.from(new Set(names))];
   }, [categoriesList]);
 
   return (
@@ -389,11 +391,11 @@ function extractSizes(materialRequirements?: any[]): string[] {
             {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto">
               <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 text-xs font-mono uppercase">
-                {categoryOptions.map((cat) => {
+                {categoryOptions.map((cat, idx) => {
                   const isActive = selectedCategory === cat;
                   return (
                     <button
-                      key={cat}
+                      key={`${cat}-${idx}`}
                       onClick={() => setSelectedCategory(cat)}
                       className={`px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all whitespace-nowrap ${
                         isActive
@@ -540,16 +542,26 @@ function extractSizes(materialRequirements?: any[]): string[] {
                         <button
                           type="button"
                           onClick={() => setViewingProduct(prod)}
-                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg font-mono font-bold text-[11px] transition-colors inline-flex items-center gap-1"
+                          className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg transition-colors inline-flex items-center justify-center"
                           title="View Product Spec"
                         >
-                          <span className="material-symbols-outlined text-sm">visibility</span>
-                          View
+                          <span className="material-symbols-outlined text-base">visibility</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingProduct(prod);
+                            setIsRegisterSkuModalOpen(true);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-amber-600 transition-colors rounded-lg hover:bg-amber-50 inline-flex items-center justify-center"
+                          title="Edit Product Spec"
+                        >
+                          <span className="material-symbols-outlined text-base">edit</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50"
+                          className="p-1.5 text-slate-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50 inline-flex items-center justify-center"
                           title="Delete Product"
                         >
                           <span className="material-symbols-outlined text-base">delete</span>
@@ -659,8 +671,12 @@ function extractSizes(materialRequirements?: any[]): string[] {
       {/* MODALS */}
       <RegisterSkuModal
         isOpen={isRegisterSkuModalOpen}
-        onClose={() => setIsRegisterSkuModalOpen(false)}
+        onClose={() => {
+          setIsRegisterSkuModalOpen(false);
+          setEditingProduct(null);
+        }}
         onSave={handleSaveSku}
+        initialData={editingProduct}
       />
 
       <DefineMaterialModal

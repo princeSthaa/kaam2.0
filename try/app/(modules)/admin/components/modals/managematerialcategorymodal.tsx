@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   fetchMaterialCategories as apiFetchMaterialCategories,
   createMaterialCategory as apiCreateMaterialCategory,
+  updateMaterialCategory as apiUpdateMaterialCategory,
   deleteMaterialCategory as apiDeleteMaterialCategory,
   MaterialCategoryDto,
 } from "../../api/materialcategory.api";
@@ -33,7 +34,8 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Add Category Form state
+  // Add / Edit Category Form state
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState("");
   const [newCatDesc, setNewCatDesc] = useState("");
   const [selectedTypeId, setSelectedTypeId] = useState<string>("");
@@ -48,17 +50,17 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
         apiFetchMaterialCategories().catch(() => []),
         fetchMaterialTypes().catch(() => []),
       ]);
-      if (Array.isArray(cats) && cats.length > 0) {
+      if (Array.isArray(cats)) {
         setCategories(cats);
       }
-      if (Array.isArray(types) && types.length > 0) {
+      if (Array.isArray(types)) {
         setMaterialTypes(types);
-        if (!selectedTypeId && types[0].id) {
+        if (!selectedTypeId && types.length > 0 && types[0].id) {
           setSelectedTypeId(types[0].id);
         }
       }
     } catch (err: any) {
-      console.warn("API GET http://localhost:5083/api/material-category failed, fallback to local data:", err);
+      console.error("Failed to load categories/types from API:", err);
     } finally {
       setLoading(false);
     }
@@ -75,33 +77,48 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+  const handleStartEdit = (cat: MaterialCategoryItem) => {
+    if (!cat.id) return;
+    setEditingId(cat.id);
+    setNewCatName(cat.name || "");
+    setNewCatDesc(cat.description || "");
+    setSelectedTypeId(cat.materialTypeId || "");
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setNewCatName("");
+    setNewCatDesc("");
+  };
+
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCatName.trim()) return;
 
     setIsSubmitting(true);
     try {
-      await apiCreateMaterialCategory({
-        name: newCatName.trim(),
-        materialTypeId: selectedTypeId || undefined,
-        description: newCatDesc.trim(),
-      });
+      if (editingId) {
+        await apiUpdateMaterialCategory(editingId, {
+          name: newCatName.trim(),
+          materialTypeId: selectedTypeId || undefined,
+          description: newCatDesc.trim(),
+        });
+        showToast(`Category "${newCatName}" updated successfully!`);
+      } else {
+        await apiCreateMaterialCategory({
+          name: newCatName.trim(),
+          materialTypeId: selectedTypeId || undefined,
+          description: newCatDesc.trim(),
+        });
+        showToast(`Category "${newCatName}" added successfully!`);
+      }
       await loadCategoriesAndTypes();
-      showToast(`Category "${newCatName}" added successfully!`);
+      handleCancelEdit();
     } catch (err) {
-      console.warn("Category creation API failed, falling back to local:", err);
-      const fallback: MaterialCategoryItem = {
-        id: String(Date.now()),
-        name: newCatName.trim(),
-        description: newCatDesc.trim(),
-        materialTypeId: selectedTypeId,
-      };
-      setCategories((prev) => [fallback, ...prev]);
-      showToast(`Category "${newCatName}" added locally!`);
+      console.error("Category save API failed:", err);
+      showToast(`Failed to ${editingId ? "update" : "create"} category.`);
     } finally {
       setIsSubmitting(false);
-      setNewCatName("");
-      setNewCatDesc("");
     }
   };
 
@@ -160,16 +177,27 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
         </div>
 
         <div className="p-6 space-y-6 overflow-y-auto">
-          {/* Add Category Form Section */}
+          {/* Add / Edit Category Form Section */}
           <form
-            onSubmit={handleAddCategory}
+            onSubmit={handleSaveCategory}
             className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3"
           >
             <div className="flex items-center justify-between border-b border-slate-200 pb-2">
               <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">add_circle</span>
-                Add New Material Category
+                <span className="material-symbols-outlined text-sm">
+                  {editingId ? "edit_note" : "add_circle"}
+                </span>
+                {editingId ? "Edit Material Category" : "Add New Material Category"}
               </h3>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="text-[11px] font-mono font-bold text-slate-500 hover:text-slate-900 transition-colors"
+                >
+                  Cancel Edit
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -227,14 +255,31 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
               />
             </div>
 
-            <div className="flex justify-end pt-1">
+            <div className="flex justify-end pt-1 gap-2">
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-3 py-2 bg-slate-200 text-slate-700 rounded-lg font-bold text-xs hover:bg-slate-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={isSubmitting || !newCatName.trim()}
                 className="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center gap-1.5"
               >
-                <span className="material-symbols-outlined text-sm">add</span>
-                <span>{isSubmitting ? "Saving..." : "Add Category"}</span>
+                <span className="material-symbols-outlined text-sm">
+                  {editingId ? "edit" : "add"}
+                </span>
+                <span>
+                  {isSubmitting
+                    ? "Saving..."
+                    : editingId
+                    ? "Update Category"
+                    : "Add Category"}
+                </span>
               </button>
             </div>
           </form>
@@ -274,7 +319,7 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
                   {loading ? (
                     <tr>
                       <td colSpan={5} className="py-6 text-center text-slate-400 font-mono">
-                        Loading material categories from http://localhost:5083/api/material-category...
+                        Loading material categories...
                       </td>
                     </tr>
                   ) : filteredCategories.length === 0 ? (
@@ -301,14 +346,24 @@ export function ManageMaterialCategoryModal({ isOpen, onClose }: ManageMaterialC
                             {cat.description || "—"}
                           </td>
                           <td className="py-2.5 px-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCategory(cat.id ? String(cat.id) : undefined)}
-                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                              title="Delete Material Category"
-                            >
-                              <span className="material-symbols-outlined text-base">delete</span>
-                            </button>
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEdit(cat)}
+                                className="p-1 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                                title="Edit Material Category"
+                              >
+                                <span className="material-symbols-outlined text-base">edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(cat.id ? String(cat.id) : undefined)}
+                                className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                title="Delete Material Category"
+                              >
+                                <span className="material-symbols-outlined text-base">delete</span>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

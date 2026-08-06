@@ -1,4 +1,8 @@
-const API_BASE_URL = "http://localhost:5083/api/material-type";
+// const API_BASE_URL = "http://localhost:5083/api/material-type";
+
+import { API_MAIN_URL } from "./constant";
+
+const API_BASE_URL = `${API_MAIN_URL}/material-type`;
 
 export interface MaterialTypeDto {
   id?: string;
@@ -50,8 +54,12 @@ export async function fetchMaterialTypes(params?: {
     throw new Error(`Failed to fetch material types: ${response.statusText}`);
   }
 
-  const data: MaterialTypeDto[] = await response.json();
-  return data.map((item) => ({
+  const rawData = await response.json();
+  const list: MaterialTypeDto[] = Array.isArray(rawData)
+    ? rawData
+    : rawData?.$values || rawData?.data || rawData?.items || [];
+
+  return list.map((item) => ({
     ...item,
     defaultUom: item.unit || item.defaultUom || "meters",
   }));

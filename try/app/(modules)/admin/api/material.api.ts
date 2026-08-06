@@ -1,4 +1,6 @@
-const API_BASE_URL = "http://localhost:5083/api/material";
+import { API_MAIN_URL } from "./constant";
+
+const API_BASE_URL = `${API_MAIN_URL}/material`;
 
 export interface MaterialTypeRef {
   id?: string;

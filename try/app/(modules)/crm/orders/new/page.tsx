@@ -8,6 +8,7 @@ import { fetchCustomers } from "../../api/customer.api";
 import { Customer } from "../../dto/customer.dto";
 import { createOrder } from "../../api/order.api";
 import { fetchProducts, fetchFabrics, resolveMediaUrl, Product, Fabric } from "../../api/catalog.api";
+import { API_MAIN_URL } from "../../api/constant";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 import { bsToAd } from "@/app/components/ui/dateUtils";
 
@@ -390,8 +391,8 @@ export default function CrmCreateOrderPage() {
     Promise.all([
       fetchProducts(),
       fetchFabrics(),
-      fetch("http://localhost:5083/api/bill-of-material").then((r) => r.json()).catch(() => ({ value: [] })),
-      fetch("http://localhost:5083/api/material").then((r) => r.json()).catch(() => ({ value: [] })),
+      fetch(`${API_MAIN_URL}/bill-of-material`).then((r) => r.json()).catch(() => ({ value: [] })),
+      fetch(`${API_MAIN_URL}/material`).then((r) => r.json()).catch(() => ({ value: [] })),
     ])
       .then(([prods, fabs, bomsRes, matsRes]) => {
         const mappedProds = prods.map((p) => ({

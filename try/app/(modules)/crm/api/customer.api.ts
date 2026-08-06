@@ -1,6 +1,9 @@
-import { Customer } from "../dto/customer.dto";
 
-const API_BASE_URL = 'http://localhost:5083/api';
+import { API_MAIN_URL } from "./constant";
+import { Customer } from "../dto/customer.dto";
+// const API_BASE_URL = 'http://localhost:5083/api';  
+
+const API_BASE_URL = `${API_MAIN_URL}/customer`;
 
 async function parseErrorMessage(res: Response): Promise<string> {
   const errorText = await res.text();
@@ -22,7 +25,7 @@ async function parseErrorMessage(res: Response): Promise<string> {
 
 export async function fetchCustomers(): Promise<Customer[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/customer`, { cache: 'no-store' });
+    const res = await fetch(`${API_BASE_URL}`, { cache: 'no-store', credentials: 'include' });
     if (res.ok) {
       return await res.json();
     }
@@ -44,9 +47,10 @@ export async function createCustomer(customer: Partial<Customer>): Promise<Custo
     ...customer,
   };
 
-  const res = await fetch(`${API_BASE_URL}/customer`, {
+  const res = await fetch(`${API_BASE_URL}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(payload),
   });
 
@@ -59,7 +63,7 @@ export async function createCustomer(customer: Partial<Customer>): Promise<Custo
 }
 
 export async function updateCustomer(id: string, customer: Partial<Customer>): Promise<Customer> {
-  const res = await fetch(`${API_BASE_URL}/customer/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(customer),
@@ -73,7 +77,7 @@ export async function updateCustomer(id: string, customer: Partial<Customer>): P
 }
 
 export async function deleteCustomer(id: string): Promise<void> {
-  const res = await fetch(`${API_BASE_URL}/customer/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API_BASE_URL}/${id}`, { method: 'DELETE' });
   if (!res.ok) {
     const errorMsg = await parseErrorMessage(res);
     throw new Error(errorMsg);
