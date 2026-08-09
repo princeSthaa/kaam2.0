@@ -1,0 +1,6 @@
+/* Warehouse Return To Supplier Custom CSS */
+.wh-rts-page {
+  min-height: 100vh;
+  background-color: #F3F4F6;
+  font-family: 'IBM Plex Sans', sans-serif;
+}

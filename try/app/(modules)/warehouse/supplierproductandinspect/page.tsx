@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/supplier-inspect.css";
+import { fetchPurchaseOrders, PurchaseOrderGetDto } from "../api/purchaseorder.api";
+import { adToBs } from "../../../components/ui/NepaliDatePicker";
 
 /* ─── Types ─────────────────────────────────────────────── */
 type POStatus = "AT DOCK" | "IN TRANSIT";
@@ -56,8 +58,16 @@ const MATERIALS: MaterialRow[] = [
 
 /* ─── Component ─────────────────────────────────────────── */
 export default function SupplierProductAndInspectPage() {
-  const [selectedPO, setSelectedPO] = useState<PendingPO>(PENDING_POS[0]);
+  const [orders, setOrders] = useState<PurchaseOrderGetDto[]>([]);
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrderGetDto | null>(null);
   const [rolls, setRolls] = useState<Roll[]>(INITIAL_ROLLS);
+
+  useEffect(() => {
+    fetchPurchaseOrders().then(data => {
+      setOrders(data);
+      if (data.length > 0) setSelectedPO(data[0]);
+    }).catch(console.error);
+  }, []);
 
   const acceptedCount = rolls.filter((r) => r.status === "accepted").length;
   const rejectedCount = rolls.filter((r) => r.status === "rejected" as unknown as RollStatus).length;
@@ -102,34 +112,40 @@ export default function SupplierProductAndInspectPage() {
         </div>
 
         <div className="wh-si-queue-list">
-          {PENDING_POS.map((po) => (
-            <div
-              key={po.id}
-              className={`wh-si-queue-item ${selectedPO.id === po.id ? "wh-si-queue-item-active" : ""}`}
-              onClick={() => setSelectedPO(po)}
-            >
-              {selectedPO.id === po.id && <div className="wh-si-queue-active-bar" />}
-              <div className={`wh-si-queue-item-top ${selectedPO.id === po.id ? "wh-si-queue-item-top-selected" : ""}`}>
-                <div>
-                  <div className={`wh-si-po-number ${selectedPO.id === po.id ? "wh-si-po-number-active" : "wh-si-po-number-muted"}`}>
-                    {po.poNumber}
+          {orders.map((po) => {
+            const isActive = selectedPO?.id === po.id;
+            const totalQty = po.items ? po.items.reduce((sum, item) => sum + item.orderedQuantity, 0) : 0;
+            const statusLabel = po.status === "Delivered" ? "AT DOCK" : "IN TRANSIT";
+
+            return (
+              <div
+                key={po.id}
+                className={`wh-si-queue-item ${isActive ? "wh-si-queue-item-active" : ""}`}
+                onClick={() => setSelectedPO(po)}
+              >
+                {isActive && <div className="wh-si-queue-active-bar" />}
+                <div className={`wh-si-queue-item-top ${isActive ? "wh-si-queue-item-top-selected" : ""}`}>
+                  <div>
+                    <div className={`wh-si-po-number ${isActive ? "wh-si-po-number-active" : "wh-si-po-number-muted"}`}>
+                      {po.orderNumber}
+                    </div>
+                    <div className="wh-si-supplier-name">{po.supplierName}</div>
                   </div>
-                  <div className="wh-si-supplier-name">{po.supplier}</div>
+                  <div className={`wh-si-status-chip ${statusLabel === "AT DOCK" ? "wh-si-status-dock" : "wh-si-status-transit"}`}>
+                    <span className={`wh-si-status-dot ${statusLabel === "AT DOCK" ? "wh-si-dot-dock" : "wh-si-dot-transit"}`} />
+                    {statusLabel}
+                  </div>
                 </div>
-                <div className={`wh-si-status-chip ${po.status === "AT DOCK" ? "wh-si-status-dock" : "wh-si-status-transit"}`}>
-                  <span className={`wh-si-status-dot ${po.status === "AT DOCK" ? "wh-si-dot-dock" : "wh-si-dot-transit"}`} />
-                  {po.status}
+                <div className={`wh-si-queue-item-bottom ${isActive ? "wh-si-queue-item-top-selected" : ""}`}>
+                  <div className="wh-si-date-label">
+                    <span className="wh-si-icon wh-si-icon-sm">calendar_today</span>
+                    {adToBs(po.createdAt)}
+                  </div>
+                  <div className="wh-si-qty-label">{totalQty} Units</div>
                 </div>
               </div>
-              <div className={`wh-si-queue-item-bottom ${selectedPO.id === po.id ? "wh-si-queue-item-top-selected" : ""}`}>
-                <div className="wh-si-date-label">
-                  <span className="wh-si-icon wh-si-icon-sm">calendar_today</span>
-                  {po.date}
-                </div>
-                <div className="wh-si-qty-label">{po.quantity}</div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -140,14 +156,14 @@ export default function SupplierProductAndInspectPage() {
         <div className="wh-si-workspace-header">
           <div>
             <div className="wh-si-workspace-title-row">
-              <h2 className="wh-si-workspace-po">{selectedPO.poNumber}</h2>
+              <h2 className="wh-si-workspace-po">{selectedPO?.orderNumber || "Select PO"}</h2>
               <div className="wh-si-inspecting-badge">
                 <span className="wh-si-pulse-dot" />
                 <span className="wh-si-inspecting-label">INSPECTING</span>
               </div>
             </div>
             <p className="wh-si-workspace-subtitle">
-              {selectedPO.supplier} &bull; Carrier: FastTrack Logistics &bull; Ref: BOL-44829
+              {selectedPO?.supplierName || "Supplier"} &bull; Carrier: {selectedPO?.shippingMethod || "FastTrack Logistics"} &bull; Ref: BOL-44829
             </p>
           </div>
           <div className="wh-si-workspace-actions">
@@ -179,16 +195,23 @@ export default function SupplierProductAndInspectPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {MATERIALS.map((mat, idx) => (
-                    <tr key={mat.sku} className={`wh-si-table-row ${idx < MATERIALS.length - 1 ? "wh-si-table-row-border" : ""}`}>
-                      <td className="wh-si-td wh-si-td-mono">{mat.sku}</td>
-                      <td className="wh-si-td">{mat.description}</td>
-                      <td className="wh-si-td wh-si-td-mono wh-si-td-right">{mat.expectedQty} Rolls</td>
-                      <td className={`wh-si-td wh-si-td-mono wh-si-td-right ${mat.inspectedQty > 0 ? "wh-si-inspected-active" : "wh-si-inspected-zero"}`}>
-                        {mat.inspectedQty} / {mat.expectedQty}
-                      </td>
-                    </tr>
-                  ))}
+                  {selectedPO?.items?.map((mat, idx) => {
+                    const inspectedQty = selectedPO.receipts?.reduce((sum, receipt) => {
+                      const item = receipt.items?.find(i => i.materialId === mat.materialId);
+                      return sum + (item ? item.receivedQuantity : 0);
+                    }, 0) || 0;
+                    
+                    return (
+                      <tr key={mat.id} className={`wh-si-table-row ${idx < selectedPO.items.length - 1 ? "wh-si-table-row-border" : ""}`}>
+                        <td className="wh-si-td wh-si-td-mono">{mat.materialCode}</td>
+                        <td className="wh-si-td">{mat.materialName}</td>
+                        <td className="wh-si-td wh-si-td-mono wh-si-td-right">{mat.orderedQuantity} Units</td>
+                        <td className={`wh-si-td wh-si-td-mono wh-si-td-right ${inspectedQty > 0 ? "wh-si-inspected-active" : "wh-si-inspected-zero"}`}>
+                          {inspectedQty} / {mat.orderedQuantity}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -199,9 +222,8 @@ export default function SupplierProductAndInspectPage() {
             <div className="wh-si-roll-header">
               <h3 className="wh-si-section-title">
                 Roll-Level Inspection:{" "}
-                <span className="wh-si-roll-sku">FAB-COT-NAVY-01</span>
+                <span className="wh-si-roll-sku">{selectedPO?.items?.[0]?.materialCode || "Select Item"}</span>
               </h3>
-              <div className="wh-si-scan-chip">SCAN ROLL BARCODE</div>
             </div>
 
             <div className="wh-si-qc-grid-card">
@@ -386,7 +408,7 @@ export default function SupplierProductAndInspectPage() {
                   <div>
                     <h3 className="wh-si-return-title">Initiate Return</h3>
                     <p className="wh-si-return-subtitle">
-                      Record inspection failure for shipment {selectedPO.poNumber}
+                      Record inspection failure for shipment {selectedPO?.orderNumber}
                     </p>
                   </div>
                 </div>

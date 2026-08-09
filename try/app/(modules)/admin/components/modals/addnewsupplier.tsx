@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { createSupplier } from "../../api/supplier.api";
+import { fetchMaterialTypes } from "../../api/materialtype.api";
+import { API_MAIN_URL } from "../../api/constant";
 
 export interface SupplierFormData {
   id?: string;
@@ -43,7 +45,7 @@ export function CategoryMultiSelect({
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5083/api/material-type")
+    fetch(`${API_MAIN_URL}/material-category`)
       .then((res) => res.json())
       .then((data: any[]) => {
         if (Array.isArray(data)) {

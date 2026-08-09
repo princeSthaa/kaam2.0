@@ -12,6 +12,7 @@ import { fetchOrders } from "../../crm/api/order.api";
 import { fetchProducts, resolveMediaUrl, Product } from "../../crm/api/catalog.api";
 import { Customer } from "../../crm/dto/customer.dto";
 import { Order } from "../../crm/dto/order.dto";
+import { API_MAIN_URL } from "../api/constant";
 
 function OpenOrdersContent() {
   const searchParams = useSearchParams();
@@ -45,8 +46,8 @@ function OpenOrdersContent() {
           fetchCustomers().catch(() => []),
           fetchOrders(customerId).catch(() => []),
           fetchProducts().catch(() => []),
-          fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).catch(() => []),
-          fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : []).catch(() => []),
         ]);
 
         const targetId = String(customerId).toLowerCase();

@@ -3,7 +3,7 @@ import { ProductionPlan, ProductionSummary } from "../dto/production.dto";
 
 // const API_BASE_URL = 'http://localhost:5083/api';
 
-const API_BASE_URL = `${API_MAIN_URL}/production-plans`;
+const API_BASE_URL = API_MAIN_URL;
 
 /**
  * Maps numeric or string backend PlanStatus enum values into standard UI status strings.
@@ -37,9 +37,27 @@ export async function fetchProductionPlans(params?: Record<string, string>): Pro
         }
       });
     }
-    const res = await fetch(url.toString(), { cache: 'no-store' });
-    if (!res.ok) throw new Error("Failed to fetch production plans");
+    // const res = await fetch(url.toString(), { cache: 'no-store' });
+    // if (!res.ok) throw new Error("Failed to fetch production plans");
+    const res = await fetch(url.toString(), { cache: "no-store" });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+
+      console.error("Production Plans API Error:", {
+        url: url.toString(),
+        status: res.status,
+        statusText: res.statusText,
+        response: errorText,
+      });
+
+      throw new Error(
+        `Failed to fetch production plans: ${res.status} ${res.statusText}`
+      );
+    }
+
     const data = await res.json();
+
     return data.map((p: any) => ({
       id: p.id,
       planNumber: p.planId || "N/A",

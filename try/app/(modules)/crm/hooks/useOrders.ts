@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { API_MAIN_URL } from "../api/constant";
-const API_BASE_URL = `${API_MAIN_URL}/customer`;
+const API_BASE_URL = `${API_MAIN_URL}/orders`;
 
 export function useOrders() {
   const [orders, setOrders] = useState<any[]>([]);

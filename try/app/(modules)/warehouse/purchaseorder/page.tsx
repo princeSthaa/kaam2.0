@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import "../styles/warehouse-purchaseorder.css";
 import { CreatePurchaseOrderModal } from "../components/CreatePurchaseOrderModal";
 import { PurchaseOrderActionsMenu } from "../components/PurchaseOrderActionsMenu";
+import { ViewPurchaseOrderModal } from "../components/ViewPurchaseOrderModal";
+import { fetchPurchaseOrders, PurchaseOrderGetDto } from "../api/purchaseorder.api";
+import { fetchSuppliers, SupplierDto } from "../api/supplier.api";
+import { NepaliDatePicker, adToBs } from "../../../components/ui/NepaliDatePicker";
 
 export type PurchaseOrderItem = {
   id: string;
@@ -20,61 +24,45 @@ export default function WarehousePurchaseOrderPage() {
   const [selectedSupplier, setSelectedSupplier] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [suppliers, setSuppliers] = useState<SupplierDto[]>([]);
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Actions menu state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  // Master Data matching Stitch screen 30d11125dbae42deacd526ac4b6a8208
-  const [orders, setOrders] = useState<PurchaseOrderItem[]>([
-    {
-      id: "po-1",
-      poId: "PO-2024-001",
-      dateCreated: "Oct 12, 2024",
-      supplier: "Apex Industrial",
-      totalAmount: "145,200.00",
-      expectedDate: "Oct 20, 2024",
-      status: "Sent",
-    },
-    {
-      id: "po-2",
-      poId: "PO-2024-002",
-      dateCreated: "Oct 14, 2024",
-      supplier: "Global Tech Supply",
-      totalAmount: "32,500.50",
-      expectedDate: "--",
-      status: "Draft",
-    },
-    {
-      id: "po-3",
-      poId: "PO-2024-003",
-      dateCreated: "Oct 05, 2024",
-      supplier: "Metro Logistics",
-      totalAmount: "89,000.00",
-      expectedDate: "Oct 15, 2024",
-      status: "Partially Received",
-    },
-    {
-      id: "po-4",
-      poId: "PO-2024-004",
-      dateCreated: "Sep 28, 2024",
-      supplier: "Apex Industrial",
-      totalAmount: "210,000.00",
-      expectedDate: "Oct 10, 2024",
-      status: "Completed",
-    },
-    {
-      id: "po-5",
-      poId: "PO-2024-005",
-      dateCreated: "Oct 15, 2024",
-      supplier: "Vanguard Materials",
-      totalAmount: "15,000.00",
-      expectedDate: "--",
-      status: "Cancelled",
-    },
-  ]);
+  const [orders, setOrders] = useState<PurchaseOrderItem[]>([]);
+  const [rawOrders, setRawOrders] = useState<PurchaseOrderGetDto[]>([]);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedViewPoId, setSelectedViewPoId] = useState<string | null>(null);
+
+  const loadPOs = async () => {
+    try {
+      const data = await fetchPurchaseOrders();
+      const mappedOrders: PurchaseOrderItem[] = data.map((d: PurchaseOrderGetDto) => ({
+        id: d.id,
+        poId: d.orderNumber,
+        dateCreated: adToBs(d.createdAt),
+        supplier: d.supplierName,
+        totalAmount: d.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+        expectedDate: adToBs(d.expectedDeliveryDate),
+        status: d.status as any
+      }));
+      setOrders(mappedOrders.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()));
+      setRawOrders(data);
+    } catch (error) {
+      console.error("Failed to load Purchase Orders:", error);
+    }
+  };
+
+  useEffect(() => {
+    loadPOs();
+    fetchSuppliers().then((data) => {
+      if (Array.isArray(data)) setSuppliers(data);
+    }).catch(console.error);
+  }, []);
 
   // Handle Checkbox Selection
   const toggleSelectAll = () => {
@@ -93,50 +81,49 @@ export default function WarehousePurchaseOrderPage() {
 
   // Handle PO Creation from Modal
   const handlePOCreated = (data: any) => {
-    const newPO: PurchaseOrderItem = {
-      id: `po-${Date.now()}`,
-      poId: `PO-2024-00${orders.length + 1}`,
-      dateCreated: "Oct 23, 2026",
-      supplier: data.supplier || "Apex Industrial",
-      totalAmount: "485,000.00",
-      expectedDate: data.requiredDate || "Oct 30, 2026",
-      status: "Sent",
-    };
-
-    setOrders((prev) => [newPO, ...prev]);
+    // Reload the list from backend
+    loadPOs();
   };
 
   // ── Actions menu handlers ──
-  const handleToggleMenu = (poId: string) => {
-    setOpenMenuId((prev) => (prev === poId ? null : poId));
+  const handleToggleMenu = (e: React.MouseEvent<HTMLButtonElement>, poId: string) => {
+    e.stopPropagation();
+    if (openMenuId === poId) {
+      setOpenMenuId(null);
+      setAnchorEl(null);
+    } else {
+      setOpenMenuId(poId);
+      setAnchorEl(e.currentTarget);
+    }
   };
 
-  const handleViewDetails = (poId: string) => {
-    console.log("View details for:", poId);
+  const handleViewDetails = (id: string) => {
+    setSelectedViewPoId(id);
+    setIsViewModalOpen(true);
   };
 
-  const handleEditDraft = (poId: string) => {
-    console.log("Edit draft:", poId);
+  const handleEditDraft = (id: string) => {
+    console.log("Edit draft:", id);
   };
 
-  const handleSendToSupplier = (poId: string) => {
+  const handleSendToSupplier = (id: string) => {
     setOrders((prev) =>
       prev.map((o) =>
-        o.poId === poId ? { ...o, status: "Sent" as const } : o
+        o.id === id ? { ...o, status: "Sent" as const } : o
       )
     );
   };
 
-  const handleMarkReceived = (poId: string) => {
+  const handleMarkReceived = (id: string) => {
     setOrders((prev) =>
       prev.map((o) =>
-        o.poId === poId ? { ...o, status: "Completed" as const } : o
+        o.id === id ? { ...o, status: "Completed" as const } : o
       )
     );
   };
 
-  const handleDuplicatePO = (poId: string) => {
-    const src = orders.find((o) => o.poId === poId);
+  const handleDuplicatePO = (id: string) => {
+    const src = orders.find((o) => o.id === id);
     if (!src) return;
     const dup: PurchaseOrderItem = {
       ...src,
@@ -148,10 +135,10 @@ export default function WarehousePurchaseOrderPage() {
     setOrders((prev) => [dup, ...prev]);
   };
 
-  const handleCancelPO = (poId: string) => {
+  const handleCancelPO = (id: string) => {
     setOrders((prev) =>
       prev.map((o) =>
-        o.poId === poId ? { ...o, status: "Cancelled" as const } : o
+        o.id === id ? { ...o, status: "Cancelled" as const } : o
       )
     );
   };
@@ -173,14 +160,17 @@ export default function WarehousePurchaseOrderPage() {
 
       // Supplier filter
       if (selectedSupplier) {
-        if (selectedSupplier === "apex" && ord.supplier !== "Apex Industrial") return false;
-        if (selectedSupplier === "global" && ord.supplier !== "Global Tech Supply") return false;
-        if (selectedSupplier === "metro" && ord.supplier !== "Metro Logistics") return false;
+        if (ord.supplier !== selectedSupplier) return false;
+      }
+
+      // Date filter
+      if (selectedDate) {
+        if (ord.dateCreated !== selectedDate && ord.expectedDate !== selectedDate) return false;
       }
 
       return true;
     });
-  }, [orders, selectedStatus, selectedSupplier]);
+  }, [orders, selectedStatus, selectedSupplier, selectedDate]);
 
   return (
     <div className="wh-pom-page">
@@ -241,9 +231,9 @@ export default function WarehousePurchaseOrderPage() {
             className="wh-pom-filter-select"
           >
             <option value="">All Suppliers</option>
-            <option value="apex">Apex Industrial</option>
-            <option value="global">Global Tech Supply</option>
-            <option value="metro">Metro Logistics</option>
+            {suppliers.map(s => (
+              <option key={s.id} value={s.name}>{s.name}</option>
+            ))}
           </select>
           <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-[16px] pointer-events-none">
             arrow_drop_down
@@ -251,12 +241,15 @@ export default function WarehousePurchaseOrderPage() {
         </div>
 
         {/* Date Filter */}
-        <div>
-          <input
-            type="date"
+        <div className="relative">
+          <NepaliDatePicker
+            id="expected_date_filter"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
+            onDateChange={setSelectedDate}
             className="wh-pom-filter-date"
+            enableNepaliPicker={true}
+            placeholder="Select date"
           />
         </div>
       </div>
@@ -346,10 +339,7 @@ export default function WarehousePurchaseOrderPage() {
                     <td className="text-right">
                       <div className="wh-poam-menu-wrapper">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleMenu(ord.poId);
-                          }}
+                          onClick={(e) => handleToggleMenu(e, ord.id)}
                           className="wh-poam-trigger"
                           title="More actions"
                           aria-label={`Actions for ${ord.poId}`}
@@ -359,8 +349,10 @@ export default function WarehousePurchaseOrderPage() {
 
                         {/* ── STITCH DESIGN: PURCHASE ORDER ACTIONS MENU ── */}
                         <PurchaseOrderActionsMenu
-                          isOpen={openMenuId === ord.poId}
-                          onClose={() => setOpenMenuId(null)}
+                          isOpen={openMenuId === ord.id}
+                          onClose={() => { setOpenMenuId(null); setAnchorEl(null); }}
+                          anchorRef={{ current: anchorEl as HTMLElement }}
+                          id={ord.id}
                           poId={ord.poId}
                           status={ord.status}
                           onViewDetails={handleViewDetails}
@@ -383,18 +375,14 @@ export default function WarehousePurchaseOrderPage() {
         {/* STITCH DESIGN: PAGINATION FOOTER */}
         <div className="wh-pom-pagination">
           <span className="text-xs text-slate-500 font-medium">
-            Showing 1 to {filteredOrders.length} of 24 entries
+            Showing 1 to {filteredOrders.length} of {orders.length} entries
           </span>
           <div className="flex items-center gap-1">
             <button className="wh-pom-page-btn text-slate-400 hover:bg-slate-100 disabled:opacity-50" disabled>
               <span className="material-symbols-outlined text-[20px]">chevron_left</span>
             </button>
             <button className="wh-pom-page-btn active">1</button>
-            <button className="wh-pom-page-btn">2</button>
-            <button className="wh-pom-page-btn">3</button>
-            <span className="text-slate-400 px-1 text-xs">...</span>
-            <button className="wh-pom-page-btn">5</button>
-            <button className="wh-pom-page-btn text-slate-600 hover:bg-slate-100">
+            <button className="wh-pom-page-btn text-slate-600 hover:bg-slate-100 disabled:opacity-50" disabled>
               <span className="material-symbols-outlined text-[20px]">chevron_right</span>
             </button>
           </div>
@@ -408,6 +396,12 @@ export default function WarehousePurchaseOrderPage() {
         onSuccess={handlePOCreated}
       />
 
+      {/* ── VIEW PURCHASE ORDER MODAL ── */}
+      <ViewPurchaseOrderModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        purchaseOrder={rawOrders.find((o) => o.id === selectedViewPoId) || null}
+      />
     </div>
   );
 }

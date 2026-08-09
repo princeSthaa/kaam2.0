@@ -634,3 +634,8 @@
 .wh-poam-item.wh-poam-item-danger:hover .wh-poam-item-icon {
     color: #b91c1c;
 }
+
+/* Fix Nepali Date Picker z-index for Modals */
+.ndp-container {
+    z-index: 99999 !important;
+}

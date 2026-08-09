@@ -18,14 +18,16 @@ export type Fabric = {
   imagePath: string;
 };
 
+const MEDIA_BASE_URL = API_MAIN_URL.replace(/\/api\/?$/, "");
+
 export function resolveMediaUrl(path?: string, defaultType: "product" | "fabric" = "product"): string {
   if (!path || path === "default.png" || path === "fabric.png" || path.includes("place-holder") || path.includes("denim")) {
     const fallbackFile = defaultType === "fabric" ? "FAB-001.jpg" : "polo-shirt.jpg";
-    return `${API_MAIN_URL}/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${fallbackFile}`;
+    return `${MEDIA_BASE_URL}/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${fallbackFile}`;
   }
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  if (path.startsWith("/")) return `${API_MAIN_URL}${path}`;
-  return `${API_MAIN_URL}/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${path}`;
+  if (path.startsWith("/")) return `${MEDIA_BASE_URL}${path}`;
+  return `${MEDIA_BASE_URL}/Media/images/${defaultType === "fabric" ? "fabrics" : "products"}/${path}`;
 }
 
 const SIZE_NAMES = ["XS", "S", "M", "L", "XL", "XXL"];

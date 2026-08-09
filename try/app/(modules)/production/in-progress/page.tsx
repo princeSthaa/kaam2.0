@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import PlanRow from '../components/PlanRow';
+import { API_MAIN_URL } from '../api/constant';
 
 export default function InProgressPage() {
   const [plans, setPlans] = useState<any[]>([]);
@@ -16,13 +17,17 @@ export default function InProgressPage() {
   const fetchPlans = async () => {
     setLoading(true);
     try {
-      const [plansRes, stagesRes] = await Promise.all([
-        fetch("http://localhost:5083/api/production-plans", { cache: 'no-store' }),
-        fetch("http://localhost:5083/api/production-plan-stage", { cache: 'no-store' })
+      const [plansRes, stagesRes, productsRes, masterProductsRes] = await Promise.all([
+        fetch(`${API_MAIN_URL}/production-plans`, { cache: 'no-store' }),
+        fetch(`${API_MAIN_URL}/production-plan-stage`, { cache: 'no-store' }),
+        fetch(`${API_MAIN_URL}/production-plan-product`, { cache: 'no-store' }),
+        fetch(`${API_MAIN_URL}/product`, { cache: 'no-store' })
       ]);
 
       const data = plansRes.ok ? await plansRes.json() : [];
       const allStages = stagesRes.ok ? await stagesRes.json() : [];
+      const allProducts = productsRes.ok ? await productsRes.json() : [];
+      const masterProducts = masterProductsRes.ok ? await masterProductsRes.json() : [];
 
       if (!Array.isArray(data)) {
         setPlans([]);
@@ -38,6 +43,26 @@ export default function InProgressPage() {
             if (!stagesByPlanId[pId]) stagesByPlanId[pId] = [];
             stagesByPlanId[pId].push(st);
           }
+        });
+      }
+
+      // Group saved DB products by ProductionPlanId
+      const productsByPlanId: Record<string, any[]> = {};
+      if (Array.isArray(allProducts)) {
+        allProducts.forEach((pr: any) => {
+          const pId = pr.productionPlanId || pr.ProductionPlanId;
+          if (pId) {
+            if (!productsByPlanId[pId]) productsByPlanId[pId] = [];
+            productsByPlanId[pId].push(pr);
+          }
+        });
+      }
+
+      // Group master products by id
+      const masterProductMap: Record<string, any> = {};
+      if (Array.isArray(masterProducts)) {
+        masterProducts.forEach((mp: any) => {
+          if (mp.id) masterProductMap[mp.id] = mp;
         });
       }
 
@@ -62,22 +87,14 @@ export default function InProgressPage() {
       });
 
       const formatted = filteredList.map((plan: any) => {
-        const rawProducts = plan.productionPlanProducts || plan.products || [];
         const planDbId = plan.id || plan.Id;
+        const rawProducts = productsByPlanId[planDbId] || plan.productionPlanProducts || plan.products || [];
         const planNo = plan.planId || plan.planNo || plan.id;
         
         // Use real saved stages from SQL Server if available
         const dbStages = stagesByPlanId[planDbId] || stagesByPlanId[planNo] || plan.productionPlanStages || plan.stages || [];
 
-        const productsList = (rawProducts.length > 0 ? rawProducts : [
-          {
-            id: plan.productId || plan.planId || plan.id || "PRD-001",
-            productName: plan.productName || plan.planName || plan.title || `Production Run (${plan.planId || plan.id})`,
-            productCode: plan.productCode || plan.planId || "PRD",
-            quantity: plan.quantity || plan.totalQuantity || 0,
-            productImage: plan.productImage || plan.image || "/images/products/place-holder.png"
-          }
-        ]).map((prod: any) => {
+        const productsList = rawProducts.map((prod: any) => {
           // Find product-specific stages or use overall plan stages
           const prodStages = dbStages.filter((st: any) => {
             if (st.productionPlanProductId && prod.id) {
@@ -89,14 +106,7 @@ export default function InProgressPage() {
             return true;
           });
 
-          const defaultStages = [
-            { id: "01", stageId: "STG-01", name: "Fabric Cutting", workCenter: "Cutting Work Center", status: "Completed", completedQty: Number(prod.quantity || plan.quantity || 0), rejectedQty: 0 },
-            { id: "02", stageId: "STG-02", name: "Sewing & Stitching", workCenter: "Assembly Line 1", status: "Active", completedQty: Math.floor(Number(prod.quantity || plan.quantity || 0) * 0.5), rejectedQty: 0 },
-            { id: "03", stageId: "STG-03", name: "QC Inspection", workCenter: "QC Station A", status: "Not Started", completedQty: 0, rejectedQty: 0 },
-            { id: "04", stageId: "STG-04", name: "Finishing & Packaging", workCenter: "Packaging Hub", status: "Not Started", completedQty: 0, rejectedQty: 0 }
-          ];
-
-          const actualStages = prodStages.length > 0 ? prodStages : (dbStages.length > 0 ? dbStages : defaultStages);
+          const actualStages = prodStages.length > 0 ? prodStages : dbStages;
 
           const enumToStatus = (val: any): string => {
             const v = String(val).toLowerCase();
@@ -151,11 +161,14 @@ export default function InProgressPage() {
             ? Math.min(100, Math.round(((completedCount + (activeCount * 0.5)) / mappedStages.length) * 100))
             : (plan.progress || 0);
 
+          const masterProd = masterProductMap[prod.productId || prod.id] || {};
+
           return {
             id: prod.id || `${plan.planId || plan.id}-${prod.productId || 'PRD'}`,
             productId: prod.productId || prod.id,
-            name: prod.productName || prod.name || "Item",
-            image: prod.productImage || prod.image || "/images/products/place-holder.png",
+            name: masterProd.name || prod.productName || prod.name || "Item",
+            sku: masterProd.sku || prod.productCode || prod.sku || "SKU-N/A",
+            image: masterProd.image || prod.productImage || prod.image || "/images/products/place-holder.png",
             source: plan.demandType || plan.sourceName || "Production",
             qty: Number(prod.quantity || prod.qty || 0),
             requiredDate: prod.requiredDate || plan.plannedCompletionDate || new Date().toISOString(),

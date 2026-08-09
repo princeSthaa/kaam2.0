@@ -439,10 +439,10 @@ export default function AdminWorkforcePage() {
                       {team.members.slice(0, 3).map((m, idx) => (
                         <div
                           key={m.id}
-                          className="w-7 h-7 rounded-full border-2 border-white bg-slate-200 overflow-hidden"
+                          className="w-7 h-7 rounded-full border-2 border-white bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500"
                           style={{ zIndex: 30 - idx * 10 }}
                         >
-                          <img src={m.avatar} alt={m.name} className="w-full h-full object-cover" />
+                          <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>person</span>
                         </div>
                       ))}
                       {team.assignedCount > 3 && (
@@ -611,7 +611,6 @@ export default function AdminWorkforcePage() {
                       <th className="p-3 w-10"></th>
                       <th className="p-3">Employee</th>
                       <th className="p-3">Role</th>
-                      <th className="p-3">Certification</th>
                       <th className="p-3 text-right">Action</th>
                     </tr>
                   </thead>
@@ -619,8 +618,8 @@ export default function AdminWorkforcePage() {
                     {activeTeam.members.map((member) => (
                       <tr key={member.id} className="hover:bg-slate-50 transition-colors">
                         <td className="p-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
-                            <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
+                          <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden flex items-center justify-center text-slate-500">
+                            <span className="material-symbols-outlined" style={{ fontSize: "20px" }}>person</span>
                           </div>
                         </td>
                         <td className="p-3">
@@ -636,12 +635,6 @@ export default function AdminWorkforcePage() {
                             }`}
                           >
                             {member.role}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                            <span className="material-symbols-outlined text-sm">verified</span>
-                            {member.certification}
                           </span>
                         </td>
                         <td className="p-3 text-right">

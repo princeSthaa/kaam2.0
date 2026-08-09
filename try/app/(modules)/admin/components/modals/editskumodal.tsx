@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { fetchProductCategories, ProductCategoryDto } from "../../api/productcategory.api";
-import { createProduct, ProductMaterialRequirementItem, ProductProductionStageItem } from "../../api/product.api";
+import { updateProduct, ProductMaterialRequirementItem, ProductProductionStageItem } from "../../api/product.api";
 import { fetchMaterialTypes } from "../../api/materialtype.api";
 import { fetchProductionStages, ProductionStageDto } from "../../api/productionstage.api";
 
@@ -35,7 +35,7 @@ export interface PipelineStageItem {
   priority: "High" | "Medium" | "Low";
 }
 
-export interface RegisterSkuFormData {
+export interface EditSkuFormData {
   productName: string;
   baseSku: string;
   category: string;
@@ -50,10 +50,11 @@ export interface RegisterSkuFormData {
   adminNotes: string;
 }
 
-interface RegisterSkuModalProps {
+interface EditSkuModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (data: RegisterSkuFormData) => void;
+  onSave?: (data: EditSkuFormData) => void;
+  initialData?: any;
 }
 
 export const DEFAULT_MATERIAL_TYPES: MaterialTypeOption[] = [
@@ -268,12 +269,13 @@ const DEFAULT_PRODUCT_CATEGORIES: ProductCategoryDto[] = [
   { id: "cat-5", name: "Trims & Accessories", categoryCode: "CAT-005" },
 ];
 
-export function RegisterSkuModal({
+export function EditSkuModal({
   isOpen,
   onClose,
   onSave,
-}: RegisterSkuModalProps) {
-  const [formData, setFormData] = useState<RegisterSkuFormData>({
+  initialData,
+}: EditSkuModalProps) {
+  const [formData, setFormData] = useState<EditSkuFormData>({
     productName: "",
     baseSku: "",
     category: "",
@@ -307,6 +309,74 @@ export function RegisterSkuModal({
   const [productionStagesList, setProductionStagesList] = useState<ProductionStageDto[]>([]);
   const [isLoadingProductionStages, setIsLoadingProductionStages] = useState<boolean>(false);
 
+  // Populate initialData if editing
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialData) {
+      // Map Material Requirements
+      const parsedMaterials: MaterialCompositionItem[] = [];
+      if (Array.isArray(initialData.materialRequirements)) {
+         const matMap = new Map<string, MaterialCompositionItem>();
+         initialData.materialRequirements.forEach((req: any) => {
+            const mTypeId = req.materialTypeId;
+            if(!matMap.has(mTypeId)) {
+               matMap.set(mTypeId, {
+                  id: mTypeId,
+                  code: `MAT-${mTypeId.substring(0, 4)}`,
+                  description: req.materialType?.name || "Material",
+                  materialTypeId: mTypeId,
+                  materialTypeName: req.materialType?.name || "Material",
+                  qty: String(req.quantity || 1),
+                  sizeBreakdown: []
+               });
+            }
+            const comp = matMap.get(mTypeId)!;
+            
+            // Enum Size 0=XS, 1=S, 2=M, 3=L, 4=XL, 5=XXL
+            const sizeMap: any = { "0": "xs", "1": "s", "2": "m", "3": "l", "4": "xl", "5": "xxl" };
+            const szStr = sizeMap[req.productSize] || String(req.productSize).toLowerCase();
+            
+            comp.sizeBreakdown!.push({
+               size: szStr,
+               requiredQty: String(req.quantity)
+            });
+         });
+         matMap.forEach(v => parsedMaterials.push(v));
+      }
+
+      // Map Production Stages
+      const parsedStages: PipelineStageItem[] = [];
+      if (Array.isArray(initialData.productionStages)) {
+          const sorted = [...initialData.productionStages].sort((a: any, b: any) => (a.sequence || 0) - (b.sequence || 0));
+          sorted.forEach((stg: any) => {
+             parsedStages.push({
+                 id: stg.productionStageId,
+                 stageName: stg.productionStage?.name || "Stage",
+                 team: "Default Team",
+                 durationMinutes: 60,
+                 priority: "Medium"
+             });
+          });
+      }
+
+      setFormData({
+        productName: initialData.name || initialData.productName || "",
+        baseSku: initialData.baseSku || initialData.sku || "",
+        category: initialData.category || "",
+        productCategoryId: initialData.productCategoryId || "",
+        uom: initialData.uom || "pcs",
+        lifecycleStatus: initialData.isActive === false ? "inactive" : "active",
+        gender: initialData.gender ? initialData.gender.toLowerCase() : "unisex",
+        selectedSizes: initialData.sizes ? initialData.sizes.map((s: string) => s.toLowerCase()) : ["s", "m", "l", "xl"],
+        materials: parsedMaterials,
+        pipelineStages: parsedStages,
+        thumbnailUrl: initialData.thumbnailUrl || initialData.imagePath || undefined,
+        adminNotes: initialData.adminNotes || "",
+      });
+      setThumbnailPreview(initialData.thumbnailUrl || initialData.imagePath || null);
+    }
+  }, [isOpen, initialData]);
 
   // Fetch Material Types, Product Categories, and Production Stages from API when modal opens
   useEffect(() => {
@@ -664,7 +734,7 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
         }
       });
 
-      const created = await createProduct({
+      await updateProduct(initialData.id, {
         sku: formData.baseSku,
         name: formData.productName,
         productCategoryId: catId,
@@ -674,15 +744,14 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
         productionStages,
       });
 
-      console.log("Product successfully created in backend:", created);
+      if (onSave) {
+        onSave(formData);
+      }
+      onClose();
     } catch (err) {
-      console.error("Product create API error:", err);
+      console.error("Failed to update product:", err);
+      alert("Failed to save product specification updates. Please check the console.");
     }
-
-    if (onSave) {
-      onSave(formData);
-    }
-    onClose();
   };
 
   const filteredMaterialTypes = materialTypes.filter((mt) =>
@@ -697,14 +766,14 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
       {/* Modal Container */}
       <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden text-slate-900 my-auto">
         {/* Modal Header */}
-        <div className="flex-1 bg-white p-6 border-b border-slate-100 flex items-center justify-between z-10 shrink-0 sticky top-0 shadow-sm">
+        <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white sticky top-0 z-10">
           <div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              <span className="material-symbols-outlined text-kaam-primary">box</span>
-              Register Product SKU
+            <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-900">barcode_scanner</span>
+              {initialData ? "Edit Product SKU Specification" : "Register Product SKU"}
             </h2>
-            <p className="text-xs text-slate-500 font-semibold mt-1">
-              Define specifications, BOM, and manufacturing pipeline
+            <p className="text-xs text-slate-500 mt-0.5">
+              Define master data, categorization, material links, and manufacturing pipeline for a new production unit.
             </p>
           </div>
           <button
@@ -1053,7 +1122,7 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
                                         <td className="py-2.5 px-4 text-slate-700 text-right">
                                           <input
                                             type="text"
-                                            placeholder="e.g. 1.5"
+                                            placeholder="e.g. 1.5 m"
                                             value={row.requiredQty}
                                             onChange={(e) =>
                                               handleUpdateSizeRequiredQty(mat.id, row.size, e.target.value)
@@ -1327,4 +1396,4 @@ const calculateTotalQtyString = (sizeBreakdown?: MaterialBreakdownSizeRow[]): st
   );
 }
 
-export default RegisterSkuModal;
+export default EditSkuModal;
