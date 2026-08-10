@@ -30,23 +30,31 @@ namespace backend.Service.WarehouseShelf
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            Guid? warehouseRoomId = null
+            Guid? warehouseRackId = null
         )
         {
-            return await _context.Database
-                .SqlQuery<WarehouseShelfDto>($@"
-                    EXEC sp_GetWarehouseShelfs
+            var query = _context.WarehouseShelfs.AsQueryable();
 
-                        @Id = {id},
-                        @Code = {code},
-                        @Capacity = {capacity},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
-                        @WarehouseRoomId = {warehouseRoomId}
-                ")
-                .ToListAsync();
+            if (id.HasValue) query = query.Where(q => q.Id == id.Value);
+            if (!string.IsNullOrEmpty(code)) query = query.Where(q => q.Code == code);
+            if (!string.IsNullOrEmpty(capacity)) query = query.Where(q => q.Capacity.Contains(capacity));
+            if (createdAt.HasValue) query = query.Where(q => q.CreatedAt.Date == createdAt.Value.Date);
+            if (!string.IsNullOrEmpty(createdBy)) query = query.Where(q => q.CreatedBy == createdBy);
+            if (updatedAt.HasValue) query = query.Where(q => q.UpdatedAt.Date == updatedAt.Value.Date);
+            if (!string.IsNullOrEmpty(updatedBy)) query = query.Where(q => q.UpdatedBy == updatedBy);
+            if (warehouseRackId.HasValue) query = query.Where(q => q.WarehouseRackId == warehouseRackId.Value);
+
+            return await query.Select(w => new WarehouseShelfDto
+            {
+                Id = w.Id,
+                Code = w.Code,
+                Capacity = w.Capacity,
+                CreatedAt = w.CreatedAt,
+                CreatedBy = w.CreatedBy,
+                UpdatedAt = w.UpdatedAt,
+                UpdatedBy = w.UpdatedBy,
+                WarehouseRackId = w.WarehouseRackId
+            }).ToListAsync();
         }
 
         public async Task<WarehouseShelfDto?> GetByIdAsync(Guid id)
@@ -62,51 +70,47 @@ namespace backend.Service.WarehouseShelf
                 warehouseShelfDto.Id = Guid.NewGuid();
             }
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertWarehouseShelf
+            var shelf = new backend.Model.WarehouseShelf
+            {
+                Id = warehouseShelfDto.Id,
+                Code = warehouseShelfDto.Code ?? string.Empty,
+                Capacity = warehouseShelfDto.Capacity ?? string.Empty,
+                WarehouseRackId = warehouseShelfDto.WarehouseRackId,
+                CreatedAt = warehouseShelfDto.CreatedAt == default ? DateTime.UtcNow : warehouseShelfDto.CreatedAt,
+                CreatedBy = warehouseShelfDto.CreatedBy ?? "System",
+                UpdatedAt = warehouseShelfDto.UpdatedAt == default ? DateTime.UtcNow : warehouseShelfDto.UpdatedAt,
+                UpdatedBy = warehouseShelfDto.UpdatedBy ?? "System"
+            };
 
-                    @Id = {warehouseShelfDto.Id},
-                    @Code = {warehouseShelfDto.Code},
-                    @Capacity = {warehouseShelfDto.Capacity},
-                    @CreatedAt = {warehouseShelfDto.CreatedAt},
-                    @CreatedBy = {warehouseShelfDto.CreatedBy},
-                    @UpdatedAt = {warehouseShelfDto.UpdatedAt},
-                    @UpdatedBy = {warehouseShelfDto.UpdatedBy},
-                    @WarehouseRoomId = {warehouseShelfDto.WarehouseRoomId}
-            ");
-
+            _context.WarehouseShelfs.Add(shelf);
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> UpdateAsync(Guid id, WarehouseShelfDto warehouseShelfDto)
         {
+            var shelf = await _context.WarehouseShelfs.FirstOrDefaultAsync(w => w.Id == id);
+            if (shelf == null) return false;
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_UpdateWarehouseShelf
+            shelf.Code = warehouseShelfDto.Code ?? shelf.Code;
+            shelf.Capacity = warehouseShelfDto.Capacity ?? shelf.Capacity;
+            shelf.WarehouseRackId = warehouseShelfDto.WarehouseRackId != Guid.Empty ? warehouseShelfDto.WarehouseRackId : shelf.WarehouseRackId;
+            shelf.UpdatedAt = DateTime.UtcNow;
+            shelf.UpdatedBy = warehouseShelfDto.UpdatedBy ?? "System";
 
-                    @Id = {warehouseShelfDto.Id},
-                    @Code = {warehouseShelfDto.Code},
-                    @Capacity = {warehouseShelfDto.Capacity},
-                    @CreatedAt = {warehouseShelfDto.CreatedAt},
-                    @CreatedBy = {warehouseShelfDto.CreatedBy},
-                    @UpdatedAt = {warehouseShelfDto.UpdatedAt},
-                    @UpdatedBy = {warehouseShelfDto.UpdatedBy},
-                    @WarehouseRoomId = {warehouseShelfDto.WarehouseRoomId}
-            ");
-
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_DeleteWarehouseShelf
-                    @Id = {id}
-            ");
+            var shelf = await _context.WarehouseShelfs.FirstOrDefaultAsync(w => w.Id == id);
+            if (shelf == null) return false;
 
+            _context.WarehouseShelfs.Remove(shelf);
+            await _context.SaveChangesAsync();
             return true;
         }
-
         // </crudgen:methods>
     }
 }

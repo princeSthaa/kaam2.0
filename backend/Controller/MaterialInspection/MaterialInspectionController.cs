@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using backend.Dto.MaterialInspection;
 using backend.Service.MaterialInspection;
-using Microsoft.AspNetCore.Mvc;
 
 namespace backend.Controller.MaterialInspection
 {
@@ -20,12 +17,12 @@ namespace backend.Controller.MaterialInspection
 
         [HttpGet]
         public async Task<ActionResult<List<MaterialInspectionDto>>> GetAll(
-            [FromQuery] Guid? materialRequestId = null,
+            [FromQuery] Guid? purchaseOrderReceiptId = null,
             [FromQuery] string? inspectionStatus = null
         )
         {
             var items = await _materialInspectionService.GetAllAsync(
-                materialRequestId,
+                purchaseOrderReceiptId,
                 inspectionStatus
             );
 
@@ -62,6 +59,7 @@ namespace backend.Controller.MaterialInspection
         }
 
         [HttpPatch("items/{itemId}")]
+        [HttpPut("items/{itemId}")]
         public async Task<IActionResult> UpdateInspectionItem(Guid itemId, [FromBody] UpdateMaterialInspectionItemDto dto)
         {
             if (!ModelState.IsValid)

@@ -18,6 +18,7 @@ namespace backend.Dto.OrderItemSize
     public class OrderItemSizeGetDto
     {
         public Guid Id { get; set; }
+        public Guid OrderItemId { get; set; }
         public ProductSize Size { get; set; }
         public int Quantity { get; set; }
     }

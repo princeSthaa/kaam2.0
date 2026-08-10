@@ -1,3 +1,4 @@
+using Dapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -33,20 +34,42 @@ namespace backend.Service.Warehouse
             string? updatedBy = null
         )
         {
-            return await _context.Database
-                .SqlQuery<WarehouseDto>($@"
-                    EXEC sp_GetWarehouses
+            var connection = _context.Database.GetDbConnection();
+            var parameters = new Dapper.DynamicParameters();
+            parameters.Add("@Id", id);
+            
+            using var multi = await connection.QueryMultipleAsync(
+                "sp_GetWarehouses",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure
+            );
 
-                        @Id = {id},
-                        @Code = {code},
-                        @Name = {name},
-                        @Location = {location},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
-                ")
-                .ToListAsync();
+            var warehouses = (await multi.ReadAsync<WarehouseDto>()).ToList();
+            var rooms = (await multi.ReadAsync<backend.Dto.WarehouseRoom.WarehouseRoomDto>()).ToList();
+            var racks = (await multi.ReadAsync<backend.Dto.WarehouseRack.WarehouseRackDto>()).ToList();
+            var shelves = (await multi.ReadAsync<backend.Dto.WarehouseShelf.WarehouseShelfDto>()).ToList();
+
+            foreach (var rack in racks)
+            {
+                rack.WarehouseShelves = shelves.Where(s => s.WarehouseRackId == rack.Id).ToList();
+            }
+
+            foreach (var room in rooms)
+            {
+                room.WarehouseRacks = racks.Where(r => r.WarehouseRoomId == room.Id).ToList();
+            }
+
+            foreach (var warehouse in warehouses)
+            {
+                warehouse.WarehouseRooms = rooms.Where(r => r.WarehouseId == warehouse.Id).ToList();
+            }
+
+            // Filtering done in memory
+
+            if (!string.IsNullOrWhiteSpace(code)) warehouses = warehouses.Where(w => w.Code == code).ToList();
+            if (!string.IsNullOrWhiteSpace(name)) warehouses = warehouses.Where(w => w.Name != null && w.Name.Contains(name)).ToList();
+            if (!string.IsNullOrWhiteSpace(location)) warehouses = warehouses.Where(w => w.Location != null && w.Location.Contains(location)).ToList();
+            return warehouses;
         }
 
         public async Task<WarehouseDto?> GetByIdAsync(Guid id)
@@ -62,51 +85,47 @@ namespace backend.Service.Warehouse
                 warehouseDto.Id = Guid.NewGuid();
             }
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertWarehouse
+            var warehouse = new backend.Model.Warehouse
+            {
+                Id = warehouseDto.Id,
+                Code = warehouseDto.Code ?? string.Empty,
+                Name = warehouseDto.Name ?? string.Empty,
+                Location = warehouseDto.Location ?? string.Empty,
+                CreatedAt = warehouseDto.CreatedAt == default ? DateTime.UtcNow : warehouseDto.CreatedAt,
+                CreatedBy = warehouseDto.CreatedBy ?? "System",
+                UpdatedAt = warehouseDto.UpdatedAt == default ? DateTime.UtcNow : warehouseDto.UpdatedAt,
+                UpdatedBy = warehouseDto.UpdatedBy ?? "System"
+            };
 
-                    @Id = {warehouseDto.Id},
-                    @Code = {warehouseDto.Code},
-                    @Name = {warehouseDto.Name},
-                    @Location = {warehouseDto.Location},
-                    @CreatedAt = {warehouseDto.CreatedAt},
-                    @CreatedBy = {warehouseDto.CreatedBy},
-                    @UpdatedAt = {warehouseDto.UpdatedAt},
-                    @UpdatedBy = {warehouseDto.UpdatedBy}
-            ");
-
+            _context.Warehouses.Add(warehouse);
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> UpdateAsync(Guid id, WarehouseDto warehouseDto)
         {
+            var warehouse = await _context.Warehouses.FirstOrDefaultAsync(w => w.Id == id);
+            if (warehouse == null) return false;
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_UpdateWarehouse
+            warehouse.Code = warehouseDto.Code ?? warehouse.Code;
+            warehouse.Name = warehouseDto.Name ?? warehouse.Name;
+            warehouse.Location = warehouseDto.Location ?? warehouse.Location;
+            warehouse.UpdatedAt = DateTime.UtcNow;
+            warehouse.UpdatedBy = warehouseDto.UpdatedBy ?? "System";
 
-                    @Id = {warehouseDto.Id},
-                    @Code = {warehouseDto.Code},
-                    @Name = {warehouseDto.Name},
-                    @Location = {warehouseDto.Location},
-                    @CreatedAt = {warehouseDto.CreatedAt},
-                    @CreatedBy = {warehouseDto.CreatedBy},
-                    @UpdatedAt = {warehouseDto.UpdatedAt},
-                    @UpdatedBy = {warehouseDto.UpdatedBy}
-            ");
-
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_DeleteWarehouse
-                    @Id = {id}
-            ");
+            var warehouse = await _context.Warehouses.FirstOrDefaultAsync(w => w.Id == id);
+            if (warehouse == null) return false;
 
+            _context.Warehouses.Remove(warehouse);
+            await _context.SaveChangesAsync();
             return true;
         }
-
         // </crudgen:methods>
     }
 }

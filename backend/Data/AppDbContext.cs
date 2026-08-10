@@ -8,8 +8,6 @@ namespace backend.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-
-        // <crudgen:dbsets>
         public DbSet<Customer> Customers { get; set; } = null!;
         public DbSet<Order> Orders { get; set; } = null!;
         public DbSet<OrderItem> OrderItems { get; set; } = null!;
@@ -27,8 +25,10 @@ namespace backend.Data
         public DbSet<BillOfMaterial> BillOfMaterials { get; set; } = null!;
         public DbSet<Warehouse> Warehouses { get; set; } = null!;
         public DbSet<WarehouseRoom> WarehouseRooms { get; set; } = null!;
+        public DbSet<WarehouseRack> WarehouseRacks { get; set; } = null!;
         public DbSet<WarehouseShelf> WarehouseShelfs { get; set; } = null!;
         public DbSet<Inventory> Inventories { get; set; } = null!;
+        public DbSet<InventoryMovement> InventoryMovements { get; set; } = null!;
         public DbSet<Outlet> Outlets { get; set; } = null!;
         public DbSet<OutletDemand> OutletDemands { get; set; } = null!;
         public DbSet<Transaction> Transactions { get; set; } = null!;
@@ -41,11 +41,18 @@ namespace backend.Data
         public DbSet<FinishedGoodsHandover> FinishedGoodsHandovers { get; set; } = null!;
         public DbSet<CustomerReturn> CustomerReturns { get; set; } = null!;
         public DbSet<Supplier> Suppliers { get; set; } = null!;
+        public DbSet<SupplierReturn> SupplierReturns { get; set; } = null!;
         public DbSet<SupplierMaterialCategory> SupplierMaterialCategories { get; set; } = null!;
         public DbSet<ProductionStage> ProductionStages { get; set; } = null!;
         public DbSet<ProductProductionStage> ProductProductionStages { get; set; } = null!;
         public DbSet<ProductCategory> ProductCategories { get; set; } = null!;
-        // </crudgen:dbsets>
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; } = null!;
+        public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; } = null!;
+        public DbSet<PurchaseOrderReceipt> PurchaseOrderReceipts { get; set; } = null!;
+        public DbSet<PurchaseOrderReceiptItem> PurchaseOrderReceiptItems { get; set; } = null!;
+        public DbSet<ProductDemand> ProductDemands { get; set; } = null!;
+        public DbSet<ProductIssue> ProductIssues { get; set; } = null!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -84,11 +91,41 @@ namespace backend.Data
                 .HasForeignKey(e => e.MaterialId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<MaterialInspection>()
-                .HasOne(e => e.MaterialRequest)
-                .WithOne(p => p.MaterialInspection)
-                .HasForeignKey<MaterialInspection>(e => e.MaterialRequestId)
+            modelBuilder.Entity<PurchaseOrderItem>()
+                .HasOne(e => e.PurchaseOrder)
+                .WithMany(p => p.Items)
+                .HasForeignKey(e => e.PurchaseOrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PurchaseOrderReceipt>()
+                .HasOne(e => e.PurchaseOrder)
+                .WithMany(p => p.Receipts)
+                .HasForeignKey(e => e.PurchaseOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PurchaseOrderReceiptItem>()
+                .HasOne(e => e.PurchaseOrderReceipt)
+                .WithMany(p => p.Items)
+                .HasForeignKey(e => e.PurchaseOrderReceiptId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PurchaseOrderReceiptItem>()
+                .HasOne(e => e.PurchaseOrderItem)
+                .WithMany()
+                .HasForeignKey(e => e.PurchaseOrderItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PurchaseOrderReceiptItem>()
+                .HasOne(e => e.Material)
+                .WithMany()
+                .HasForeignKey(e => e.MaterialId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<MaterialInspection>()
+                .HasOne(e => e.PurchaseOrderReceipt)
+                .WithOne(p => p.MaterialInspection)
+                .HasForeignKey<MaterialInspection>(e => e.PurchaseOrderReceiptId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<MaterialInspection>()
                 .HasOne(e => e.Supplier)
@@ -103,6 +140,48 @@ namespace backend.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<MaterialInspectionItem>()
+                .HasOne(e => e.Material)
+                .WithMany()
+                .HasForeignKey(e => e.MaterialId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<MaterialInspection>()
+                .Property(e => e.InspectionStatus)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<MaterialInspectionItem>()
+                .Property(e => e.InspectionStatus)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<Inventory>()
+                .HasIndex(i => new { i.MaterialId, i.WarehouseShelfId })
+                .IsUnique();
+
+            modelBuilder.Entity<SupplierReturn>()
+                .HasOne(e => e.Supplier)
+                .WithMany()
+                .HasForeignKey(e => e.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierReturn>()
+                .HasOne(e => e.PurchaseOrderReceipt)
+                .WithMany()
+                .HasForeignKey(e => e.PurchaseOrderReceiptId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierReturn>()
+                .HasOne(e => e.MaterialInspection)
+                .WithMany()
+                .HasForeignKey(e => e.MaterialInspectionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierReturn>()
+                .HasOne(e => e.MaterialInspectionItem)
+                .WithMany()
+                .HasForeignKey(e => e.MaterialInspectionItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<SupplierReturn>()
                 .HasOne(e => e.Material)
                 .WithMany()
                 .HasForeignKey(e => e.MaterialId)
@@ -207,10 +286,16 @@ namespace backend.Data
                 .HasForeignKey(e => e.WarehouseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<WarehouseShelf>()
+            modelBuilder.Entity<WarehouseRack>()
                 .HasOne(e => e.WarehouseRoom)
-                .WithMany(p => p.WarehouseShelfs)
+                .WithMany(p => p.WarehouseRacks)
                 .HasForeignKey(e => e.WarehouseRoomId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WarehouseShelf>()
+                .HasOne(e => e.WarehouseRack)
+                .WithMany(p => p.WarehouseShelfs)
+                .HasForeignKey(e => e.WarehouseRackId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<OutletDemand>()
@@ -230,7 +315,6 @@ namespace backend.Data
             .WithMany(p => p.ProductMaterialRequirements)
             .HasForeignKey(e => e.MaterialTypeId)
             .OnDelete(DeleteBehavior.Restrict);
-        
         
         }
     }

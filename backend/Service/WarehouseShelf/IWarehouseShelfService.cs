@@ -17,7 +17,7 @@ namespace backend.Service.WarehouseShelf
             string? createdBy = null,
             DateTime? updatedAt = null,
             string? updatedBy = null,
-            Guid? warehouseRoomId = null
+            Guid? warehouseRackId = null
         );
 
         Task<WarehouseShelfDto?> GetByIdAsync(Guid id);

@@ -1,3 +1,4 @@
+using Dapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -28,7 +29,7 @@ namespace backend.Service.Order
         public async Task<List<OrderGetDto>> GetAllAsync(
             Guid? id = null,
             string? orderNumber = null,
-            OrderStatus? status = null,
+            backend.Model.Enums.OrderStatus? status = null,
             decimal? totalAmount = null,
             DateTime? dueDate = null,
             DateTime? createdAt = null,
@@ -38,32 +39,39 @@ namespace backend.Service.Order
             Guid? customerId = null
         )
         {
-            var query = _context.Orders
-                .Include(o => o.OrderItems)
-                    .ThenInclude(i => i.OrderItemSizes)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(i => i.Product)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(i => i.OrderItemMaterials)
-                        .ThenInclude(m => m.Material)
-                            .ThenInclude(m => m.MaterialCategory)
-                .AsNoTracking()
-                .AsQueryable();
+            var connection = _context.Database.GetDbConnection();
+            var parameters = new Dapper.DynamicParameters();
+            parameters.Add("@Id", id);
 
-            if (id.HasValue) query = query.Where(o => o.Id == id.Value);
-            if (!string.IsNullOrWhiteSpace(orderNumber)) query = query.Where(o => o.OrderNumber == orderNumber);
-            if (status.HasValue) query = query.Where(o => o.Status == status.Value);
-            if (totalAmount.HasValue) query = query.Where(o => o.TotalAmount == totalAmount.Value);
-            if (dueDate.HasValue) query = query.Where(o => o.DueDate == dueDate.Value);
-            if (createdAt.HasValue) query = query.Where(o => o.CreatedAt == createdAt.Value);
-            if (!string.IsNullOrWhiteSpace(createdBy)) query = query.Where(o => o.CreatedBy == createdBy);
-            if (updatedAt.HasValue) query = query.Where(o => o.UpdatedAt == updatedAt.Value);
-            if (!string.IsNullOrWhiteSpace(updatedBy)) query = query.Where(o => o.UpdatedBy == updatedBy);
-            if (customerId.HasValue) query = query.Where(o => o.CustomerId == customerId.Value);
+            
+            using var multi = await connection.QueryMultipleAsync(
+                "sp_GetOrders",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure
+            );
 
-            var orders = await query.ToListAsync();
+            var orders = (await multi.ReadAsync<OrderGetDto>()).ToList();
+            var items = (await multi.ReadAsync<backend.Dto.OrderItem.OrderItemGetDto>()).ToList();
+            var sizes = (await multi.ReadAsync<backend.Dto.OrderItemSize.OrderItemSizeGetDto>()).ToList();
+            var materials = (await multi.ReadAsync<backend.Dto.OrderItemMaterial.OrderItemMaterialGetDto>()).ToList();
 
-            return orders.Select(MapOrderToDto).ToList();
+            foreach (var item in items)
+            {
+                item.OrderItemSizes = sizes.Where(s => s.OrderItemId == item.Id).ToList();
+                item.OrderItemMaterials = materials.Where(m => m.OrderItemId == item.Id).ToList();
+            }
+
+            foreach (var order in orders)
+            {
+                order.OrderItems = items.Where(i => i.OrderId == order.Id).ToList();
+            }
+
+            // Filtering done in memory
+
+            if (!string.IsNullOrWhiteSpace(orderNumber)) orders = orders.Where(o => o.OrderNumber == orderNumber).ToList();
+            if (status.HasValue) orders = orders.Where(o => o.Status == status.Value).ToList();
+            if (customerId.HasValue) orders = orders.Where(o => o.CustomerId == customerId.Value).ToList();
+            return orders;
         }
 
         public static OrderGetDto MapOrderToDto(backend.Model.Order order)

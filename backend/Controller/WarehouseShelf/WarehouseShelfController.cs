@@ -42,7 +42,7 @@ namespace backend.Controller.WarehouseShelf
             [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
             [FromQuery] string? updatedBy = null,
-            [FromQuery] Guid? warehouseRoomId = null
+            [FromQuery] Guid? warehouseRackId = null
         )
         {
             var items = await _WarehouseShelfService.GetAllAsync(
@@ -53,7 +53,7 @@ namespace backend.Controller.WarehouseShelf
                 createdBy,
                 updatedAt,
                 updatedBy,
-                warehouseRoomId
+                warehouseRackId
             );
 
             return Ok(items);

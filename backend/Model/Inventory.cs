@@ -11,6 +11,15 @@ namespace backend.Model
         // <crudgen:properties>
         [Key]
         public Guid Id { get; set; }
+
+        [ForeignKey(nameof(Material))]
+        public Guid? MaterialId { get; set; }
+        public virtual Material? Material { get; set; }
+
+        [ForeignKey(nameof(WarehouseShelf))]
+        public Guid? WarehouseShelfId { get; set; }
+        public virtual WarehouseShelf? WarehouseShelf { get; set; }
+
         public string SKU { get; set; } = string.Empty;
         public string ItemName { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

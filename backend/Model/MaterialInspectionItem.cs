@@ -1,6 +1,6 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using backend.Model.Enums;
 
 namespace backend.Model
 {
@@ -21,8 +21,14 @@ namespace backend.Model
         [Column(TypeName = "decimal(18,2)")]
         public decimal ReceivedQuantity { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal AcceptedQuantity { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal RejectedQuantity { get; set; }
+
         [MaxLength(50)]
-        public string InspectionStatus { get; set; } = "Pending";
+        public InspectionStatus InspectionStatus { get; set; } = InspectionStatus.Pending;
 
         public string Notes { get; set; } = string.Empty;
 
@@ -30,5 +36,8 @@ namespace backend.Model
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public string UpdatedBy { get; set; } = string.Empty;
+
+        public Guid PurchaseOrderReceiptItemId { get; set; }
+        public virtual PurchaseOrderReceiptItem PurchaseOrderReceiptItem { get; set; } = null!;
     }
 }

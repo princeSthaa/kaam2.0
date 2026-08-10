@@ -36,23 +36,34 @@ namespace backend.Service.Inventory
             string? updatedBy = null
         )
         {
-            return await _context.Database
-                .SqlQuery<InventoryDto>($@"
-                    EXEC sp_GetInventories
+            var query = _context.Inventories.AsQueryable();
 
-                        @Id = {id},
-                        @SKU = {sKU},
-                        @ItemName = {itemName},
-                        @Type = {type},
-                        @Quantity = {quantity},
-                        @Location = {location},
-                        @Status = {status},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
-                ")
-                .ToListAsync();
+            if (id.HasValue) query = query.Where(q => q.Id == id.Value);
+            if (!string.IsNullOrEmpty(sKU)) query = query.Where(q => q.SKU == sKU);
+            if (!string.IsNullOrEmpty(itemName)) query = query.Where(q => q.ItemName.Contains(itemName));
+            if (!string.IsNullOrEmpty(type)) query = query.Where(q => q.Type == type);
+            if (quantity.HasValue) query = query.Where(q => q.Quantity == quantity.Value);
+            if (!string.IsNullOrEmpty(location)) query = query.Where(q => q.Location.Contains(location));
+            if (!string.IsNullOrEmpty(status)) query = query.Where(q => q.Status == status);
+            if (createdAt.HasValue) query = query.Where(q => q.CreatedAt.Date == createdAt.Value.Date);
+            if (!string.IsNullOrEmpty(createdBy)) query = query.Where(q => q.CreatedBy == createdBy);
+            if (updatedAt.HasValue) query = query.Where(q => q.UpdatedAt.Date == updatedAt.Value.Date);
+            if (!string.IsNullOrEmpty(updatedBy)) query = query.Where(q => q.UpdatedBy == updatedBy);
+
+            return await query.Select(i => new InventoryDto
+            {
+                Id = i.Id,
+                SKU = i.SKU,
+                ItemName = i.ItemName,
+                Type = i.Type,
+                Quantity = i.Quantity,
+                Location = i.Location,
+                Status = i.Status,
+                CreatedAt = i.CreatedAt,
+                CreatedBy = i.CreatedBy,
+                UpdatedAt = i.UpdatedAt,
+                UpdatedBy = i.UpdatedBy
+            }).ToListAsync();
         }
 
         public async Task<InventoryDto?> GetByIdAsync(Guid id)
@@ -68,57 +79,53 @@ namespace backend.Service.Inventory
                 inventoryDto.Id = Guid.NewGuid();
             }
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertInventory
+            var inventory = new backend.Model.Inventory
+            {
+                Id = inventoryDto.Id,
+                SKU = inventoryDto.SKU ?? string.Empty,
+                ItemName = inventoryDto.ItemName ?? string.Empty,
+                Type = inventoryDto.Type ?? string.Empty,
+                Quantity = inventoryDto.Quantity,
+                Location = inventoryDto.Location ?? string.Empty,
+                Status = inventoryDto.Status ?? string.Empty,
+                CreatedAt = inventoryDto.CreatedAt == default ? DateTime.UtcNow : inventoryDto.CreatedAt,
+                CreatedBy = inventoryDto.CreatedBy ?? "System",
+                UpdatedAt = inventoryDto.UpdatedAt == default ? DateTime.UtcNow : inventoryDto.UpdatedAt,
+                UpdatedBy = inventoryDto.UpdatedBy ?? "System"
+            };
 
-                    @Id = {inventoryDto.Id},
-                    @SKU = {inventoryDto.SKU},
-                    @ItemName = {inventoryDto.ItemName},
-                    @Type = {inventoryDto.Type},
-                    @Quantity = {inventoryDto.Quantity},
-                    @Location = {inventoryDto.Location},
-                    @Status = {inventoryDto.Status},
-                    @CreatedAt = {inventoryDto.CreatedAt},
-                    @CreatedBy = {inventoryDto.CreatedBy},
-                    @UpdatedAt = {inventoryDto.UpdatedAt},
-                    @UpdatedBy = {inventoryDto.UpdatedBy}
-            ");
-
+            _context.Inventories.Add(inventory);
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> UpdateAsync(Guid id, InventoryDto inventoryDto)
         {
+            var inventory = await _context.Inventories.FirstOrDefaultAsync(i => i.Id == id);
+            if (inventory == null) return false;
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_UpdateInventory
+            inventory.SKU = inventoryDto.SKU ?? inventory.SKU;
+            inventory.ItemName = inventoryDto.ItemName ?? inventory.ItemName;
+            inventory.Type = inventoryDto.Type ?? inventory.Type;
+            inventory.Quantity = inventoryDto.Quantity;
+            inventory.Location = inventoryDto.Location ?? inventory.Location;
+            inventory.Status = inventoryDto.Status ?? inventory.Status;
+            inventory.UpdatedAt = DateTime.UtcNow;
+            inventory.UpdatedBy = inventoryDto.UpdatedBy ?? "System";
 
-                    @Id = {inventoryDto.Id},
-                    @SKU = {inventoryDto.SKU},
-                    @ItemName = {inventoryDto.ItemName},
-                    @Type = {inventoryDto.Type},
-                    @Quantity = {inventoryDto.Quantity},
-                    @Location = {inventoryDto.Location},
-                    @Status = {inventoryDto.Status},
-                    @CreatedAt = {inventoryDto.CreatedAt},
-                    @CreatedBy = {inventoryDto.CreatedBy},
-                    @UpdatedAt = {inventoryDto.UpdatedAt},
-                    @UpdatedBy = {inventoryDto.UpdatedBy}
-            ");
-
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_DeleteInventory
-                    @Id = {id}
-            ");
+            var inventory = await _context.Inventories.FirstOrDefaultAsync(i => i.Id == id);
+            if (inventory == null) return false;
 
+            _context.Inventories.Remove(inventory);
+            await _context.SaveChangesAsync();
             return true;
         }
-
         // </crudgen:methods>
     }
 }

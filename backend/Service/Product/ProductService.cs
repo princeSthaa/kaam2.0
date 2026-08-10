@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Dapper;
 using backend.Data;
 using backend.Dto.Product;
 using backend.Dto.ProductMaterialRequirement;
@@ -27,141 +28,59 @@ namespace backend.Service.Product
             string? updatedBy = null
         )
         {
-            var query = _context.Products
-                .AsNoTracking()
-                .Include(p => p.ProductCategory)
-                .Include(p => p.MaterialRequirements)
-                    .ThenInclude(m => m.MaterialType)
-                    .ThenInclude(mt => mt.MaterialCategories)
-                .Include(p => p.ProductionStages)
-                    .ThenInclude(s => s.ProductionStage)
-                .AsQueryable();
+            var connection = _context.Database.GetDbConnection();
 
-            if (id.HasValue && id != Guid.Empty)
-                query = query.Where(x => x.Id == id);
+            var parameters = new DynamicParameters();
+            parameters.Add("@Id", id);
+            parameters.Add("@Name", name);
 
-            if (!string.IsNullOrWhiteSpace(name))
-                query = query.Where(x => x.Name.Contains(name));
+            using var multi = await connection.QueryMultipleAsync(
+                "sp_GetProducts",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure
+            );
 
-            if (!string.IsNullOrWhiteSpace(imagePath))
-                query = query.Where(x => x.ImagePath.Contains(imagePath));
+            var products = multi.Read<ProductDto>().ToList();
+            var materialReqs = multi.Read<ProductMaterialRequirementDto, MaterialTypeDto, ProductMaterialRequirementDto>(
+                (req, matType) => {
+                    req.MaterialType = matType;
+                    return req;
+                },
+                splitOn: "Id"
+            ).ToList();
+            var prodStages = multi.Read<ProductProductionStageDto, ProductionStageDto, ProductProductionStageDto>(
+                (stage, prodStage) => {
+                    stage.ProductionStage = prodStage;
+                    return stage;
+                },
+                splitOn: "Id"
+            ).ToList();
 
-            var products = await query.ToListAsync();
-
-            return products.Select(product => new ProductDto
+            foreach (var p in products)
             {
-                Id = product.Id,
-                SKU = product.SKU,
-                Name = product.Name,
-                ImagePath = product.ImagePath,
-                isActive = product.isActive,
-                ProductCategoryId = product.ProductCategoryId,
-
-                MaterialRequirements = product.MaterialRequirements
+                p.MaterialRequirements = materialReqs
+                    .Where(m => m.ProductId == p.Id)
                     .OrderBy(x => x.ProductSize)
-                    .Select(x => new ProductMaterialRequirementDto
-                    {
-                        Id = x.Id,
-                        ProductId = x.ProductId,
-                        MaterialTypeId = x.MaterialTypeId,
-                        ProductSize = x.ProductSize,
-                        Quantity = x.Quantity,
-
-                        MaterialType = new MaterialTypeDto
-                        {
-                            Id = x.MaterialType.Id,
-                            Name = x.MaterialType.Name,
-                            CreatedAt = x.MaterialType.CreatedAt,
-                            UpdatedAt = x.MaterialType.UpdatedAt
-                        }
-
-                    }).ToList(),
-
-                ProductionStages = product.ProductionStages
+                    .ToList();
+                p.ProductionStages = prodStages
+                    .Where(s => s.ProductId == p.Id)
                     .OrderBy(x => x.Sequence)
-                    .Select(x => new ProductProductionStageDto
-                    {
-                        Id = x.Id,
-                        ProductId = x.ProductId,
-                        ProductionStageId = x.ProductionStageId,
-                        Sequence = x.Sequence,
+                    .ToList();
+            }
 
-                        ProductionStage = new ProductionStageDto
-                        {
-                            Id = x.ProductionStage.Id,
-                            Name = x.ProductionStage.Name,
-                            Description = x.ProductionStage.Description,
-                            IsActive = x.ProductionStage.IsActive
-                        }
+            // Filter by imagePath in memory if needed
+            if (!string.IsNullOrWhiteSpace(imagePath))
+            {
+                products = products.Where(p => p.ImagePath != null && p.ImagePath.Contains(imagePath)).ToList();
+            }
 
-                    }).ToList()
-
-            }).ToList();
+            return products;
         }
-
 
         public async Task<ProductDto?> GetByIdAsync(Guid id)
         {
-            var product = await _context.Products
-                .AsNoTracking()
-                .Include(p => p.ProductCategory)
-                .Include(p => p.MaterialRequirements)
-                    .ThenInclude(m => m.MaterialType)
-                .Include(p => p.ProductionStages)
-                    .ThenInclude(s => s.ProductionStage)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (product == null)
-                return null;
-
-            return new ProductDto
-            {
-                Id = product.Id,
-                SKU = product.SKU,
-                Name = product.Name,
-                ImagePath = product.ImagePath,
-                isActive = product.isActive,
-                ProductCategoryId = product.ProductCategoryId,
-
-                MaterialRequirements = product.MaterialRequirements
-                    .OrderBy(x => x.ProductSize)
-                    .Select(x => new ProductMaterialRequirementDto
-                    {
-                        Id = x.Id,
-                        ProductId = x.ProductId,
-                        MaterialTypeId = x.MaterialTypeId,
-                        ProductSize = x.ProductSize,
-                        Quantity = x.Quantity,
-
-                        MaterialType = new MaterialTypeDto
-                        {
-                            Id = x.MaterialType.Id,
-                            Name = x.MaterialType.Name,
-                            CreatedAt = x.MaterialType.CreatedAt,
-                            UpdatedAt = x.MaterialType.UpdatedAt
-                        }
-
-                    }).ToList(),
-
-                ProductionStages = product.ProductionStages
-                    .OrderBy(x => x.Sequence)
-                    .Select(x => new ProductProductionStageDto
-                    {
-                        Id = x.Id,
-                        ProductId = x.ProductId,
-                        ProductionStageId = x.ProductionStageId,
-                        Sequence = x.Sequence,
-
-                        ProductionStage = new ProductionStageDto
-                        {
-                            Id = x.ProductionStage.Id,
-                            Name = x.ProductionStage.Name,
-                            Description = x.ProductionStage.Description,
-                            IsActive = x.ProductionStage.IsActive
-                        }
-
-                    }).ToList()
-            };
+            var products = await GetAllAsync(id: id);
+            return products.FirstOrDefault();
         }
 
 

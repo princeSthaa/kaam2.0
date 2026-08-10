@@ -14,6 +14,7 @@ using backend.Service.Material;
 using backend.Service.BillOfMaterial;
 using backend.Service.Warehouse;
 using backend.Service.WarehouseRoom;
+using backend.Service.WarehouseRack;
 using backend.Service.WarehouseShelf;
 using backend.Service.Inventory;
 using backend.Service.Outlet;
@@ -27,6 +28,10 @@ using backend.Service.MaterialCategory;
 using backend.Service.MaterialType;
 using backend.Service.ProductionStage;
 using backend.Service.ProductCategory;
+using backend.Service.PurchaseOrder;
+using backend.Service.PurchaseOrderReceipt;
+using backend.Service.ProductDemand;
+using backend.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,9 +40,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs",
         policy => policy
-            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001") // Frontend origins
+            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "https://wgfk2srw-5082.inc1.devtunnels.ms/", "https://wgfk2srw-5083.inc1.devtunnels.ms/") // Frontend origins
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials());
 });
 
 builder.Services.AddControllers().AddJsonOptions(options =>
@@ -61,6 +67,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IOrderItemService, OrderItemService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IWorkCenterService, WorkCenterService>();
+builder.Services.AddScoped<backend.Service.Wms.IWmsInventoryService, backend.Service.Wms.WmsInventoryService>();
 builder.Services.AddScoped<IProductionPlanService, ProductionPlanService>();
 builder.Services.AddScoped<IProductionPlanProductService, ProductionPlanProductService>();
 builder.Services.AddScoped<IProductionPlanProductSizeService, ProductionPlanProductSizeService>();
@@ -69,6 +76,7 @@ builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<IBillOfMaterialService, BillOfMaterialService>();
 builder.Services.AddScoped<IWarehouseService, WarehouseService>();
 builder.Services.AddScoped<IWarehouseRoomService, WarehouseRoomService>();
+builder.Services.AddScoped<IWarehouseRackService, WarehouseRackService>();
 builder.Services.AddScoped<IWarehouseShelfService, WarehouseShelfService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IOutletService, OutletService>();
@@ -81,8 +89,21 @@ builder.Services.AddScoped<IMaterialInspectionService, MaterialInspectionService
 builder.Services.AddScoped<IMaterialCategoryService, MaterialCategoryService>();
 builder.Services.AddScoped<IMaterialTypeService, MaterialTypeService>();
 builder.Services.AddScoped<IProductionStageService, ProductionStageService>();
+builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
+builder.Services.AddScoped<IPurchaseOrderReceiptService, PurchaseOrderReceiptService>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+builder.Services.AddScoped<IProductDemandService, ProductDemandService>();
 
+int GetAvailablePort()
+{
+    var activeTcpListeners = System.Net.NetworkInformation.IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners();
+    bool is5083InUse = System.Linq.Enumerable.Any(activeTcpListeners, endpoint => endpoint.Port == 5083);
+    return is5083InUse ? 5082 : 5083;
+}
+
+int portToUse = GetAvailablePort();
+builder.WebHost.UseUrls($"http://*:{portToUse}");
+Console.WriteLine($"Starting server on port {portToUse}");
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -90,8 +111,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        SqlScriptRunner.Run(context);
-        DatabaseSeeder.Seed(context);
+        // SqlScriptRunner.Run(context);
+        // DatabaseSeeder.Seed(context);
     }
     catch (Exception ex)
     {

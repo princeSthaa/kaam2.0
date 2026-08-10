@@ -46,7 +46,7 @@ namespace backend.Dto.WarehouseRoom
 
         public Guid WarehouseId { get; set; }
         [NotMapped]
-        public List<WarehouseShelfDto> WarehouseShelfs { get; set; } = new List<WarehouseShelfDto>();
+        public List<backend.Dto.WarehouseRack.WarehouseRackDto> WarehouseRacks { get; set; } = new();
 
         // </crudgen:properties>
     }

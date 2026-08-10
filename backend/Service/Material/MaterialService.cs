@@ -36,7 +36,6 @@ namespace backend.Service.Material
                         @MaterialTypeId = {materialTypeId},
                         @MaterialCategoryId = {materialCategoryId},
                         @AvailableQty = {availableQty},
-                        @Unit = {unit},
                         @ImagePath = {imagePath},
                         @CostPerUnit = {costPerUnit}
                 ")
@@ -44,7 +43,10 @@ namespace backend.Service.Material
         }
         public async Task<bool> CreateAsync(MaterialDto materialDto)
         {
-            materialDto.Id = Guid.NewGuid();
+            if (materialDto.Id == Guid.Empty)
+            {
+                materialDto.Id = Guid.NewGuid();
+            }
             materialDto.CreatedAt = DateTime.UtcNow;
             materialDto.UpdatedAt = DateTime.UtcNow;
             

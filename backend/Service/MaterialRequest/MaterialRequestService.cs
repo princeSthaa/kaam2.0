@@ -1,3 +1,4 @@
+using Dapper;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.MaterialRequest;
@@ -24,24 +25,30 @@ namespace backend.Service.MaterialRequest
             string? requestNumber = null
         )
         {
-            var query = _context.MaterialRequests
-                .Include(r => r.Supplier)
-                .Include(r => r.Items)
-                    .ThenInclude(i => i.Material)
-                .AsNoTracking()
-                .AsQueryable();
+            var connection = _context.Database.GetDbConnection();
+            var parameters = new Dapper.DynamicParameters();
+            parameters.Add("@Id", id);
 
-            if (id.HasValue) query = query.Where(r => r.Id == id.Value);
-            if (supplierId.HasValue) query = query.Where(r => r.SupplierId == supplierId.Value);
-            if (!string.IsNullOrWhiteSpace(requestNumber)) query = query.Where(r => r.RequestNumber.Contains(requestNumber));
-            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<MaterialRequestStatus>(status, true, out var parsedStatus))
+            using var multi = await connection.QueryMultipleAsync(
+                "sp_GetMaterialRequests",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure
+            );
+
+            var requests = (await multi.ReadAsync<MaterialRequestDto>()).ToList();
+            var items = (await multi.ReadAsync<MaterialRequestItemDto>()).ToList();
+
+            foreach (var r in requests)
             {
-                query = query.Where(r => r.Status == parsedStatus);
+                r.Items = items.Where(i => i.MaterialRequestId == r.Id).ToList();
             }
 
-            var items = await query.OrderByDescending(r => r.CreatedAt).ToListAsync();
+            // Filtering done in memory
 
-            return items.Select(r => MapToDto(r)).ToList();
+            if (supplierId.HasValue) requests = requests.Where(r => r.SupplierId == supplierId.Value).ToList();
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<backend.Model.Enums.MaterialRequestStatus>(status, true, out var parsedStatus)) requests = requests.Where(r => r.Status == parsedStatus).ToList();
+            if (!string.IsNullOrWhiteSpace(requestNumber)) requests = requests.Where(r => r.RequestNumber == requestNumber).ToList();
+            return requests;
         }
 
         public async Task<MaterialRequestDto?> GetByIdAsync(Guid id)
@@ -115,13 +122,29 @@ namespace backend.Service.MaterialRequest
             {
                 foreach (var item in entity.Items)
                 {
-                    var mat = await _context.Materials.FindAsync(item.MaterialId);
-                    if (mat != null)
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(i => i.MaterialId == item.MaterialId && i.WarehouseShelfId == null);
+
+                    if (inventory == null)
                     {
-                        mat.AvailableQty += item.RequestedQuantity;
+                        inventory = new backend.Model.Inventory
+                        {
+                            Id = Guid.NewGuid(),
+                            MaterialId = item.MaterialId,
+                            Quantity = item.RequestedQuantity,
+                            WarehouseShelfId = null,
+                            Status = "Staging",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _context.Inventories.Add(inventory);
+                    }
+                    else
+                    {
+                        inventory.Quantity += item.RequestedQuantity;
+                        inventory.UpdatedAt = DateTime.UtcNow;
                     }
                 }
-                await CreateInspectionIfMissingAsync(entity);
             }
 
             _context.MaterialRequests.Add(entity);
@@ -189,13 +212,29 @@ namespace backend.Service.MaterialRequest
             {
                 foreach (var item in entity.Items)
                 {
-                    var mat = await _context.Materials.FindAsync(item.MaterialId);
-                    if (mat != null)
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(i => i.MaterialId == item.MaterialId && i.WarehouseShelfId == null);
+
+                    if (inventory == null)
                     {
-                        mat.AvailableQty += item.RequestedQuantity;
+                        inventory = new backend.Model.Inventory
+                        {
+                            Id = Guid.NewGuid(),
+                            MaterialId = item.MaterialId,
+                            Quantity = item.RequestedQuantity,
+                            WarehouseShelfId = null,
+                            Status = "Staging",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _context.Inventories.Add(inventory);
+                    }
+                    else
+                    {
+                        inventory.Quantity += item.RequestedQuantity;
+                        inventory.UpdatedAt = DateTime.UtcNow;
                     }
                 }
-                await CreateInspectionIfMissingAsync(entity);
             }
 
             await _context.SaveChangesAsync();
@@ -219,54 +258,33 @@ namespace backend.Service.MaterialRequest
             {
                 foreach (var item in entity.Items)
                 {
-                    var mat = await _context.Materials.FindAsync(item.MaterialId);
-                    if (mat != null)
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(i => i.MaterialId == item.MaterialId && i.WarehouseShelfId == null);
+
+                    if (inventory == null)
                     {
-                        mat.AvailableQty += item.RequestedQuantity;
+                        inventory = new backend.Model.Inventory
+                        {
+                            Id = Guid.NewGuid(),
+                            MaterialId = item.MaterialId,
+                            Quantity = item.RequestedQuantity,
+                            WarehouseShelfId = null,
+                            Status = "Staging",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        };
+                        _context.Inventories.Add(inventory);
+                    }
+                    else
+                    {
+                        inventory.Quantity += item.RequestedQuantity;
+                        inventory.UpdatedAt = DateTime.UtcNow;
                     }
                 }
-                await CreateInspectionIfMissingAsync(entity);
             }
 
             await _context.SaveChangesAsync();
             return true;
-        }
-
-        private async Task CreateInspectionIfMissingAsync(backend.Model.MaterialRequest entity)
-        {
-            var exists = await _context.MaterialInspections
-                .AnyAsync(mi => mi.MaterialRequestId == entity.Id);
-
-            if (!exists)
-            {
-                var inspection = new backend.Model.MaterialInspection
-                {
-                    Id = Guid.NewGuid(),
-                    MaterialRequestId = entity.Id,
-                    SupplierId = entity.SupplierId,
-                    InspectionStatus = "Pending",
-                    InspectorName = "System",
-                    Notes = entity.Notes ?? string.Empty,
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedBy = entity.UpdatedBy ?? "System",
-                    UpdatedAt = DateTime.UtcNow,
-                    UpdatedBy = entity.UpdatedBy ?? "System",
-                    Items = entity.Items.Select(item => new backend.Model.MaterialInspectionItem
-                    {
-                        Id = Guid.NewGuid(),
-                        MaterialId = item.MaterialId,
-                        ReceivedQuantity = item.RequestedQuantity,
-                        InspectionStatus = "Pending",
-                        Notes = string.Empty,
-                        CreatedAt = DateTime.UtcNow,
-                        CreatedBy = entity.UpdatedBy ?? "System",
-                        UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = entity.UpdatedBy ?? "System"
-                    }).ToList()
-                };
-
-                _context.MaterialInspections.Add(inspection);
-            }
         }
 
         public async Task<bool> DeleteAsync(Guid id)

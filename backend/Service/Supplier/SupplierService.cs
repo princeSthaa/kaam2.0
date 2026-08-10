@@ -213,24 +213,27 @@ namespace backend.Service.Supplier
                 .Include(s => s.SupplierMaterialCategories)
                     .ThenInclude(sm => sm.MaterialCategory)
                 .Include(s => s.MaterialRequests)
-                    .ThenInclude(r => r.MaterialInspection)
-                        .ThenInclude(mi => mi!.Items)
                 .FirstOrDefaultAsync(s => s.Id == id && !s.IsDeleted);
 
             if (supplier == null) return null;
 
-            var requests = supplier.MaterialRequests.ToList();
-            var inspectionItems = requests
-                .Where(r => r.MaterialInspection != null)
-                .SelectMany(r => r.MaterialInspection!.Items)
-                .ToList();
+            var purchaseOrders = await _context.PurchaseOrders
+                .Where(po => po.SupplierId == id)
+                .ToListAsync();
 
-            int totalOrders = requests.Count;
+            var inspections = await _context.MaterialInspections
+                .Include(mi => mi.Items)
+                .Where(mi => mi.SupplierId == id)
+                .ToListAsync();
+
+            var inspectionItems = inspections.SelectMany(i => i.Items).ToList();
+            int totalOrders = purchaseOrders.Count + supplier.MaterialRequests.Count;
 
             decimal onTimeRate = 100.00m;
             if (totalOrders > 0)
             {
-                int onTimeCount = requests.Count(r => r.RequiredDate.Date >= r.CreatedAt.Date);
+                int onTimeCount = purchaseOrders.Count(po => po.Status == backend.Model.Enums.OrderStatus.Completed || po.Status == backend.Model.Enums.OrderStatus.Delivered) +
+                                  supplier.MaterialRequests.Count(r => r.RequiredDate.Date >= r.CreatedAt.Date);
                 onTimeRate = Math.Round(((decimal)onTimeCount / totalOrders) * 100m, 2);
             }
 
@@ -238,9 +241,8 @@ namespace backend.Service.Supplier
             if (inspectionItems.Count > 0)
             {
                 int defectiveCount = inspectionItems.Count(i =>
-                    string.Equals(i.InspectionStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(i.InspectionStatus, "Failed", StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(i.InspectionStatus, "Purchase Return", StringComparison.OrdinalIgnoreCase));
+                    i.RejectedQuantity > 0 ||
+                    i.InspectionStatus == backend.Model.Enums.InspectionStatus.Rejected);
                 defectRate = Math.Round(((decimal)defectiveCount / inspectionItems.Count) * 100m, 2);
             }
 

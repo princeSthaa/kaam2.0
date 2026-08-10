@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.ProductionStage;
 using backend.Service.ProductionStage;
 using Microsoft.AspNetCore.Mvc;

@@ -6,8 +6,10 @@ namespace backend.Dto.MaterialInspection
     public class MaterialInspectionDto
     {
         public Guid Id { get; set; }
-        public Guid MaterialRequestId { get; set; }
-        public string RequestNumber { get; set; } = string.Empty;
+        public Guid PurchaseOrderReceiptId { get; set; }
+        public string ReceiptNumber { get; set; } = string.Empty;
+        public Guid? PurchaseOrderId { get; set; }
+        public string OrderNumber { get; set; } = string.Empty;
         public Guid? SupplierId { get; set; }
         public string SupplierCode { get; set; } = string.Empty;
         public string SupplierName { get; set; } = string.Empty;

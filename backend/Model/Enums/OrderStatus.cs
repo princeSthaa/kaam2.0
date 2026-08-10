@@ -7,8 +7,9 @@ namespace backend.Model.Enums
     {
         Pending,
         Processing,
+        PartiallyDelivered,
+        Delivered,
         Completed,
-        Cancelled,
-        Planned
+        Cancelled
     }
 }

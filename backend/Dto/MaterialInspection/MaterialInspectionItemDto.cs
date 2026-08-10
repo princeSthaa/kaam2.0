@@ -9,8 +9,9 @@ namespace backend.Dto.MaterialInspection
         public Guid MaterialId { get; set; }
         public string MaterialCode { get; set; } = string.Empty;
         public string MaterialName { get; set; } = string.Empty;
-        public string Unit { get; set; } = string.Empty;
         public decimal ReceivedQuantity { get; set; }
+        public decimal AcceptedQuantity { get; set; }
+        public decimal RejectedQuantity { get; set; }
         public string InspectionStatus { get; set; } = "Pending";
         public string Notes { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }

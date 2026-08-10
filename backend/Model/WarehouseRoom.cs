@@ -19,7 +19,7 @@ namespace backend.Model
         public string UpdatedBy { get; set; } = string.Empty;
         public Guid WarehouseId { get; set; }
         public virtual Warehouse Warehouse { get; set; } = null!;
-        public virtual ICollection<WarehouseShelf> WarehouseShelfs { get; set; } = new List<WarehouseShelf>();
+        public virtual ICollection<WarehouseRack> WarehouseRacks { get; set; } = new List<WarehouseRack>();
         // </crudgen:properties>
     }
 }

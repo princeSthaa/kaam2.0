@@ -33,20 +33,28 @@ namespace backend.Service.WarehouseRoom
             Guid? warehouseId = null
         )
         {
-            return await _context.Database
-                .SqlQuery<WarehouseRoomDto>($@"
-                    EXEC sp_GetWarehouseRooms
+            var query = _context.WarehouseRooms.AsQueryable();
 
-                        @Id = {id},
-                        @Name = {name},
-                        @Floor = {floor},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
-                        @WarehouseId = {warehouseId}
-                ")
-                .ToListAsync();
+            if (id.HasValue) query = query.Where(q => q.Id == id.Value);
+            if (!string.IsNullOrEmpty(name)) query = query.Where(q => q.Name.Contains(name));
+            if (!string.IsNullOrEmpty(floor)) query = query.Where(q => q.Floor.Contains(floor));
+            if (createdAt.HasValue) query = query.Where(q => q.CreatedAt.Date == createdAt.Value.Date);
+            if (!string.IsNullOrEmpty(createdBy)) query = query.Where(q => q.CreatedBy == createdBy);
+            if (updatedAt.HasValue) query = query.Where(q => q.UpdatedAt.Date == updatedAt.Value.Date);
+            if (!string.IsNullOrEmpty(updatedBy)) query = query.Where(q => q.UpdatedBy == updatedBy);
+            if (warehouseId.HasValue) query = query.Where(q => q.WarehouseId == warehouseId.Value);
+
+            return await query.Select(w => new WarehouseRoomDto
+            {
+                Id = w.Id,
+                Name = w.Name,
+                Floor = w.Floor,
+                CreatedAt = w.CreatedAt,
+                CreatedBy = w.CreatedBy,
+                UpdatedAt = w.UpdatedAt,
+                UpdatedBy = w.UpdatedBy,
+                WarehouseId = w.WarehouseId
+            }).ToListAsync();
         }
 
         public async Task<WarehouseRoomDto?> GetByIdAsync(Guid id)
@@ -62,51 +70,47 @@ namespace backend.Service.WarehouseRoom
                 warehouseRoomDto.Id = Guid.NewGuid();
             }
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertWarehouseRoom
+            var room = new backend.Model.WarehouseRoom
+            {
+                Id = warehouseRoomDto.Id,
+                Name = warehouseRoomDto.Name ?? string.Empty,
+                Floor = warehouseRoomDto.Floor ?? string.Empty,
+                WarehouseId = warehouseRoomDto.WarehouseId,
+                CreatedAt = warehouseRoomDto.CreatedAt == default ? DateTime.UtcNow : warehouseRoomDto.CreatedAt,
+                CreatedBy = warehouseRoomDto.CreatedBy ?? "System",
+                UpdatedAt = warehouseRoomDto.UpdatedAt == default ? DateTime.UtcNow : warehouseRoomDto.UpdatedAt,
+                UpdatedBy = warehouseRoomDto.UpdatedBy ?? "System"
+            };
 
-                    @Id = {warehouseRoomDto.Id},
-                    @Name = {warehouseRoomDto.Name},
-                    @Floor = {warehouseRoomDto.Floor},
-                    @CreatedAt = {warehouseRoomDto.CreatedAt},
-                    @CreatedBy = {warehouseRoomDto.CreatedBy},
-                    @UpdatedAt = {warehouseRoomDto.UpdatedAt},
-                    @UpdatedBy = {warehouseRoomDto.UpdatedBy},
-                    @WarehouseId = {warehouseRoomDto.WarehouseId}
-            ");
-
+            _context.WarehouseRooms.Add(room);
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> UpdateAsync(Guid id, WarehouseRoomDto warehouseRoomDto)
         {
+            var room = await _context.WarehouseRooms.FirstOrDefaultAsync(w => w.Id == id);
+            if (room == null) return false;
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_UpdateWarehouseRoom
+            room.Name = warehouseRoomDto.Name ?? room.Name;
+            room.Floor = warehouseRoomDto.Floor ?? room.Floor;
+            room.WarehouseId = warehouseRoomDto.WarehouseId != Guid.Empty ? warehouseRoomDto.WarehouseId : room.WarehouseId;
+            room.UpdatedAt = DateTime.UtcNow;
+            room.UpdatedBy = warehouseRoomDto.UpdatedBy ?? "System";
 
-                    @Id = {warehouseRoomDto.Id},
-                    @Name = {warehouseRoomDto.Name},
-                    @Floor = {warehouseRoomDto.Floor},
-                    @CreatedAt = {warehouseRoomDto.CreatedAt},
-                    @CreatedBy = {warehouseRoomDto.CreatedBy},
-                    @UpdatedAt = {warehouseRoomDto.UpdatedAt},
-                    @UpdatedBy = {warehouseRoomDto.UpdatedBy},
-                    @WarehouseId = {warehouseRoomDto.WarehouseId}
-            ");
-
+            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_DeleteWarehouseRoom
-                    @Id = {id}
-            ");
+            var room = await _context.WarehouseRooms.FirstOrDefaultAsync(w => w.Id == id);
+            if (room == null) return false;
 
+            _context.WarehouseRooms.Remove(room);
+            await _context.SaveChangesAsync();
             return true;
         }
-
         // </crudgen:methods>
     }
 }

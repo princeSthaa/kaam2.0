@@ -1,9 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.Product;
-using backend.Model;
-using backend.Model.Enums;
 
 namespace backend.Service.Product
 {

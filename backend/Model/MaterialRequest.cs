@@ -27,6 +27,5 @@ namespace backend.Model
         public string UpdatedBy { get; set; } = string.Empty;
 
         public virtual ICollection<MaterialRequestItem> Items { get; set; } = new List<MaterialRequestItem>();
-        public virtual MaterialInspection? MaterialInspection { get; set; }
     }
 }

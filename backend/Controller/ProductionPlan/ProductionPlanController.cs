@@ -154,6 +154,13 @@ namespace backend.Controller.ProductionPlan
                 .Include(bom => bom.Material)
                 .ToListAsync();
 
+            var materialIds = boms.Select(b => b.MaterialId).Distinct().ToList();
+            var materialInventories = await _context.Inventories
+                .Where(i => i.MaterialId.HasValue && materialIds.Contains(i.MaterialId.Value))
+                .GroupBy(i => i.MaterialId)
+                .Select(g => new { MaterialId = g.Key.Value, TotalQty = g.Sum(i => i.Quantity) })
+                .ToDictionaryAsync(k => k.MaterialId, v => v.TotalQty);
+
             foreach (var productId in requestedProducts.Keys)
             {
                 if (!boms.Any(bom => bom.ProductId == productId))
@@ -163,12 +170,15 @@ namespace backend.Controller.ProductionPlan
             }
 
             response.Materials = boms
-                .GroupBy(bom => new { bom.MaterialId, bom.Material.MaterialCode, bom.Material.Name, bom.Material.AvailableQty })
+                .GroupBy(bom => new { bom.MaterialId, bom.Material.MaterialCode, bom.Material.Name })
                 .Select(group =>
                 {
                     var requiredQty = group.Sum(bom =>
                         requestedProducts[bom.ProductId] * bom.QtyPerUnit * (1 + bom.WastagePercent / 100));
-                    var availableQty = group.Key.AvailableQty;
+                    
+                    var availableQty = materialInventories.ContainsKey(group.Key.MaterialId) 
+                        ? materialInventories[group.Key.MaterialId] 
+                        : 0m;
 
                     return new MaterialCheckItemDto
                     {

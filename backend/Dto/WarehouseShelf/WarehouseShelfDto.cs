@@ -44,7 +44,7 @@ namespace backend.Dto.WarehouseShelf
 
         public string UpdatedBy { get; set; } = string.Empty;
 
-        public Guid WarehouseRoomId { get; set; }
+        public Guid WarehouseRackId { get; set; }
         // </crudgen:properties>
     }
 }

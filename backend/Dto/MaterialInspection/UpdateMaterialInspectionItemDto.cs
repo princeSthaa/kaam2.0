@@ -1,9 +1,12 @@
+using System;
+
 namespace backend.Dto.MaterialInspection
 {
     public class UpdateMaterialInspectionItemDto
     {
-        public decimal? ReceivedQuantity { get; set; }
-        public string? InspectionStatus { get; set; }
+        public Guid Id { get; set; }
+        public decimal? AcceptedQuantity { get; set; }
+        public decimal? RejectedQuantity { get; set; }
         public string? Notes { get; set; }
     }
 }

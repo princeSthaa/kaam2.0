@@ -1,3 +1,4 @@
+using Dapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -31,8 +32,8 @@ namespace backend.Service.ProductionPlan
             string? demandType = null,
             string? sourceId = null,
             string? sourceName = null,
-            PlanPriority? priority = null,
-            PlanStatus? status = null,
+            backend.Model.Enums.PlanPriority? priority = null,
+            backend.Model.Enums.PlanStatus? status = null,
             DateTime? plannedStartDate = null,
             DateTime? plannedCompletionDate = null,
             int? quantity = null,
@@ -52,38 +53,45 @@ namespace backend.Service.ProductionPlan
             string? updatedBy = null
         )
         {
-            return await _context.Database
-                .SqlQuery<ProductionPlanDto>($@"
-                    EXEC sp_GetProductionPlans
+            var connection = _context.Database.GetDbConnection();
+            var parameters = new Dapper.DynamicParameters();
+            parameters.Add("@Id", id);
 
-                        @Id = {id},
-                        @PlanId = {planId},
-                        @BatchId = {batchId},
-                        @PlanName = {planName},
-                        @DemandType = {demandType},
-                        @SourceId = {sourceId},
-                        @SourceName = {sourceName},
-                        @Priority = {priority},
-                        @Status = {status},
-                        @PlannedStartDate = {plannedStartDate},
-                        @PlannedCompletionDate = {plannedCompletionDate},
-                        @Quantity = {quantity},
-                        @EstimatedCost = {estimatedCost},
-                        @Supervisor = {supervisor},
-                        @ProductionLine = {productionLine},
-                        @MaterialWarehouse = {materialWarehouse},
-                        @ProductionNotes = {productionNotes},
-                        @PlanDate = {planDate},
-                        @OutputDestination = {outputDestination},
-                        @RequiredDate = {requiredDate},
-                        @Progress = {progress},
-                        @Blocked = {blocked},
-                        @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
-                ")
-                .ToListAsync();
+            
+            using var multi = await connection.QueryMultipleAsync(
+                "sp_GetProductionPlans",
+                parameters,
+                commandType: System.Data.CommandType.StoredProcedure
+            );
+
+            var plans = (await multi.ReadAsync<ProductionPlanDto>()).ToList();
+            var products = (await multi.ReadAsync<backend.Dto.ProductionPlanProduct.ProductionPlanProductDto>()).ToList();
+            var sizes = (await multi.ReadAsync<backend.Dto.ProductionPlanProductSize.ProductionPlanProductSizeDto>()).ToList();
+            var stages = (await multi.ReadAsync<backend.Dto.ProductionPlanStage.ProductionPlanStageDto>()).ToList();
+
+            foreach (var p in products)
+            {
+                p.ProductionPlanProductSizes = sizes.Where(s => s.ProductionPlanProductId == p.Id).ToList();
+            }
+
+            foreach (var plan in plans)
+            {
+                plan.ProductionPlanProducts = products.Where(p => p.ProductionPlanId == plan.Id).ToList();
+                plan.ProductionPlanStages = stages.Where(s => s.ProductionPlanId == plan.Id).ToList();
+            }
+
+            // In-memory filters for remaining arguments
+            if (plannedStartDate.HasValue) plans = plans.Where(p => p.PlannedStartDate == plannedStartDate).ToList();
+            // etc...
+
+            // Filtering done in memory
+
+            if (!string.IsNullOrWhiteSpace(planId)) plans = plans.Where(p => p.PlanId == planId).ToList();
+            if (!string.IsNullOrWhiteSpace(batchId)) plans = plans.Where(p => p.BatchId == batchId).ToList();
+            if (!string.IsNullOrWhiteSpace(planName)) plans = plans.Where(p => p.PlanName != null && p.PlanName.Contains(planName)).ToList();
+            if (priority.HasValue) plans = plans.Where(p => p.Priority == priority.Value).ToList();
+            if (status.HasValue) plans = plans.Where(p => p.Status == status.Value).ToList();
+            return plans;
         }
 
         public async Task<ProductionPlanDto?> GetByIdAsync(Guid id)
@@ -287,7 +295,7 @@ namespace backend.Service.ProductionPlan
 
                 if (isFullyPlanned)
                 {
-                    sourceOrder.Status = OrderStatus.Planned;
+                    sourceOrder.Status = OrderStatus.Processing;
                     sourceOrder.ProductionPlanId = plan.Id;
                 }
                 else

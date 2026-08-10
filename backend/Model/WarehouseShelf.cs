@@ -17,8 +17,8 @@ namespace backend.Model
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
-        public Guid WarehouseRoomId { get; set; }
-        public virtual WarehouseRoom WarehouseRoom { get; set; } = null!;
+        public Guid WarehouseRackId { get; set; }
+        public virtual WarehouseRack WarehouseRack { get; set; } = null!;
         // </crudgen:properties>
     }
 }
