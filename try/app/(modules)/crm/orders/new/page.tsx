@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { MaterialIcon } from "@/app/components/ui/MaterialIcon";
 import { fetchCustomers } from "../../api/customer.api";
 import { Customer } from "../../dto/customer.dto";
 import { createOrder } from "../../api/order.api";
@@ -260,16 +261,99 @@ function ProductSelect({ value, onChange, products }: { value: string; onChange:
   );
 }
 
-function FabricModalReact({ isOpen, onClose, onSelect, fabrics }: { isOpen: boolean; onClose: () => void; onSelect: (fabricId: string) => void; fabrics: Fabric[] }) {
+function FabricModalReact({
+  isOpen,
+  onClose,
+  onSelect,
+  fabrics,
+  productId,
+  productsData,
+  bomData,
+  materials,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSelect: (fabricId: string) => void;
+  fabrics: Fabric[];
+  productId?: string;
+  productsData?: any[];
+  bomData?: any[];
+  materials?: any[];
+}) {
+  const [activeTab, setActiveTab] = useState<"bom" | "all">("bom");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+
+  const currentProduct = productsData?.find(
+    (p) => String(p.productId || p.id).toLowerCase() === String(productId || "").toLowerCase()
+  );
+
+  // BOM items defined for this specific product
+  const productBoms =
+    bomData?.filter(
+      (b) => String(b.productId).toLowerCase() === String(productId || "").toLowerCase()
+    ) || [];
+
+  const productMaterialReqs = currentProduct?.materialRequirements || [];
+
+  // Consolidate BOM material specifications for this product
+  const bomMaterialsList = useMemo(() => {
+    const list: { id?: string; name: string; type?: string; unit?: string; reqQty?: number }[] = [];
+
+    productBoms.forEach((b) => {
+      const mat = materials?.find((m) => String(m.id).toLowerCase() === String(b.materialId).toLowerCase());
+      if (mat) {
+        list.push({
+          id: mat.id,
+          name: mat.name,
+          type: mat.type || "Fabric",
+          unit: mat.unit || "m",
+          reqQty: Number(b.quantity) || 1,
+        });
+      }
+    });
+
+    productMaterialReqs.forEach((req: any) => {
+      const name = req.materialType?.name || "Specified Material";
+      if (!list.some((l) => l.name.toLowerCase() === name.toLowerCase())) {
+        list.push({
+          id: req.materialTypeId || req.id,
+          name,
+          type: "Fabric",
+          unit: req.materialType?.unit || "m",
+          reqQty: Number(req.quantity) || 1,
+        });
+      }
+    });
+
+    return list;
+  }, [productBoms, productMaterialReqs, materials]);
+
+  // Find matching fabrics from fabricsData for the product's BOM materials
+  const bomMatchedFabrics = useMemo(() => {
+    if (!bomMaterialsList.length) return [];
+    return fabrics.filter((f) => {
+      const fName = (f.name || "").toLowerCase();
+      const fCat = (f.category || (f as any).type || "").toLowerCase();
+      return bomMaterialsList.some((mat) => {
+        const mName = mat.name.toLowerCase();
+        return fName.includes(mName) || mName.includes(fName) || fCat.includes(mName) || mName.includes(fCat);
+      });
+    });
+  }, [fabrics, bomMaterialsList]);
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedCategory(null);
       setSearch("");
+    } else {
+      if (bomMaterialsList.length > 0 || bomMatchedFabrics.length > 0) {
+        setActiveTab("bom");
+      } else {
+        setActiveTab("all");
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, bomMaterialsList.length, bomMatchedFabrics.length]);
 
   if (!isOpen) return null;
 
@@ -278,71 +362,356 @@ function FabricModalReact({ isOpen, onClose, onSelect, fabrics }: { isOpen: bool
 
   return (
     <>
-      <div className="modal-backdrop fade show"></div>
-      <div className="modal fade show" style={{ display: "block" }} tabIndex={-1} aria-modal="true" role="dialog">
-        <div className="modal-dialog modal-lg">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">{selectedCategory ? `Select Fabric - ${selectedCategory}` : "Select Fabric Category"}</h5>
-              <button type="button" className="btn-close" onClick={onClose}></button>
+      <div
+        className="modal-backdrop fade show"
+        style={{ backgroundColor: "rgba(15, 23, 42, 0.25)", backdropFilter: "blur(2px)", cursor: "pointer" }}
+        onClick={onClose}
+      ></div>
+      <div
+        className="modal fade show"
+        style={{ display: "block", cursor: "pointer" }}
+        tabIndex={-1}
+        aria-modal="true"
+        role="dialog"
+        onClick={onClose}
+      >
+        <div
+          className="modal-dialog modal-lg modal-dialog-centered"
+          style={{ cursor: "default" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="modal-content border-0 shadow-2xl rounded-4 overflow-hidden bg-white">
+            {/* Clean Light Modal Header */}
+            <div className="modal-header bg-white text-slate-900 px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+              <div className="d-flex align-items-center gap-3">
+                <span className="p-2 rounded-3 bg-blue-50 text-blue-600 border border-blue-100 d-inline-flex align-items-center justify-content-center">
+                  <MaterialIcon name="style" style={{ fontSize: "22px" }} />
+                </span>
+                <div>
+                  <h5 className="modal-title fw-bold text-slate-900 mb-0" style={{ fontSize: "1rem" }}>
+                    {selectedCategory ? `Select Fabric — ${selectedCategory}` : "Select Fabric & Material"}
+                  </h5>
+                  {currentProduct && (
+                    <div className="d-flex align-items-center gap-1.5 mt-0.5 text-slate-500 small">
+                      <MaterialIcon name="inventory_2" style={{ fontSize: "14px", color: "#2563eb" }} />
+                      <span>Product: <strong className="text-slate-800">{currentProduct.name}</strong></span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn p-1 text-slate-400 hover-text-slate-700 rounded-2 border-0 bg-transparent cursor-pointer"
+                onClick={onClose}
+              >
+                <MaterialIcon name="close" style={{ fontSize: "22px" }} />
+              </button>
             </div>
-            <div className="modal-body fabric-modal-body" style={{ maxHeight: "500px", overflowY: "auto" }}>
-              {!selectedCategory ? (
-                <>
-                  <input type="text" className="form-control mb-3" placeholder="Search categories..." value={search} onChange={(e) => setSearch(e.target.value)} />
-                  <div className="row">
-                    {categories.filter((c) => c.toLowerCase().includes(search.toLowerCase())).map((cat) => {
-                      const catFabrics = fabrics.filter((f) => getCat(f) === cat);
-                      return (
-                        <div key={cat} className="col-md-4 col-sm-6 mb-4">
-                          <div className="border rounded fabric-cat-col text-center bg-white shadow-sm" style={{ cursor: "pointer", transition: "transform 0.2s", overflow: "hidden" }} onClick={() => { setSelectedCategory(cat); setSearch(""); }}>
-                            <div className="d-flex" style={{ width: "100%", background: "#eee" }}>
-                              {catFabrics.slice(0, 4).map((f) => (
-                                <img key={f.id} src={resolveMediaUrl(f.imagePath, "fabric")} alt={f.name} style={{ flex: 1, height: "100px", objectFit: "cover", minWidth: 0 }} />
-                              ))}
-                            </div>
-                            <div className="p-3 border-top">
-                              <strong style={{ fontSize: "1.1em", color: "#333" }}>{cat}</strong>
-                              <br />
-                              <small className="text-muted">{catFabrics.length} fabric options</small>
+
+            {/* Navigation Pill Tabs */}
+            <div className="px-4 pt-3 pb-2 bg-slate-50 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className={`btn btn-sm rounded-pill fw-bold d-inline-flex align-items-center gap-2 px-3 py-1.5 transition-all ${
+                    activeTab === "bom"
+                      ? "btn-success shadow-sm"
+                      : "btn-outline-secondary bg-white border-slate-200 text-slate-700"
+                  }`}
+                  onClick={() => {
+                    setActiveTab("bom");
+                    setSelectedCategory(null);
+                  }}
+                >
+                  <MaterialIcon name="fact_check" style={{ fontSize: "16px" }} />
+                  <span>Product BOM Materials</span>
+                  <span
+                    className="rounded-circle px-2 py-0.5 font-bold"
+                    style={{
+                      fontSize: "12px",
+                      lineHeight: "1.2",
+                      backgroundColor: activeTab === "bom" ? "#ffffff" : "#e2e8f0",
+                      color: activeTab === "bom" ? "#14532d" : "#0f172a",
+                      border: activeTab === "bom" ? "1px solid #bbf7d0" : "1px solid #cbd5e1",
+                    }}
+                  >
+                    {bomMaterialsList.length || bomMatchedFabrics.length}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`btn btn-sm rounded-pill fw-bold d-inline-flex align-items-center gap-2 px-3 py-1.5 transition-all ${
+                    activeTab === "all"
+                      ? "btn-primary shadow-sm"
+                      : "btn-outline-secondary bg-white border-slate-200 text-slate-700"
+                  }`}
+                  onClick={() => {
+                    setActiveTab("all");
+                    setSelectedCategory(null);
+                  }}
+                >
+                  <MaterialIcon name="grid_view" style={{ fontSize: "16px" }} />
+                  <span>All System Categories</span>
+                  <span
+                    className="rounded-circle px-2 py-0.5 font-bold"
+                    style={{
+                      fontSize: "12px",
+                      lineHeight: "1.2",
+                      backgroundColor: activeTab === "all" ? "#ffffff" : "#e2e8f0",
+                      color: activeTab === "all" ? "#1e3a8a" : "#0f172a",
+                      border: activeTab === "all" ? "1px solid #bfdbfe" : "1px solid #cbd5e1",
+                    }}
+                  >
+                    {categories.length}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="modal-body fabric-modal-body p-4" style={{ maxHeight: "520px", overflowY: "auto", background: "#f8fafc" }}>
+              {activeTab === "bom" ? (
+                /* ================= PRODUCT BOM SPECIFIC FABRICS/MATERIALS ================= */
+                <div>
+                  <div className="alert alert-emerald border-emerald-200 bg-emerald-50 text-emerald-900 rounded-3 p-3 mb-4 d-flex align-items-center justify-content-between gap-3 shadow-2xs">
+                    <div className="d-flex align-items-center gap-2.5">
+                      <MaterialIcon name="verified" style={{ fontSize: "20px", color: "#059669" }} />
+                      <span className="small">
+                        Showing materials specifically configured in the Bill of Materials (BOM) for <strong>{currentProduct?.name || "this product"}</strong>.
+                      </span>
+                    </div>
+                    {bomMaterialsList.length > 0 && (
+                      <span
+                        className="rounded-pill px-3 py-1 text-xs font-bold shrink-0"
+                        style={{
+                          backgroundColor: "#059669",
+                          color: "#ffffff",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          lineHeight: "1",
+                          display: "inline-block",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                        }}
+                      >
+                        {bomMaterialsList.length} BOM Items
+                      </span>
+                    )}
+                  </div>
+
+                  {bomMaterialsList.length > 0 ? (
+                    <div className="row g-3">
+                      {bomMaterialsList.map((bomItem, idx) => {
+                        const matchedFabric = fabrics.find((f) =>
+                          f.id === bomItem.id ||
+                          f.name.toLowerCase().includes(bomItem.name.toLowerCase()) ||
+                          bomItem.name.toLowerCase().includes(f.name.toLowerCase())
+                        );
+
+                        return (
+                          <div key={idx} className="col-md-6">
+                            <div
+                              className="bg-white rounded-3 border border-slate-200 p-3.5 shadow-2xs hover-shadow transition-all d-flex flex-column justify-between h-100 position-relative cursor-pointer border-hover-emerald"
+                              style={{ cursor: "pointer" }}
+                              onClick={() => {
+                                const selectedId = matchedFabric ? matchedFabric.id : (bomItem.id || bomItem.name);
+                                onSelect(selectedId);
+                                onClose();
+                              }}
+                            >
+                              <div className="d-flex align-items-start gap-3">
+                                {matchedFabric ? (
+                                  <img
+                                    src={resolveMediaUrl(matchedFabric.imagePath, "fabric")}
+                                    alt={matchedFabric.name}
+                                    style={{ width: "56px", height: "56px", objectFit: "cover", borderRadius: "10px" }}
+                                    className="border shadow-2xs shrink-0"
+                                  />
+                                ) : (
+                                  <div
+                                    className="rounded-3 bg-emerald-50 text-emerald-700 border border-emerald-200 d-flex align-items-center justify-center fw-bold shrink-0"
+                                    style={{ width: "56px", height: "56px" }}
+                                  >
+                                    <MaterialIcon name="inventory" style={{ fontSize: "24px", color: "#059669" }} />
+                                  </div>
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="d-flex align-items-center gap-1.5 mb-1">
+                                    <h6 className="fw-bold text-slate-900 mb-0 truncate" title={bomItem.name}>
+                                      {bomItem.name}
+                                    </h6>
+                                  </div>
+                                  <div className="d-flex align-items-center gap-2 text-xs text-slate-500 font-mono">
+                                    <span className="d-inline-flex align-items-center gap-1">
+                                      <MaterialIcon name="category" style={{ fontSize: "12px" }} />
+                                      {bomItem.type}
+                                    </span>
+                                    <span>&bull;</span>
+                                    <span className="d-inline-flex align-items-center gap-1 fw-bold text-slate-800">
+                                      <MaterialIcon name="straighten" style={{ fontSize: "12px", color: "#2563eb" }} />
+                                      {bomItem.reqQty} {bomItem.unit}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="btn btn-emerald-600 bg-emerald-600 hover-bg-emerald-700 text-white btn-sm rounded-2.5 mt-3 fw-bold w-100 d-inline-flex align-items-center justify-center gap-1.5 py-2 cursor-pointer shadow-2xs"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const selectedId = matchedFabric ? matchedFabric.id : (bomItem.id || bomItem.name);
+                                  onSelect(selectedId);
+                                  onClose();
+                                }}
+                              >
+                                <MaterialIcon name="check_circle" style={{ fontSize: "16px" }} />
+                                <span>Select Product BOM Material</span>
+                              </button>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-5 bg-white rounded-3 border border-slate-200 p-4">
+                      <MaterialIcon name="inventory_2" style={{ fontSize: "40px", color: "#cbd5e1" }} />
+                      <p className="mt-2 mb-1 text-slate-600 fw-bold">No explicit BOM materials configured</p>
+                      <p className="text-xs text-slate-400 mb-3">No specific Bill of Materials entries mapped to {currentProduct?.name || "this product"}.</p>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-primary rounded-pill px-3 fw-bold d-inline-flex align-items-center gap-1.5"
+                        onClick={() => setActiveTab("all")}
+                      >
+                        <MaterialIcon name="search" style={{ fontSize: "16px" }} />
+                        <span>Browse All System Fabric Categories</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <>
-                  <div className="d-flex mb-3 gap-2 align-items-center">
-                    <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setSelectedCategory(null)}>
-                      &larr; Back
-                    </button>
-                    <input type="text" className="form-control" placeholder="Search fabrics..." value={search} onChange={(e) => setSearch(e.target.value)} />
-                  </div>
-                  <div className="row">
-                    {fabrics
-                      .filter((f) => getCat(f) === selectedCategory)
-                      .filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
-                      .map((f) => (
-                        <div key={f.id} className="col-md-4 col-sm-6 mb-3">
-                          <div
-                            className="fabric-item bg-white shadow-sm"
-                            onClick={() => {
-                              onSelect(f.id);
-                              onClose();
-                            }}
-                          >
-                            <img src={resolveMediaUrl(f.imagePath, "fabric")} alt={f.name} />
-                            <strong>{f.name}</strong>
-                            <br />
-                            <small className="text-muted">{f.id}</small>
-                          </div>
+                /* ================= ALL SYSTEM FABRIC CATEGORIES ================= */
+                <div>
+                  {!selectedCategory ? (
+                    <>
+                      <div className="position-relative mb-3">
+                        <span className="position-absolute top-50 start-0 translate-middle-y ms-3 text-slate-400 d-flex">
+                          <MaterialIcon name="search" style={{ fontSize: "18px" }} />
+                        </span>
+                        <input
+                          type="text"
+                          className="form-control form-control-sm ps-5 rounded-3 bg-white border-slate-200"
+                          placeholder="Search fabric categories..."
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="row g-3">
+                        {categories
+                          .filter((c) => c.toLowerCase().includes(search.toLowerCase()))
+                          .map((cat) => {
+                            const catFabrics = fabrics.filter((f) => getCat(f) === cat);
+                            return (
+                              <div key={cat} className="col-md-4 col-sm-6">
+                                <div
+                                  className="bg-white border border-slate-200 rounded-3 overflow-hidden shadow-2xs hover-shadow transition-all text-center cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedCategory(cat);
+                                    setSearch("");
+                                  }}
+                                >
+                                  <div className="d-flex bg-slate-100" style={{ height: "90px" }}>
+                                    {catFabrics.slice(0, 4).map((f) => (
+                                      <img
+                                        key={f.id}
+                                        src={resolveMediaUrl(f.imagePath, "fabric")}
+                                        alt={f.name}
+                                        style={{ flex: 1, height: "100%", objectFit: "cover", minWidth: 0 }}
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="p-3 border-top border-slate-100 bg-white">
+                                    <div className="d-flex align-items-center justify-content-center gap-1 font-bold text-slate-900">
+                                      <MaterialIcon name="category" style={{ fontSize: "16px", color: "#2563eb" }} />
+                                      <span>{cat}</span>
+                                    </div>
+                                    <small className="text-slate-500 font-mono text-xs mt-0.5 block">{catFabrics.length} fabric options</small>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="d-flex mb-3 gap-2 align-items-center">
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary bg-white rounded-2.5 d-inline-flex align-items-center gap-1 font-bold text-xs"
+                          onClick={() => setSelectedCategory(null)}
+                        >
+                          <MaterialIcon name="arrow_back" style={{ fontSize: "15px" }} />
+                          <span>Back to Categories</span>
+                        </button>
+                        <div className="position-relative flex-1">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm rounded-3 bg-white border-slate-200"
+                            placeholder="Search fabrics in this category..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                          />
                         </div>
-                      ))}
-                  </div>
-                </>
+                      </div>
+
+                      <div className="row g-3">
+                        {fabrics
+                          .filter((f) => getCat(f) === selectedCategory)
+                          .filter((f) => f.name.toLowerCase().includes(search.toLowerCase()))
+                          .map((f) => (
+                            <div key={f.id} className="col-md-4 col-sm-6">
+                              <div
+                                className="bg-white border border-slate-200 rounded-3 p-2.5 shadow-2xs hover-shadow transition-all cursor-pointer text-center"
+                                onClick={() => {
+                                  onSelect(f.id);
+                                  onClose();
+                                }}
+                              >
+                                <img
+                                  src={resolveMediaUrl(f.imagePath, "fabric")}
+                                  alt={f.name}
+                                  className="w-100 rounded-2 mb-2 object-cover border"
+                                  style={{ height: "110px" }}
+                                />
+                                <strong className="d-block text-slate-900 text-xs truncate" title={f.name}>
+                                  {f.name}
+                                </strong>
+                                <small className="text-slate-400 font-mono text-[10px]">{f.id}</small>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="modal-footer bg-slate-50 px-4 py-2.5 border-top d-flex align-items-center justify-content-between">
+              <span className="text-xs text-slate-500 font-mono d-none d-sm-inline">
+                Click outside or press Close to dismiss
+              </span>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-secondary bg-white text-slate-700 border-slate-300 hover-bg-slate-100 rounded-2.5 px-3.5 py-1.5 fw-bold d-inline-flex align-items-center gap-1.5 cursor-pointer shadow-2xs ms-auto"
+                onClick={onClose}
+              >
+                <MaterialIcon name="close" style={{ fontSize: "16px" }} />
+                <span>Close</span>
+              </button>
             </div>
           </div>
         </div>
@@ -380,7 +749,12 @@ export default function CrmCreateOrderPage() {
   const [materials, setMaterials] = useState<any[]>([]);
   const [calculatedBoms, setCalculatedBoms] = useState<any[]>([]);
   const [editableBomQuantities, setEditableBomQuantities] = useState<Record<string, string>>({}); // Stores manual overrides of BOM quantities
-  const [fabricModalState, setFabricModalState] = useState<{ isOpen: boolean; rowId?: string; fabricRowId?: string }>({ isOpen: false });
+  const [fabricModalState, setFabricModalState] = useState<{
+    isOpen: boolean;
+    rowId?: string;
+    fabricRowId?: string;
+    productId?: string;
+  }>({ isOpen: false });
 
   const sizeMultipliers: Record<string, number> = { XS: 0.8, S: 0.9, M: 1.0, L: 1.1, XL: 1.2, XXL: 1.3 };
 
@@ -428,8 +802,8 @@ export default function CrmCreateOrderPage() {
       if (!row.productId) return;
 
       row.fabrics.forEach((fab) => {
-        const fabricDef = fabricsData.find((f) => f.id === fab.fabricId);
-        const fabricName = fabricDef ? fabricDef.name : "";
+        const fabricDef = fabricsData.find((f) => f.id === fab.fabricId || f.name.toLowerCase() === fab.fabricId.toLowerCase());
+        const fabricName = fabricDef ? fabricDef.name : fab.fabricId;
 
         const hasQuantities = Object.values(fab.quantities).some((qty) => qty > 0);
 
@@ -775,7 +1149,11 @@ export default function CrmCreateOrderPage() {
                         </div>
 
                         {row.fabrics.map((fabricRow) => {
-                          const selectedFabric = fabricsData.find((f) => f.id === fabricRow.fabricId);
+                          const selectedFabric = fabricRow.fabricId
+                            ? fabricsData.find(
+                                (f) => f.id === fabricRow.fabricId || f.name.toLowerCase() === fabricRow.fabricId.toLowerCase()
+                              ) || { id: fabricRow.fabricId, name: fabricRow.fabricId, imagePath: "" }
+                            : null;
                           return (
                             <div key={fabricRow.id} className="fabric-row" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '15px', marginTop: '15px', padding: '15px', background: '#fdfdfd', border: '1px dashed #ccc', borderRadius: '6px' }}>
                               <div className="d-flex align-items-center w-100">
@@ -783,7 +1161,18 @@ export default function CrmCreateOrderPage() {
                                   {selectedFabric && (
                                     <img src={resolveMediaUrl(selectedFabric.imagePath, "fabric")} style={{ width: '40px', height: '40px', borderRadius: '4px', border: '1px solid #ccc', objectFit: 'cover' }} alt={selectedFabric.name} />
                                   )}
-                                  <button type="button" className="btn btn-outline-info btn-sm" onClick={() => setFabricModalState({ isOpen: true, rowId: row.id, fabricRowId: fabricRow.id })}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline-info btn-sm"
+                                    onClick={() =>
+                                      setFabricModalState({
+                                        isOpen: true,
+                                        rowId: row.id,
+                                        fabricRowId: fabricRow.id,
+                                        productId: row.productId,
+                                      })
+                                    }
+                                  >
                                     Select Fabric
                                   </button>
                                   <span style={{ fontWeight: 500 }}>
@@ -954,6 +1343,10 @@ export default function CrmCreateOrderPage() {
           }
         }}
         fabrics={fabricsData}
+        productId={fabricModalState.productId}
+        productsData={productsData}
+        bomData={bomData}
+        materials={materials}
       />
     </>
   );

@@ -63,6 +63,8 @@ export interface UpdateProductDto {
   isActive?: boolean;
   imagePath?: string;
   image?: File | null;
+  materialRequirements?: ProductMaterialRequirementItem[] | string;
+  productionStages?: ProductProductionStageItem[] | string;
 }
 
 export async function fetchProducts(params?: {
@@ -175,8 +177,22 @@ export async function updateProduct(id: string, payload: UpdateProductDto): Prom
     if (payload.imagePath) formData.append("ImagePath", payload.imagePath);
     formData.append("Image", payload.image);
 
+    if (payload.materialRequirements) {
+      const matReqStr = typeof payload.materialRequirements === "string" 
+        ? payload.materialRequirements 
+        : JSON.stringify(payload.materialRequirements);
+      formData.append("MaterialRequirements", matReqStr);
+    }
+    
+    if (payload.productionStages) {
+      const stagesStr = typeof payload.productionStages === "string" 
+        ? payload.productionStages 
+        : JSON.stringify(payload.productionStages);
+      formData.append("ProductionStages", stagesStr);
+    }
+
     const response = await fetch(`${API_BASE_URL}/${id}`, {
-      method: "PUT",
+      method: "POST",
       body: formData,
     });
 
@@ -187,10 +203,26 @@ export async function updateProduct(id: string, payload: UpdateProductDto): Prom
     return;
   }
 
+  const matReqList = Array.isArray(payload.materialRequirements)
+    ? payload.materialRequirements
+    : typeof payload.materialRequirements === "string" && payload.materialRequirements
+      ? JSON.parse(payload.materialRequirements)
+      : undefined;
+
+  const stagesList = Array.isArray(payload.productionStages)
+    ? payload.productionStages
+    : typeof payload.productionStages === "string" && payload.productionStages
+      ? JSON.parse(payload.productionStages)
+      : undefined;
+
+  const body: any = { ...payload };
+  if (matReqList !== undefined) body.materialRequirements = matReqList;
+  if (stagesList !== undefined) body.productionStages = stagesList;
+
   const response = await fetch(`${API_BASE_URL}/${id}/json`, {
-    method: "PUT",
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

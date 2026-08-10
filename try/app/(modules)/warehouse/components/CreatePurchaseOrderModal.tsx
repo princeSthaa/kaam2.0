@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/warehouse-purchaseorder.css";
+import { fetchMaterialCategories, MaterialCategoryDto } from "../api/materialcategory.api";
+import { fetchSuppliers, SupplierDto } from "../api/supplier.api";
+import { fetchMaterials, MaterialGetDto } from "../api/material.api";
+import { NepaliDatePicker } from "../../../components/ui/NepaliDatePicker";
+import { createPurchaseOrder, CreatePurchaseOrderDto } from "../api/purchaseorder.api";
 
 export type CreatePurchaseOrderModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (poData: any) => void;
+  planCode?: string;
+  materialName?: string;
+  shortageQty?: string | number;
 };
 
 export function CreatePurchaseOrderModal({
@@ -14,51 +22,100 @@ export function CreatePurchaseOrderModal({
   onClose,
   onSuccess,
 }: CreatePurchaseOrderModalProps) {
-  const [supplier, setSupplier] = useState("sup_1");
+  const [supplier, setSupplier] = useState("");
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const categoryContainerRef = useRef<HTMLDivElement>(null);
+  const [categories, setCategories] = useState<MaterialCategoryDto[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<SupplierDto[]>([]);
+  const [allMaterials, setAllMaterials] = useState<MaterialGetDto[]>([]);
+  const [isMaterialDropdownOpen, setIsMaterialDropdownOpen] = useState(false);
+  const [materialSearch, setMaterialSearch] = useState("");
+  const materialContainerRef = useRef<HTMLDivElement>(null);
+  
   const [expectedDate, setExpectedDate] = useState("2024-10-20");
   const [shippingMethod, setShippingMethod] = useState("Standard Freight");
   const [paymentTerms, setPaymentTerms] = useState("Net 30");
   const [notes, setNotes] = useState("");
 
+  useEffect(() => {
+    if (isOpen) {
+      Promise.all([
+        fetchMaterialCategories().catch((err) => {
+          console.error("Failed to load material categories:", err);
+          return [];
+        }),
+        fetchSuppliers().catch((err) => {
+          console.error("Failed to load suppliers:", err);
+          return [];
+        }),
+        fetchMaterials().catch((err) => {
+          console.error("Failed to load materials:", err);
+          return [];
+        })
+      ]).then(([catData, supData, matData]) => {
+        if (Array.isArray(catData)) setCategories(catData);
+        if (Array.isArray(supData)) setAllSuppliers(supData);
+        if (Array.isArray(matData)) setAllMaterials(matData);
+      });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryContainerRef.current && !categoryContainerRef.current.contains(event.target as Node)) {
+        setIsCategoryDropdownOpen(false);
+      }
+      if (materialContainerRef.current && !materialContainerRef.current.contains(event.target as Node)) {
+        setIsMaterialDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredSuppliers = allSuppliers.filter((s) => {
+    if (selectedCategoryIds.length === 0) return false;
+    return s.materialCategories?.some((mc) => {
+      const matchId = mc.id || mc.materialCategoryId;
+      return matchId && selectedCategoryIds.includes(matchId);
+    });
+  });
+
   // Line items state matching Stitch screen 2b09f42891d44866a446787ccf49fa78
-  const [lineItems, setLineItems] = useState([
-    {
-      id: "item-1",
-      materialName: "Heavy Cotton Canvas",
-      sku: "SKU-FAB-1029",
-      variant: "Navy Blue",
-      requiredQty: 500,
-      unitPrice: 450.0,
-      taxPercent: 18,
-      subtotal: "225,000.00",
-    },
-    {
-      id: "item-2",
-      materialName: "Industrial Zippers 15cm",
-      sku: "SKU-TRM-8821",
-      variant: "Brass Finish",
-      requiredQty: 1000,
-      unitPrice: 25.5,
-      taxPercent: 12,
-      subtotal: "25,500.00",
-    },
-  ]);
+  type LineItem = {
+    id: string;
+    materialId: string;
+    materialName: string;
+    sku: string;
+    units: string;
+    requiredQty: number;
+    unitPrice: number;
+    taxPercent: number;
+    subtotal: string;
+  };
+  
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
 
   if (!isOpen) return null;
 
   // Add line item handler
-  const handleAddLineItem = () => {
+  const handleAddMaterial = (material: MaterialGetDto) => {
     const newItem = {
       id: `item-${Date.now()}`,
-      materialName: "New Material Item",
-      sku: "SKU-NEW-000",
-      variant: "Standard",
-      requiredQty: 100,
-      unitPrice: 100.0,
-      taxPercent: 18,
-      subtotal: "10,000.00",
+      materialId: material.id,
+      materialName: material.name,
+      sku: material.materialCode || "N/A",
+      units: "pcs",
+      requiredQty: 1,
+      unitPrice: material.costPerUnit || 0,
+      taxPercent: 0,
+      subtotal: (material.costPerUnit || 0).toFixed(2),
     };
     setLineItems((prev) => [...prev, newItem]);
+    setIsMaterialDropdownOpen(false);
+    setMaterialSearch("");
   };
 
   // Delete line item handler
@@ -66,21 +123,50 @@ export function CreatePurchaseOrderModal({
     setLineItems((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const handleSendPO = (e: React.FormEvent) => {
+  const handleSendPO = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSuccess) {
-      onSuccess({
-        poNumber: "PO-2024-006",
-        supplier,
-        expectedDate,
-        shippingMethod,
-        paymentTerms,
-        notes,
-        lineItems,
-      });
+
+    if (!supplier) {
+      alert("Please select a supplier.");
+      return;
     }
-    onClose();
+    if (lineItems.length === 0) {
+      alert("Please add at least one line item.");
+      return;
+    }
+
+    const payload: CreatePurchaseOrderDto = {
+      supplierId: supplier,
+      materialCategoryId: selectedCategoryIds[0] || "00000000-0000-0000-0000-000000000000",
+      shippingMethod,
+      shippingAddress: "Kathmandu",
+      paymentTerms,
+      expectedDeliveryDate: expectedDate,
+      items: lineItems.map(item => ({
+        materialId: item.materialId,
+        orderedQuantity: item.requiredQty,
+        unitPrice: item.unitPrice,
+        totalPrice: item.requiredQty * item.unitPrice
+      }))
+    };
+
+    try {
+      const result = await createPurchaseOrder(payload);
+      console.log("Created Purchase Order:", result);
+      if (onSuccess) onSuccess({ supplier, lineItems, result });
+      onClose();
+    } catch (error) {
+      console.error("Failed to create PO:", error);
+      alert("Failed to create Purchase Order. Please check the console for details.");
+    }
   };
+
+  // Calculations
+  const calcSubtotal = lineItems.reduce((sum, item) => sum + item.requiredQty * item.unitPrice, 0);
+  const calcTotalTax = lineItems.reduce((sum, item) => sum + item.requiredQty * item.unitPrice * (item.taxPercent / 100), 0);
+  const calcGrandTotal = calcSubtotal + calcTotalTax;
+
+  const formatCurrency = (val: number) => val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
     <div className="wh-cpom-overlay">
@@ -92,7 +178,6 @@ export function CreatePurchaseOrderModal({
         <div className="wh-cpom-header">
           <div className="wh-cpom-header-title">
             <h2>Create New Purchase Order</h2>
-            <span className="wh-cpom-po-badge">PO-2024-006</span>
           </div>
           <button
             onClick={onClose}
@@ -109,31 +194,113 @@ export function CreatePurchaseOrderModal({
           {/* Section 1: Supplier & General Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             
-            {/* Supplier Selection */}
-            <div className="md:col-span-5 flex flex-col gap-2">
-              <label className="wh-cpom-field-label" htmlFor="supplier-select">
-                Supplier
-              </label>
-              <div className="relative">
-                <select
-                  id="supplier-select"
-                  value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
-                  className="wh-cpom-select pr-10"
-                >
-                  <option value="">Select Supplier...</option>
-                  <option value="sup_1">Apex Textiles Ltd.</option>
-                  <option value="sup_2">Global Trims &amp; Accessories</option>
-                  <option value="sup_3">Meridian Fabrics Inc.</option>
-                </select>
-                <span className="material-symbols-outlined absolute right-3 top-2.5 text-slate-400 pointer-events-none">
-                  expand_more
-                </span>
+            {/* Category and Supplier Selection */}
+            <div className="md:col-span-5 flex flex-col gap-4">
+              <div className="flex flex-col gap-2" ref={categoryContainerRef}>
+                <label className="wh-cpom-field-label">
+                  Material Categories
+                </label>
+                <div className="relative">
+                  <div
+                    className="w-full min-h-[40px] px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus-within:ring-2 focus-within:ring-slate-900 cursor-pointer flex flex-wrap gap-2 items-center"
+                    onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
+                  >
+                    {selectedCategoryIds.length === 0 && <span className="text-slate-400">Select Categories...</span>}
+                    {selectedCategoryIds.map((id) => {
+                      const cat = categories.find((c) => c.id === id);
+                      return (
+                        <span
+                          key={id}
+                          className="bg-slate-900 text-white px-2 py-1 rounded text-[10px] font-bold flex items-center gap-1 shadow-sm"
+                        >
+                          {cat ? cat.name.toUpperCase() : id}
+                          <span
+                            className="material-symbols-outlined text-[14px] cursor-pointer hover:text-slate-300"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCategoryIds(prev => prev.filter(x => x !== id));
+                            }}
+                          >
+                            close
+                          </span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                  {isCategoryDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 flex flex-col overflow-hidden">
+                      <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
+                        <input
+                          type="text"
+                          placeholder="Search categories..."
+                          value={categorySearch}
+                          onChange={(e) => setCategorySearch(e.target.value)}
+                          className="w-full px-3 py-1.5 border border-slate-200 rounded text-slate-900 outline-none text-xs focus:ring-1 focus:ring-slate-900"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      <div className="overflow-y-auto p-1">
+                        {categories.filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase())).map((cat) => (
+                          <div
+                            key={cat.id}
+                            className="px-3 py-2 hover:bg-slate-100 rounded cursor-pointer flex items-center gap-2 text-xs font-semibold text-slate-700 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (selectedCategoryIds.includes(cat.id)) {
+                                setSelectedCategoryIds(prev => prev.filter(x => x !== cat.id));
+                              } else {
+                                setSelectedCategoryIds(prev => [...prev, cat.id]);
+                              }
+                            }}
+                          >
+                            <div
+                              className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                selectedCategoryIds.includes(cat.id)
+                                  ? "bg-slate-900 border-slate-900 text-white"
+                                  : "border-slate-300 bg-white"
+                              }`}
+                            >
+                              {selectedCategoryIds.includes(cat.id) && (
+                                <span className="material-symbols-outlined text-[12px] font-bold">check</span>
+                              )}
+                            </div>
+                            <span>{cat.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 font-medium">
-                <span className="material-symbols-outlined text-[14px]">info</span>
-                <span>Suppliers are filtered based on material requirements.</span>
-              </p>
+
+              <div className="flex flex-col gap-2">
+                <label className="wh-cpom-field-label" htmlFor="supplier-select">
+                  Supplier
+                </label>
+                <div className="relative">
+                  <select
+                    id="supplier-select"
+                    value={supplier}
+                    onChange={(e) => setSupplier(e.target.value)}
+                    className="wh-cpom-select pr-10"
+                    disabled={selectedCategoryIds.length === 0}
+                  >
+                    <option value="">Select Supplier...</option>
+                    {filteredSuppliers.map((sup) => (
+                      <option key={sup.id} value={sup.id}>
+                        {sup.name} {sup.supplierCode ? `(${sup.supplierCode})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined absolute right-3 top-2.5 text-slate-400 pointer-events-none">
+                    expand_more
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 flex items-center gap-1 mt-1 font-medium">
+                  <span className="material-symbols-outlined text-[14px]">info</span>
+                  <span>Select a category first to filter suppliers.</span>
+                </p>
+              </div>
             </div>
 
             {/* Order Details Grid */}
@@ -144,11 +311,12 @@ export function CreatePurchaseOrderModal({
                 <label className="wh-cpom-field-label" htmlFor="expected_date">
                   Expected Date
                 </label>
-                <input
+                <NepaliDatePicker
                   id="expected_date"
-                  type="date"
                   value={expectedDate}
                   onChange={(e) => setExpectedDate(e.target.value)}
+                  onDateChange={setExpectedDate}
+                  enableNepaliPicker={true}
                   className="wh-cpom-input"
                 />
               </div>
@@ -204,14 +372,48 @@ export function CreatePurchaseOrderModal({
           <div className="flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <h3 className="wh-cpom-section-title m-0">Line Items</h3>
-              <button
-                onClick={handleAddLineItem}
-                type="button"
-                className="text-blue-600 hover:text-blue-800 font-extrabold text-xs flex items-center gap-1 cursor-pointer transition-colors uppercase tracking-wider"
-              >
-                <span className="material-symbols-outlined text-[16px]">add_circle</span>
-                <span>ADD MATERIAL</span>
-              </button>
+              <div className="relative" ref={materialContainerRef}>
+                <button
+                  onClick={() => setIsMaterialDropdownOpen(!isMaterialDropdownOpen)}
+                  type="button"
+                  className="text-blue-600 hover:text-blue-800 font-extrabold text-xs flex items-center gap-1 cursor-pointer transition-colors uppercase tracking-wider"
+                >
+                  <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                  <span>ADD MATERIAL</span>
+                </button>
+                
+                {isMaterialDropdownOpen && (
+                  <div className="absolute right-0 z-50 w-64 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 flex flex-col overflow-hidden">
+                    <div className="p-2 border-b border-slate-100 bg-slate-50 sticky top-0">
+                      <input
+                        type="text"
+                        placeholder="Search materials..."
+                        value={materialSearch}
+                        onChange={(e) => setMaterialSearch(e.target.value)}
+                        className="w-full px-3 py-1.5 border border-slate-200 rounded text-slate-900 outline-none text-xs focus:ring-1 focus:ring-slate-900"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="overflow-y-auto p-1">
+                      {allMaterials.filter(m => m.name.toLowerCase().includes(materialSearch.toLowerCase()) || (m.materialCode && m.materialCode.toLowerCase().includes(materialSearch.toLowerCase()))).map((mat) => (
+                        <div
+                          key={mat.id}
+                          className="px-3 py-2 hover:bg-slate-100 rounded cursor-pointer flex flex-col gap-0.5"
+                          onClick={() => handleAddMaterial(mat)}
+                        >
+                          <span className="text-xs font-semibold text-slate-800">{mat.name}</span>
+                          <span className="text-[10px] text-slate-500 font-mono">{mat.materialCode}</span>
+                        </div>
+                      ))}
+                      {allMaterials.length === 0 && (
+                        <div className="px-3 py-4 text-center text-xs text-slate-500 font-medium">
+                          No materials found
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="wh-cpom-table-container">
@@ -220,7 +422,7 @@ export function CreatePurchaseOrderModal({
                   <tr>
                     <th className="w-10"></th>
                     <th className="w-1/3">Material / SKU</th>
-                    <th>Variant / Size</th>
+                    <th>Units</th>
                     <th className="text-right">Required Qty</th>
                     <th className="text-right">Unit Price (Rs)</th>
                     <th className="text-right">Tax %</th>
@@ -236,7 +438,7 @@ export function CreatePurchaseOrderModal({
                         <button
                           type="button"
                           onClick={() => handleDeleteItem(item.id)}
-                          className="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer p-1"
+                          className="text-slate-400 hover:text-red-600 transition-colors cursor-pointer p-1"
                         >
                           <span className="material-symbols-outlined text-[18px]">delete</span>
                         </button>
@@ -262,10 +464,10 @@ export function CreatePurchaseOrderModal({
                         </div>
                       </td>
 
-                      {/* Variant */}
+                      {/* Units */}
                       <td className="pt-3">
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                          {item.variant}
+                          {item.units}
                         </span>
                       </td>
 
@@ -316,7 +518,7 @@ export function CreatePurchaseOrderModal({
 
                       {/* Subtotal */}
                       <td className="pt-3 text-right font-mono font-bold text-slate-900 text-xs">
-                        {item.subtotal}
+                        {(item.requiredQty * item.unitPrice).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
 
                     </tr>
@@ -324,17 +526,6 @@ export function CreatePurchaseOrderModal({
                 </tbody>
               </table>
 
-              {/* Add row state button */}
-              <div className="px-4 py-3 border-t border-slate-200 bg-white text-center">
-                <button
-                  type="button"
-                  onClick={handleAddLineItem}
-                  className="text-slate-600 hover:text-slate-900 text-xs font-semibold flex items-center justify-center gap-2 w-full transition-colors cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[18px]">add</span>
-                  <span>Add another line item</span>
-                </button>
-              </div>
             </div>
           </div>
 
@@ -359,22 +550,22 @@ export function CreatePurchaseOrderModal({
             <div className="w-full sm:w-1/3 bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-3 shadow-xs">
               <div className="flex justify-between text-xs text-slate-600 font-semibold">
                 <span>Total Items</span>
-                <span className="font-mono text-slate-900">{lineItems.length}</span>
+                <span className="font-mono text-slate-900">{lineItems.reduce((sum, item) => sum + item.requiredQty, 0)} Units ({lineItems.length} SKUs)</span>
               </div>
 
               <div className="flex justify-between text-xs text-slate-600 font-semibold">
                 <span>Subtotal</span>
-                <span className="font-mono text-slate-900">Rs 250,500.00</span>
+                <span className="font-mono text-slate-900">Rs {formatCurrency(calcSubtotal)}</span>
               </div>
 
               <div className="flex justify-between text-xs text-slate-600 font-semibold border-b border-slate-200 pb-3">
                 <span>Total Tax</span>
-                <span className="font-mono text-slate-900">Rs 43,560.00</span>
+                <span className="font-mono text-slate-900">Rs {formatCurrency(calcTotalTax)}</span>
               </div>
 
               <div className="flex justify-between items-center pt-1">
                 <span className="font-bold text-slate-900 text-sm">Grand Total</span>
-                <span className="font-mono text-lg font-extrabold text-slate-900">Rs 294,060.00</span>
+                <span className="font-mono text-lg font-extrabold text-slate-900">Rs {formatCurrency(calcGrandTotal)}</span>
               </div>
             </div>
 

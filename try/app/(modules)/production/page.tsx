@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { API_MAIN_URL } from "./api/constant";
 import {
   BarChart,
   Bar,
@@ -108,8 +109,8 @@ export default function ProductionOverviewDashboardPage() {
     setIsLoading(true);
     try {
       const [plansRes, stagesRes] = await Promise.all([
-        fetch("http://localhost:5083/api/production-plans", { cache: "no-store" }),
-        fetch("http://localhost:5083/api/production-plan-stage", { cache: "no-store" })
+        fetch(`${API_MAIN_URL}/production-plans`, { cache: "no-store" }),
+        fetch(`${API_MAIN_URL}/production-plan-stage`, { cache: "no-store" })
       ]);
 
       const plansData = plansRes.ok ? await plansRes.json() : [];

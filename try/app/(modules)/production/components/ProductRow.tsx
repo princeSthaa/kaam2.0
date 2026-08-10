@@ -46,7 +46,7 @@ export default function ProductRow({ product, isExpanded, onToggle, onUpdateProd
             />
           </div>
           <div>
-            <div className="font-kaam-label-md text-xs text-kaam-on-surface font-bold font-mono">{product.id}</div>
+            <div className="font-kaam-label-md text-xs text-kaam-on-surface font-bold font-mono">{product.sku || product.id}</div>
             <div className="font-kaam-body-sm text-xs font-semibold text-kaam-on-surface truncate">{product.name}</div>
           </div>
         </div>

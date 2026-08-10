@@ -9,7 +9,7 @@ import {
   ProductCategoryDto,
 } from "../../api/productcategory.api";
 
-export interface ProductCategoryItem extends ProductCategoryDto {}
+export interface ProductCategoryItem extends ProductCategoryDto { }
 
 interface ManageProductCategoryModalProps {
   isOpen: boolean;
@@ -252,7 +252,7 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                   {loading ? (
                     <tr>
                       <td colSpan={4} className="py-6 text-center text-slate-400 font-mono">
-                        Loading product categories from http://localhost:5083/api/product-category...
+                        Loading product categories ...
                       </td>
                     </tr>
                   ) : filteredCategories.length === 0 ? (
@@ -271,11 +271,10 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                         <td className="py-2.5 px-4 font-mono">
                           <div className="flex items-center gap-3">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                                cat.isActive !== false
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold border ${cat.isActive !== false
                                   ? "bg-emerald-50 text-emerald-800 border-emerald-200"
                                   : "bg-slate-100 text-slate-600 border-slate-200"
-                              }`}
+                                }`}
                             >
                               {cat.isActive !== false ? "Active" : "Inactive"}
                             </span>
@@ -283,15 +282,13 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
                             <button
                               type="button"
                               onClick={() => handleToggleCategoryStatus(cat)}
-                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                                cat.isActive !== false ? "bg-emerald-600" : "bg-slate-300"
-                              }`}
+                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${cat.isActive !== false ? "bg-emerald-600" : "bg-slate-300"
+                                }`}
                               title={`Toggle status to ${cat.isActive !== false ? "Inactive" : "Active"}`}
                             >
                               <span
-                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                                  cat.isActive !== false ? "translate-x-4" : "translate-x-0"
-                                }`}
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${cat.isActive !== false ? "translate-x-4" : "translate-x-0"
+                                  }`}
                               />
                             </button>
                           </div>

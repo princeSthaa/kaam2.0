@@ -3,11 +3,13 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/registerskumodal";
+import { EditSkuModal, EditSkuFormData } from "../components/modals/editskumodal";
 import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
 import { ManageProductionStagesModal } from "../components/modals/manageproductionstagesmodal";
 import { ManageProductCategoryModal } from "../components/modals/manageproductcategorymodal";
 import { fetchProducts, deleteProduct as apiDeleteProduct, ProductDto } from "../api/product.api";
 import { fetchProductCategories, ProductCategoryDto } from "../api/productcategory.api";
+import { API_MAIN_URL } from "../api/constant";
 
 export interface ProductDirectoryItem {
   id: string;
@@ -24,6 +26,7 @@ export interface ProductDirectoryItem {
   updatedAt?: string;
   thumbnailUrl?: string;
   adminNotes?: string;
+  originalData?: ProductDto;
 }
 
 function ProductAvatar({ src, name, sku }: { src?: string; name: string; sku: string }) {
@@ -56,6 +59,7 @@ export default function ProductDirectoryPage() {
 
   // Modal States
   const [isRegisterSkuModalOpen, setIsRegisterSkuModalOpen] = useState(false);
+  const [isEditSkuModalOpen, setIsEditSkuModalOpen] = useState(false);
   const [isDefineMaterialModalOpen, setIsDefineMaterialModalOpen] = useState(false);
   const [isManageStagesModalOpen, setIsManageStagesModalOpen] = useState(false);
   const [isManageProductCategoryModalOpen, setIsManageProductCategoryModalOpen] = useState(false);
@@ -120,8 +124,9 @@ function extractSizes(materialRequirements?: any[]): string[] {
           thumbnailUrl: p.imagePath
             ? p.imagePath.startsWith("http")
               ? p.imagePath
-              : `http://localhost:5083${p.imagePath}`
+              : `${API_MAIN_URL}${p.imagePath}`
             : undefined,
+          originalData: p
         }));
         setProducts(mapped);
       }
@@ -551,7 +556,7 @@ function extractSizes(materialRequirements?: any[]): string[] {
                           type="button"
                           onClick={() => {
                             setEditingProduct(prod);
-                            setIsRegisterSkuModalOpen(true);
+                            setIsEditSkuModalOpen(true);
                           }}
                           className="p-1.5 text-slate-400 hover:text-amber-600 transition-colors rounded-lg hover:bg-amber-50 inline-flex items-center justify-center"
                           title="Edit Product Spec"
@@ -673,11 +678,21 @@ function extractSizes(materialRequirements?: any[]): string[] {
         isOpen={isRegisterSkuModalOpen}
         onClose={() => {
           setIsRegisterSkuModalOpen(false);
-          setEditingProduct(null);
         }}
         onSave={handleSaveSku}
-        initialData={editingProduct}
       />
+
+      {editingProduct && (
+        <EditSkuModal
+          isOpen={isEditSkuModalOpen}
+          onClose={() => {
+            setIsEditSkuModalOpen(false);
+            setEditingProduct(null);
+          }}
+          onSave={handleSaveSku as any}
+          initialData={editingProduct.originalData}
+        />
+      )}
 
       <DefineMaterialModal
         isOpen={isDefineMaterialModalOpen}

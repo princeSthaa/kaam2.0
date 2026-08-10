@@ -6,6 +6,7 @@ import { TableShell } from "@/app/components/ui/TableShell";
 import { fetchCustomers } from "../../crm/api/customer.api";
 import { Customer } from "../../crm/dto/customer.dto";
 import { fetchOrders } from "../../crm/api/order.api";
+import { API_MAIN_URL } from "../api/constant";
 
 type CatalogKind = "customer" | "outlet";
 
@@ -375,8 +376,8 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
       Promise.all([
         fetchCustomers(),
         fetchOrders(),
-        fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => [])
+        fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : []).catch(() => [])
       ]).then(([custs, ords, plans, planProducts]) => {
         const plannedOrderItemIds = new Set<string>();
         const plannedOrderProductKeys = new Set<string>();

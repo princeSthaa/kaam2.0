@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Script from "next/script";
 import Link from "next/link";
+import { API_MAIN_URL } from "../../admin/api/constant";
 
 import { STAGE_COLORS, STAGE_LIGHT_COLORS as STAGE_LIGHT } from "../constants/production.constants";
 import { adToBs as adToNepali, getStatusStyle, calculatePlanProgress as planProgress } from "../lib/production-utils";
@@ -36,10 +37,10 @@ export default function ProductionOverviewPage() {
     setLoading(true);
     try {
       const [plansRes, stagesRes, wcRes, prodRes] = await Promise.all([
-        fetch("http://localhost:5083/api/production-plans", { cache: "no-store" }),
-        fetch("http://localhost:5083/api/production-plan-stage", { cache: "no-store" }),
-        fetch("http://localhost:5083/api/work-center", { cache: "no-store" }),
-        fetch("http://localhost:5083/api/production-plan-product", { cache: "no-store" })
+        fetch(`${API_MAIN_URL}/production-plans`, { cache: "no-store" }),
+        fetch(`${API_MAIN_URL}/production-plan-stage`, { cache: "no-store" }),
+        fetch(`${API_MAIN_URL}/work-center`, { cache: "no-store" }),
+        fetch(`${API_MAIN_URL}/production-plan-product`, { cache: "no-store" })
       ]);
 
       const plansData = plansRes.ok ? await plansRes.json() : [];

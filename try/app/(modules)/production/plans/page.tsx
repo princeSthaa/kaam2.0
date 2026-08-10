@@ -5,6 +5,7 @@ import Link from "next/link";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 import PlanDetailsPage from "./[id]/page";
 import { formatNepaliDate } from "../lib/production-utils";
+import { API_MAIN_URL } from "../api/constant";
 import "../styles/production-plans-list.css";
 
 const demandTypeOptions = [
@@ -42,7 +43,7 @@ export default function ProductionPlansListPage() {
 
   const fetchPlans = () => {
     setLoading(true);
-    fetch("http://localhost:5083/api/production-plans")
+    fetch(`${API_MAIN_URL}/production-plans`)
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         if (Array.isArray(data)) {

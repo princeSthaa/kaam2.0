@@ -18,6 +18,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 import { checkMaterials } from "../../api/production.api";
+import { API_MAIN_URL } from "../../api/constant";
 import "./styles/create-customer-plan.css";
 
 // Mock Database Lists
@@ -117,7 +118,7 @@ export default function CreateCustomerPlanPage() {
   const [backendWorkCenters, setBackendWorkCenters] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5083/api/work-center")
+    fetch(`${API_MAIN_URL}/work-center`)
       .then(res => res.ok ? res.json() : [])
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -267,12 +268,12 @@ export default function CreateCustomerPlanPage() {
       const initialDates: Record<string, any> = {};
 
       const defaultStart = new Date();
-      defaultStart.setDate(defaultStart.getDate() + 1);
+      // start date is today by default
       const defaultEnd = new Date(defaultStart);
       defaultEnd.setDate(defaultEnd.getDate() + 14);
 
       tempData.basket.forEach((item: any) => {
-        const rawReq = item.deliveryDate || item.requiredDate || defaultEnd.toISOString().split("T")[0];
+        const rawReq = item.dueDate || item.deliveryDate || item.requiredDate || defaultEnd.toISOString().split("T")[0];
         const cleanReq = String(rawReq).split("T")[0];
         initialDates[item.id] = {
           start: adToBs(defaultStart.toISOString().split("T")[0]),
@@ -305,8 +306,8 @@ export default function CreateCustomerPlanPage() {
     if (typeof window !== "undefined") {
       if (editPlanId) {
         Promise.all([
-          fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(editPlanId)}`).then((res) => (res.ok ? res.json() : null)),
-          fetch("http://localhost:5083/api/production-plan-product").then((res) => (res.ok ? res.json() : [])),
+          fetch(`${API_MAIN_URL}/production-plans/${encodeURIComponent(editPlanId)}`).then((res) => (res.ok ? res.json() : null)),
+          fetch(`${API_MAIN_URL}/production-plan-product`).then((res) => (res.ok ? res.json() : [])),
         ])
           .then(([data, allProducts]) => {
             if (data) {
@@ -372,7 +373,7 @@ export default function CreateCustomerPlanPage() {
           const sourceName = parsed.kind === "customer"
             ? parsed.sourceDetail?.customerName
             : parsed.sourceDetail?.name;
-          setPlanName(`Production Plan - ${sourceName || "Stock"} (${bsDateStr})`);
+          setPlanName(`Batch - ${sourceName || "Stock"} - ${generatedPlanNo}`);
 
           if (parsed.kind === "customer") {
             setOutputDestination("Customer Dispatch");
@@ -501,7 +502,7 @@ export default function CreateCustomerPlanPage() {
     const totalQuantity = basketItems.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
     const requiredDates = basketItems
-      .map((item: any) => item.deliveryDate || item.requiredDate)
+      .map((item: any) => item.dueDate || item.deliveryDate || item.requiredDate)
       .filter(Boolean)
       .sort();
     const earliestRequiredDate = requiredDates[0] || new Date().toISOString();
@@ -630,7 +631,7 @@ export default function CreateCustomerPlanPage() {
     };
 
     try {
-      const response = await fetch("http://localhost:5083/api/production-plans", {
+      const response = await fetch(`${API_MAIN_URL}/production-plans`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPlan)
@@ -734,12 +735,12 @@ export default function CreateCustomerPlanPage() {
                   <input type="text" id="planDate" className="ccp-input readonly" value={adToBs(planDate)} readOnly />
                 </div>
                 <div className="ccp-form-group full">
-                  <label htmlFor="planName" className="ccp-label">Production Plan Name <span style={{ color: "#dc2626" }}>*</span></label>
+                  <label htmlFor="planName" className="ccp-label">Batch <span style={{ color: "#dc2626" }}>*</span></label>
                   <input
                     type="text"
                     id="planName"
                     className="ccp-input"
-                    placeholder="Enter descriptive name for the production plan"
+                    placeholder="Enter descriptive name for the batch"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
                     required
@@ -863,19 +864,19 @@ export default function CreateCustomerPlanPage() {
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "16px" }}>
                             <div>
                               <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Planned Start (BS)</label>
-                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.start)}
+                              <NepaliDatePicker className="ccp-input" value={pd.start} enableNepaliPicker={true}
                                 onChange={(e: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, start: bsToAd(e.target.value) } }))}
                                 onDateChange={(bsVal: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, start: bsToAd(bsVal) } }))} />
                             </div>
                             <div>
                               <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Planned End (BS)</label>
-                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.end)}
+                              <NepaliDatePicker className="ccp-input" value={pd.end} enableNepaliPicker={true}
                                 onChange={(e: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, end: bsToAd(e.target.value) } }))}
                                 onDateChange={(bsVal: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, end: bsToAd(bsVal) } }))} />
                             </div>
                             <div>
                               <label style={{ fontSize: "11px", fontWeight: "700", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "4px" }}>Required By (BS)</label>
-                              <NepaliDatePicker className="ccp-input" value={adToBs(pd.required)}
+                              <NepaliDatePicker className="ccp-input" value={pd.required} enableNepaliPicker={true}
                                 onChange={(e: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, required: bsToAd(e.target.value) } }))}
                                 onDateChange={(bsVal: any) => setProductDates(prev => ({ ...prev, [item.id]: { ...pd, required: bsToAd(bsVal) } }))} />
                             </div>
@@ -929,11 +930,11 @@ export default function CreateCustomerPlanPage() {
                                         </option>
                                       ))}
                                     </select>
-                                    <NepaliDatePicker style={S_stage.stageThinInput} value={adToBs(stage.plannedStartDate)}
+                                    <NepaliDatePicker style={S_stage.stageThinInput} value={stage.plannedStartDate} enableNepaliPicker={true}
                                       onChange={(e: any) => updateStage(item.id, si, "plannedStartDate", bsToAd(e.target.value))}
                                       onDateChange={(bsVal: any) => updateStage(item.id, si, "plannedStartDate", bsToAd(bsVal))}
                                     />
-                                    <NepaliDatePicker style={S_stage.stageThinInput} value={adToBs(stage.plannedEndDate)}
+                                    <NepaliDatePicker style={S_stage.stageThinInput} value={stage.plannedEndDate} enableNepaliPicker={true}
                                       onChange={(e: any) => updateStage(item.id, si, "plannedEndDate", bsToAd(e.target.value))}
                                       onDateChange={(bsVal: any) => updateStage(item.id, si, "plannedEndDate", bsToAd(bsVal))}
                                     />
