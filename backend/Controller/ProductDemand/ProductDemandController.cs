@@ -21,7 +21,7 @@ public class ProductDemandController : ControllerBase
         [FromQuery] string? requestId = null,
         [FromQuery] decimal? quantity = null,
         [FromQuery] string? approvedBy = null,
-        [FromQuery] bool? isIssued = false,
+        [FromQuery] bool? isIssued = null,
         [FromQuery] DateTime? createdAt = null,
         [FromQuery] DateTime? updatedAt = null
     ) =>   

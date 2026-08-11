@@ -32,10 +32,11 @@ using backend.Service.PurchaseOrder;
 using backend.Service.PurchaseOrderReceipt;
 using backend.Service.ProductDemand;
 using backend.Model;
+using backend.Service.ProductIssue;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Add CORS policies to allow Next.js frontend
+// Add CORS policies to allow Next.js frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs",
@@ -110,6 +111,7 @@ builder.Services.AddScoped<IPurchaseOrderService, PurchaseOrderService>();
 builder.Services.AddScoped<IPurchaseOrderReceiptService, PurchaseOrderReceiptService>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
 builder.Services.AddScoped<IProductDemandService, ProductDemandService>();
+builder.Services.AddScoped<IProductIssueService,ProductIssueService>();
 
 int GetAvailablePort()
 {
