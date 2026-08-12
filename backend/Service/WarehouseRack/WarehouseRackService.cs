@@ -1,11 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.WarehouseRack;
-using backend.Model;
 
 namespace backend.Service.WarehouseRack
 {
@@ -21,33 +16,22 @@ namespace backend.Service.WarehouseRack
         public async Task<List<WarehouseRackDto>> GetAllAsync(
             Guid? id = null,
             string? code = null,
+            string? name = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? warehouseRoomId = null
         )
         {
-            var query = _context.WarehouseRacks.AsQueryable();
-
-            if (id.HasValue) query = query.Where(q => q.Id == id.Value);
-            if (!string.IsNullOrEmpty(code)) query = query.Where(q => q.Code == code);
-            if (createdAt.HasValue) query = query.Where(q => q.CreatedAt.Date == createdAt.Value.Date);
-            if (!string.IsNullOrEmpty(createdBy)) query = query.Where(q => q.CreatedBy == createdBy);
-            if (updatedAt.HasValue) query = query.Where(q => q.UpdatedAt.Date == updatedAt.Value.Date);
-            if (!string.IsNullOrEmpty(updatedBy)) query = query.Where(q => q.UpdatedBy == updatedBy);
-            if (warehouseRoomId.HasValue) query = query.Where(q => q.WarehouseRoomId == warehouseRoomId.Value);
-
-            return await query.Select(w => new WarehouseRackDto
-            {
-                Id = w.Id,
-                Code = w.Code,
-                CreatedAt = w.CreatedAt,
-                CreatedBy = w.CreatedBy,
-                UpdatedAt = w.UpdatedAt,
-                UpdatedBy = w.UpdatedBy,
-                WarehouseRoomId = w.WarehouseRoomId
-            }).ToListAsync();
+            return await _context.Database.SqlQuery<WarehouseRackDto>($@"
+                EXEC sp_GetWarehouseRacks
+                    @Id = {id},
+                    @Code = {code},
+                    @Name = {name},
+                    @CreatedAt = {createdAt},
+                    @UpdatedAt = {updatedAt},
+                    @WarehouseRoomId = {warehouseRoomId}
+            ")
+            .ToListAsync();
         }
 
         public async Task<WarehouseRackDto?> GetByIdAsync(Guid id)
@@ -56,51 +40,43 @@ namespace backend.Service.WarehouseRack
             return results.FirstOrDefault();
         }
 
-        public async Task<bool> CreateAsync(WarehouseRackDto warehouseRackDto)
+        public async Task<WarehouseRackDto> CreateAsync(WarehouseRackDto dto)
         {
-            if (warehouseRackDto.Id == Guid.Empty)
-            {
-                warehouseRackDto.Id = Guid.NewGuid();
-            }
+            dto.Id = Guid.NewGuid();
+            dto.Code = $"RCK-{((await _context.WarehouseRacks.CountAsync()) + 1):D2}";
+            var now = DateTime.UtcNow;
 
-            var rack = new backend.Model.WarehouseRack
-            {
-                Id = warehouseRackDto.Id,
-                Code = warehouseRackDto.Code ?? string.Empty,
-                WarehouseRoomId = warehouseRackDto.WarehouseRoomId,
-                CreatedAt = warehouseRackDto.CreatedAt == default ? DateTime.UtcNow : warehouseRackDto.CreatedAt,
-                CreatedBy = warehouseRackDto.CreatedBy ?? "System",
-                UpdatedAt = warehouseRackDto.UpdatedAt == default ? DateTime.UtcNow : warehouseRackDto.UpdatedAt,
-                UpdatedBy = warehouseRackDto.UpdatedBy ?? "System"
-            };
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_InsertWarehouseRacks
+                    @Id = {dto.Id},
+                    @Code = {dto.Code},
+                    @Name = {dto.Name},
+                    @WarehouseRoomId = {dto.WarehouseRoomId},
+                    @CreatedAt = {now},
+                    @UpdatedAt = {now}
+            ");
 
-            _context.WarehouseRacks.Add(rack);
-            await _context.SaveChangesAsync();
-            return true;
+            return dto;
         }
 
         public async Task<bool> UpdateAsync(Guid id, WarehouseRackDto warehouseRackDto)
         {
-            var rack = await _context.WarehouseRacks.FirstOrDefaultAsync(w => w.Id == id);
-            if (rack == null) return false;
+            var now = DateTime.UtcNow;
 
-            rack.Code = warehouseRackDto.Code ?? rack.Code;
-            rack.WarehouseRoomId = warehouseRackDto.WarehouseRoomId != Guid.Empty ? warehouseRackDto.WarehouseRoomId : rack.WarehouseRoomId;
-            rack.UpdatedAt = DateTime.UtcNow;
-            rack.UpdatedBy = warehouseRackDto.UpdatedBy ?? "System";
-
-            await _context.SaveChangesAsync();
-            return true;
+            return await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_UpdateWarehouseRacks
+                    @Id = {id},
+                    @Name = {warehouseRackDto.Name},
+                    @UpdatedAt = {now}
+            ") > 0;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            var rack = await _context.WarehouseRacks.FirstOrDefaultAsync(w => w.Id == id);
-            if (rack == null) return false;
-
-            _context.WarehouseRacks.Remove(rack);
-            await _context.SaveChangesAsync();
-            return true;
+            return await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                EXEC sp_DeleteWarehouseRacks
+                    @Id = {id}
+            ") > 0;
         }
     }
 }

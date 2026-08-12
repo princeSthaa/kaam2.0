@@ -24,6 +24,7 @@ namespace backend.Data
         public DbSet<Material> Materials { get; set; } = null!;
         public DbSet<BillOfMaterial> BillOfMaterials { get; set; } = null!;
         public DbSet<Warehouse> Warehouses { get; set; } = null!;
+        public DbSet<WarehouseFloor> WarehouseFloors { get; set; } = null!;
         public DbSet<WarehouseRoom> WarehouseRooms { get; set; } = null!;
         public DbSet<WarehouseRack> WarehouseRacks { get; set; } = null!;
         public DbSet<WarehouseShelf> WarehouseShelfs { get; set; } = null!;
@@ -144,15 +145,7 @@ namespace backend.Data
                 .WithMany()
                 .HasForeignKey(e => e.MaterialId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<MaterialInspection>()
-                .Property(e => e.InspectionStatus)
-                .HasConversion<string>();
-
-            modelBuilder.Entity<MaterialInspectionItem>()
-                .Property(e => e.InspectionStatus)
-                .HasConversion<string>();
-
+                
             modelBuilder.Entity<Inventory>()
                 .HasIndex(i => new { i.MaterialId, i.WarehouseShelfId })
                 .IsUnique();
@@ -280,12 +273,18 @@ namespace backend.Data
                 .WithMany()
                 .HasForeignKey(e => e.MaterialId)
                 .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<WarehouseRoom>()
+            modelBuilder.Entity<WarehouseFloor>()
                 .HasOne(e => e.Warehouse)
-                .WithMany(p => p.WarehouseRooms)
+                .WithMany(p => p.WarehouseFloors)
                 .HasForeignKey(e => e.WarehouseId)
                 .OnDelete(DeleteBehavior.Cascade);
-
+                
+            modelBuilder.Entity<WarehouseRoom>()
+                .HasOne(e => e.WarehouseFloor)
+                .WithMany(p => p.WarehouseRooms)
+                .HasForeignKey(e => e.WarehouseFloorId)
+                
+                .OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<WarehouseRack>()
                 .HasOne(e => e.WarehouseRoom)
                 .WithMany(p => p.WarehouseRacks)

@@ -18,7 +18,7 @@ public class ProductDemandService : IProductDemandService
         string? requestId = null,
         decimal? quantity = null,
         string? approvedBy = null,
-        bool? isIssued = false,
+        bool? isIssued = null,
         DateTime? createdAt = null,
         DateTime? updatedAt = null
     )

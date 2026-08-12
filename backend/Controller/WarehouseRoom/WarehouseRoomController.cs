@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.WarehouseRoom;
-using backend.Model;
 using backend.Service.WarehouseRoom;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,7 +15,6 @@ namespace backend.Controller.WarehouseRoom
             _WarehouseRoomService = WarehouseRoomService;
         }
 
-        // <crudgen:actions>
         [HttpGet("{id}")] 
         public async Task<ActionResult<WarehouseRoomDto>> GetById(Guid id)
         {
@@ -37,22 +32,18 @@ namespace backend.Controller.WarehouseRoom
         public async Task<ActionResult<List<WarehouseRoomDto>>> GetAll(
             [FromQuery] Guid? id = null,
             [FromQuery] string? name = null,
-            [FromQuery] string? floor = null,
+            [FromQuery] string? code = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? warehouseId = null
         )
         {
             var items = await _WarehouseRoomService.GetAllAsync(
                 id,
                 name,
-                floor,
+                code,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 warehouseId
             );
 
@@ -69,45 +60,31 @@ namespace backend.Controller.WarehouseRoom
 
             var created = await _WarehouseRoomService.CreateAsync(warehouseRoomDto);
 
-            if (!created)
+            if (created == null)
             {
                 return BadRequest();
             }
 
-            return Ok();
+            return Ok(created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] WarehouseRoomDto warehouseRoomDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] WarehouseRoomDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var updated = await _WarehouseRoomService.UpdateAsync(id, warehouseRoomDto);
+            return await _WarehouseRoomService.UpdateAsync(id, dto)? NoContent() : NotFound($"WarehouseRoom with ID {id} not found.");
 
-            if (!updated)
-            {
-                return NotFound($"WarehouseRoom with ID {id} not found.");
-            }
-
-            return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleted = await _WarehouseRoomService.DeleteAsync(id);
-
-            if (!deleted)
-            {
-                return NotFound($"WarehouseRoom with ID {id} not found.");
-            }
-
-            return NoContent();
+            return await _WarehouseRoomService.DeleteAsync(id)? NoContent(): NotFound($"WarehouseRoom with ID {id} not found.");
         }
-        // </crudgen:actions>
     }
 }
 
