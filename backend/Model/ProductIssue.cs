@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace backend.Model;
 
 [Table("ProductIssue")]
-public class ProductIssue
+public class ProductIssues
 {
     [Key]
     public Guid Id { get; set; }

@@ -76,6 +76,53 @@ namespace backend.Controller.PurchaseOrder
             }
         }
 
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] backend.Dto.PurchaseOrder.PurchaseOrderStatusUpdateDto dto)
+        {
+            try
+            {
+                var po = await _service.GetByIdAsync(id);
+                if (po == null) return NotFound($"PurchaseOrder with ID {id} not found.");
+
+                if (!Enum.TryParse<OrderStatus>(dto.Status, true, out var newStatus))
+                {
+                    return BadRequest("Invalid status.");
+                }
+
+                var updateDto = new PurchaseOrderDto
+                {
+                    Id = po.Id,
+                    OrderNumber = po.OrderNumber,
+                    Status = newStatus,
+                    SupplierId = po.SupplierId,
+                    MaterialCategoryId = po.MaterialCategoryId,
+                    ShippingMethod = po.ShippingMethod,
+                    ShippingAddress = po.ShippingAddress,
+                    PaymentTerms = po.PaymentTerms,
+                    ExpectedDeliveryDate = po.ExpectedDeliveryDate,
+                    Items = po.Items.Select(i => new backend.Dto.PurchaseOrder.PurchaseOrderItemDto
+                    {
+                        Id = i.Id,
+                        MaterialId = i.MaterialId,
+                        OrderedQuantity = i.OrderedQuantity,
+                        UnitPrice = i.UnitPrice
+                    }).ToList()
+                };
+
+                var updated = await _service.UpdateAsync(id, updateDto);
+                if (updated)
+                {
+                    var updatedPo = await _service.GetByIdAsync(id);
+                    return Ok(updatedPo);
+                }
+                return NotFound();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {

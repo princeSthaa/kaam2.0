@@ -35,7 +35,7 @@ using backend.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
-Add CORS policies to allow Next.js frontend
+// Add CORS policies to allow Next.js frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowNextJs",

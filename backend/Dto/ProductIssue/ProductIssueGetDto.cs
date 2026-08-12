@@ -1,7 +1,7 @@
 
-namespace backend.Model;
+namespace backend.Dto.ProductIssue;
 
-public class ProductIssue
+public class ProductIssueGetDto
 {
     public Guid Id { get; set; }
     public Guid ProductDemandId { get; set; }

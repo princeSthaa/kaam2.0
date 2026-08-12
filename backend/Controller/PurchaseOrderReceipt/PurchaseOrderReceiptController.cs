@@ -13,7 +13,7 @@ namespace backend.Controller.PurchaseOrderReceipt
     {
         private readonly IPurchaseOrderReceiptService _service;
 
-        public PurchaseOrderReceiptController(IPurchaseOrderReceiptService service)
+        public PurchaseOrderReceiptController(IPurchaseOrderReceiptService service, backend.Data.AppDbContext context)
         {
             _service = service;
         }

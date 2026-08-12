@@ -45,10 +45,18 @@ namespace backend.Service.PurchaseOrder
 
             var pos = (await multi.ReadAsync<PurchaseOrderGetDto>()).ToList();
             var items = (await multi.ReadAsync<PurchaseOrderItemDto>()).ToList();
+            var receipts = (await multi.ReadAsync<PurchaseOrderReceiptDto>()).ToList();
+            var receiptItems = (await multi.ReadAsync<PurchaseOrderReceiptItemDto>()).ToList();
+
+            foreach (var r in receipts)
+            {
+                r.Items = receiptItems.Where(ri => ri.PurchaseOrderReceiptId == r.Id).ToList();
+            }
 
             foreach (var po in pos)
             {
                 po.Items = items.Where(i => i.PurchaseOrderId == po.Id).ToList();
+                po.Receipts = receipts.Where(r => r.PurchaseOrderId == po.Id).ToList();
             }
 
             // Filtering done in memory
