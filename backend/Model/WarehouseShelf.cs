@@ -12,13 +12,14 @@ namespace backend.Model
         [Key]
         public Guid Id { get; set; }
         public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public string Capacity { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
+
+        [Column(nameof(WarehouseRackId))]
         public Guid WarehouseRackId { get; set; }
-        public virtual WarehouseRack WarehouseRack { get; set; } = null!;
+        public virtual WarehouseRack? WarehouseRack { get; set; } = null!;
         // </crudgen:properties>
     }
 }

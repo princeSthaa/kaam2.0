@@ -12,17 +12,16 @@ namespace backend.Service.WarehouseShelf
         Task<List<WarehouseShelfDto>> GetAllAsync(
             Guid? id = null,
             string? code = null,
+            string? name = null,
             string? capacity = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? warehouseRackId = null
         );
 
         Task<WarehouseShelfDto?> GetByIdAsync(Guid id);
 
-        Task<bool> CreateAsync(WarehouseShelfDto warehouseShelfDto);
+        Task<WarehouseShelfDto> CreateAsync(WarehouseShelfDto warehouseShelfDto);
 
         Task<bool> UpdateAsync(Guid id, WarehouseShelfDto warehouseShelfDto);
 

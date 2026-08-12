@@ -11,14 +11,15 @@ namespace backend.Model
         // <crudgen:properties>
         [Key]
         public Guid Id { get; set; }
+        public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public string Floor { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
-        public Guid WarehouseId { get; set; }
-        public virtual Warehouse Warehouse { get; set; } = null!;
+
+        [Column(nameof(WarehouseFloorId))]
+        public Guid WarehouseFloorId { get; set; }
+        public virtual WarehouseFloor? WarehouseFloor { get; set; }
+
         public virtual ICollection<WarehouseRack> WarehouseRacks { get; set; } = new List<WarehouseRack>();
         // </crudgen:properties>
     }

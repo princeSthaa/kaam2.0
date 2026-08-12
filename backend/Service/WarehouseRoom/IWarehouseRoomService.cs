@@ -12,19 +12,17 @@ namespace backend.Service.WarehouseRoom
         Task<List<WarehouseRoomDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
-            string? floor = null,
+            string? code = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? warehouseId = null
         );
 
         Task<WarehouseRoomDto?> GetByIdAsync(Guid id);
 
-        Task<bool> CreateAsync(WarehouseRoomDto warehouseRoomDto);
+        Task<WarehouseRoomDto> CreateAsync(WarehouseRoomDto warehouseRoomDto);
 
-        Task<bool> UpdateAsync(Guid id, WarehouseRoomDto warehouseRoomDto);
+        Task<bool> UpdateAsync(Guid id, WarehouseRoomDto dto);
 
         Task<bool> DeleteAsync(Guid id);
 

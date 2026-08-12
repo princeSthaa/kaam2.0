@@ -33,45 +33,32 @@ using backend.Service.PurchaseOrderReceipt;
 using backend.Service.ProductDemand;
 using backend.Model;
 using backend.Service.ProductIssue;
+using backend.Service.WarehouseFloor;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add CORS policies to allow Next.js frontend
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowNextJs",
-        policy => policy
-            .WithOrigins("http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001", "https://wgfk2srw-5082.inc1.devtunnels.ms/", "https://wgfk2srw-5083.inc1.devtunnels.ms/") // Frontend origins
+    options.AddPolicy("AllowNextJs", policy => policy
+            .WithOrigins(
+                "http://localhost:3000", 
+                "http://127.0.0.1:3000", 
+                "http://localhost:3001", 
+                "http://127.0.0.1:3001", 
+                "https://wgfk2srw-5082.inc1.devtunnels.ms/", 
+                "https://wgfk2srw-5083.inc1.devtunnels.ms/") // Frontend origins
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
 });
 
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy("AllowNextJs", policy =>
-//     {
-//         policy
-//             .WithOrigins(
-//                 "http://localhost:3000",
-//                 "http://127.0.0.1:3000",
-//                 "http://localhost:3001",
-//                 "http://127.0.0.1:3001"
-//             )
-//             .AllowAnyHeader()
-//             .AllowAnyMethod()
-//             .AllowCredentials();
-//     });
-// });
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
-
-// builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSwaggerGen();
 
 // Configure EF Core SQL Server Database
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -92,10 +79,6 @@ builder.Services.AddScoped<IProductionPlanProductSizeService, ProductionPlanProd
 builder.Services.AddScoped<IProductionPlanStageService, ProductionPlanStageService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<IBillOfMaterialService, BillOfMaterialService>();
-builder.Services.AddScoped<IWarehouseService, WarehouseService>();
-builder.Services.AddScoped<IWarehouseRoomService, WarehouseRoomService>();
-builder.Services.AddScoped<IWarehouseRackService, WarehouseRackService>();
-builder.Services.AddScoped<IWarehouseShelfService, WarehouseShelfService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IOutletService, OutletService>();
 builder.Services.AddScoped<IOutletDemandService, OutletDemandService>();
@@ -112,6 +95,11 @@ builder.Services.AddScoped<IPurchaseOrderReceiptService, PurchaseOrderReceiptSer
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
 builder.Services.AddScoped<IProductDemandService, ProductDemandService>();
 builder.Services.AddScoped<IProductIssueService,ProductIssueService>();
+builder.Services.AddScoped<IWarehouseService, WarehouseService>();
+builder.Services.AddScoped<IWarehouseFloorService, WarehouseFloorService>();
+builder.Services.AddScoped<IWarehouseRoomService, WarehouseRoomService>();
+builder.Services.AddScoped<IWarehouseRackService, WarehouseRackService>();
+builder.Services.AddScoped<IWarehouseShelfService, WarehouseShelfService>();
 
 int GetAvailablePort()
 {

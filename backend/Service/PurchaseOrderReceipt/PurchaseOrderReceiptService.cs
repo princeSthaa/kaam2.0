@@ -128,13 +128,8 @@ namespace backend.Service.PurchaseOrderReceipt
                     ? $"REC-{DateTime.UtcNow:yyyyMMddHHmmss}"
                     : dto.ReceiptNumber;
             
-            if (!Enum.TryParse<ReceiptStatus>(dto.Status, true, out var receiptStatus))
-            {
-                throw new InvalidOperationException(
-                    $"Invalid receipt status: {dto.Status}"
-                );
-            }
-
+            var receiptStatus = ReceiptStatus.PendingInspection;
+            
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertPurchaseOrderReceipt 
                     @Id = {receiptId}, 

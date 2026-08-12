@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using backend.Dto.WarehouseRack;
 using backend.Service.WarehouseRack;
@@ -11,57 +8,61 @@ namespace backend.Controller.WarehouseRack
     [Route("api/warehouse-rack")]
     public class WarehouseRackController : ControllerBase
     {
-        private readonly IWarehouseRackService _warehouseRackService;
+        private readonly IWarehouseRackService _service;
 
-        public WarehouseRackController(IWarehouseRackService warehouseRackService)
+        public WarehouseRackController(IWarehouseRackService service)
         {
-            _warehouseRackService = warehouseRackService;
+            _service = service;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll(
             [FromQuery] Guid? id,
             [FromQuery] string? code,
+            [FromQuery] string? name,
             [FromQuery] DateTime? createdAt,
-            [FromQuery] string? createdBy,
             [FromQuery] DateTime? updatedAt,
-            [FromQuery] string? updatedBy,
             [FromQuery] Guid? warehouseRoomId)
         {
-            var racks = await _warehouseRackService.GetAllAsync(id, code, createdAt, createdBy, updatedAt, updatedBy, warehouseRoomId);
+            var racks = await _service.GetAllAsync(id, code, name, createdAt, updatedAt, warehouseRoomId);
             return Ok(racks);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var rack = await _warehouseRackService.GetByIdAsync(id);
+            var rack = await _service.GetByIdAsync(id);
             if (rack == null) return NotFound();
             return Ok(rack);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] WarehouseRackDto warehouseRackDto)
+        public async Task<IActionResult> Create([FromBody] WarehouseRackDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var success = await _warehouseRackService.CreateAsync(warehouseRackDto);
-            if (success) return Ok(new { id = warehouseRackDto.Id, message = "Created successfully" });
-            return BadRequest("Failed to create warehouse rack.");
+            var created = await _service.CreateAsync(dto);
+
+            if (created == null)
+            {
+                return BadRequest();
+            }
+
+            return Ok(created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] WarehouseRackDto warehouseRackDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] WarehouseRackDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var success = await _warehouseRackService.UpdateAsync(id, warehouseRackDto);
+            var success = await _service.UpdateAsync(id, dto);
             if (success) return Ok("Updated successfully");
             return BadRequest("Failed to update warehouse rack.");
         }
@@ -69,7 +70,7 @@ namespace backend.Controller.WarehouseRack
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var success = await _warehouseRackService.DeleteAsync(id);
+            var success = await _service.DeleteAsync(id);
             if (success) return Ok("Deleted successfully");
             return BadRequest("Failed to delete warehouse rack.");
         }

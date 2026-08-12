@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.WarehouseRack;
 
 namespace backend.Service.WarehouseRack
@@ -10,15 +7,14 @@ namespace backend.Service.WarehouseRack
         Task<List<WarehouseRackDto>> GetAllAsync(
             Guid? id = null,
             string? code = null,
+            string? name = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? warehouseRoomId = null
         );
 
         Task<WarehouseRackDto?> GetByIdAsync(Guid id);
-        Task<bool> CreateAsync(WarehouseRackDto warehouseRackDto);
+        Task<WarehouseRackDto> CreateAsync(WarehouseRackDto warehouseRackDto);
         Task<bool> UpdateAsync(Guid id, WarehouseRackDto warehouseRackDto);
         Task<bool> DeleteAsync(Guid id);
     }

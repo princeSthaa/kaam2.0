@@ -12,8 +12,8 @@ using backend.Data;
 namespace backend.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260810114313_ProductIssue")]
-    partial class ProductIssue
+    [Migration("20260812070203_FloorName")]
+    partial class FloorName
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -484,10 +484,9 @@ namespace backend.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("InspectionStatus")
-                        .IsRequired()
+                    b.Property<int>("InspectionStatus")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int");
 
                     b.Property<string>("InspectorName")
                         .IsRequired()
@@ -536,10 +535,9 @@ namespace backend.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("InspectionStatus")
-                        .IsRequired()
+                    b.Property<int>("InspectionStatus")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int");
 
                     b.Property<Guid>("MaterialId")
                         .HasColumnType("uniqueidentifier");
@@ -1894,10 +1892,6 @@ namespace backend.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -1909,13 +1903,40 @@ namespace backend.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Warehouses");
+                });
+
+            modelBuilder.Entity("backend.Model.WarehouseFloor", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("WarehouseId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("WarehouseId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("WarehouseFloors");
                 });
 
             modelBuilder.Entity("backend.Model.WarehouseRack", b =>
@@ -1931,19 +1952,12 @@ namespace backend.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("WarehouseRoomId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("WarehouseRoomId");
 
                     b.HasKey("Id");
 
@@ -1958,16 +1972,12 @@ namespace backend.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Floor")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1976,16 +1986,13 @@ namespace backend.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("WarehouseId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<Guid>("WarehouseFloorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("WarehouseFloorId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WarehouseId");
+                    b.HasIndex("WarehouseFloorId");
 
                     b.ToTable("WarehouseRooms");
                 });
@@ -2007,19 +2014,12 @@ namespace backend.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("WarehouseRackId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("WarehouseRackId");
 
                     b.HasKey("Id");
 
@@ -2571,6 +2571,17 @@ namespace backend.Data.Migrations
                     b.Navigation("Supplier");
                 });
 
+            modelBuilder.Entity("backend.Model.WarehouseFloor", b =>
+                {
+                    b.HasOne("backend.Model.Warehouse", "Warehouse")
+                        .WithMany("WarehouseFloors")
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Warehouse");
+                });
+
             modelBuilder.Entity("backend.Model.WarehouseRack", b =>
                 {
                     b.HasOne("backend.Model.WarehouseRoom", "WarehouseRoom")
@@ -2584,13 +2595,13 @@ namespace backend.Data.Migrations
 
             modelBuilder.Entity("backend.Model.WarehouseRoom", b =>
                 {
-                    b.HasOne("backend.Model.Warehouse", "Warehouse")
+                    b.HasOne("backend.Model.WarehouseFloor", "WarehouseFloor")
                         .WithMany("WarehouseRooms")
-                        .HasForeignKey("WarehouseId")
+                        .HasForeignKey("WarehouseFloorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Warehouse");
+                    b.Navigation("WarehouseFloor");
                 });
 
             modelBuilder.Entity("backend.Model.WarehouseShelf", b =>
@@ -2708,6 +2719,11 @@ namespace backend.Data.Migrations
                 });
 
             modelBuilder.Entity("backend.Model.Warehouse", b =>
+                {
+                    b.Navigation("WarehouseFloors");
+                });
+
+            modelBuilder.Entity("backend.Model.WarehouseFloor", b =>
                 {
                     b.Navigation("WarehouseRooms");
                 });

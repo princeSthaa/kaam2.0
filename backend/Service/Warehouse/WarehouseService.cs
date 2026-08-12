@@ -1,15 +1,8 @@
 using Dapper;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.Warehouse;
-using backend.Model;
 
 namespace backend.Service.Warehouse
 {
@@ -45,6 +38,7 @@ namespace backend.Service.Warehouse
             );
 
             var warehouses = (await multi.ReadAsync<WarehouseDto>()).ToList();
+            var floors = (await multi.ReadAsync<backend.Dto.WarehouseFloor.WarehouseFloorDto>()).ToList();
             var rooms = (await multi.ReadAsync<backend.Dto.WarehouseRoom.WarehouseRoomDto>()).ToList();
             var racks = (await multi.ReadAsync<backend.Dto.WarehouseRack.WarehouseRackDto>()).ToList();
             var shelves = (await multi.ReadAsync<backend.Dto.WarehouseShelf.WarehouseShelfDto>()).ToList();
@@ -59,9 +53,14 @@ namespace backend.Service.Warehouse
                 room.WarehouseRacks = racks.Where(r => r.WarehouseRoomId == room.Id).ToList();
             }
 
+            foreach (var floor in floors)
+            {
+                floor.WarehouseRooms = rooms.Where(r => r.WarehouseFloorId == floor.Id).ToList();
+            }
+
             foreach (var warehouse in warehouses)
             {
-                warehouse.WarehouseRooms = rooms.Where(r => r.WarehouseId == warehouse.Id).ToList();
+                warehouse.WarehouseFloors = floors.Where(f => f.WarehouseId == warehouse.Id).ToList();
             }
 
             // Filtering done in memory
@@ -69,6 +68,7 @@ namespace backend.Service.Warehouse
             if (!string.IsNullOrWhiteSpace(code)) warehouses = warehouses.Where(w => w.Code == code).ToList();
             if (!string.IsNullOrWhiteSpace(name)) warehouses = warehouses.Where(w => w.Name != null && w.Name.Contains(name)).ToList();
             if (!string.IsNullOrWhiteSpace(location)) warehouses = warehouses.Where(w => w.Location != null && w.Location.Contains(location)).ToList();
+            
             return warehouses;
         }
 
@@ -80,10 +80,10 @@ namespace backend.Service.Warehouse
 
         public async Task<bool> CreateAsync(WarehouseDto warehouseDto)
         {
-            if (warehouseDto.Id == Guid.Empty)
-            {
-                warehouseDto.Id = Guid.NewGuid();
-            }
+            warehouseDto.Id = Guid.NewGuid();
+            warehouseDto.Code =$"WAR-{((await _context.Warehouses.CountAsync()) + 1):D2}";
+            warehouseDto.CreatedAt = DateTime.UtcNow;
+            warehouseDto.UpdatedAt = DateTime.UtcNow;
 
             var warehouse = new backend.Model.Warehouse
             {
@@ -91,10 +91,8 @@ namespace backend.Service.Warehouse
                 Code = warehouseDto.Code ?? string.Empty,
                 Name = warehouseDto.Name ?? string.Empty,
                 Location = warehouseDto.Location ?? string.Empty,
-                CreatedAt = warehouseDto.CreatedAt == default ? DateTime.UtcNow : warehouseDto.CreatedAt,
-                CreatedBy = warehouseDto.CreatedBy ?? "System",
-                UpdatedAt = warehouseDto.UpdatedAt == default ? DateTime.UtcNow : warehouseDto.UpdatedAt,
-                UpdatedBy = warehouseDto.UpdatedBy ?? "System"
+                CreatedAt = warehouseDto.CreatedAt,
+                UpdatedAt = warehouseDto.UpdatedAt,
             };
 
             _context.Warehouses.Add(warehouse);
@@ -111,7 +109,6 @@ namespace backend.Service.Warehouse
             warehouse.Name = warehouseDto.Name ?? warehouse.Name;
             warehouse.Location = warehouseDto.Location ?? warehouse.Location;
             warehouse.UpdatedAt = DateTime.UtcNow;
-            warehouse.UpdatedBy = warehouseDto.UpdatedBy ?? "System";
 
             await _context.SaveChangesAsync();
             return true;

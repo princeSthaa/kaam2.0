@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.WarehouseShelf;
-using backend.Model;
 using backend.Service.WarehouseShelf;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,47 +8,40 @@ namespace backend.Controller.WarehouseShelf
     [Route("api/warehouse-shelf")]
     public class WarehouseShelfController : ControllerBase
     {
-        private readonly IWarehouseShelfService _WarehouseShelfService;
+        private readonly IWarehouseShelfService _service;
 
-        public WarehouseShelfController(IWarehouseShelfService WarehouseShelfService)
+        public WarehouseShelfController(IWarehouseShelfService service)
         {
-            _WarehouseShelfService = WarehouseShelfService;
+            _service = service;
         }
 
-        // <crudgen:actions>
         [HttpGet("{id}")] 
         public async Task<ActionResult<WarehouseShelfDto>> GetById(Guid id)
         {
-            var item = await _WarehouseShelfService.GetByIdAsync(id);
-
-            if (item == null)
-            {
-                return NotFound($"WarehouseShelf with ID {id} not found.");
-            }
-
-            return Ok(item);
+            var item = await _service.GetByIdAsync(id);
+            return item != null ? 
+                Ok(item) : 
+                NotFound($"WarehouseShelf with ID {id} not found.");
         }
 
         [HttpGet]
         public async Task<ActionResult<List<WarehouseShelfDto>>> GetAll(
             [FromQuery] Guid? id = null,
             [FromQuery] string? code = null,
+            [FromQuery] string? name = null,
             [FromQuery] string? capacity = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? warehouseRackId = null
         )
         {
-            var items = await _WarehouseShelfService.GetAllAsync(
+            var items = await _service.GetAllAsync(
                 id,
                 code,
+                name,
                 capacity,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 warehouseRackId
             );
 
@@ -60,21 +49,16 @@ namespace backend.Controller.WarehouseShelf
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] WarehouseShelfDto warehouseShelfDto)
+        public async Task<IActionResult> Create([FromBody] WarehouseShelfDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var created = await _WarehouseShelfService.CreateAsync(warehouseShelfDto);
+            var created = await _service.CreateAsync(dto);
 
-            if (!created)
-            {
-                return BadRequest();
-            }
-
-            return Ok();
+            return created != null? Ok(created) : BadRequest();
         }
 
         [HttpPut("{id}")]
@@ -85,29 +69,18 @@ namespace backend.Controller.WarehouseShelf
                 return BadRequest(ModelState);
             }
 
-            var updated = await _WarehouseShelfService.UpdateAsync(id, warehouseShelfDto);
-
-            if (!updated)
-            {
-                return NotFound($"WarehouseShelf with ID {id} not found.");
-            }
-
-            return NoContent();
+            return await _service.UpdateAsync(id, warehouseShelfDto)? 
+                NoContent() : 
+                NotFound($"WarehouseShelf with ID {id} not found.");
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleted = await _WarehouseShelfService.DeleteAsync(id);
-
-            if (!deleted)
-            {
-                return NotFound($"WarehouseShelf with ID {id} not found.");
-            }
-
-            return NoContent();
+            return await _service.DeleteAsync(id)? 
+                NoContent():
+                NotFound($"WarehouseShelf with ID {id} not found.");
         }
-        // </crudgen:actions>
     }
 }
 
