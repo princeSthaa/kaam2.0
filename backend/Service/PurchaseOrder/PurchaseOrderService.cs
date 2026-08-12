@@ -57,6 +57,7 @@ namespace backend.Service.PurchaseOrder
             if (status.HasValue) pos = pos.Where(p => p.Status == status.Value).ToList();
             if (supplierId.HasValue) pos = pos.Where(p => p.SupplierId == supplierId.Value).ToList();
             if (materialCategoryId.HasValue) pos = pos.Where(p => p.MaterialCategoryId == materialCategoryId.Value).ToList();
+            
             return pos;
         }
 
