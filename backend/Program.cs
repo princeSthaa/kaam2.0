@@ -31,7 +31,6 @@ using backend.Service.ProductCategory;
 using backend.Service.PurchaseOrder;
 using backend.Service.PurchaseOrderReceipt;
 using backend.Service.ProductDemand;
-using backend.Model;
 using backend.Service.ProductIssue;
 using backend.Service.WarehouseFloor;
 
@@ -109,7 +108,7 @@ int GetAvailablePort()
 }
 
 int portToUse = GetAvailablePort();
-builder.WebHost.UseUrls($"http://*:{portToUse}");
+builder.WebHost.UseUrls($"http://localhost:{portToUse}");
 Console.WriteLine($"Starting server on port {portToUse}");
 var app = builder.Build();
 
