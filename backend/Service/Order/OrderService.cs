@@ -1,19 +1,11 @@
 using Dapper;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using backend.Data;
 using backend.Dto.OrderItem;
 using backend.Dto.OrderItemSize;
 using backend.Dto.Order;
-using backend.Model.Enums;
 using Microsoft.EntityFrameworkCore;
-using backend.Dto.Product;
-using backend.Dto.Fabric;
 using backend.Dto.OrderItemMaterial;
-using backend.Dto.Material;
 
 namespace backend.Service.Order
 {
@@ -136,16 +128,9 @@ namespace backend.Service.Order
 
         public async Task<bool> CreateAsync(OrderDto orderDto)
         {
-            if (orderDto.Id == Guid.Empty)
-            {
-                orderDto.Id = Guid.NewGuid();
-            }
+            orderDto.Id = Guid.NewGuid();
+            var now = DateTime.UtcNow;
 
-            if (orderDto.CreatedAt == default)
-                orderDto.CreatedAt = DateTime.UtcNow;
-
-            if (orderDto.UpdatedAt == default)
-                orderDto.UpdatedAt = DateTime.UtcNow;
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertOrder
@@ -156,8 +141,8 @@ namespace backend.Service.Order
                     @DueDate = {orderDto.DueDate},
                     @CreatedAt = {orderDto.CreatedAt},
                     @CreatedBy = {orderDto.CreatedBy},
-                    @UpdatedAt = {orderDto.UpdatedAt},
-                    @UpdatedBy = {orderDto.UpdatedBy},
+                    @UpdatedAt = {now},
+                    @UpdatedBy = {now},
                     @CustomerId = {orderDto.CustomerId}
             ");
 

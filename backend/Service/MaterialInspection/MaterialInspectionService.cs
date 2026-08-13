@@ -162,12 +162,12 @@ namespace backend.Service.MaterialInspection
                 }
 
                 await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
                 
                 if (allCompleted && inspection.Items.Any() && inspection.PurchaseOrderReceipt != null && inspection.PurchaseOrderReceipt.PurchaseOrderId != Guid.Empty)
                 {
                     await _purchaseOrderService.RecalculateOrderStatusAsync(inspection.PurchaseOrderReceipt.PurchaseOrderId);
                 }
+                await transaction.CommitAsync();
                 
                 return true;
             }
