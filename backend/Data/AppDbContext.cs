@@ -52,7 +52,7 @@ namespace backend.Data
         public DbSet<PurchaseOrderReceipt> PurchaseOrderReceipts { get; set; } = null!;
         public DbSet<PurchaseOrderReceiptItem> PurchaseOrderReceiptItems { get; set; } = null!;
         public DbSet<ProductDemand> ProductDemands { get; set; } = null!;
-        public DbSet<ProductIssue> ProductIssues { get; set; } = null!;
+        public DbSet<ProductIssues> ProductIssues { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

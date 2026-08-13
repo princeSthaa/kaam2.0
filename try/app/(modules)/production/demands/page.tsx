@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { MaterialIcon } from "@/app/components/ui/MaterialIcon";
-import { fetchProductionPlans } from "../api/production.api";
+import { fetchProductionPlans } from "../api/constant";
 import { ProductionPlan } from "../dto/production.dto";
 
 export default function ProductionCreatePage() {

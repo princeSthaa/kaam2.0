@@ -12,7 +12,14 @@ import { fetchOrders } from "../../crm/api/order.api";
 import { fetchProducts, resolveMediaUrl, Product } from "../../crm/api/catalog.api";
 import { Customer } from "../../crm/dto/customer.dto";
 import { Order } from "../../crm/dto/order.dto";
-import { API_MAIN_URL } from "../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { mockProductionPlans } from "../api/production.mock";
+
+const dispatchMockFallback = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("MockDataFallback"));
+  }
+};
 
 function OpenOrdersContent() {
   const searchParams = useSearchParams();
@@ -46,8 +53,8 @@ function OpenOrdersContent() {
           fetchCustomers().catch(() => []),
           fetchOrders(customerId).catch(() => []),
           fetchProducts().catch(() => []),
-          fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : []).catch(() => []),
-          fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : Promise.reject()).catch(() => { dispatchMockFallback(); return mockProductionPlans; }),
+          fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : Promise.reject()).catch(() => { dispatchMockFallback(); return []; }),
         ]);
 
         const targetId = String(customerId).toLowerCase();

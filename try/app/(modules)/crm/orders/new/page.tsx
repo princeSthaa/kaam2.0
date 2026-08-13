@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { MaterialIcon } from "@/app/components/ui/MaterialIcon";
-import { fetchCustomers } from "../../api/customer.api";
+import { fetchCustomers } from "../../api/constant";
 import { Customer } from "../../dto/customer.dto";
-import { createOrder } from "../../api/order.api";
-import { fetchProducts, fetchFabrics, resolveMediaUrl, Product, Fabric } from "../../api/catalog.api";
-import { API_MAIN_URL } from "../../api/constant";
+import { createOrder } from "../../api/constant";
+import { fetchProducts, fetchFabrics, resolveMediaUrl, Product, Fabric } from "../../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
 import { bsToAd } from "@/app/components/ui/dateUtils";
 
@@ -389,7 +389,7 @@ function FabricModalReact({
                 </span>
                 <div>
                   <h5 className="modal-title fw-bold text-slate-900 mb-0" style={{ fontSize: "1rem" }}>
-                    {selectedCategory ? `Select Fabric — ${selectedCategory}` : "Select Fabric & Material"}
+                    {selectedCategory ? `Select Fabric — ${selectedCategory}` : "Select Fabric Material"}
                   </h5>
                   {currentProduct && (
                     <div className="d-flex align-items-center gap-1.5 mt-0.5 text-slate-500 small">
@@ -416,7 +416,7 @@ function FabricModalReact({
                   className={`btn btn-sm rounded-pill fw-bold d-inline-flex align-items-center gap-2 px-3 py-1.5 transition-all ${
                     activeTab === "bom"
                       ? "btn-success shadow-sm"
-                      : "btn-outline-secondary bg-white border-slate-200 text-slate-700"
+                      : "bg-white border border-slate-200 text-slate-700"
                   }`}
                   onClick={() => {
                     setActiveTab("bom");
@@ -444,7 +444,7 @@ function FabricModalReact({
                   className={`btn btn-sm rounded-pill fw-bold d-inline-flex align-items-center gap-2 px-3 py-1.5 transition-all ${
                     activeTab === "all"
                       ? "btn-primary shadow-sm"
-                      : "btn-outline-secondary bg-white border-slate-200 text-slate-700"
+                      : "bg-white border border-slate-200 text-slate-700"
                   }`}
                   onClick={() => {
                     setActiveTab("all");

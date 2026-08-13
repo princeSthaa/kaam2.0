@@ -11,6 +11,7 @@ export const topLinks = [
   { label: "Production", href: "/production" },
   { label: "Warehouse", href: "/warehouse" },
   // { label: "SRM", href: "/srm" },
+  { label: "Factory", href: "/factory" },
   { label: "Inventory", href: "/inventory" },
   { label: "Admin", href: "/admin" },
 ];

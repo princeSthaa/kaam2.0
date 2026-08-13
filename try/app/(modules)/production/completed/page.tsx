@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { fetchProductionPlans } from "../api/production.api";
+import { fetchProductionPlans } from "../api/constant";
 import { ProductionPlanDto } from "../dto";
 import { StatusBadge } from "../components/StatusBadge";
 import "../styles/production-plans.css";

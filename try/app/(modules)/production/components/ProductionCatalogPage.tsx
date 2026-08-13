@@ -6,7 +6,14 @@ import { TableShell } from "@/app/components/ui/TableShell";
 import { fetchCustomers } from "../../crm/api/customer.api";
 import { Customer } from "../../crm/dto/customer.dto";
 import { fetchOrders } from "../../crm/api/order.api";
-import { API_MAIN_URL } from "../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { mockProductionPlans } from "../api/production.mock";
+
+const dispatchMockFallback = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("MockDataFallback"));
+  }
+};
 
 type CatalogKind = "customer" | "outlet";
 
@@ -376,8 +383,8 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
       Promise.all([
         fetchCustomers(),
         fetchOrders(),
-        fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : []).catch(() => [])
+        fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : Promise.reject()).catch(() => { dispatchMockFallback(); return mockProductionPlans; }),
+        fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : Promise.reject()).catch(() => { dispatchMockFallback(); return []; })
       ]).then(([custs, ords, plans, planProducts]) => {
         const plannedOrderItemIds = new Set<string>();
         const plannedOrderProductKeys = new Set<string>();

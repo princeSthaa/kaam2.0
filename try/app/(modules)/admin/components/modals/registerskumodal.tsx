@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { fetchProductCategories, ProductCategoryDto } from "../../api/productcategory.api";
-import { createProduct, ProductMaterialRequirementItem, ProductProductionStageItem } from "../../api/product.api";
-import { fetchMaterialTypes } from "../../api/materialtype.api";
-import { fetchProductionStages, ProductionStageDto } from "../../api/productionstage.api";
+import { fetchProductCategories, ProductCategoryDto } from "../../api/constant";
+import { createProduct, ProductMaterialRequirementItem, ProductProductionStageItem } from "../../api/constant";
+import { fetchMaterialTypes } from "../../api/constant";
+import { fetchProductionStages, ProductionStageDto } from "../../api/constant";
 
 export interface MaterialBreakdownSizeRow {
   size: string;

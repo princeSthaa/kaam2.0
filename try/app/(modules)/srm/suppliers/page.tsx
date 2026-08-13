@@ -7,7 +7,7 @@ import {
   updateSupplier,
   deleteSupplier,
   SupplierDto
-} from "../api/supplier.api";
+} from "../api/constant";
 import AddNewSupplierModal, { SupplierFormData, getInitials } from "../components/modals/addnewsupplier";
 
 

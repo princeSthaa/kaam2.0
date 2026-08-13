@@ -7,7 +7,7 @@ import {
   updateProductCategory as apiUpdateProductCategory,
   deleteProductCategory as apiDeleteProductCategory,
   ProductCategoryDto,
-} from "../../api/productcategory.api";
+} from "../../api/constant";
 
 export interface ProductCategoryItem extends ProductCategoryDto { }
 

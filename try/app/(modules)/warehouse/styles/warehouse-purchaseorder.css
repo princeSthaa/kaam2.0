@@ -498,16 +498,12 @@
     align-items: center;
     justify-content: center;
     transition: all 0.15s ease;
-    opacity: 0;
+    opacity: 1;
 }
 
 .wh-poam-trigger:hover {
     color: #0f172a;
     background: #f1f5f9;
-}
-
-.wh-pom-page tr:hover .wh-poam-trigger {
-    opacity: 1;
 }
 
 .wh-poam-menu {

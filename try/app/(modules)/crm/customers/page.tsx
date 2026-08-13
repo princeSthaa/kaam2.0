@@ -5,7 +5,7 @@ import { ActionButton } from "@/app/components/ui/ActionButton";
 import { BootstrapCard, BootstrapCardHeader } from "@/app/components/ui/BootstrapCard";
 import { useCustomers } from "../hooks";
 import { CustomerRow } from "../components/CustomerRow";
-import { updateCustomer } from "../api/customer.api";
+import { updateCustomer } from "../api/constant";
 import { Customer } from "../dto/customer.dto";
 
 export default function CrmCustomerFilterPage() {

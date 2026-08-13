@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { API_MAIN_URL } from "../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 const API_BASE_URL = `${API_MAIN_URL}/orders`;
 
 export function useOrders() {

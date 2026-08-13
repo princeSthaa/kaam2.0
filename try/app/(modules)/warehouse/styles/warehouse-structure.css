@@ -195,6 +195,10 @@
     padding-left: 96px;
 }
 
+.wh-struct-level-indent-5 {
+    padding-left: 128px;
+}
+
 .wh-struct-node-title {
     display: flex;
     align-items: center;

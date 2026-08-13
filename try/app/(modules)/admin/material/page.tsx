@@ -7,7 +7,7 @@ import { RegisterSkuModal, RegisterSkuFormData } from "../components/modals/regi
 import { ManageProductionStagesModal } from "../components/modals/manageproductionstagesmodal";
 import { ManageMaterialCategoryModal } from "../components/modals/managematerialcategorymodal";
 import { ManageMaterialTypeModal } from "../components/modals/managematerialtypemodal";
-import { fetchMaterials, deleteMaterial as apiDeleteMaterial, MaterialGetDto } from "../api/material.api";
+import { fetchMaterials, deleteMaterial as apiDeleteMaterial, MaterialGetDto } from "../api/constant";
 
 export interface MaterialDirectoryItem {
   id: string;

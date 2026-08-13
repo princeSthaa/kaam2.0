@@ -272,13 +272,12 @@ export default function CrmIndexPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-bold font-mono rounded border ${
-                            o.status === "Completed"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : o.status === "Processing"
+                          className={`px-2 py-0.5 text-[10px] font-bold font-mono rounded border ${o.status === "Completed"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : o.status === "Processing"
                               ? "bg-blue-50 text-blue-700 border-blue-200"
                               : "bg-amber-50 text-amber-700 border-amber-200"
-                          }`}
+                            }`}
                         >
                           {o.status || "Pending"}
                         </span>
@@ -344,9 +343,8 @@ export default function CrmIndexPage() {
 
             {/* Activities Timeline (Scrollable when expanded) */}
             <div
-              className={`space-y-4 relative before:absolute before:inset-0 before:left-4 before:w-0.5 before:bg-slate-100 transition-all ${
-                showAllActivities ? "max-h-[380px] overflow-y-auto pr-1" : ""
-              }`}
+              className={`space-y-4 relative before:absolute before:inset-0 before:left-4 before:w-0.5 before:bg-slate-100 transition-all ${showAllActivities ? "max-h-[380px] overflow-y-auto pr-1" : ""
+                }`}
             >
               {(showAllActivities ? activities : visibleActivities).map((act) => (
                 <div key={act.id} className="relative flex items-start space-x-3 group">
@@ -414,17 +412,11 @@ export default function CrmIndexPage() {
                 <span className="material-symbols-outlined text-sm text-purple-600">person_add</span>
                 <span>New Customer</span>
               </Link>
-              <Link
-                href="/crm/audit"
-                className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
-              >
-                <span className="material-symbols-outlined text-sm text-amber-600">history</span>
-                <span>Audit Logs</span>
-              </Link>
+
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

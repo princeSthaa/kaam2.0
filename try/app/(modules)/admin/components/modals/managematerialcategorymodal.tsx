@@ -7,8 +7,8 @@ import {
   updateMaterialCategory as apiUpdateMaterialCategory,
   deleteMaterialCategory as apiDeleteMaterialCategory,
   MaterialCategoryDto,
-} from "../../api/materialcategory.api";
-import { fetchMaterialTypes, MaterialTypeDto } from "../../api/materialtype.api";
+} from "../../api/constant";
+import { fetchMaterialTypes, MaterialTypeDto } from "../../api/constant";
 
 export interface MaterialCategoryItem extends MaterialCategoryDto {
   materialType?: string;

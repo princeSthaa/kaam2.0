@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import "../styles/warehouse-purchaseorder.css";
-import { PurchaseOrderGetDto } from "../api/purchaseorder.api";
+import { PurchaseOrderGetDto } from "../api/constant";
 import { adToBs } from "../../../components/ui/NepaliDatePicker";
 
 export type ViewPurchaseOrderModalProps = {
@@ -102,7 +102,7 @@ export function ViewPurchaseOrderModal({
                 </div>
                 <div className="flex justify-between pt-3 border-t border-slate-100">
                   <span className="text-sm text-slate-500">Total Amount</span>
-                  <span className="text-sm font-bold text-slate-900 font-mono">Rs {purchaseOrder.totalAmount.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-slate-900 font-mono">Rs {(purchaseOrder.totalAmount || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -131,14 +131,14 @@ export function ViewPurchaseOrderModal({
                   {purchaseOrder.items?.length > 0 ? purchaseOrder.items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-4">
-                        <div className="font-medium text-slate-800 text-sm">{item.materialName}</div>
-                        <div className="text-xs text-slate-500 font-mono mt-0.5">{item.materialCode}</div>
+                        <div className="font-medium text-slate-800 text-sm">{item.materialName || "Unknown Item"}</div>
+                        <div className="text-xs text-slate-500 font-mono mt-0.5">{item.materialCode || "-"}</div>
                       </td>
-                      <td className="px-5 py-4 text-right text-sm text-slate-700">{item.orderedQuantity}</td>
-                      <td className="px-5 py-4 text-right text-sm text-slate-700 font-mono">{item.unitPrice}</td>
+                      <td className="px-5 py-4 text-right text-sm text-slate-700">{item.orderedQuantity || 0}</td>
+                      <td className="px-5 py-4 text-right text-sm text-slate-700 font-mono">{item.unitPrice || 0}</td>
                       <td className="px-5 py-4 text-right text-sm text-slate-700">13%</td>
                       <td className="px-5 py-4 text-right text-sm font-bold text-slate-900 font-mono">
-                        {(item.orderedQuantity * item.unitPrice * 1.13).toLocaleString()}
+                        {((item.orderedQuantity || 0) * (item.unitPrice || 0) * 1.13).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
                     </tr>
                   )) : (

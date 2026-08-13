@@ -95,10 +95,10 @@ export function PurchaseOrderActionsMenu({
   if (!isOpen) return null;
 
   // Status-aware actions visibility
-  const canEdit = status === "Draft" || status === "Pending";
-  const canSend = status === "Draft" || status === "Pending";
-  const canMarkReceived = status === "Sent" || status === "Partially Received" || status === "Pending";
-  const canCancel = status === "Draft" || status === "Sent" || status === "Pending";
+  const canEdit = status === "Draft";
+  const canSend = status === "Draft";
+  const canMarkReceived = status === "Sent" || status === "Partially Received";
+  const canCancel = status === "Draft" || status === "Sent";
 
   const handleAction = (e: React.MouseEvent, fn?: (id: string) => void) => {
     e.stopPropagation();

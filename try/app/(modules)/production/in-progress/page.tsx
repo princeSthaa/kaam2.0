@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import PlanRow from '../components/PlanRow';
-import { API_MAIN_URL } from '../api/constant';
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 export default function InProgressPage() {
   const [plans, setPlans] = useState<any[]>([]);

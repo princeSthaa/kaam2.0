@@ -1,4 +1,4 @@
-import { API_MAIN_URL } from "../../production/api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 export interface PurchaseOrderItemDto {
   materialId: string;
@@ -95,9 +95,28 @@ export async function createPurchaseOrder(po: CreatePurchaseOrderDto): Promise<P
 }
 
 export async function fetchPurchaseOrders(): Promise<PurchaseOrderGetDto[]> {
-  const response = await fetch(`${API_MAIN_URL}/purchase-order`);
+  const response = await fetch(`${API_MAIN_URL}/purchase-order`, {
+    cache: "no-store"
+  });
   if (!response.ok) {
     throw new Error("Failed to fetch Purchase Orders");
   }
+  return response.json();
+}
+
+export async function updatePurchaseOrderStatus(id: string, status: string): Promise<PurchaseOrderGetDto> {
+  const response = await fetch(`${API_MAIN_URL}/purchase-order/${id}/status`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to update Purchase Order status: ${errorText}`);
+  }
+
   return response.json();
 }

@@ -1,5 +1,12 @@
-import { API_MAIN_URL } from "./constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import { ProductionPlan, ProductionSummary } from "../dto/production.dto";
+import { mockProductionPlans, mockProductionSummary, mockCheckMaterialsResponse, mockCreateProductionPlan } from "./production.mock";
+
+const dispatchMockFallback = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("MockDataFallback"));
+  }
+};
 
 // const API_BASE_URL = 'http://localhost:5083/api';
 
@@ -73,7 +80,8 @@ export async function fetchProductionPlans(params?: Record<string, string>): Pro
     }));
   } catch (err) {
     console.error("fetchProductionPlans Error:", err);
-    return [];
+    dispatchMockFallback();
+    return mockProductionPlans;
   }
 }
 
@@ -81,13 +89,22 @@ export async function fetchProductionPlans(params?: Record<string, string>): Pro
  * Computes high-level production summary counts across all plans.
  */
 export async function fetchProductionSummary(): Promise<ProductionSummary> {
-  const plans = await fetchProductionPlans();
-  return {
-    totalPlans: plans.length,
-    draftPlans: plans.filter(p => p.status === "Draft").length,
-    inProgressPlans: plans.filter(p => p.status === "In Progress").length,
-    completedPlans: plans.filter(p => p.status === "Completed").length,
-  };
+  try {
+    const plans = await fetchProductionPlans();
+    // If fetchProductionPlans failed, it might already return mock data, 
+    // but if we had a direct summary API, we would wrap it here.
+    // For now we calculate summary from the plans (which might be mock).
+    return {
+      totalPlans: plans.length,
+      draftPlans: plans.filter(p => p.status === "Draft").length,
+      inProgressPlans: plans.filter(p => p.status === "In Progress" || p.status === "Active").length,
+      completedPlans: plans.filter(p => p.status === "Completed").length,
+    };
+  } catch (err) {
+    console.error("fetchProductionSummary Error:", err);
+    dispatchMockFallback();
+    return mockProductionSummary;
+  }
 }
 
 /**
@@ -95,25 +112,37 @@ export async function fetchProductionSummary(): Promise<ProductionSummary> {
  * @param plan Production plan payload
  */
 export async function createProductionPlan(plan: any): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}/production-plans`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(plan),
-  });
-  if (!res.ok) throw new Error("Failed to create production plan");
-  const text = await res.text();
-  return text ? JSON.parse(text) : plan;
+  try {
+    const res = await fetch(`${API_BASE_URL}/production-plans`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(plan),
+    });
+    if (!res.ok) throw new Error("Failed to create production plan");
+    const text = await res.text();
+    return text ? JSON.parse(text) : plan;
+  } catch (err) {
+    console.error("createProductionPlan Error:", err);
+    dispatchMockFallback();
+    return mockCreateProductionPlan(plan);
+  }
 }
 
 /**
  * Checks material availability against required quantities for products.
  */
 export async function checkMaterials(products: { productId: string, quantity: number }[]): Promise<any> {
-  const res = await fetch(`${API_BASE_URL}/production-plans/check-materials`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ products }),
-  });
-  if (!res.ok) throw new Error("Failed to check material availability");
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE_URL}/production-plans/check-materials`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ products }),
+    });
+    if (!res.ok) throw new Error("Failed to check material availability");
+    return res.json();
+  } catch (err) {
+    console.error("checkMaterials Error:", err);
+    dispatchMockFallback();
+    return mockCheckMaterialsResponse;
+  }
 }

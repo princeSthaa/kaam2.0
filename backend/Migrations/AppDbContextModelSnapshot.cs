@@ -1093,7 +1093,7 @@ namespace backend.Migrations
                     b.ToTable("ProductDemand");
                 });
 
-            modelBuilder.Entity("backend.Model.ProductIssue", b =>
+            modelBuilder.Entity("backend.Model.ProductIssues", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2335,7 +2335,7 @@ namespace backend.Migrations
                     b.Navigation("Material");
                 });
 
-            modelBuilder.Entity("backend.Model.ProductIssue", b =>
+            modelBuilder.Entity("backend.Model.ProductIssues", b =>
                 {
                     b.HasOne("backend.Model.ProductDemand", "ProductDemand")
                         .WithMany()

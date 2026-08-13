@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import "../styles/warehouse-purchaseorder.css";
-import { fetchMaterialCategories, MaterialCategoryDto } from "../api/materialcategory.api";
-import { fetchSuppliers, SupplierDto } from "../api/supplier.api";
-import { fetchMaterials, MaterialGetDto } from "../api/material.api";
+import { fetchMaterialCategories, MaterialCategoryDto } from "../api/constant";
+import { fetchSuppliers, SupplierDto } from "../api/constant";
+import { fetchMaterials, MaterialGetDto } from "../api/constant";
 import { NepaliDatePicker } from "../../../components/ui/NepaliDatePicker";
-import { createPurchaseOrder, CreatePurchaseOrderDto } from "../api/purchaseorder.api";
+import { createPurchaseOrder, CreatePurchaseOrderDto } from "../api/constant";
 
 export type CreatePurchaseOrderModalProps = {
   isOpen: boolean;
@@ -15,12 +15,19 @@ export type CreatePurchaseOrderModalProps = {
   planCode?: string;
   materialName?: string;
   shortageQty?: string | number;
+  materialId?: string;
+  sku?: string;
 };
 
 export function CreatePurchaseOrderModal({
   isOpen,
   onClose,
   onSuccess,
+  planCode,
+  materialName,
+  shortageQty,
+  materialId,
+  sku
 }: CreatePurchaseOrderModalProps) {
   const [supplier, setSupplier] = useState("");
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
@@ -39,8 +46,28 @@ export function CreatePurchaseOrderModal({
   const [paymentTerms, setPaymentTerms] = useState("Net 30");
   const [notes, setNotes] = useState("");
 
+  // Line items state matching Stitch screen 2b09f42891d44866a446787ccf49fa78
+  type LineItem = {
+    id: string;
+    materialId: string;
+    materialName: string;
+    sku: string;
+    units: string;
+    requiredQty: number;
+    unitPrice: number;
+    taxPercent: number;
+    subtotal: string;
+  };
+  
+  const [lineItems, setLineItems] = useState<LineItem[]>([]);
+
   useEffect(() => {
     if (isOpen) {
+      // Reset state on open
+      setLineItems([]);
+      setSupplier("");
+      setSelectedCategoryIds([]);
+
       Promise.all([
         fetchMaterialCategories().catch((err) => {
           console.error("Failed to load material categories:", err);
@@ -57,10 +84,32 @@ export function CreatePurchaseOrderModal({
       ]).then(([catData, supData, matData]) => {
         if (Array.isArray(catData)) setCategories(catData);
         if (Array.isArray(supData)) setAllSuppliers(supData);
-        if (Array.isArray(matData)) setAllMaterials(matData);
+        if (Array.isArray(matData)) {
+          setAllMaterials(matData);
+          if (materialId) {
+            const mat = matData.find(m => m.id === materialId);
+            if (mat) {
+              const reqQty = parseInt(String(shortageQty || "1").replace(/[^0-9]/g, '')) || 1;
+              setLineItems([{
+                id: `item-${Date.now()}`,
+                materialId: mat.id,
+                materialName: mat.name,
+                sku: mat.materialCode || sku || "N/A",
+                units: "pcs",
+                requiredQty: reqQty,
+                unitPrice: mat.costPerUnit || 0,
+                taxPercent: 0,
+                subtotal: ((mat.costPerUnit || 0) * reqQty).toFixed(2),
+              }]);
+              if (mat.materialCategoryId) {
+                setSelectedCategoryIds([mat.materialCategoryId]);
+              }
+            }
+          }
+        }
       });
     }
-  }, [isOpen]);
+  }, [isOpen, materialId, sku, shortageQty]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,20 +132,7 @@ export function CreatePurchaseOrderModal({
     });
   });
 
-  // Line items state matching Stitch screen 2b09f42891d44866a446787ccf49fa78
-  type LineItem = {
-    id: string;
-    materialId: string;
-    materialName: string;
-    sku: string;
-    units: string;
-    requiredQty: number;
-    unitPrice: number;
-    taxPercent: number;
-    subtotal: string;
-  };
-  
-  const [lineItems, setLineItems] = useState<LineItem[]>([]);
+
 
   if (!isOpen) return null;
 

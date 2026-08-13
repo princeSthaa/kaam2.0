@@ -7,6 +7,6 @@ export const crmNavigation: SidebarSection = {
     { name: "Filter Customers", url: "/crm/customers", icon: "filter_list" },
     { name: "Create Customer", url: "/crm/customers/new", icon: "add_circle" },
     { name: "Create Order", url: "/crm/orders/new", icon: "add_circle" },
-    { name: "Audit Log", url: "/crm/audit", icon: "history" },
+
   ],
 };

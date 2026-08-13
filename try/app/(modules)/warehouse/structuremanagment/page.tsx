@@ -7,7 +7,7 @@ export type StructureNode = {
   id: string;
   code: string;
   name: string;
-  levelType: "floor" | "rack" | "level" | "shelf";
+  levelType: "floor" | "room" | "rack" | "level" | "shelf";
   typeTag: string;
   maxCap: string;
   parentId?: string;
@@ -23,7 +23,7 @@ export default function WarehouseStructureManagementPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
 
-  const [addType, setAddType] = useState<"floor" | "rack" | "level" | "shelf">("floor");
+  const [addType, setAddType] = useState<"floor" | "room" | "rack" | "level" | "shelf">("floor");
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [newTag, setNewTag] = useState("Main Storage");
@@ -41,13 +41,22 @@ export default function WarehouseStructureManagementPage() {
       maxCap: "--",
     },
     {
+      id: "flr-01-rm-a",
+      code: "FLR-01-RM-A",
+      name: "Room A",
+      levelType: "room",
+      typeTag: "General Area",
+      maxCap: "--",
+      parentId: "flr-01",
+    },
+    {
       id: "flr-01-ra",
       code: "FLR-01-RA",
       name: "Rack A",
       levelType: "rack",
       typeTag: "High Density",
       maxCap: "10,000kg",
-      parentId: "flr-01",
+      parentId: "flr-01-rm-a",
     },
     {
       id: "flr-01-ra-l1",
@@ -101,7 +110,7 @@ export default function WarehouseStructureManagementPage() {
       levelType: "rack",
       typeTag: "Standard Rack",
       maxCap: "8,000kg",
-      parentId: "flr-01",
+      parentId: "flr-01-rm-a",
     },
     {
       id: "flr-02",
@@ -112,13 +121,22 @@ export default function WarehouseStructureManagementPage() {
       maxCap: "--",
     },
     {
+      id: "flr-02-rm-b",
+      code: "FLR-02-RM-B",
+      name: "Room B",
+      levelType: "room",
+      typeTag: "General Area",
+      maxCap: "--",
+      parentId: "flr-02",
+    },
+    {
       id: "flr-02-ra",
       code: "FLR-02-RA",
       name: "Rack A (Finished)",
       levelType: "rack",
       typeTag: "High Density",
       maxCap: "12,000kg",
-      parentId: "flr-02",
+      parentId: "flr-02-rm-b",
     },
   ]);
 
@@ -126,11 +144,11 @@ export default function WarehouseStructureManagementPage() {
     setExpandedNodes((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleOpenAddModal = (type: "floor" | "rack" | "level" | "shelf", defaultParentId?: string) => {
+  const handleOpenAddModal = (type: "floor" | "room" | "rack" | "level" | "shelf", defaultParentId?: string) => {
     setAddType(type);
     setNewCode(type === "floor" ? `FLR-0${nodes.filter((n) => n.levelType === "floor").length + 1}` : "");
     setNewName("");
-    setNewTag(type === "floor" ? "Main Storage" : type === "rack" ? "High Density" : type === "level" ? "Pallet Storage" : "Bin Location");
+    setNewTag(type === "floor" ? "Main Storage" : type === "room" ? "General Area" : type === "rack" ? "High Density" : type === "level" ? "Pallet Storage" : "Bin Location");
     setNewCap(type === "shelf" ? "500kg" : type === "level" ? "2,500kg" : type === "rack" ? "10,000kg" : "--");
     setParentSelection(defaultParentId || "");
     setIsAddModalOpen(true);
@@ -209,13 +227,17 @@ export default function WarehouseStructureManagementPage() {
     );
   }, [nodes, searchTerm]);
 
-  // Organize floors, racks, levels, and shelves hierarchically
+  // Organize floors, rooms, racks, levels, and shelves hierarchically
   const floorNodes = useMemo(() => {
     return filteredNodes.filter((n) => n.levelType === "floor");
   }, [filteredNodes]);
 
-  const getRacksForFloor = (floorId: string) => {
-    return filteredNodes.filter((n) => n.levelType === "rack" && n.parentId === floorId);
+  const getRoomsForFloor = (floorId: string) => {
+    return filteredNodes.filter((n) => n.levelType === "room" && n.parentId === floorId);
+  };
+
+  const getRacksForRoom = (roomId: string) => {
+    return filteredNodes.filter((n) => n.levelType === "rack" && n.parentId === roomId);
   };
 
   const getLevelsForRack = (rackId: string) => {
@@ -254,6 +276,14 @@ export default function WarehouseStructureManagementPage() {
             >
               <span className="material-symbols-outlined text-[18px]">add</span>
               <span>Add Floor</span>
+            </button>
+
+            <button
+              onClick={() => handleOpenAddModal("room")}
+              className="wh-struct-btn-secondary"
+            >
+              <span className="material-symbols-outlined text-[18px]">meeting_room</span>
+              <span>Add Room</span>
             </button>
 
             <button
@@ -311,7 +341,7 @@ export default function WarehouseStructureManagementPage() {
           ) : (
             floorNodes.map((floor) => {
               const isFloorExpanded = !!expandedNodes[floor.id] || !!searchTerm;
-              const childRacks = getRacksForFloor(floor.id);
+              const childRooms = getRoomsForFloor(floor.id);
 
               return (
                 <React.Fragment key={floor.id}>
@@ -319,7 +349,7 @@ export default function WarehouseStructureManagementPage() {
                   {/* FLOOR ROW (LEVEL 1) */}
                   <div className="wh-struct-row bg-white">
                     <div className="wh-struct-node-title wh-struct-level-indent-1">
-                      {childRacks.length > 0 ? (
+                      {childRooms.length > 0 ? (
                         <button
                           onClick={() => toggleExpand(floor.id)}
                           className="wh-struct-expand-btn"
@@ -350,8 +380,8 @@ export default function WarehouseStructureManagementPage() {
                     {/* Action Buttons with EDIT Pencil Icon */}
                     <div className="wh-struct-action-buttons">
                       <button
-                        onClick={() => handleOpenAddModal("rack")}
-                        title="Add Rack to Floor"
+                        onClick={() => handleOpenAddModal("room", floor.id)}
+                        title="Add Room to Floor"
                         className="wh-struct-icon-btn"
                       >
                         <span className="material-symbols-outlined text-[16px]">add</span>
@@ -373,63 +403,63 @@ export default function WarehouseStructureManagementPage() {
                     </div>
                   </div>
 
-                  {/* RACK ROWS (CHILDREN OF FLOOR) */}
+                  {/* ROOM ROWS (CHILDREN OF FLOOR) */}
                   {isFloorExpanded &&
-                    childRacks.map((rack) => {
-                      const isRackExpanded = !!expandedNodes[rack.id] || !!searchTerm;
-                      const childLevels = getLevelsForRack(rack.id);
+                    childRooms.map((room) => {
+                      const isRoomExpanded = !!expandedNodes[room.id] || !!searchTerm;
+                      const childRacks = getRacksForRoom(room.id);
 
                       return (
-                        <React.Fragment key={rack.id}>
+                        <React.Fragment key={room.id}>
                           <div className="wh-struct-row bg-slate-50/60">
                             <div className="wh-struct-node-title wh-struct-level-indent-2">
-                              {childLevels.length > 0 ? (
+                              {childRacks.length > 0 ? (
                                 <button
-                                  onClick={() => toggleExpand(rack.id)}
+                                  onClick={() => toggleExpand(room.id)}
                                   className="wh-struct-expand-btn"
                                 >
                                   <span className="material-symbols-outlined text-[18px]">
-                                    {isRackExpanded ? "expand_more" : "chevron_right"}
+                                    {isRoomExpanded ? "expand_more" : "chevron_right"}
                                   </span>
                                 </button>
                               ) : (
                                 <div className="w-6"></div>
                               )}
-                              <span className="material-symbols-outlined text-slate-600 text-[20px]">shelves</span>
-                              <span className="font-semibold text-slate-800 text-xs">{rack.name}</span>
+                              <span className="material-symbols-outlined text-indigo-500 text-[20px]">meeting_room</span>
+                              <span className="font-semibold text-slate-800 text-xs">{room.name}</span>
                             </div>
 
                             <div>
-                              <span className="wh-struct-code-badge">{rack.code}</span>
+                              <span className="wh-struct-code-badge">{room.code}</span>
                             </div>
 
                             <div>
-                              <span className="wh-struct-type-tag density">{rack.typeTag}</span>
+                              <span className="wh-struct-type-tag storage">{room.typeTag}</span>
                             </div>
 
                             <div className="font-mono text-xs font-bold text-slate-700 text-right">
-                              {rack.maxCap}
+                              {room.maxCap}
                             </div>
 
                             {/* Action Buttons with EDIT Pencil Icon */}
                             <div className="wh-struct-action-buttons">
                               <button
-                                onClick={() => handleOpenAddModal("level")}
-                                title="Add Level to Rack"
+                                onClick={() => handleOpenAddModal("rack", room.id)}
+                                title="Add Rack to Room"
                                 className="wh-struct-icon-btn"
                               >
                                 <span className="material-symbols-outlined text-[16px]">add</span>
                               </button>
                               <button
-                                onClick={() => handleOpenEditModal(rack)}
-                                title="Edit Rack"
+                                onClick={() => handleOpenEditModal(room)}
+                                title="Edit Room"
                                 className="wh-struct-icon-btn"
                               >
                                 <span className="material-symbols-outlined text-[16px]">edit</span>
                               </button>
                               <button
-                                onClick={() => handleDeleteNode(rack.id)}
-                                title="Delete Rack"
+                                onClick={() => handleDeleteNode(room.id)}
+                                title="Delete Room"
                                 className="wh-struct-icon-btn danger"
                               >
                                 <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -437,67 +467,63 @@ export default function WarehouseStructureManagementPage() {
                             </div>
                           </div>
 
-                          {/* LEVEL ROWS (CHILDREN OF RACK) */}
-                          {isRackExpanded &&
-                            childLevels.map((lvl) => {
-                              const isLevelExpanded = !!expandedNodes[lvl.id] || !!searchTerm;
-                              const childShelves = getShelvesForLevel(lvl.id);
+                          {/* RACK ROWS (CHILDREN OF ROOM) */}
+                          {isRoomExpanded &&
+                            childRacks.map((rack) => {
+                              const isRackExpanded = !!expandedNodes[rack.id] || !!searchTerm;
+                              const childLevels = getLevelsForRack(rack.id);
 
                               return (
-                                <React.Fragment key={lvl.id}>
+                                <React.Fragment key={rack.id}>
                                   <div className="wh-struct-row bg-white/90">
                                     <div className="wh-struct-node-title wh-struct-level-indent-3">
-                                      {childShelves.length > 0 ? (
+                                      {childLevels.length > 0 ? (
                                         <button
-                                          onClick={() => toggleExpand(lvl.id)}
+                                          onClick={() => toggleExpand(rack.id)}
                                           className="wh-struct-expand-btn"
                                         >
                                           <span className="material-symbols-outlined text-[18px]">
-                                            {isLevelExpanded ? "expand_more" : "chevron_right"}
+                                            {isRackExpanded ? "expand_more" : "chevron_right"}
                                           </span>
                                         </button>
                                       ) : (
-                                        <div className="w-6 flex items-center justify-center">
-                                          <span className="material-symbols-outlined text-slate-300 text-[16px]">
-                                            horizontal_rule
-                                          </span>
-                                        </div>
+                                        <div className="w-6"></div>
                                       )}
-                                      <span className="material-symbols-outlined text-slate-400 text-[18px]">layers</span>
-                                      <span className="font-medium text-slate-700 text-xs">{lvl.name}</span>
+                                      <span className="material-symbols-outlined text-slate-600 text-[20px]">shelves</span>
+                                      <span className="font-semibold text-slate-800 text-xs">{rack.name}</span>
                                     </div>
 
                                     <div>
-                                      <span className="wh-struct-code-badge">{lvl.code}</span>
+                                      <span className="wh-struct-code-badge">{rack.code}</span>
                                     </div>
 
                                     <div>
-                                      <span className="wh-struct-type-tag pallet">{lvl.typeTag}</span>
+                                      <span className="wh-struct-type-tag density">{rack.typeTag}</span>
                                     </div>
 
-                                    <div className="font-mono text-xs font-semibold text-slate-600 text-right">
-                                      {lvl.maxCap}
+                                    <div className="font-mono text-xs font-bold text-slate-700 text-right">
+                                      {rack.maxCap}
                                     </div>
 
-                                    {/* Action Buttons with EDIT Pencil Icon & Add Shelf */}
+                                    {/* Action Buttons with EDIT Pencil Icon */}
                                     <div className="wh-struct-action-buttons">
                                       <button
-                                        onClick={() => handleOpenAddModal("shelf", lvl.id)}
-                                        title="Add Shelf Bin to Level"
+                                        onClick={() => handleOpenAddModal("level", rack.id)}
+                                        title="Add Level to Rack"
                                         className="wh-struct-icon-btn"
                                       >
                                         <span className="material-symbols-outlined text-[16px]">add</span>
                                       </button>
                                       <button
-                                        onClick={() => handleOpenEditModal(lvl)}
-                                        title="Edit Level"
+                                        onClick={() => handleOpenEditModal(rack)}
+                                        title="Edit Rack"
                                         className="wh-struct-icon-btn"
                                       >
                                         <span className="material-symbols-outlined text-[16px]">edit</span>
                                       </button>
                                       <button
-                                        onClick={() => handleDeleteNode(lvl.id)}
-                                        title="Delete Level"
+                                        onClick={() => handleDeleteNode(rack.id)}
+                                        title="Delete Rack"
                                         className="wh-struct-icon-btn danger"
                                       >
                                         <span className="material-symbols-outlined text-[16px]">delete</span>
@@ -505,50 +531,121 @@ export default function WarehouseStructureManagementPage() {
                                     </div>
                                   </div>
 
-                                  {/* SHELF ROWS (CHILDREN OF LEVEL) */}
-                                  {isLevelExpanded &&
-                                    childShelves.map((shf) => (
-                                      <div key={shf.id} className="wh-struct-row bg-slate-50/80">
-                                        <div className="wh-struct-node-title wh-struct-level-indent-4">
-                                          <div className="w-6 flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-emerald-400 text-[14px]">
-                                              subdirectory_arrow_right
-                                            </span>
+                                  {/* LEVEL ROWS (CHILDREN OF RACK) */}
+                                  {isRackExpanded &&
+                                    childLevels.map((lvl) => {
+                                      const isLevelExpanded = !!expandedNodes[lvl.id] || !!searchTerm;
+                                      const childShelves = getShelvesForLevel(lvl.id);
+
+                                      return (
+                                        <React.Fragment key={lvl.id}>
+                                          <div className="wh-struct-row bg-slate-50/80">
+                                            <div className="wh-struct-node-title wh-struct-level-indent-4">
+                                              {childShelves.length > 0 ? (
+                                                <button
+                                                  onClick={() => toggleExpand(lvl.id)}
+                                                  className="wh-struct-expand-btn"
+                                                >
+                                                  <span className="material-symbols-outlined text-[18px]">
+                                                    {isLevelExpanded ? "expand_more" : "chevron_right"}
+                                                  </span>
+                                                </button>
+                                              ) : (
+                                                <div className="w-6 flex items-center justify-center">
+                                                  <span className="material-symbols-outlined text-slate-300 text-[16px]">
+                                                    horizontal_rule
+                                                  </span>
+                                                </div>
+                                              )}
+                                              <span className="material-symbols-outlined text-slate-400 text-[18px]">layers</span>
+                                              <span className="font-medium text-slate-700 text-xs">{lvl.name}</span>
+                                            </div>
+
+                                            <div>
+                                              <span className="wh-struct-code-badge">{lvl.code}</span>
+                                            </div>
+
+                                            <div>
+                                              <span className="wh-struct-type-tag pallet">{lvl.typeTag}</span>
+                                            </div>
+
+                                            <div className="font-mono text-xs font-semibold text-slate-600 text-right">
+                                              {lvl.maxCap}
+                                            </div>
+
+                                            {/* Action Buttons with EDIT Pencil Icon & Add Shelf */}
+                                            <div className="wh-struct-action-buttons">
+                                              <button
+                                                onClick={() => handleOpenAddModal("shelf", lvl.id)}
+                                                title="Add Shelf Bin to Level"
+                                                className="wh-struct-icon-btn"
+                                              >
+                                                <span className="material-symbols-outlined text-[16px]">add</span>
+                                              </button>
+                                              <button
+                                                onClick={() => handleOpenEditModal(lvl)}
+                                                title="Edit Level"
+                                                className="wh-struct-icon-btn"
+                                              >
+                                                <span className="material-symbols-outlined text-[16px]">edit</span>
+                                              </button>
+                                              <button
+                                                onClick={() => handleDeleteNode(lvl.id)}
+                                                title="Delete Level"
+                                                className="wh-struct-icon-btn danger"
+                                              >
+                                                <span className="material-symbols-outlined text-[16px]">delete</span>
+                                              </button>
+                                            </div>
                                           </div>
-                                          <span className="material-symbols-outlined text-emerald-600 text-[18px]">grid_view</span>
-                                          <span className="font-medium text-slate-800 text-xs">{shf.name}</span>
-                                        </div>
 
-                                        <div>
-                                          <span className="wh-struct-code-badge">{shf.code}</span>
-                                        </div>
+                                          {/* SHELF ROWS (CHILDREN OF LEVEL) */}
+                                          {isLevelExpanded &&
+                                            childShelves.map((shf) => (
+                                              <div key={shf.id} className="wh-struct-row bg-white/90">
+                                                <div className="wh-struct-node-title wh-struct-level-indent-5">
+                                                  <div className="w-6 flex items-center justify-center">
+                                                    <span className="material-symbols-outlined text-emerald-400 text-[14px]">
+                                                      subdirectory_arrow_right
+                                                    </span>
+                                                  </div>
+                                                  <span className="material-symbols-outlined text-emerald-600 text-[18px]">grid_view</span>
+                                                  <span className="font-medium text-slate-800 text-xs">{shf.name}</span>
+                                                </div>
 
-                                        <div>
-                                          <span className="wh-struct-type-tag bin">{shf.typeTag}</span>
-                                        </div>
+                                                <div>
+                                                  <span className="wh-struct-code-badge">{shf.code}</span>
+                                                </div>
 
-                                        <div className="font-mono text-xs font-semibold text-slate-600 text-right">
-                                          {shf.maxCap}
-                                        </div>
+                                                <div>
+                                                  <span className="wh-struct-type-tag bin">{shf.typeTag}</span>
+                                                </div>
 
-                                        <div className="wh-struct-action-buttons">
-                                          <button
-                                            onClick={() => handleOpenEditModal(shf)}
-                                            title="Edit Shelf"
-                                            className="wh-struct-icon-btn"
-                                          >
-                                            <span className="material-symbols-outlined text-[16px]">edit</span>
-                                          </button>
-                                          <button
-                                            onClick={() => handleDeleteNode(shf.id)}
-                                            title="Delete Shelf"
-                                            className="wh-struct-icon-btn danger"
-                                          >
-                                            <span className="material-symbols-outlined text-[16px]">delete</span>
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ))}
+                                                <div className="font-mono text-xs font-semibold text-slate-600 text-right">
+                                                  {shf.maxCap}
+                                                </div>
+
+                                                <div className="wh-struct-action-buttons">
+                                                  <button
+                                                    onClick={() => handleOpenEditModal(shf)}
+                                                    title="Edit Shelf"
+                                                    className="wh-struct-icon-btn"
+                                                  >
+                                                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                                                  </button>
+                                                  <button
+                                                    onClick={() => handleDeleteNode(shf.id)}
+                                                    title="Delete Shelf"
+                                                    className="wh-struct-icon-btn danger"
+                                                  >
+                                                    <span className="material-symbols-outlined text-[16px]">delete</span>
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            ))}
+                                        </React.Fragment>
+                                      );
+                                    })}
                                 </React.Fragment>
                               );
                             })}
@@ -580,22 +677,30 @@ export default function WarehouseStructureManagementPage() {
             <form onSubmit={handleAddStructure}>
               <div className="wh-struct-modal-body">
                 
-                {/* Parent Selection if Rack, Level, or Shelf */}
+                {/* Parent Selection if Room, Rack, Level, or Shelf */}
                 {addType !== "floor" && (
                   <div className="wh-struct-field">
-                    <label>PARENT {addType === "rack" ? "FLOOR" : addType === "level" ? "RACK" : "LEVEL"}</label>
+                    <label>PARENT {addType === "room" ? "FLOOR" : addType === "rack" ? "ROOM" : addType === "level" ? "RACK" : "LEVEL"}</label>
                     <select
                       value={parentSelection}
                       onChange={(e) => setParentSelection(e.target.value)}
                       required
                     >
                       <option value="">-- Select Parent --</option>
-                      {addType === "rack"
+                      {addType === "room"
                         ? nodes
                             .filter((n) => n.levelType === "floor")
                             .map((f) => (
                               <option key={f.id} value={f.id}>
                                 {f.name} ({f.code})
+                              </option>
+                            ))
+                        : addType === "rack"
+                        ? nodes
+                            .filter((n) => n.levelType === "room")
+                            .map((rm) => (
+                              <option key={rm.id} value={rm.id}>
+                                {rm.name} ({rm.code})
                               </option>
                             ))
                         : addType === "level"
@@ -700,22 +805,30 @@ export default function WarehouseStructureManagementPage() {
             <form onSubmit={handleUpdateStructure}>
               <div className="wh-struct-modal-body">
                 
-                {/* Parent Selection if Rack, Level, or Shelf */}
+                {/* Parent Selection if Room, Rack, Level, or Shelf */}
                 {addType !== "floor" && (
                   <div className="wh-struct-field">
-                    <label>PARENT {addType === "rack" ? "FLOOR" : addType === "level" ? "RACK" : "LEVEL"}</label>
+                    <label>PARENT {addType === "room" ? "FLOOR" : addType === "rack" ? "ROOM" : addType === "level" ? "RACK" : "LEVEL"}</label>
                     <select
                       value={parentSelection}
                       onChange={(e) => setParentSelection(e.target.value)}
                       required
                     >
                       <option value="">-- Select Parent --</option>
-                      {addType === "rack"
+                      {addType === "room"
                         ? nodes
                             .filter((n) => n.levelType === "floor")
                             .map((f) => (
                               <option key={f.id} value={f.id}>
                                 {f.name} ({f.code})
+                              </option>
+                            ))
+                        : addType === "rack"
+                        ? nodes
+                            .filter((n) => n.levelType === "room")
+                            .map((rm) => (
+                              <option key={rm.id} value={rm.id}>
+                                {rm.name} ({rm.code})
                               </option>
                             ))
                         : addType === "level"

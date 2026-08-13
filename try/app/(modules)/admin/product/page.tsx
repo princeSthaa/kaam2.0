@@ -7,9 +7,9 @@ import { EditSkuModal, EditSkuFormData } from "../components/modals/editskumodal
 import { DefineMaterialModal, MaterialSpecFormData } from "../components/modals/definematerial";
 import { ManageProductionStagesModal } from "../components/modals/manageproductionstagesmodal";
 import { ManageProductCategoryModal } from "../components/modals/manageproductcategorymodal";
-import { fetchProducts, deleteProduct as apiDeleteProduct, ProductDto } from "../api/product.api";
-import { fetchProductCategories, ProductCategoryDto } from "../api/productcategory.api";
-import { API_MAIN_URL } from "../api/constant";
+import { fetchProducts, deleteProduct as apiDeleteProduct, ProductDto } from "../api/constant";
+import { fetchProductCategories, ProductCategoryDto } from "../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 export interface ProductDirectoryItem {
   id: string;

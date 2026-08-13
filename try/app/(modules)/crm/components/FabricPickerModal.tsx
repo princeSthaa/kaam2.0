@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Fabric, resolveMediaUrl } from "../api/catalog.api";
+import { Fabric, resolveMediaUrl } from "../api/constant";
 
 export interface FabricPickerModalProps {
   isOpen: boolean;

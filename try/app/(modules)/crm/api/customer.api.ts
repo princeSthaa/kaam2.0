@@ -1,6 +1,13 @@
-
-import { API_MAIN_URL } from "./constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import { Customer } from "../dto/customer.dto";
+import { mockCustomers } from "./crm.mock";
+
+const dispatchMockFallback = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("MockDataFallback"));
+  }
+};
+
 // const API_BASE_URL = 'http://localhost:5083/api';  
 
 const API_BASE_URL = `${API_MAIN_URL}/customer`;
@@ -31,10 +38,13 @@ export async function fetchCustomers(): Promise<Customer[]> {
     }
     const errorText = await res.text();
     console.warn("Failed to fetch customers from API:", res.status, errorText);
+    dispatchMockFallback();
+    return mockCustomers;
   } catch (err) {
     console.error("Error connecting to Customer API:", err);
+    dispatchMockFallback();
+    return mockCustomers;
   }
-  return [];
 }
 
 export async function createCustomer(customer: Partial<Customer>): Promise<Customer> {

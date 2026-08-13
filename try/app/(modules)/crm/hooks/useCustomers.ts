@@ -1,5 +1,5 @@
 "use client";
-import { API_MAIN_URL } from "../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import { useState, useEffect, useCallback } from "react";
 const API_BASE_URL = `${API_MAIN_URL}/customer`;
 

@@ -7,7 +7,7 @@ import {
   updateMaterialType as apiUpdateMaterialType,
   deleteMaterialType as apiDeleteMaterialType,
   MaterialTypeDto,
-} from "../../api/materialtype.api";
+} from "../../api/constant";
 
 export interface MaterialTypeItem extends MaterialTypeDto {
   defaultUom?: string;

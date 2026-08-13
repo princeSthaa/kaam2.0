@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { API_MAIN_URL } from "./api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import {
   BarChart,
   Bar,

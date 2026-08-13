@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Script from "next/script";
 import Link from "next/link";
-import { API_MAIN_URL } from "../../admin/api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 import { STAGE_COLORS, STAGE_LIGHT_COLORS as STAGE_LIGHT } from "../constants/production.constants";
 import { adToBs as adToNepali, getStatusStyle, calculatePlanProgress as planProgress } from "../lib/production-utils";

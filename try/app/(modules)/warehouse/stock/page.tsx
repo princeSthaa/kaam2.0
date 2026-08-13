@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "../styles/warehouse-stock.css";
 import { StockDiscrepancyModal } from "../components/StockDiscrepancyModal";
 import { NewMaterialReceiptModal } from "../components/NewMaterialReceiptModal";
+import { fetchMaterials } from "../api/constant";
 
 export type StockItem = {
   id: string;
@@ -15,7 +16,7 @@ export type StockItem = {
   unit: string;
   location: string;
   capacityPct: number;
-  status: "In Stock" | "Low Stock" | "Reserved";
+  status: "In Stock" | "Low Stock" | "Out of Stock";
   totalValue: string;
   batchNo?: string;
   weight?: string;
@@ -52,89 +53,52 @@ export default function WarehouseStockPage() {
   const [adjustNotes, setAdjustNotes] = useState("");
 
   // Stock Items Master List
-  const [stockItems, setStockItems] = useState<StockItem[]>([
-    {
-      id: "item-1",
-      name: "100% Cotton Twill - Navy",
-      sku: "SKU-8924-A",
-      category: "Fabric",
-      type: "raw",
-      currentStock: 450,
-      unit: "Units",
-      location: "FL-01 › RK-B4 › SH-02",
-      capacityPct: 75,
-      status: "In Stock",
-      totalValue: "Rs 450,000",
-      batchNo: "B-40291",
-      weight: "1.2kg/unit",
-      image: "/images/fabrics/FAB-001.jpg",
-    },
-    {
-      id: "item-2",
-      name: "Resin Buttons - 18L Matte Black",
-      sku: "TRM-BTN-MBK-18",
-      category: "Trims",
-      type: "raw",
-      currentStock: 240,
-      unit: "Gross",
-      location: "FL-01 › RK-C3 › SH-01",
-      capacityPct: 15,
-      status: "Low Stock",
-      totalValue: "Rs 12,000",
-      batchNo: "B-10822",
-      weight: "0.1kg/gross",
-      image: "https://images.unsplash.com/photo-1605518216938-7c31b7b14ad0?w=150&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "item-3",
-      name: "Chambray Classic Shirt - L",
-      sku: "FG-SHR-CHM-L",
-      category: "Shirts",
-      type: "finished",
-      currentStock: 1200,
-      unit: "Units",
-      location: "FL-02 › R-14 › S-02-B",
-      capacityPct: 90,
-      status: "In Stock",
-      totalValue: "Rs 1,020,000",
-      batchNo: "FG-2026-08",
-      qcStatus: "QC Verified (Grade A • Passed)",
-      inspector: "J. Doe (ID: 8492)",
-      image: "/images/products/casual-shirt.jpg",
-    },
-    {
-      id: "item-4",
-      name: "Heavy Duty Zippers - Brass 24\"",
-      sku: "TRM-ZIP-BRS-24",
-      category: "Trims",
-      type: "raw",
-      currentStock: 500,
-      unit: "Pcs",
-      location: "FL-01 › RK-D1 › SH-05",
-      capacityPct: 40,
-      status: "Reserved",
-      totalValue: "Rs 25,000",
-      batchNo: "B-99201",
-      weight: "0.3kg/unit",
-      image: "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=150&auto=format&fit=crop&q=80",
-    },
-    {
-      id: "item-5",
-      name: "Poly-Cotton Blend Fabric - Charcoal",
-      sku: "FAB-PLY-CHR-02",
-      category: "Fabric",
-      type: "raw",
-      currentStock: 310,
-      unit: "Rolls",
-      location: "FL-01 › RK-B2 › SH-03",
-      capacityPct: 85,
-      status: "In Stock",
-      totalValue: "Rs 620,000",
-      batchNo: "B-33109",
-      weight: "2.5kg/roll",
-      image: "/images/fabrics/FAB-002.png",
-    },
-  ]);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const responseData = await fetchMaterials();
+      const data = (responseData as any).value || responseData;
+      
+      if (!Array.isArray(data)) {
+        setStockItems([]);
+        return;
+      }
+
+      const mapped: StockItem[] = data.map((item: any) => {
+        const qty = item.availableQty || 0;
+        const status = qty > 50 ? "In Stock" : (qty > 0 ? "Low Stock" : "Out of Stock");
+        const totalVal = qty * (item.costPerUnit || 0);
+
+        return {
+          id: item.id,
+          name: item.name,
+          sku: item.materialCode || "N/A",
+          category: item.materialCategoryName || item.materialCategory?.name || "Uncategorized",
+          type: "raw",
+          currentStock: qty,
+          unit: "Units", 
+          location: "", 
+          capacityPct: Math.floor(Math.random() * 40) + 20, 
+          status: status as any,
+          totalValue: `Rs ${totalVal.toLocaleString()}`,
+          image: item.imagePath || undefined,
+        };
+      });
+
+      setStockItems(mapped);
+    } catch (err) {
+      console.error("Failed to load materials", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Open Handlers
   const handleOpenMoveModal = (item: StockItem) => {
@@ -201,6 +165,37 @@ export default function WarehouseStockPage() {
     setIsAdjustStockOpen(false);
   };
 
+  // Compute KPI Stats
+  const kpiStats = useMemo(() => {
+    let totalValue = 0;
+    let rawCount = 0;
+    let finishedCount = 0;
+    let lowStockCount = 0;
+
+    stockItems.forEach(item => {
+      // Parse totalValue back from string format "Rs 1,000"
+      const valStr = item.totalValue.replace(/Rs\s|,/g, '');
+      totalValue += (parseFloat(valStr) || 0);
+
+      if (item.type === "raw") rawCount += item.currentStock;
+      if (item.type === "finished") finishedCount += item.currentStock;
+      if (item.status === "Low Stock" || item.status === "Out of Stock") lowStockCount++;
+    });
+
+    const formatNumber = (num: number) => {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    };
+
+    return {
+      totalValueStr: `Rs ${formatNumber(totalValue)}`,
+      rawCountStr: formatNumber(rawCount),
+      finishedCountStr: formatNumber(finishedCount),
+      lowStockCount
+    };
+  }, [stockItems]);
+
   // Filtered Items
   const filteredItems = useMemo(() => {
     return stockItems.filter((item) => {
@@ -265,10 +260,10 @@ export default function WarehouseStockPage() {
             <span className="wh-stock-kpi-title">TOTAL STOCK VALUE</span>
             <span className="material-symbols-outlined text-slate-400">account_balance</span>
           </div>
-          <div className="wh-stock-kpi-value">Rs 42.8M</div>
+          <div className="wh-stock-kpi-value">{kpiStats.totalValueStr}</div>
           <div className="wh-stock-kpi-footer text-emerald-600 flex items-center gap-1">
             <span className="material-symbols-outlined text-[16px]">trending_up</span>
-            <span>+2.4% vs last month</span>
+            <span>Live Valuation</span>
           </div>
         </div>
 
@@ -278,12 +273,12 @@ export default function WarehouseStockPage() {
             <span className="wh-stock-kpi-title">RAW MATERIALS</span>
             <span className="material-symbols-outlined text-slate-400">layers</span>
           </div>
-          <div className="wh-stock-kpi-value">1,452 <span className="text-xs text-slate-500 font-semibold">Rolls</span></div>
+          <div className="wh-stock-kpi-value">{kpiStats.rawCountStr} <span className="text-xs text-slate-500 font-semibold">Units</span></div>
           <div className="wh-stock-kpi-footer text-slate-500 flex items-center justify-between">
             <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mr-3">
-              <div className="bg-blue-600 h-full rounded-full" style={{ width: "65%" }}></div>
+              <div className="bg-blue-600 h-full rounded-full" style={{ width: "45%" }}></div>
             </div>
-            <span className="shrink-0 text-xs font-bold">65% Cap</span>
+            <span className="shrink-0 text-xs font-bold">45% Cap</span>
           </div>
         </div>
 
@@ -293,12 +288,12 @@ export default function WarehouseStockPage() {
             <span className="wh-stock-kpi-title">FINISHED GOODS</span>
             <span className="material-symbols-outlined text-slate-400">checkroom</span>
           </div>
-          <div className="wh-stock-kpi-value">18.4K <span className="text-xs text-slate-500 font-semibold">Units</span></div>
+          <div className="wh-stock-kpi-value">{kpiStats.finishedCountStr} <span className="text-xs text-slate-500 font-semibold">Units</span></div>
           <div className="wh-stock-kpi-footer text-slate-500 flex items-center justify-between">
             <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mr-3">
-              <div className="bg-emerald-600 h-full rounded-full" style={{ width: "82%" }}></div>
+              <div className="bg-emerald-600 h-full rounded-full" style={{ width: "20%" }}></div>
             </div>
-            <span className="shrink-0 text-xs font-bold">82% Cap</span>
+            <span className="shrink-0 text-xs font-bold">20% Cap</span>
           </div>
         </div>
 
@@ -308,14 +303,16 @@ export default function WarehouseStockPage() {
             <span className="wh-stock-kpi-title text-red-700">LOW STOCK ALERTS</span>
             <span className="material-symbols-outlined text-red-600">warning</span>
           </div>
-          <div className="wh-stock-kpi-value text-red-700">12 <span className="text-xs text-red-500 font-semibold">SKUs</span></div>
+          <div className="wh-stock-kpi-value text-red-700">{kpiStats.lowStockCount} <span className="text-xs text-red-500 font-semibold">SKUs</span></div>
           <div className="wh-stock-kpi-footer text-red-600">
             <button
               type="button"
               onClick={() => {
-                const lowItem = stockItems.find((it) => it.status === "Low Stock") || stockItems[0];
-                setSelectedItem(lowItem);
-                setIsDiscrepancyModalOpen(true);
+                const lowItem = stockItems.find((it) => it.status === "Low Stock" || it.status === "Out of Stock") || stockItems[0];
+                if (lowItem) {
+                  setSelectedItem(lowItem);
+                  setIsDiscrepancyModalOpen(true);
+                }
               }}
               className="underline cursor-pointer font-bold hover:text-red-800 bg-transparent border-none p-0 text-red-600"
             >
@@ -405,7 +402,6 @@ export default function WarehouseStockPage() {
                 <th>CATEGORY</th>
                 <th>CURRENT STOCK</th>
                 <th>LOCATION</th>
-                <th>CAPACITY</th>
                 <th>STATUS</th>
                 <th className="text-right">TOTAL VALUE</th>
                 <th className="text-center">ACTIONS</th>
@@ -414,7 +410,7 @@ export default function WarehouseStockPage() {
             <tbody>
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-400 text-sm font-semibold">
+                  <td colSpan={7} className="p-12 text-center text-slate-400 text-sm font-semibold">
                     No inventory stock items match your search criteria.
                   </td>
                 </tr>
@@ -457,20 +453,6 @@ export default function WarehouseStockPage() {
                       <span className="font-mono text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
                         {item.location}
                       </span>
-                    </td>
-
-                    {/* Capacity Gauge */}
-                    <td className="w-32">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-slate-100 h-2 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${item.capacityPct < 30 ? "bg-red-500" : "bg-blue-600"
-                              }`}
-                            style={{ width: `${item.capacityPct}%` }}
-                          ></div>
-                        </div>
-                        <span className="font-mono text-xs font-bold text-slate-600 w-8">{item.capacityPct}%</span>
-                      </div>
                     </td>
 
                     {/* Status */}

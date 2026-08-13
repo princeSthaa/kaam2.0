@@ -1,20 +1,22 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import "../styles/warehouse-factoryrequest.css";
 import { CreatePurchaseOrderModal } from "../components/CreatePurchaseOrderModal";
+import { getMaterialRequests, updateMaterialRequestStatus, fetchMaterials } from "../api/constant";
 
 export type FactoryRequest = {
   id: string;
   reqId: string;
   planId: string;
+  materialId: string;
   materialName: string;
   sku: string;
   qtyRequested: number;
   qtyAvailable: number;
   uom: string;
   workCenter: string;
-  urgency: "Critical" | "Normal";
+  requestedBy: string;
   stockStatus: "In Stock" | "Partial" | "Out of Stock" | "Issued" | "Declined";
   location: { aisle: string; rack: string; bin: string };
   issuedAt?: string;
@@ -33,98 +35,76 @@ export default function WarehouseFactoryRequestsPage() {
   const [issueQty, setIssueQty] = useState("");
 
   // Pending Requests State
-  const [pendingRequests, setPendingRequests] = useState<FactoryRequest[]>([
-    {
-      id: "req-1",
-      reqId: "RQ-8901",
-      planId: "PP-1024",
-      materialName: "100% Cotton Twill - Navy",
-      sku: "TWL-NVY-100",
-      qtyRequested: 150,
-      qtyAvailable: 420,
-      uom: "Rolls",
-      workCenter: "WC 04 - Stitching",
-      urgency: "Critical",
-      stockStatus: "In Stock",
-      location: { aisle: "Aisle 04", rack: "Rack B", bin: "Bin 12" },
-    },
-    {
-      id: "req-2",
-      reqId: "RQ-8902",
-      planId: "PP-1024",
-      materialName: "Polyester Thread - Navy #40",
-      sku: "THR-NVY-040",
-      qtyRequested: 500,
-      qtyAvailable: 350,
-      uom: "Cones",
-      workCenter: "WC 04 - Stitching",
-      urgency: "Normal",
-      stockStatus: "Partial",
-      location: { aisle: "Aisle 02", rack: "Rack A", bin: "Bin 04" },
-    },
-    {
-      id: "req-3",
-      reqId: "RQ-8899",
-      planId: "PP-1018",
-      materialName: "Metal Zippers 8\" - Silver",
-      sku: "TRM-ZIP-SLV-08",
-      qtyRequested: 1200,
-      qtyAvailable: 0,
-      uom: "Pcs",
-      workCenter: "WC 02 - Assembly",
-      urgency: "Critical",
-      stockStatus: "Out of Stock",
-      location: { aisle: "Aisle 01", rack: "Rack C", bin: "Bin 08" },
-    },
-    {
-      id: "req-4",
-      reqId: "RQ-8898",
-      planId: "PP-1018",
-      materialName: "Denim 12oz - Indigo",
-      sku: "FAB-DNM-IND-12",
-      qtyRequested: 80,
-      qtyAvailable: 120,
-      uom: "Rolls",
-      workCenter: "WC 01 - Cutting",
-      urgency: "Normal",
-      stockStatus: "In Stock",
-      location: { aisle: "Aisle 05", rack: "Rack D", bin: "Bin 02" },
-    },
-  ]);
-
+  const [pendingRequests, setPendingRequests] = useState<FactoryRequest[]>([]);
   // Issued Materials State
-  const [issuedRequests, setIssuedRequests] = useState<FactoryRequest[]>([
-    {
-      id: "req-101",
-      reqId: "RQ-8890",
-      planId: "PP-1012",
-      materialName: "Elastic Band 1.5\" - White",
-      sku: "TRM-ELT-WHT-15",
-      qtyRequested: 300,
-      qtyAvailable: 600,
-      uom: "Meters",
-      workCenter: "WC 04 - Stitching",
-      urgency: "Normal",
-      stockStatus: "Issued",
-      location: { aisle: "Aisle 02", rack: "Rack C", bin: "Bin 01" },
-      issuedAt: "Today, 11:20 AM",
-    },
-    {
-      id: "req-102",
-      reqId: "RQ-8892",
-      planId: "PP-1014",
-      materialName: "Poly Bag Packaging - Medium",
-      sku: "PKG-BAG-MED-01",
-      qtyRequested: 1500,
-      qtyAvailable: 5000,
-      uom: "Pcs",
-      workCenter: "WC 05 - Packing",
-      urgency: "Normal",
-      stockStatus: "Issued",
-      location: { aisle: "Aisle 06", rack: "Rack A", bin: "Bin 10" },
-      issuedAt: "Today, 09:45 AM",
-    },
-  ]);
+  const [issuedRequests, setIssuedRequests] = useState<FactoryRequest[]>([]);
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  const loadRequests = async () => {
+    try {
+      setIsLoading(true);
+      const [requestsRes, materialsRes] = await Promise.all([
+        getMaterialRequests().catch(() => []),
+        fetchMaterials().catch(() => [])
+      ]);
+
+      const pending: FactoryRequest[] = [];
+      const issued: FactoryRequest[] = [];
+
+      requestsRes.forEach((req: any) => {
+        req.items?.forEach((item: any) => {
+          const material = materialsRes.find((m: any) => m.id === item.materialId);
+          const isIssued = req.status === "Issued" || req.status === "Completed";
+          
+          let stockStatus = req.status;
+          if (req.status === "Draft" || req.status === "Pending") {
+             const available = material?.availableQty || 0;
+             if (available >= item.requestedQuantity) stockStatus = "In Stock";
+             else if (available > 0) stockStatus = "Partial";
+             else stockStatus = "Out of Stock";
+          }
+
+          const mapped: FactoryRequest = {
+            id: item.id,
+            reqId: req.requestNumber || req.id,
+            planId: req.notes || "N/A",
+            materialId: material?.id || item.materialId,
+            materialName: material?.name || "Unknown Material",
+            sku: material?.materialCode || "UNKNOWN",
+            qtyRequested: item.requestedQuantity,
+            qtyAvailable: material?.availableQty || 0,
+            uom: "Units",
+            workCenter: "WC 01 - Cutting",
+            requestedBy: req.requestedBy || "Unknown",
+            stockStatus: isIssued ? "Issued" : stockStatus as any,
+            location: { aisle: "Aisle 01", rack: "Rack A", bin: "Bin 01" },
+            issuedAt: req.updatedAt,
+          };
+          
+          // @ts-ignore - custom property for API updates
+          mapped.originalReqId = req.id;
+
+          if (isIssued) {
+            issued.push(mapped);
+          } else {
+            pending.push(mapped);
+          }
+        });
+      });
+
+      setPendingRequests(pending);
+      setIssuedRequests(issued);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Quick Issue Open Handler
   const handleOpenConfirmModal = (req: FactoryRequest) => {
@@ -134,25 +114,35 @@ export default function WarehouseFactoryRequestsPage() {
   };
 
   // Confirm Issue Handler (Moves item from Pending to Issued)
-  const handleConfirmIssue = (e: React.FormEvent) => {
+  const handleConfirmIssue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReq) return;
 
-    const issuedItem: FactoryRequest = {
-      ...selectedReq,
-      stockStatus: "Issued",
-      issuedAt: "Just now",
-    };
-
-    setPendingRequests((prev) => prev.filter((r) => r.id !== selectedReq.id));
-    setIssuedRequests((prev) => [issuedItem, ...prev]);
-    setIsConfirmModalOpen(false);
+    try {
+      // @ts-ignore
+      await updateMaterialRequestStatus(selectedReq.originalReqId, "Issued");
+      await loadRequests();
+      setIsConfirmModalOpen(false);
+    } catch (err) {
+      console.error("Failed to issue material:", err);
+      alert("Failed to issue material.");
+    }
   };
 
   // Decline / Cancel Request Handler
-  const handleDeclineRequest = (id: string) => {
+  const handleDeclineRequest = async (id: string) => {
     if (confirm("Are you sure you want to decline/cancel this material request?")) {
-      setPendingRequests((prev) => prev.filter((r) => r.id !== id));
+      try {
+        const reqItem = pendingRequests.find(r => r.id === id);
+        if (reqItem) {
+          // @ts-ignore
+          await updateMaterialRequestStatus(reqItem.originalReqId, "Declined");
+          await loadRequests();
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to decline request");
+      }
     }
   };
 
@@ -186,9 +176,17 @@ export default function WarehouseFactoryRequestsPage() {
     });
   }, [pendingRequests, issuedRequests, activeTab, selectedLine, searchTerm]);
 
+  // KPI Calculations
+  const criticalShortagesCount = pendingRequests.filter((r) => r.urgency === "Critical" && r.stockStatus === "Out of Stock").length;
+  
+  const totalIssuedUnits = issuedRequests.reduce((sum, req) => sum + req.qtyRequested, 0);
+  
+  const totalRequestsCount = pendingRequests.length + issuedRequests.length;
+  const throughputRate = totalRequestsCount === 0 ? 0 : Math.round((issuedRequests.length / totalRequestsCount) * 100);
+
   return (
     <div className="wh-freq-page">
-      
+
       {/* ── HEADER CARD ── */}
       <div className="wh-freq-header-card">
         <div className="wh-freq-header-top">
@@ -221,7 +219,7 @@ export default function WarehouseFactoryRequestsPage() {
 
       {/* ── BENTO STATS GRID CARDS ── */}
       <div className="wh-freq-bento-grid">
-        
+
         {/* Pending Requests */}
         <div className="wh-freq-stat-card">
           <div className="wh-freq-stat-header">
@@ -246,10 +244,10 @@ export default function WarehouseFactoryRequestsPage() {
             </div>
           </div>
           <div className="wh-freq-stat-value text-red-700">
-            {pendingRequests.filter((r) => r.urgency === "Critical" && r.stockStatus === "Out of Stock").length || 1}
+            {criticalShortagesCount}
           </div>
           <div className="wh-freq-stat-footer text-red-600 font-bold">
-            Blocking Lines: 02, 05
+            {criticalShortagesCount > 0 ? "Requires immediate action" : "No blocking issues"}
           </div>
         </div>
 
@@ -261,10 +259,10 @@ export default function WarehouseFactoryRequestsPage() {
               <span className="material-symbols-outlined text-[18px]">payments</span>
             </div>
           </div>
-          <div className="wh-freq-stat-value">Rs 1.2M</div>
+          <div className="wh-freq-stat-value">{totalIssuedUnits.toLocaleString()} Units</div>
           <div className="wh-freq-stat-footer text-slate-500 flex items-center gap-1">
             <span className="material-symbols-outlined text-[14px] text-emerald-600">check_circle</span>
-            <span>{issuedRequests.length} Batches / 12k Units</span>
+            <span>{issuedRequests.length} Batches Processed</span>
           </div>
         </div>
 
@@ -277,9 +275,9 @@ export default function WarehouseFactoryRequestsPage() {
             </div>
           </div>
           <div>
-            <div className="wh-freq-stat-value">88%</div>
+            <div className="wh-freq-stat-value">{throughputRate}%</div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full mt-2 overflow-hidden">
-              <div className="bg-slate-900 h-full rounded-full" style={{ width: "88%" }}></div>
+              <div className="bg-slate-900 h-full rounded-full" style={{ width: `${throughputRate}%` }}></div>
             </div>
           </div>
           <div className="wh-freq-stat-footer text-slate-500">Fulfilled vs Requested</div>
@@ -289,7 +287,7 @@ export default function WarehouseFactoryRequestsPage() {
 
       {/* ── TOOLBAR & TABS CARD ── */}
       <div className="wh-freq-toolbar-card">
-        
+
         {/* Filter Tabs */}
         <div className="wh-freq-tabs">
           <button
@@ -308,7 +306,7 @@ export default function WarehouseFactoryRequestsPage() {
 
         {/* Dropdown Controls */}
         <div className="wh-freq-filter-controls">
-          
+
           {/* Line Filter */}
           <select
             value={selectedLine}
@@ -343,12 +341,12 @@ export default function WarehouseFactoryRequestsPage() {
             <thead>
               <tr>
                 <th>REQ ID</th>
-                <th>PLAN ID</th>
                 <th>MATERIAL</th>
                 <th className="text-right">QTY</th>
                 <th>UOM</th>
-                <th>WORK CENTER</th>
-                <th>URGENCY</th>
+                {/* <th>WORK CENTER</th> */}
+                <th>REQUESTED BY</th>
+                <th>NOTES</th>
                 <th>STATUS</th>
                 <th className="text-right">ACTIONS</th>
               </tr>
@@ -365,15 +363,10 @@ export default function WarehouseFactoryRequestsPage() {
               ) : (
                 filteredRequests.map((req) => (
                   <tr key={req.id}>
-                    
+
                     {/* Req ID */}
                     <td>
                       <span className="wh-freq-code-badge">{req.reqId}</span>
-                    </td>
-
-                    {/* Plan ID */}
-                    <td>
-                      <span className="font-mono text-xs font-semibold text-slate-600">{req.planId}</span>
                     </td>
 
                     {/* Material */}
@@ -393,19 +386,18 @@ export default function WarehouseFactoryRequestsPage() {
                     </td>
 
                     {/* Work Center */}
-                    <td className="font-medium text-slate-700 text-xs">
+                    {/* <td className="font-medium text-slate-700 text-xs">
                       {req.workCenter}
+                    </td> */}
+
+                    {/* Requested By */}
+                    <td>
+                      <span className="font-semibold text-slate-700">{req.requestedBy}</span>
                     </td>
 
-                    {/* Urgency */}
+                    {/* Notes (formerly Plan ID) */}
                     <td>
-                      <span
-                        className={`wh-freq-urgency-pill ${
-                          req.urgency === "Critical" ? "critical" : "normal"
-                        }`}
-                      >
-                        {req.urgency}
-                      </span>
+                      <span className="font-mono text-xs font-semibold text-slate-600">{req.planId}</span>
                     </td>
 
                     {/* Status */}
@@ -413,13 +405,12 @@ export default function WarehouseFactoryRequestsPage() {
                       {activeTab === "pending" ? (
                         <div className="flex items-center gap-1.5 text-xs font-semibold">
                           <div
-                            className={`w-2.5 h-2.5 rounded-full ${
-                              req.stockStatus === "In Stock"
-                                ? "bg-emerald-600"
-                                : req.stockStatus === "Partial"
+                            className={`w-2.5 h-2.5 rounded-full ${req.stockStatus === "In Stock"
+                              ? "bg-emerald-600"
+                              : req.stockStatus === "Partial"
                                 ? "bg-amber-500"
                                 : "bg-red-600"
-                            }`}
+                              }`}
                           ></div>
                           <span className="text-slate-700">
                             {req.stockStatus} ({req.qtyAvailable})
@@ -437,7 +428,7 @@ export default function WarehouseFactoryRequestsPage() {
                     <td className="text-right">
                       {activeTab === "pending" ? (
                         <div className="flex items-center justify-end gap-2">
-                          
+
                           {/* In Stock Actions */}
                           {req.stockStatus === "In Stock" && (
                             <button
@@ -476,7 +467,7 @@ export default function WarehouseFactoryRequestsPage() {
                               >
                                 Decline / Cancel
                               </button>
-                              
+
                               <button
                                 onClick={() => handleOpenCreatePO(req)}
                                 title="Create Purchase Order"
@@ -508,7 +499,7 @@ export default function WarehouseFactoryRequestsPage() {
       {isConfirmModalOpen && selectedReq && (
         <div className="wh-freq-modal-overlay">
           <div className="wh-freq-modal">
-            
+
             {/* Header */}
             <div className="wh-freq-modal-header">
               <h3 className="text-slate-900 font-extrabold text-lg">Confirm Material Issuance</h3>
@@ -522,7 +513,7 @@ export default function WarehouseFactoryRequestsPage() {
 
             <form onSubmit={handleConfirmIssue}>
               <div className="wh-freq-modal-body">
-                
+
                 {/* Material Details Card */}
                 <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 flex gap-4 items-center">
                   <div className="w-14 h-14 rounded-lg bg-slate-900 text-white flex-shrink-0 flex items-center justify-center font-bold text-xl">
@@ -584,10 +575,10 @@ export default function WarehouseFactoryRequestsPage() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 flex items-center gap-1 font-medium">
+                  {/* <p className="text-xs text-slate-500 mt-1 flex items-center gap-1 font-medium">
                     <span className="material-symbols-outlined text-[14px]">info</span>
                     Quantity matches requested amount for Work Center {selectedReq.workCenter}.
-                  </p>
+                  </p> */}
                 </div>
 
               </div>
@@ -618,6 +609,8 @@ export default function WarehouseFactoryRequestsPage() {
         onClose={() => setIsCreatePOModalOpen(false)}
         planCode={selectedReq?.planId || "PP-1018"}
         materialName={selectedReq?.materialName}
+        materialId={selectedReq?.materialId}
+        sku={selectedReq?.sku}
         shortageQty={selectedReq ? `${selectedReq.qtyRequested} ${selectedReq.uom}` : undefined}
       />
 

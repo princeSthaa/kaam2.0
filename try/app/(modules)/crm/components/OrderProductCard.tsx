@@ -1,5 +1,5 @@
 import React from "react";
-import { Product, resolveMediaUrl } from "../api/catalog.api";
+import { Product, resolveMediaUrl } from "../api/constant";
 
 export interface OrderProductCardProps {
   product: Product;

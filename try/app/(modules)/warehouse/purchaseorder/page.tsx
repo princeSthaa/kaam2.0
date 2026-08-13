@@ -5,9 +5,10 @@ import "../styles/warehouse-purchaseorder.css";
 import { CreatePurchaseOrderModal } from "../components/CreatePurchaseOrderModal";
 import { PurchaseOrderActionsMenu } from "../components/PurchaseOrderActionsMenu";
 import { ViewPurchaseOrderModal } from "../components/ViewPurchaseOrderModal";
-import { fetchPurchaseOrders, PurchaseOrderGetDto } from "../api/purchaseorder.api";
-import { fetchSuppliers, SupplierDto } from "../api/supplier.api";
+import { fetchPurchaseOrders, PurchaseOrderGetDto, updatePurchaseOrderStatus, fetchMaterialInspections, fetchPurchaseOrderReceipts } from "../api/constant";
+import { fetchSuppliers, SupplierDto } from "../api/constant";
 import { NepaliDatePicker, adToBs } from "../../../components/ui/NepaliDatePicker";
+import { createPurchaseOrderReceipt } from "../api/constant";
 
 export type PurchaseOrderItem = {
   id: string;
@@ -16,7 +17,8 @@ export type PurchaseOrderItem = {
   supplier: string;
   totalAmount: string;
   expectedDate: string;
-  status: "Sent" | "Draft" | "Partially Received" | "Completed" | "Cancelled";
+  status: "Sent" | "Draft" | "Delivered" | "Partially Received" | "Completed" | "Cancelled";
+  inspectionStatus?: string;
 };
 
 export default function WarehousePurchaseOrderPage() {
@@ -40,16 +42,51 @@ export default function WarehousePurchaseOrderPage() {
 
   const loadPOs = async () => {
     try {
-      const data = await fetchPurchaseOrders();
-      const mappedOrders: PurchaseOrderItem[] = data.map((d: PurchaseOrderGetDto) => ({
-        id: d.id,
-        poId: d.orderNumber,
-        dateCreated: adToBs(d.createdAt),
-        supplier: d.supplierName,
-        totalAmount: d.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }),
-        expectedDate: adToBs(d.expectedDeliveryDate),
-        status: d.status as any
-      }));
+      const [data, inspections, allReceipts] = await Promise.all([
+        fetchPurchaseOrders(),
+        fetchMaterialInspections().catch(() => []),
+        fetchPurchaseOrderReceipts().catch(() => [])
+      ]);
+      // Deduplicate POs in case the backend returns duplicate rows
+      const uniqueDataMap = new Map();
+      for (const d of data) {
+        if (!uniqueDataMap.has(d.id)) {
+          uniqueDataMap.set(d.id, d);
+        }
+      }
+      const uniqueData: PurchaseOrderGetDto[] = Array.from(uniqueDataMap.values());
+
+      const mappedOrders: PurchaseOrderItem[] = uniqueData.map((d: PurchaseOrderGetDto) => {
+        let iStatusDisplay = "-";
+        
+        // Find receipt by matching purchaseOrderId if d.receipts is empty
+        const receipt = allReceipts.find((r: any) => r.purchaseOrderId === d.id) || d.receipts?.[0];
+        const receiptId = receipt?.id;
+        
+        if (receiptId) {
+          const inspection = inspections.find((i: any) => i.purchaseOrderReceiptId === receiptId);
+          if (inspection) {
+            const iStatus = String(inspection.inspectionStatus);
+            if (iStatus === "4" || iStatus === "1") iStatusDisplay = "Completed";
+            else if (iStatus === "2") iStatusDisplay = "Rejected";
+            else if (iStatus === "3") iStatusDisplay = "Partial";
+            else if (iStatus === "0") iStatusDisplay = "Pending";
+          } else {
+            iStatusDisplay = "Pending";
+          }
+        }
+
+        return {
+          id: d.id,
+          poId: d.orderNumber,
+          dateCreated: adToBs(d.createdAt),
+          supplier: d.supplierName || "Unknown",
+          totalAmount: (d.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }),
+          expectedDate: adToBs(d.expectedDeliveryDate || d.createdAt),
+          status: (d.status || "Draft") as any,
+          inspectionStatus: iStatusDisplay
+        };
+      });
       setOrders(mappedOrders.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()));
       setRawOrders(data);
     } catch (error) {
@@ -106,20 +143,41 @@ export default function WarehousePurchaseOrderPage() {
     console.log("Edit draft:", id);
   };
 
-  const handleSendToSupplier = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "Sent" as const } : o
-      )
-    );
+  const handleSendToSupplier = async (id: string) => {
+    try {
+      await updatePurchaseOrderStatus(id, "Processing"); // "Sent" conceptually maps to Processing in the backend enums if it's sent to supplier, or we can use "Pending" depending on business logic. "Processing" is fine.
+      loadPOs();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update status.");
+    }
   };
 
-  const handleMarkReceived = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "Completed" as const } : o
-      )
-    );
+  const handleMarkReceived = async (id: string) => {
+    const po = rawOrders.find((r) => r.id === id);
+    if (!po) return;
+
+    try {
+      const receiptPayload = {
+        purchaseOrderId: po.id,
+        orderNumber: po.orderNumber,
+        receivedBy: "Warehouse User",
+        status: "Accepted", // mark as fully received
+        items: po.items.map(item => ({
+          purchaseOrderItemId: item.id,
+          materialId: item.materialId,
+          receivedQuantity: item.orderedQuantity
+        }))
+      };
+
+      await createPurchaseOrderReceipt(receiptPayload);
+
+      // Reload POs
+      loadPOs();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to mark PO as received.");
+    }
   };
 
   const handleDuplicatePO = (id: string) => {
@@ -135,12 +193,14 @@ export default function WarehousePurchaseOrderPage() {
     setOrders((prev) => [dup, ...prev]);
   };
 
-  const handleCancelPO = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.id === id ? { ...o, status: "Cancelled" as const } : o
-      )
-    );
+  const handleCancelPO = async (id: string) => {
+    try {
+      await updatePurchaseOrderStatus(id, "Cancelled");
+      loadPOs();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to cancel PO.");
+    }
   };
 
   const handleDownloadPDF = (poId: string) => {
@@ -152,15 +212,12 @@ export default function WarehousePurchaseOrderPage() {
     return orders.filter((ord) => {
       // Status filter
       if (selectedStatus) {
-        if (selectedStatus === "sent" && ord.status !== "Sent") return false;
-        if (selectedStatus === "draft" && ord.status !== "Draft") return false;
-        if (selectedStatus === "partial" && ord.status !== "Partially Received") return false;
-        if (selectedStatus === "completed" && ord.status !== "Completed") return false;
+        if (ord.status.toLowerCase() !== selectedStatus.toLowerCase()) return false;
       }
-
+      
       // Supplier filter
-      if (selectedSupplier) {
-        if (ord.supplier !== selectedSupplier) return false;
+      if (selectedSupplier && ord.supplier !== selectedSupplier) {
+        return false;
       }
 
       // Date filter
@@ -215,8 +272,10 @@ export default function WarehousePurchaseOrderPage() {
             <option value="">All Statuses</option>
             <option value="draft">Draft</option>
             <option value="sent">Sent</option>
-            <option value="partial">Partially Received</option>
+            <option value="delivered">Delivered</option>
+            <option value="partially received">Partially Received</option>
             <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
           <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-[16px] pointer-events-none">
             arrow_drop_down
@@ -273,7 +332,8 @@ export default function WarehousePurchaseOrderPage() {
                 <th>Supplier</th>
                 <th className="text-right">Total Amount (Rs)</th>
                 <th>Expected Date</th>
-                <th>Status</th>
+                <th>PO Status</th>
+                <th>Inspection</th>
                 <th className="w-12"></th>
               </tr>
             </thead>
@@ -324,7 +384,7 @@ export default function WarehousePurchaseOrderPage() {
                             ? "sent"
                             : ord.status === "Draft"
                             ? "draft"
-                            : ord.status === "Partially Received"
+                            : (ord.status === "Partially Received" || ord.status === "Delivered")
                             ? "partial"
                             : ord.status === "Completed"
                             ? "completed"
@@ -333,6 +393,24 @@ export default function WarehousePurchaseOrderPage() {
                       >
                         {ord.status}
                       </span>
+                    </td>
+
+                    {/* Inspection Status Badge */}
+                    <td>
+                      {ord.inspectionStatus && ord.inspectionStatus !== "N/A" && ord.inspectionStatus !== "-" ? (
+                        <span
+                          className={`wh-pom-status-chip ${
+                            ord.inspectionStatus === "Completed" ? "completed"
+                              : ord.inspectionStatus === "Partial" ? "partial"
+                              : ord.inspectionStatus === "Rejected" ? "cancelled"
+                              : "draft"
+                          }`}
+                        >
+                          {ord.inspectionStatus}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-medium">-</span>
+                      )}
                     </td>
 
                     {/* ── STITCH DESIGN: THREE-DOT ACTION MENU ── */}

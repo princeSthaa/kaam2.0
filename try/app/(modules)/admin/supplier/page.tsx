@@ -6,8 +6,10 @@ import {
   createSupplier,
   updateSupplier,
   deleteSupplier,
-  SupplierDto
-} from "../api/supplier.api";
+  SupplierDto,
+  SupplierCategoryResponseDto
+} from "../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import AddNewSupplierModal, { SupplierFormData, getInitials } from "../components/modals/addnewsupplier";
 import { AddMaterialToSupplierModal } from "../components/modals/addmaterialtosuppliermodal";
 
@@ -24,6 +26,10 @@ interface Supplier {
   location: string;
   complianceScore: number;
   materialCategoryIds?: string[];
+  onTimeDeliveryRate?: number;
+  defectRate?: number;
+  rating?: number;
+  materialCategories?: SupplierCategoryResponseDto[];
 }
 
 export default function AdminSupplierDirectoryPage() {
@@ -36,6 +42,27 @@ export default function AdminSupplierDirectoryPage() {
   // Modals state
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [supplierOrders, setSupplierOrders] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (selectedSupplier) {
+      fetch(`${API_MAIN_URL}/purchase-order?supplierId=${selectedSupplier.id}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            setSupplierOrders(data.slice(0, 5));
+          } else {
+            setSupplierOrders([]);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to fetch supplier POs:", err);
+          setSupplierOrders([]);
+        });
+    } else {
+      setSupplierOrders([]);
+    }
+  }, [selectedSupplier]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isMapMaterialModalOpen, setIsMapMaterialModalOpen] = useState(false);
   const [isSupplierMenuOpen, setIsSupplierMenuOpen] = useState(false);
@@ -69,6 +96,10 @@ export default function AdminSupplierDirectoryPage() {
           location: s.address || "Kathmandu, Nepal",
           complianceScore: s.rating ? Math.round(Number(s.rating)) : 90,
           materialCategoryIds: s.materialCategories?.map((c) => c.materialCategoryId) || [],
+          onTimeDeliveryRate: s.onTimeDeliveryRate,
+          defectRate: s.defectRate,
+          rating: s.rating,
+          materialCategories: s.materialCategories,
         }));
         setSuppliers(mapped);
       }
@@ -551,8 +582,7 @@ export default function AdminSupplierDirectoryPage() {
                       <span className="material-symbols-outlined text-slate-700">schedule</span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-slate-900">94.8%</span>
-                      <span className="text-emerald-600 font-mono text-xs font-bold">+1.2%</span>
+                      <span className="text-2xl font-bold text-slate-900">{selectedSupplier.onTimeDeliveryRate ? `${selectedSupplier.onTimeDeliveryRate}%` : "N/A"}</span>
                     </div>
                   </div>
 
@@ -563,20 +593,18 @@ export default function AdminSupplierDirectoryPage() {
                       <span className="material-symbols-outlined text-slate-700">verified</span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-slate-900">A-</span>
-                      <span className="text-slate-500 font-mono text-xs">Top 5%</span>
+                      <span className="text-2xl font-bold text-slate-900">{selectedSupplier.rating ? `${selectedSupplier.rating}/5` : "N/A"}</span>
                     </div>
                   </div>
 
                   {/* Card 3 */}
                   <div className="bg-white p-4 rounded-xl border-l-4 border-l-emerald-600 border border-slate-200 shadow-sm flex flex-col justify-between h-28">
                     <div className="flex items-center justify-between text-xs font-mono text-slate-500">
-                      <span>RISK LEVEL</span>
+                      <span>DEFECT RATE</span>
                       <span className="material-symbols-outlined text-emerald-600">gpp_good</span>
                     </div>
                     <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-emerald-700 uppercase">Low</span>
-                      <span className="text-slate-500 font-mono text-xs">Stable</span>
+                      <span className="text-2xl font-bold text-emerald-700 uppercase">{selectedSupplier.defectRate ? `${selectedSupplier.defectRate}%` : "N/A"}</span>
                     </div>
                   </div>
                 </div>
@@ -595,8 +623,7 @@ export default function AdminSupplierDirectoryPage() {
                       <span className="material-symbols-outlined text-slate-400 text-base">person</span>
                       <div>
                         <p className="text-[10px] text-slate-400 font-mono uppercase">Primary Liaison</p>
-                        <p className="font-bold text-slate-900">Roberto Mendoza</p>
-                        <p className="text-[11px] text-slate-500">Procurement Director</p>
+                        <p className="font-bold text-slate-900">Primary Contact</p>
                       </div>
                     </div>
 
@@ -629,7 +656,7 @@ export default function AdminSupplierDirectoryPage() {
                 </div>
 
                 {/* Recent Transactions Table (2 cols) */}
-                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between text-xs">
+                <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-start text-xs">
                   <div className="p-4 border-b border-slate-200 flex items-center justify-between">
                     <h3 className="font-bold text-slate-900 font-mono uppercase tracking-wider">
                       Recent Transactions
@@ -650,36 +677,39 @@ export default function AdminSupplierDirectoryPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-mono text-xs">
-                        <tr className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-bold text-slate-900">#PO-2023-8821</td>
-                          <td className="px-4 py-3 text-slate-600">Oct 08, 2023</td>
-                          <td className="px-4 py-3 font-bold text-slate-900">Rs 42,350.00</td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-200">
-                              DELIVERED
-                            </span>
-                          </td>
-                        </tr>
-                        <tr className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-bold text-slate-900">#PO-2023-8794</td>
-                          <td className="px-4 py-3 text-slate-600">Sep 24, 2023</td>
-                          <td className="px-4 py-3 font-bold text-slate-900">Rs 18,900.00</td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-200">
-                              DELIVERED
-                            </span>
-                          </td>
-                        </tr>
-                        <tr className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-bold text-slate-900">#PO-2023-8910</td>
-                          <td className="px-4 py-3 text-slate-600">Oct 11, 2023</td>
-                          <td className="px-4 py-3 font-bold text-slate-900">Rs 112,400.00</td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-200">
-                              TRANSIT
-                            </span>
-                          </td>
-                        </tr>
+                        {supplierOrders.length > 0 ? (
+                          supplierOrders.map((order, idx) => {
+                            const isDelivered = order.status === "Delivered" || order.status === "Closed" || order.status === 2;
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50">
+                                <td className="px-4 py-3 font-bold text-slate-900">{order.orderNumber || `#${order.id?.slice(0,8)}`}</td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "—"}
+                                </td>
+                                <td className="px-4 py-3 font-bold text-slate-900">
+                                  {order.totalAmount != null ? `Rs ${order.totalAmount.toLocaleString()}` : "—"}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  {isDelivered ? (
+                                    <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-200">
+                                      DELIVERED
+                                    </span>
+                                  ) : (
+                                    <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-200 uppercase">
+                                      {order.status || "PENDING"}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr>
+                            <td colSpan={4} className="px-4 py-6 text-center text-slate-400">
+                              No recent transactions found.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -690,54 +720,26 @@ export default function AdminSupplierDirectoryPage() {
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-900 text-xs uppercase tracking-wider font-mono">
-                    Active Materials Catalog ({selectedSupplier.category})
+                    Active Materials Catalog
                   </h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-800 shrink-0">
-                      <span className="material-symbols-outlined text-lg">texture</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono text-slate-400">M-882-C</span>
-                      <h4 className="font-bold text-slate-900">Egyptian Cotton 800TC</h4>
-                      <p className="text-[10px] font-mono text-emerald-600 font-semibold">IN STOCK: 2,400kg</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-800 shrink-0">
-                      <span className="material-symbols-outlined text-lg">waves</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono text-slate-400">M-910-S</span>
-                      <h4 className="font-bold text-slate-900">Ultra-Strength Silk</h4>
-                      <p className="text-[10px] font-mono text-amber-600 font-semibold">LOW STOCK: 120kg</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-800 shrink-0">
-                      <span className="material-symbols-outlined text-lg">colorize</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono text-slate-400">D-441-B</span>
-                      <h4 className="font-bold text-slate-900">Reactive Indigo Dye</h4>
-                      <p className="text-[10px] font-mono text-emerald-600 font-semibold">IN STOCK: 4,000L</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-800 shrink-0">
-                      <span className="material-symbols-outlined text-lg">category</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] font-mono text-slate-400">P-122-Z</span>
-                      <h4 className="font-bold text-slate-900">Industrial Spindles</h4>
-                      <p className="text-[10px] font-mono text-slate-500">REORDERED: 50 units</p>
-                    </div>
-                  </div>
+                  {selectedSupplier.materialCategories && selectedSupplier.materialCategories.length > 0 ? (
+                    selectedSupplier.materialCategories.map((cat, idx) => (
+                      <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-800 shrink-0">
+                          <span className="material-symbols-outlined text-lg">category</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-mono text-slate-400">CODE: {cat.materialCode || cat.materialCategoryId?.slice(0,8) || "—"}</span>
+                          <h4 className="font-bold text-slate-900">{cat.name}</h4>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-slate-500 col-span-4">No material categories mapped.</p>
+                  )}
                 </div>
               </section>
             </main>

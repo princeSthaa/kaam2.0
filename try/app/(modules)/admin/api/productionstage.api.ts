@@ -1,7 +1,7 @@
 // const API_BASE_URL = "http://localhost:5083/api/production-stage";
 
 
-import { API_MAIN_URL } from "./constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 const API_BASE_URL = `${API_MAIN_URL}/production-stage`;
 

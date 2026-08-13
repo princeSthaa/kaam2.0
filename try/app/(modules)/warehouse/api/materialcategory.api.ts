@@ -1,4 +1,4 @@
-import { API_MAIN_URL } from "./constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 export interface MaterialCategoryDto {
   id: string;

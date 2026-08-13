@@ -1,7 +1,14 @@
 "use client";
-import { API_MAIN_URL } from "@/app/(modules)/production/api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 const API_BASE_URL = `${API_MAIN_URL}/production-plans`;
+import { mockProductionPlans } from "../../api/production.mock";
+
+const dispatchMockFallback = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("MockDataFallback"));
+  }
+};
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,7 +20,7 @@ import { fetchOrders } from "../../../crm/api/order.api";
 import { fetchFabrics, Fabric, resolveMediaUrl } from "../../../crm/api/catalog.api";
 import { Customer } from "../../../crm/dto/customer.dto";
 import { Order } from "../../../crm/dto/order.dto";
-import { checkMaterials } from "../../api/production.api";
+import { checkMaterials } from "../../api/constant";
 import { buildPlanNo, saveProductionDraft, normalizeSizeRows, draftStorageKey } from "../../api/production.helpers";
 import { fetchProducts as fetchAdminProducts } from "../../../admin/api/product.api";
 
@@ -55,8 +62,8 @@ function CustomerDemandContent() {
       fetchCustomers().then(setLiveCustomers).catch(console.error),
       fetchOrders(customerIdParam || undefined).then(setLiveOrders).catch(console.error),
       fetchFabrics().then(setFabrics).catch(console.error),
-      fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : []).then(setExistingPlans).catch(console.error),
-      fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : []).then(setExistingPlanProducts).catch(console.error)
+      fetch(`${API_MAIN_URL}/production-plans`).then(r => r.ok ? r.json() : Promise.reject()).then(setExistingPlans).catch((err) => { console.error(err); dispatchMockFallback(); setExistingPlans(mockProductionPlans); }),
+      fetch(`${API_MAIN_URL}/production-plan-product`).then(r => r.ok ? r.json() : Promise.reject()).then(setExistingPlanProducts).catch((err) => { console.error(err); dispatchMockFallback(); setExistingPlanProducts([]); })
     ]).finally(() => {
       setIsLoadingData(false);
     });

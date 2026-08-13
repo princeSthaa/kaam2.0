@@ -1,4 +1,4 @@
-import { fetchProductionPlans } from "../api/production.api";
+import { fetchProductionPlans } from "../api/constant";
 
 export async function syncProductionDraftsJob(): Promise<{ syncedCount: number }> {
   try {

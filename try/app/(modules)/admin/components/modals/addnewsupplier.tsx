@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { createSupplier } from "../../api/supplier.api";
-import { fetchMaterialTypes } from "../../api/materialtype.api";
-import { API_MAIN_URL } from "../../api/constant";
+import { createSupplier } from "../../api/constant";
+import { fetchMaterialTypes } from "../../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 export interface SupplierFormData {
   id?: string;

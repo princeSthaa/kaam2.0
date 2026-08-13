@@ -1,16 +1,32 @@
 import { Order } from "../dto/order.dto";
-import { API_MAIN_URL } from "./constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { mockOrders } from "./crm.mock";
+
+const dispatchMockFallback = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("MockDataFallback"));
+  }
+};
 
 // const API_BASE_URL = 'http://localhost:5083/api';
 
 const API_BASE_URL = `${API_MAIN_URL}/order`;
 
 export async function fetchOrders(customerId?: string): Promise<Order[]> {
-  const query = customerId ? `?customerId=${encodeURIComponent(customerId)}` : "";
-  const res = await fetch(`${API_BASE_URL}${query}`, { cache: 'no-store', credentials: 'include' });
-  if (!res.ok) throw new Error('Failed to fetch orders');
-  const text = await res.text();
-  return text ? JSON.parse(text) : (null as any);
+  try {
+    const query = customerId ? `?customerId=${encodeURIComponent(customerId)}` : "";
+    const res = await fetch(`${API_BASE_URL}${query}`, { cache: 'no-store', credentials: 'include' });
+    if (!res.ok) throw new Error('Failed to fetch orders');
+    const text = await res.text();
+    return text ? JSON.parse(text) : (null as any);
+  } catch (err) {
+    console.error("fetchOrders error:", err);
+    dispatchMockFallback();
+    if (customerId) {
+      return mockOrders.filter(o => o.customerId === customerId);
+    }
+    return mockOrders;
+  }
 }
 
 export async function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order> {
@@ -18,7 +34,9 @@ export async function createOrder(order: Omit<Order, 'id' | 'createdAt' | 'updat
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(order),
+    body: JSON.stringify(order)
+    // body: JSON.stringify(order),
+    // body: JSON.stringify({ orderDto: order }),
   });
   if (!res.ok) {
     const errorText = await res.text();

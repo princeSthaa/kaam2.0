@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { fetchMaterialTypes, MaterialTypeDto } from "../../api/materialtype.api";
-import { fetchMaterialCategories, MaterialCategoryDto } from "../../api/materialcategory.api";
-import { createMaterial, uploadMaterialImage } from "../../api/material.api";
+import { fetchMaterialTypes, MaterialTypeDto } from "../../api/constant";
+import { fetchMaterialCategories, MaterialCategoryDto } from "../../api/constant";
+import { createMaterial, uploadMaterialImage } from "../../api/constant";
 
 export interface MaterialSpecFormData {
     name: string;

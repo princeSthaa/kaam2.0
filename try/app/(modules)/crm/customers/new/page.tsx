@@ -6,7 +6,7 @@ import { ActionButton } from "@/app/components/ui/ActionButton";
 import { FormField } from "@/app/components/ui/FormField";
 import { LegacyCard, LegacyCardHeader } from "@/app/components/ui/LegacyCard";
 import { PageHeader } from "@/app/components/ui/PageHeader";
-import { createCustomer } from "../../api/customer.api";
+import { createCustomer } from "../../api/constant";
 
 const customerTypeOptions = [
   { value: "Retail", label: "Retail" },

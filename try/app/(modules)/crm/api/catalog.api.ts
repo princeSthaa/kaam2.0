@@ -1,4 +1,11 @@
-import { API_MAIN_URL } from "./constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { mockProducts, mockFabrics } from "./crm.mock";
+
+const dispatchMockFallback = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("MockDataFallback"));
+  }
+};
 
 // const API_BASE_URL = 'http://localhost:5083/api';
 
@@ -78,10 +85,12 @@ export async function fetchProducts(): Promise<Product[]> {
         }));
       }
     }
+    throw new Error(`Failed to fetch products: ${res.statusText}`);
   } catch (err) {
     console.warn("Could not fetch products from API:", err);
+    dispatchMockFallback();
+    return mockProducts;
   }
-  return [];
 }
 
 export async function fetchFabrics(): Promise<Fabric[]> {
@@ -106,8 +115,10 @@ export async function fetchFabrics(): Promise<Fabric[]> {
         }));
       }
     }
+    throw new Error(`Failed to fetch fabrics: ${res.statusText}`);
   } catch (err) {
     console.warn("Could not fetch materials from backend:", err);
+    dispatchMockFallback();
+    return mockFabrics;
   }
-  return [];
 }
