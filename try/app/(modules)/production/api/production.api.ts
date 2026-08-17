@@ -80,8 +80,7 @@ export async function fetchProductionPlans(params?: Record<string, string>): Pro
     }));
   } catch (err) {
     console.error("fetchProductionPlans Error:", err);
-    dispatchMockFallback();
-    return mockProductionPlans;
+    return [];
   }
 }
 

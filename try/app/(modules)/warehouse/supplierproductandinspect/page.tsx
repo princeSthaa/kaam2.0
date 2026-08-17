@@ -110,8 +110,8 @@ export default function SupplierProductAndInspectPage() {
           const inspectionsForPO = allInspections.filter(i => receiptIds.has(i.purchaseOrderReceiptId));
 
           // Prefer a non-completed (active) inspection, otherwise take the latest completed one
-          backendInspection = inspectionsForPO.find(i => i.inspectionStatus !== "4")
-            || inspectionsForPO.sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())[0]
+          backendInspection = inspectionsForPO.find((i: any) => i.inspectionStatus !== "4")
+            || inspectionsForPO.sort((a: any, b: any) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime())[0]
             || null;
 
           if (backendInspection) {

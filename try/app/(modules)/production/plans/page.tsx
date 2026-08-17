@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
+import { NepaliDatePicker, bsToAd } from "@/app/components/ui/NepaliDatePicker";
 import PlanDetailsPage from "./[id]/page";
 import { formatNepaliDate } from "../lib/production-utils";
 import { API_MAIN_URL } from "@/app/(modules)/api/constant";
@@ -98,6 +98,26 @@ export default function ProductionPlansListPage() {
       });
     }
 
+    if (fromDate) {
+      const fromAd = bsToAd(fromDate);
+      result = result.filter((p) => {
+        const rawDate = p.plannedStartDate || p.startDate || p.createdAt;
+        if (!rawDate) return true;
+        const dateStr = String(rawDate).split("T")[0];
+        return dateStr >= fromAd;
+      });
+    }
+
+    if (toDate) {
+      const toAd = bsToAd(toDate);
+      result = result.filter((p) => {
+        const rawDate = p.plannedCompletionDate || p.endDate || p.plannedStartDate || p.startDate || p.createdAt;
+        if (!rawDate) return true;
+        const dateStr = String(rawDate).split("T")[0];
+        return dateStr <= toAd;
+      });
+    }
+
     if (sourceSearch.trim()) {
       const lowerQ = sourceSearch.toLowerCase();
       result = result.filter((p) => {
@@ -115,7 +135,7 @@ export default function ProductionPlansListPage() {
     });
 
     return result;
-  }, [plans, demandTypeFilter, statusFilter, sourceSearch, sortFilter]);
+  }, [plans, demandTypeFilter, statusFilter, sourceSearch, sortFilter, fromDate, toDate]);
 
   const getStatusBadgeClass = (status: any) => {
     const st = String(status || "").toLowerCase();
@@ -219,9 +239,11 @@ export default function ProductionPlansListPage() {
             <NepaliDatePicker
               id="fromDateFilter"
               className="ppl-form-control"
-              placeholder="DD-MM-YYYY"
+              placeholder="YYYY-MM-DD"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
+              onDateChange={(val) => setFromDate(val)}
+              enableNepaliPicker={true}
             />
           </div>
 
@@ -230,9 +252,11 @@ export default function ProductionPlansListPage() {
             <NepaliDatePicker
               id="toDateFilter"
               className="ppl-form-control"
-              placeholder="DD-MM-YYYY"
+              placeholder="YYYY-MM-DD"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
+              onDateChange={(val) => setToDate(val)}
+              enableNepaliPicker={true}
             />
           </div>
 

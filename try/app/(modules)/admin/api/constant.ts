@@ -6,3 +6,4 @@ export * from "./product.api";
 export * from "./productcategory.api";
 export * from "./productionstage.api";
 export * from "./supplier.api";
+export * from "./warehouse.api";

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { fetchProductionPlans } from "../api/constant";
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import { ProductionPlanDto } from "../dto";
 import { StatusBadge } from "../components/StatusBadge";
 import "../styles/production-plans.css";
@@ -26,14 +26,48 @@ export default function CompletedPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchProductionPlans()
+    fetch(`${API_MAIN_URL}/production-plans`)
+      .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
-        const filtered = data.filter((p) => {
-          const st = String(p.status || "").toLowerCase();
-          return st === "completed" || st === "5";
-        });
+        if (!Array.isArray(data)) {
+          setPlans([]);
+          setLoading(false);
+          return;
+        }
 
-        filtered.sort((a, b) => {
+        const filtered = data
+          .filter((p: any) => {
+            if (
+              String(p.id || "").startsWith("mock-") ||
+              String(p.planId || p.planNumber || "").includes("MOCK") ||
+              String(p.planName || p.title || "").toLowerCase().includes("summer collection") ||
+              String(p.planName || p.title || "").toLowerCase().includes("denim jeans restock")
+            ) {
+              return false;
+            }
+            const st = String(p.status || "").toLowerCase();
+            return st === "completed" || st === "5";
+          })
+          .map((p: any) => ({
+            id: p.id,
+            planNumber: p.planId || p.planNumber || "N/A",
+            title: p.planName || p.title || "Untitled",
+            status: "Completed",
+            demandSource:
+              p.demandType === "Customer Order"
+                ? "Customer"
+                : p.demandType === "Outlet Replenishment"
+                ? "Outlet"
+                : p.demandSource || "In-House",
+            totalQuantity: p.quantity || p.totalQuantity || 0,
+            priority: p.priority?.toString(),
+            progress: p.progress || 100,
+            blocked: p.blocked || false,
+            startDate: p.plannedStartDate || p.startDate,
+            endDate: p.plannedCompletionDate || p.endDate,
+          }));
+
+        filtered.sort((a: any, b: any) => {
           const dateA = new Date(a.startDate || 0).getTime();
           const dateB = new Date(b.startDate || 0).getTime();
           return dateB - dateA;
@@ -44,6 +78,7 @@ export default function CompletedPage() {
       })
       .catch((err) => {
         console.error("Error fetching completed production plans:", err);
+        setPlans([]);
         setLoading(false);
       });
   }, []);
@@ -75,12 +110,20 @@ export default function CompletedPage() {
           <h1>Completed Production</h1>
           <p>Finished plans ready for the next business step.</p>
         </div>
-        <div className="pp-header-actions">
-          <Link href="/production/plans" className="btn btn-light">
-            View All Plans
+        <div className="pp-header-actions flex items-center gap-2.5">
+          <Link
+            href="/production/plans"
+            className="flex items-center gap-2 bg-slate-100 border border-slate-300 text-slate-800 py-2.5 px-4 rounded-xl font-bold text-xs hover:bg-slate-200 hover:text-slate-900 transition-all shadow-xs"
+          >
+            <span className="material-symbols-outlined text-base text-slate-600">format_list_bulleted</span>
+            <span>View All Plans</span>
           </Link>
-          <Link href="/production" className="btn btn-light">
-            Overview
+          <Link
+            href="/production"
+            className="flex items-center gap-2 bg-slate-900 text-white py-2.5 px-4 rounded-xl font-bold text-xs hover:bg-slate-800 transition-all shadow-xs"
+          >
+            <span className="material-symbols-outlined text-base">dashboard</span>
+            <span>Overview</span>
           </Link>
         </div>
       </div>
@@ -266,10 +309,11 @@ export default function CompletedPage() {
                     style={{ display: "flex", gap: "8px", marginLeft: "16px" }}
                   >
                     <Link
-                      className="btn btn-light btn-sm"
+                      className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-800 font-bold px-3.5 py-1.5 rounded-lg text-xs border border-slate-300 transition-all shadow-xs"
                       href={`/production/plans/${plan.id}`}
                     >
-                      Details
+                      <span>Details</span>
+                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
                     </Link>
                   </div>
                 </article>

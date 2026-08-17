@@ -136,7 +136,18 @@
     border-color: #15803d;
 }
 
-.btn-light:hover,
+.btn-light {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.btn-light:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0f172a;
+}
+
 .btn-outline:hover {
     border-color: var(--pp-border-strong);
 }

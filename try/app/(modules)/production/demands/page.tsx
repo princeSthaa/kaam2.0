@@ -251,6 +251,10 @@ export default function ProductionCreatePage() {
                 {plans.slice(0, 5).map((plan) => {
                   const isPlanActive = plan.status === "Active" || plan.status === "In Progress" || plan.status === "Cutting" || plan.status === "Stitching";
                   const isPlanDone = plan.status === "Completed";
+                  const planObj = plan as any;
+                  const planNumber = planObj.planCode || planObj.planId || plan.planNumber || `PLAN-${plan.id}`;
+                  const demandType = planObj.demandType || plan.demandSource;
+                  const dateVal = planObj.targetDate || plan.startDate || planObj.plannedStartDate;
                   return (
                     <tr key={plan.id}>
                       <td>
@@ -259,13 +263,13 @@ export default function ProductionCreatePage() {
                             <MaterialIcon name="precision_manufacturing" style={{ fontSize: "16px" }} />
                           </span>
                           <div>
-                            <strong className="text-slate-900 d-block">{plan.planCode || `PLAN-${plan.id}`}</strong>
-                            {plan.demandType && <span className="text-xs text-slate-400 font-mono">{plan.demandType}</span>}
+                            <strong className="text-slate-900 d-block">{planNumber}</strong>
+                            {demandType && <span className="text-xs text-slate-400 font-mono">{demandType}</span>}
                           </div>
                         </div>
                       </td>
                       <td className="text-slate-600 text-sm font-mono">
-                        {plan.targetDate ? new Date(plan.targetDate).toLocaleDateString() : "—"}
+                        {dateVal ? new Date(dateVal).toLocaleDateString() : "—"}
                       </td>
                       <td>
                         <span

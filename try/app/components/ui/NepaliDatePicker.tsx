@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef } from "react";
-import { adToBs } from "./dateUtils";
-export { adToBs } from "./dateUtils";
+import { adToBs, bsToAd } from "./dateUtils";
+export { adToBs, bsToAd } from "./dateUtils";
 
 const scriptId = "nepali-date-picker-script";
 const stylesheetId = "nepali-date-picker-styles";

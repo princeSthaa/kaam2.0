@@ -5,7 +5,7 @@ export const warehouseNavigation: SidebarSection = {
   links: [
     { name: "Overview", url: "/warehouse", icon: "dashboard" },
     { name: "Stock", url: "/warehouse/stock", icon: "inventory" },
-    { name: "Structure Management", url: "/warehouse/structuremanagment", icon: "account_tree" },
+    // the page is updated or is in admin module now { name: "Structure Management", url: "/warehouse/structuremanagment", icon: "account_tree" },
     { name: "Visualization", url: "/warehouse/visualization", icon: "visibility" },
     { name: "Factory Requests", url: "/warehouse/factoryrequest", icon: "precision_manufacturing" },
     { name: "Purchase Order", url: "/warehouse/purchaseorder", icon: "receipt_long" },

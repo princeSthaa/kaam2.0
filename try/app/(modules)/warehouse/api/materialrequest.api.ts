@@ -1,14 +1,9 @@
 import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { MaterialGetDto } from "./material.api";
 
 export interface SupplierGetDto {
   id: string;
   code: string;
-  name: string;
-}
-
-export interface MaterialGetDto {
-  id: string;
-  materialCode: string;
   name: string;
 }
 
