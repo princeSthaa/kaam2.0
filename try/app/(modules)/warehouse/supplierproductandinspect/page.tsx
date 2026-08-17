@@ -2,10 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import "../styles/supplier-inspect.css";
-// import { fetchPurchaseOrders, PurchaseOrderGetDto } from "../api/constant";
-import { fetchPurchaseOrders, PurchaseOrderGetDto, fetchMaterialInspections, fetchPurchaseOrderReceipts } from "../api/constant";
-import { updateMaterialInspection } from "../api/constant";
-import { createPurchaseOrderReceipt } from "../api/constant";
+import {
+  fetchPurchaseOrders,
+  PurchaseOrderGetDto,
+  fetchMaterialInspections,
+  fetchPurchaseOrderReceipts,
+  updatePurchaseOrderStatus,
+  updateMaterialInspection,
+  createPurchaseOrderReceipt,
+  createMaterialInspection,
+} from "../api/constant";
 import { adToBs } from "../../../components/ui/NepaliDatePicker";
 import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
@@ -53,27 +59,29 @@ export default function SupplierProductAndInspectPage() {
   const [orders, setOrders] = useState<PurchaseOrderGetDto[]>([]);
   const [selectedPO, setSelectedPO] = useState<PurchaseOrderGetDto | null>(null);
   const [inspectionItems, setInspectionItems] = useState<InspectionMaterialState[]>([]);
-  const [filterStatus, setFilterStatus] = useState<"All" | "Pending" | "Delivered">("All");
+  const [filterStatus, setFilterStatus] = useState<"Active" | "Pending" | "Delivered" | "Completed" | "All">("Active");
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [currentInspectionId, setCurrentInspectionId] = useState<string | null>(null);
+  const [currentInspectionStatus, setCurrentInspectionStatus] = useState<string | null>(null);
   const [poReceipts, setPoReceipts] = useState<any[]>([]);
 
   const fetchAndEnrichOrders = async () => {
     const [ordersData, materialsData] = await Promise.all([
       fetchPurchaseOrders(),
-      fetch(`${API_MAIN_URL}/material`).then(res => res.json())
+      fetch(`${API_MAIN_URL}/material`).then((res) => res.json()),
     ]);
 
     return ordersData.map((order: PurchaseOrderGetDto) => ({
       ...order,
-      items: order.items?.map(item => {
-        const materialInfo = materialsData.find((m: any) => m.id === item.materialId);
-        return {
-          ...item,
-          materialCode: item.materialCode || materialInfo?.materialCode || "N/A",
-          materialName: item.materialName || materialInfo?.name || "Unknown Material"
-        };
-      }) || []
+      items:
+        order.items?.map((item) => {
+          const materialInfo = materialsData.find((m: any) => m.id === item.materialId);
+          return {
+            ...item,
+            materialCode: item.materialCode || materialInfo?.materialCode || "N/A",
+            materialName: item.materialName || materialInfo?.name || "Unknown Material",
+          };
+        }) || [],
     }));
   };
 
@@ -81,7 +89,14 @@ export default function SupplierProductAndInspectPage() {
     fetchAndEnrichOrders()
       .then((enrichedOrders) => {
         setOrders(enrichedOrders);
-        if (enrichedOrders.length > 0) setSelectedPO(enrichedOrders[0]);
+        const active = enrichedOrders.filter(
+          (o: any) => !["Completed", "PartiallyDelivered", "Cancelled"].includes(o.status)
+        );
+        if (active.length > 0) {
+          setSelectedPO(active[0]);
+        } else if (enrichedOrders.length > 0) {
+          setSelectedPO(enrichedOrders[0]);
+        }
       })
       .catch(console.error);
   }, []);
@@ -91,6 +106,7 @@ export default function SupplierProductAndInspectPage() {
       if (!selectedPO?.items) {
         setInspectionItems([]);
         setCurrentInspectionId(null);
+        setCurrentInspectionStatus(null);
         setPoReceipts([]);
         return;
       }
@@ -110,18 +126,21 @@ export default function SupplierProductAndInspectPage() {
           const inspectionsForPO = allInspections.filter(i => receiptIds.has(i.purchaseOrderReceiptId));
 
           // Prefer a non-completed (active) inspection, otherwise take the latest completed one
-          backendInspection = inspectionsForPO.find((i: any) => i.inspectionStatus !== "4")
+          backendInspection = inspectionsForPO.find((i: any) => i.inspectionStatus !== "4" && i.inspectionStatus !== "Completed" && i.inspectionStatus !== "PartiallyAccepted")
             || inspectionsForPO.sort((a: any, b: any) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime())[0]
             || null;
 
           if (backendInspection) {
             setCurrentInspectionId(backendInspection.id);
+            setCurrentInspectionStatus(backendInspection.inspectionStatus || null);
           } else {
             setCurrentInspectionId(null);
+            setCurrentInspectionStatus(null);
           }
         } else {
           setPoReceipts([]);
           setCurrentInspectionId(null);
+          setCurrentInspectionStatus(null);
         }
       } catch (e) {
         console.error("Failed to load inspections", e);
@@ -142,9 +161,9 @@ export default function SupplierProductAndInspectPage() {
             receivedQuantity: item.orderedQuantity,
             acceptedQuantity: matchedBackendItem?.acceptedQuantity ?? item.orderedQuantity,
             rejectedQuantity: matchedBackendItem?.rejectedQuantity ?? 0,
-            status: matchedBackendItem ? 
-              (matchedBackendItem.inspectionStatus === "1" ? "accepted" : 
-               matchedBackendItem.inspectionStatus === "2" ? "rejected" : "partial") 
+            status: matchedBackendItem ?
+              (matchedBackendItem.inspectionStatus === "1" ? "accepted" :
+                matchedBackendItem.inspectionStatus === "2" ? "rejected" : "partial")
               : (backendInspection?.inspectionStatus === "4" ? "accepted" : "pending"),
             notes: matchedBackendItem?.notes ?? (backendInspection?.inspectionStatus === "4" ? "Auto-completed" : "")
           };
@@ -229,67 +248,118 @@ export default function SupplierProductAndInspectPage() {
       const receiptPayload = {
         purchaseOrderId: selectedPO.id,
         receivedBy: "Admin",
-        items: selectedPO.items.map(item => ({
+        status: "PendingInspection",
+        items: selectedPO.items.map((item) => ({
           purchaseOrderItemId: item.id,
           materialId: item.materialId,
-          receivedQuantity: item.orderedQuantity
-        }))
+          receivedQuantity: item.orderedQuantity,
+        })),
       };
 
       // 2. Send receipt creation request to the backend
-      await createPurchaseOrderReceipt(receiptPayload);
+      const receipt = await createPurchaseOrderReceipt(receiptPayload);
 
-      // 3. Fetch the latest data from the database to refresh the UI
+      // 3. Update PO status in the backend to "Delivered"
+      try {
+        await updatePurchaseOrderStatus(selectedPO.id, "Delivered");
+      } catch (statusErr) {
+        console.warn("PO status update to Delivered notice:", statusErr);
+      }
+
+      // 4. Ensure a Material Inspection record exists for this receipt
+      if (receipt?.id) {
+        try {
+          const allInspections = await fetchMaterialInspections().catch(() => []);
+          const exists = allInspections.some((i) => i.purchaseOrderReceiptId === receipt.id);
+          if (!exists) {
+            await createMaterialInspection({
+              purchaseOrderId: selectedPO.id,
+              purchaseOrderReceiptId: receipt.id,
+              inspectionStatus: "0",
+              inspectorName: "Admin",
+              notes: "Initiated on PO receipt",
+              items: selectedPO.items.map((item) => ({
+                materialId: item.materialId,
+                receivedQuantity: item.orderedQuantity,
+                acceptedQuantity: item.orderedQuantity,
+                rejectedQuantity: 0,
+                inspectionStatus: "0",
+                notes: "",
+              })),
+            });
+          }
+        } catch (inspErr) {
+          console.warn("Material inspection auto-create notice:", inspErr);
+        }
+      }
+
+      // 5. Fetch the latest data from the database to refresh the UI
       const updatedOrders = await fetchAndEnrichOrders();
-
-      // 4. Apply the updated data to the screen
       setOrders(updatedOrders);
-      setSelectedPO(updatedOrders.find(o => o.id === selectedPO.id) || null);
+      setSelectedPO(updatedOrders.find((o) => o.id === selectedPO.id) || null);
 
-      alert("Receipt confirmed! You can now inspect the materials.");
-    } catch (err) {
+      alert("Receipt confirmed! PO status updated to Delivered. You can now inspect the materials.");
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to confirm receipt.");
+      alert(`Failed to confirm receipt: ${err.message || "Unknown error"}`);
     }
   }
 
   async function handleSaveProgress() {
     if (!selectedPO) return;
     try {
-      if (!currentInspectionId) {
-        alert("No inspection record found. Please confirm receipt first.");
-        return;
+      let inspectionId = currentInspectionId;
+      if (!inspectionId && poReceipts.length > 0) {
+        const receipt = poReceipts[0];
+        try {
+          const newInsp = await createMaterialInspection({
+            purchaseOrderId: selectedPO.id,
+            purchaseOrderReceiptId: receipt.id,
+            inspectionStatus: "InProgress",
+            inspectorName: "Admin",
+            notes: "Progress saved",
+            items: inspectionItems.map((item) => ({
+              materialId: item.materialId,
+              receivedQuantity: item.receivedQuantity,
+              acceptedQuantity: item.acceptedQuantity,
+              rejectedQuantity: item.rejectedQuantity,
+              inspectionStatus: item.status === "accepted" ? "1" : item.status === "rejected" ? "2" : "0",
+              notes: item.notes || "",
+            })),
+          });
+          inspectionId = newInsp.id;
+          setCurrentInspectionId(inspectionId);
+        } catch (e) {
+          console.warn("Could not create inspection on save progress:", e);
+        }
       }
 
-      // Only send items that the user has explicitly inspected (not pending)
-      const itemsToProcess = inspectionItems.filter((i) => i.status !== "pending" && i.inspectionItemId);
-      if (itemsToProcess.length === 0) {
-        alert("No items inspected yet to save. Please accept or reject at least one item.");
-        return;
+      if (inspectionId) {
+        const payloadItems = inspectionItems.map((item) => {
+          const itemObj: any = {
+            acceptedQuantity: item.acceptedQuantity,
+            rejectedQuantity: item.rejectedQuantity,
+            inspectionStatus: item.status === "accepted" ? "1" : item.status === "rejected" ? "2" : "0",
+            notes: item.notes || "Progress saved",
+          };
+          if (item.inspectionItemId) {
+            itemObj.id = item.inspectionItemId;
+          }
+          return itemObj;
+        });
+
+        await updateMaterialInspection(inspectionId, {
+          inspectionStatus: "InProgress",
+          inspectorName: "Admin",
+          notes: "Progress saved",
+          items: payloadItems,
+        });
       }
-
-      // Backend UpdateMaterialInspectionItemDto expects: id, acceptedQuantity, rejectedQuantity, notes
-      const payloadItems = itemsToProcess.map(item => ({
-        id: item.inspectionItemId!,
-        acceptedQuantity: item.acceptedQuantity,
-        rejectedQuantity: item.rejectedQuantity,
-        inspectionStatus: item.status === "accepted" ? "1" : item.status === "rejected" ? "2" : "0",
-        notes: item.notes || "Progress saved"
-      }));
-
-      const payload = {
-        inspectionStatus: "InProgress",
-        inspectorName: "Admin",
-        notes: "Progress saved",
-        items: payloadItems
-      };
-
-      await updateMaterialInspection(currentInspectionId, payload);
 
       // Refresh data after saving
       const updatedOrders = await fetchAndEnrichOrders();
       setOrders(updatedOrders);
-      setSelectedPO(updatedOrders.find(o => o.id === selectedPO.id) || null);
+      setSelectedPO(updatedOrders.find((o) => o.id === selectedPO.id) || null);
 
       alert("Progress saved successfully!");
     } catch (err: any) {
@@ -301,60 +371,132 @@ export default function SupplierProductAndInspectPage() {
   const handleCompleteInspection = async () => {
     if (!selectedPO) return;
     try {
-      if (!currentInspectionId) {
-        alert("No inspection record found. Please confirm receipt first.");
-        return;
+      const totalAcc = inspectionItems.reduce(
+        (sum, item) => sum + (item.status === "pending" ? item.receivedQuantity : item.acceptedQuantity),
+        0
+      );
+      const totalRej = inspectionItems.reduce(
+        (sum, item) => sum + (item.status === "pending" ? 0 : item.rejectedQuantity),
+        0
+      );
+      const totalOrd = selectedPO.items
+        ? selectedPO.items.reduce((sum, item) => sum + item.orderedQuantity, 0)
+        : totalAcc + totalRej;
+
+      let targetPoStatus: "Completed" | "PartiallyDelivered" | "Cancelled" = "Completed";
+      let targetInspectionStatus = "Completed";
+
+      if (totalRej > 0 && totalAcc > 0) {
+        targetPoStatus = "PartiallyDelivered";
+        targetInspectionStatus = "PartiallyAccepted";
+      } else if (totalRej > 0 && totalAcc === 0) {
+        targetPoStatus = "Cancelled";
+        targetInspectionStatus = "Rejected";
+      } else if (totalAcc < totalOrd) {
+        targetPoStatus = "PartiallyDelivered";
+        targetInspectionStatus = "PartiallyAccepted";
       }
 
-      // For complete inspection, ALL items must be inspected.
-      // Items still pending will be auto-accepted with full quantity.
-      const payloadItems = inspectionItems
-        .filter(item => item.inspectionItemId)
-        .map(item => {
-          if (item.status === "pending") {
-            // Auto-accept uninspected items with full received quantity
-            return {
-              id: item.inspectionItemId!,
-              acceptedQuantity: item.receivedQuantity,
-              rejectedQuantity: 0,
-              inspectionStatus: "1",
-              notes: item.notes || "Auto-accepted on completion"
-            };
-          }
-          return {
-            id: item.inspectionItemId!,
-            acceptedQuantity: item.acceptedQuantity,
-            rejectedQuantity: item.rejectedQuantity,
-            inspectionStatus: item.status === "accepted" ? "1" : item.status === "rejected" ? "2" : "0",
-            notes: item.notes || ""
+      let inspectionId = currentInspectionId;
+      if (!inspectionId && poReceipts.length > 0) {
+        const receipt = poReceipts[0];
+        try {
+          const newInsp = await createMaterialInspection({
+            purchaseOrderId: selectedPO.id,
+            purchaseOrderReceiptId: receipt.id,
+            inspectionStatus: targetInspectionStatus,
+            inspectorName: "Admin",
+            notes: targetPoStatus === "PartiallyDelivered" ? "Partially accepted inspection" : "Completed inspection",
+            items: inspectionItems.map((item) => ({
+              materialId: item.materialId,
+              receivedQuantity: item.receivedQuantity,
+              acceptedQuantity: item.acceptedQuantity,
+              rejectedQuantity: item.rejectedQuantity,
+              inspectionStatus: item.status === "rejected" ? "2" : item.rejectedQuantity > 0 ? "3" : "1",
+              notes: item.notes || "",
+            })),
+          });
+          inspectionId = newInsp.id;
+          setCurrentInspectionId(inspectionId);
+        } catch (e) {
+          console.warn("Could not create inspection on complete:", e);
+        }
+      }
+
+      if (inspectionId) {
+        const payloadItems = inspectionItems.map((item) => {
+          const accepted = item.status === "pending" ? item.receivedQuantity : item.acceptedQuantity;
+          const rejected = item.status === "pending" ? 0 : item.rejectedQuantity;
+          const statusVal = item.status === "rejected" ? "2" : rejected > 0 ? "3" : "1";
+
+          const itemObj: any = {
+            acceptedQuantity: accepted,
+            rejectedQuantity: rejected,
+            inspectionStatus: statusVal,
+            notes: item.notes || (item.status === "pending" ? "Auto-accepted on completion" : ""),
           };
+          if (item.inspectionItemId) {
+            itemObj.id = item.inspectionItemId;
+          }
+          return itemObj;
         });
 
-      if (payloadItems.length === 0) {
-        alert("No inspection items found. Please confirm receipt first.");
-        return;
+        await updateMaterialInspection(inspectionId, {
+          inspectionStatus: targetInspectionStatus,
+          inspectorName: "Admin",
+          notes: targetPoStatus === "PartiallyDelivered" ? "Partially accepted inspection" : "Inspection completed",
+          items: payloadItems,
+        });
       }
 
-      const payload = {
-        inspectionStatus: "Completed",
-        inspectorName: "Admin",
-        notes: "Inspection completed",
-        items: payloadItems
-      };
-
-      await updateMaterialInspection(currentInspectionId, payload);
+      // Update PO status to PartiallyDelivered or Completed
+      try {
+        await updatePurchaseOrderStatus(selectedPO.id, targetPoStatus);
+      } catch (poErr) {
+        console.warn(`Failed to update PO status to ${targetPoStatus}:`, poErr);
+      }
 
       // Refresh data after completing
       const updatedOrders = await fetchAndEnrichOrders();
       setOrders(updatedOrders);
-      setSelectedPO(updatedOrders.find(o => o.id === selectedPO.id) || null);
 
-      alert("Inspection completed successfully!");
+      // Advance to next active order
+      const remainingActive = updatedOrders.filter(
+        (o: PurchaseOrderGetDto) =>
+          !["Completed", "PartiallyDelivered", "Cancelled"].includes(o.status) && o.id !== selectedPO.id
+      );
+      setSelectedPO(remainingActive.length > 0 ? remainingActive[0] : null);
+      alert(`Inspection completed! PO status updated to ${targetPoStatus}.`);
     } catch (err: any) {
       console.error(err);
       alert(`Failed to complete inspection: ${err.message || "Unknown error"}`);
     }
-  }
+  };
+
+  const isInspectionFinalized =
+    selectedPO?.status === "Completed" ||
+    selectedPO?.status === "PartiallyDelivered" ||
+    currentInspectionStatus === "Completed" ||
+    currentInspectionStatus === "PartiallyAccepted" ||
+    currentInspectionStatus === "Rejected" ||
+    currentInspectionStatus === "4";
+
+  const displayedOrders = orders.filter((po) => {
+    const isDone = ["Completed", "PartiallyDelivered", "Cancelled"].includes(po.status);
+    if (filterStatus === "Active") {
+      return !isDone;
+    }
+    if (filterStatus === "Pending") {
+      return !["Delivered", "PartiallyDelivered", "Completed", "Cancelled"].includes(po.status);
+    }
+    if (filterStatus === "Delivered") {
+      return po.status === "Delivered" || po.status === "Processing";
+    }
+    if (filterStatus === "Completed") {
+      return isDone;
+    }
+    return true; // "All"
+  });
 
   return (
     <main className="wh-si-main">
@@ -362,327 +504,389 @@ export default function SupplierProductAndInspectPage() {
       {/* ── Left: Pending Receipts Queue ── */}
       <section className="wh-si-queue-panel">
         <div className="wh-si-queue-header" style={{ position: "relative" }}>
-          <h3 className="wh-si-queue-title">Pending Receipts</h3>
+          <div>
+            <h3 className="wh-si-queue-title">Receiving Queue</h3>
+            <span style={{ fontSize: "11px", color: "#64748b", fontWeight: 600 }}>
+              {displayedOrders.length} {filterStatus === "Active" ? "Active" : filterStatus} {displayedOrders.length === 1 ? "Order" : "Orders"}
+            </span>
+          </div>
           <button className="wh-si-icon-btn" title="Filter" onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}>
             <span className="wh-si-icon">filter_list</span>
           </button>
 
           {isFilterDropdownOpen && (
-            <div style={{ position: "absolute", top: "100%", right: "16px", background: "white", border: "1px solid #ddd", borderRadius: "8px", boxShadow: "0 4px 6px rgba(0,0,0,0.1)", zIndex: 10, overflow: "hidden" }}>
-              <div style={{ padding: "8px 16px", cursor: "pointer", background: filterStatus === "All" ? "#f0f0f0" : "transparent" }} onClick={() => { setFilterStatus("All"); setIsFilterDropdownOpen(false); }}>All</div>
-              <div style={{ padding: "8px 16px", cursor: "pointer", background: filterStatus === "Pending" ? "#f0f0f0" : "transparent" }} onClick={() => { setFilterStatus("Pending"); setIsFilterDropdownOpen(false); }}>Pending Delivery</div>
-              <div style={{ padding: "8px 16px", cursor: "pointer", background: filterStatus === "Delivered" ? "#f0f0f0" : "transparent" }} onClick={() => { setFilterStatus("Delivered"); setIsFilterDropdownOpen(false); }}>Delivered</div>
+            <div style={{ position: "absolute", top: "100%", right: "16px", background: "white", border: "1px solid #e2e8f0", borderRadius: "10px", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)", zIndex: 50, overflow: "hidden", minWidth: "200px" }}>
+              <div style={{ padding: "10px 16px", cursor: "pointer", fontSize: "12px", fontWeight: 600, background: filterStatus === "Active" ? "#f1f5f9" : "transparent" }} onClick={() => { setFilterStatus("Active"); setIsFilterDropdownOpen(false); }}>Active Queue (Pending)</div>
+              <div style={{ padding: "10px 16px", cursor: "pointer", fontSize: "12px", fontWeight: 600, background: filterStatus === "Pending" ? "#f1f5f9" : "transparent" }} onClick={() => { setFilterStatus("Pending"); setIsFilterDropdownOpen(false); }}>Pending Delivery</div>
+              <div style={{ padding: "10px 16px", cursor: "pointer", fontSize: "12px", fontWeight: 600, background: filterStatus === "Delivered" ? "#f1f5f9" : "transparent" }} onClick={() => { setFilterStatus("Delivered"); setIsFilterDropdownOpen(false); }}>Delivered / In Inspection</div>
+              <div style={{ padding: "10px 16px", cursor: "pointer", fontSize: "12px", fontWeight: 600, background: filterStatus === "Completed" ? "#f1f5f9" : "transparent" }} onClick={() => { setFilterStatus("Completed"); setIsFilterDropdownOpen(false); }}>Completed / Partial Inspections</div>
+              <div style={{ padding: "10px 16px", cursor: "pointer", fontSize: "12px", fontWeight: 600, background: filterStatus === "All" ? "#f1f5f9" : "transparent" }} onClick={() => { setFilterStatus("All"); setIsFilterDropdownOpen(false); }}>All Orders</div>
             </div>
           )}
         </div>
 
         <div className="wh-si-queue-list">
-          {orders.filter(po => {
-            if (filterStatus === "All") return true;
-            if (filterStatus === "Delivered") return po.status === "Delivered";
-            return po.status !== "Delivered";
-          }).map((po) => {
-            const isActive = selectedPO?.id === po.id;
-            const totalQty = po.items ? po.items.reduce((sum, item) => sum + item.orderedQuantity, 0) : 0;
-            return (
-              <div
-                key={po.id}
-                className={`wh-si-queue-item ${isActive ? "wh-si-queue-item-active" : ""}`}
-                onClick={() => setSelectedPO(po)}
-              >
-                {isActive && <div className="wh-si-queue-active-bar" />}
-                <div className={`wh-si-queue-item-top ${isActive ? "wh-si-queue-item-top-selected" : ""}`}>
-                  <div>
-                    <div className={`wh-si-po-number ${isActive ? "wh-si-po-number-active" : "wh-si-po-number-muted"}`}>
-                      {po.orderNumber}
+          {displayedOrders.length === 0 ? (
+            <div style={{ padding: "36px 16px", textAlign: "center", color: "#94a3b8", fontSize: "12px" }}>
+              <span className="wh-si-icon" style={{ fontSize: "36px", display: "block", marginBottom: "8px", color: "#cbd5e1" }}>
+                task_alt
+              </span>
+              <span style={{ fontWeight: 600, color: "#64748b", display: "block" }}>No orders in this queue</span>
+              <span>All active shipments are received & inspected.</span>
+            </div>
+          ) : (
+            displayedOrders.map((po) => {
+              const isActive = selectedPO?.id === po.id;
+              const totalQty = po.items ? po.items.reduce((sum, item) => sum + item.orderedQuantity, 0) : 0;
+              return (
+                <div
+                  key={po.id}
+                  className={`wh-si-queue-item ${isActive ? "wh-si-queue-item-active" : ""}`}
+                  onClick={() => setSelectedPO(po)}
+                >
+                  {isActive && <div className="wh-si-queue-active-bar" />}
+                  <div className={`wh-si-queue-item-top ${isActive ? "wh-si-queue-item-top-selected" : ""}`}>
+                    <div>
+                      <div className={`wh-si-po-number ${isActive ? "wh-si-po-number-active" : "wh-si-po-number-muted"}`}>
+                        {po.orderNumber}
+                      </div>
+                      <div className="wh-si-supplier-name">{po.supplierName}</div>
                     </div>
-                    <div className="wh-si-supplier-name">{po.supplierName}</div>
+                  </div>
+                  <div className={`wh-si-queue-item-bottom ${isActive ? "wh-si-queue-item-top-selected" : ""}`}>
+                    <div className="wh-si-date-label">
+                      <span className="wh-si-icon wh-si-icon-sm">calendar_today</span>
+                      {adToBs(po.createdAt)}
+                    </div>
+                    <div className="wh-si-qty-label">{totalQty} Units</div>
                   </div>
                 </div>
-                <div className={`wh-si-queue-item-bottom ${isActive ? "wh-si-queue-item-top-selected" : ""}`}>
-                  <div className="wh-si-date-label">
-                    <span className="wh-si-icon wh-si-icon-sm">calendar_today</span>
-                    {adToBs(po.createdAt)}
-                  </div>
-                  <div className="wh-si-qty-label">{totalQty} Units</div>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </section>
 
       {/* ── Right: Active Inspection Workspace ── */}
       <section className="wh-si-workspace">
-
-        {/* Workspace Header */}
-        <div className="wh-si-workspace-header">
-          <div>
-            <div className="wh-si-workspace-title-row">
-              <h2 className="wh-si-workspace-po">{selectedPO?.orderNumber || "Select PO"}</h2>
-              <div className="wh-si-inspecting-badge">
-                <span className="wh-si-pulse-dot" />
-                <span className="wh-si-inspecting-label">INSPECTING</span>
-              </div>
+        {!selectedPO ? (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px", textAlign: "center", backgroundColor: "#fff" }}>
+            <div style={{ width: "64px", height: "64px", borderRadius: "50%", backgroundColor: "#ecfdf5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+              <span className="wh-si-icon" style={{ fontSize: "36px" }}>task_alt</span>
             </div>
-            <p className="wh-si-workspace-subtitle">
-              {selectedPO?.supplierName || "Supplier"} {selectedPO?.shippingMethod ? <>&bull; Carrier: {selectedPO.shippingMethod}</> : ""}
+            <h3 style={{ fontSize: "18px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>All Inspections Completed</h3>
+            <p style={{ fontSize: "13px", color: "#64748b", maxWidth: "380px" }}>
+              There are no pending purchase orders requiring quality inspection in the active receiving queue. Select another queue filter to view previous records.
             </p>
           </div>
-          {/*
-          <div className="wh-si-workspace-actions">
-            <button className="wh-si-action-btn">
-              <span className="wh-si-icon wh-si-icon-sm">print</span>
-              Print Roll Tags
-            </button>
-            <button className="wh-si-action-btn">
-              <span className="wh-si-icon wh-si-icon-sm">attachment</span>
-              View BOL
-            </button>
-          </div>
-          */}
-        </div>
-
-        {/* Scrollable content */}
-        <div className="wh-si-workspace-body">
-
-          {/* Expected Materials Table */}
-          <div className="wh-si-section">
-            <h3 className="wh-si-section-title">Expected Materials</h3>
-            <div className="wh-si-table-wrap">
-              <table className="wh-si-table">
-                <thead>
-                  <tr className="wh-si-table-head-row">
-                    <th className="wh-si-th">Item / SKU</th>
-                    <th className="wh-si-th">Description</th>
-                    <th className="wh-si-th wh-si-th-right">Expected Qty</th>
-                    <th className="wh-si-th wh-si-th-right">Inspected</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedPO?.items?.map((mat, idx) => {
-                    // Use the fetched receipts (poReceipts) since selectedPO.receipts is empty from the API
-                    const inspectedQty = poReceipts.reduce((sum: number, receipt: any) => {
-                      const item = receipt.items?.find((i: any) => i.materialId === mat.materialId);
-                      return sum + (item ? item.receivedQuantity : 0);
-                    }, 0) || 0;
-
-                    return (
-                      <tr key={mat.id} className={`wh-si-table-row ${idx < selectedPO.items.length - 1 ? "wh-si-table-row-border" : ""}`}>
-                        <td className="wh-si-td wh-si-td-mono">{mat.materialCode}</td>
-                        <td className="wh-si-td">{mat.materialName}</td>
-                        <td className="wh-si-td wh-si-td-mono wh-si-td-right">{mat.orderedQuantity} Units</td>
-                        <td className={`wh-si-td wh-si-td-mono wh-si-td-right ${inspectedQty > 0 ? "wh-si-inspected-active" : "wh-si-inspected-zero"}`}>
-                          {inspectedQty} / {mat.orderedQuantity}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Material Inspection Grid */}
-          {selectedPO && ["Delivered", "Processing", "Completed"].includes(selectedPO.status) ? (
-            <div className="wh-si-section">
-              <div className="wh-si-roll-header">
-                <h3 className="wh-si-section-title">
-                  Material Inspection:{" "}
-                  <span className="wh-si-roll-sku">{selectedPO?.items?.[0]?.materialCode || "Select Item"}</span>
-                </h3>
-              </div>
-
-              <div className="wh-si-qc-grid-card">
-                {/* Grid header */}
-                <div className="wh-si-qc-grid-head">
-                  <div className="wh-si-col-label">Material Code</div>
-                  <div className="wh-si-col-label">Material Name</div>
-                  <div className="wh-si-col-label">Received Qty</div>
-                  <div className="wh-si-col-label">Accepted Qty</div>
-                  <div className="wh-si-col-label">Rejected Qty</div>
-                  <div className="wh-si-col-label">Notes</div>
-                  <div className="wh-si-col-label wh-si-col-label-right">Action</div>
-                </div>
-
-                {/* Grid rows */}
-                {inspectionItems.map((item) => (
-                  <div
-                    key={item.materialId}
-                    className={`wh-si-qc-row
-                    ${item.status === "accepted" ? "wh-si-qc-row-accepted" : ""}
-                    ${item.status === "pending" || item.status === "partial" ? "wh-si-qc-row-active" : ""}
-                    ${item.status === "rejected" ? "wh-si-qc-row-rejected" : ""}
-                  `}
-                  >
-                    {/* Material Code */}
-                    <div className={`wh-si-td-mono
-                    ${item.status === "accepted" ? "wh-si-roll-id-accepted" : ""}
-                    ${item.status === "pending" || item.status === "partial" ? "wh-si-roll-id-active" : ""}
-                    ${item.status === "rejected" ? "wh-si-roll-id-muted" : ""}
-                  `}>
-                      {item.materialCode}
-                    </div>
-
-                    {/* Material Name */}
-                    <div className="wh-si-supplier-tag">{item.materialName}</div>
-
-                    {/* Received Qty */}
-                    <div>
-                      <input
-                        type="number"
-                        className={`wh-si-cell-input ${item.status === "pending" ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
-                        value={item.receivedQuantity}
-                        disabled={item.status !== "pending"}
-                        onChange={(e) => updateItem(item.materialId, { receivedQuantity: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
-
-                    {/* Accepted Qty */}
-                    <div>
-                      <input
-                        type="number"
-                        className={`wh-si-cell-input ${item.status === "pending" ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
-                        value={item.acceptedQuantity}
-                        disabled={item.status !== "pending"}
-                        onChange={(e) => updateItem(item.materialId, { acceptedQuantity: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
-
-                    {/* Rejected Qty */}
-                    <div>
-                      <input
-                        type="number"
-                        className={`wh-si-cell-input ${item.status === "pending" ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
-                        value={item.rejectedQuantity}
-                        disabled={item.status !== "pending"}
-                        onChange={(e) => updateItem(item.materialId, { rejectedQuantity: parseFloat(e.target.value) || 0 })}
-                      />
-                    </div>
-
-                    {/* Notes */}
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Add notes..."
-                        className={`wh-si-cell-input ${item.status === "pending" ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
-                        value={item.notes}
-                        disabled={item.status !== "pending"}
-                        onChange={(e) => updateItem(item.materialId, { notes: e.target.value })}
-                        style={{ width: "100%", padding: "4px 8px" }}
-                      />
-                    </div>
-
-                    {/* Action */}
-                    <div className="wh-si-action-col">
-                      {item.status === "accepted" && (
-                        <span 
-                          className="wh-si-accepted-tag" 
-                          style={{ cursor: "pointer" }} 
-                          onClick={() => markItemStatus(item.materialId, "pending")}
-                          title="Click to edit"
-                        >
-                          <span className="wh-si-icon wh-si-icon-xs">check_circle</span>
-                          ACCEPTED
-                        </span>
-                      )}
-                      {item.status === "rejected" && (
-                        <span 
-                          className="wh-si-rejected-tag" 
-                          style={{ cursor: "pointer" }} 
-                          onClick={() => markItemStatus(item.materialId, "pending")}
-                          title="Click to edit"
-                        >
-                          <span className="wh-si-icon wh-si-icon-xs">cancel</span>
-                          REJECTED
-                        </span>
-                      )}
-                      {item.status === "partial" && (
-                        <span 
-                          className="wh-si-waiting-tag" 
-                          style={{ cursor: "pointer" }} 
-                          onClick={() => markItemStatus(item.materialId, "pending")}
-                          title="Click to edit"
-                        >
-                          PARTIAL
-                        </span>
-                      )}
-                      {item.status === "pending" && (
-                        <div className="wh-si-row-btns">
-                          <button
-                            className="wh-si-reject-btn"
-                            title="Reject All"
-                            onClick={() => {
-                              updateItem(item.materialId, { acceptedQuantity: 0, rejectedQuantity: item.receivedQuantity });
-                              markItemStatus(item.materialId, "rejected");
-                            }}
-                          >
-                            <span className="wh-si-icon wh-si-icon-sm">close</span>
-                          </button>
-                          <button
-                            className="wh-si-accept-btn"
-                            title="Confirm Quantities"
-                            onClick={() => {
-                              if (item.acceptedQuantity + item.rejectedQuantity !== item.receivedQuantity) {
-                                updateItem(item.materialId, { acceptedQuantity: item.receivedQuantity - item.rejectedQuantity });
-                              }
-                              markItemStatus(item.materialId, item.rejectedQuantity > 0 ? "partial" : "accepted");
-                            }}
-                          >
-                            <span className="wh-si-icon wh-si-icon-sm">check</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
+        ) : (
+          <>
+            {/* Workspace Header */}
+            <div className="wh-si-workspace-header">
+              <div>
+                <div className="wh-si-workspace-title-row">
+                  <h2 className="wh-si-workspace-po">{selectedPO.orderNumber || "Select PO"}</h2>
+                  <div className="wh-si-inspecting-badge">
+                    <span className="wh-si-pulse-dot" />
+                    <span className="wh-si-inspecting-label">
+                      {isInspectionFinalized
+                        ? selectedPO.status === "PartiallyDelivered"
+                          ? "PARTIALLY DELIVERED"
+                          : "COMPLETED"
+                        : "INSPECTING"}
+                    </span>
                   </div>
-                ))}
+                </div>
+                <p className="wh-si-workspace-subtitle">
+                  {selectedPO.supplierName || "Supplier"} {selectedPO.shippingMethod ? <>&bull; Carrier: {selectedPO.shippingMethod}</> : ""}
+                </p>
               </div>
             </div>
-          ) : (
-            <div className="wh-si-section" style={{ textAlign: "center", padding: "40px", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px dashed #ccc", marginTop: "16px" }}>
-              <span className="wh-si-icon" style={{ fontSize: "48px", color: "#999", marginBottom: "16px" }}>inventory_2</span>
-              <h3 style={{ marginBottom: "8px", color: "#333", fontSize: "18px", fontWeight: "600" }}>PO is Pending Receipt</h3>
-              <p style={{ color: "#666", marginBottom: "24px", fontSize: "14px" }}>
-                The materials for this Purchase Order have not been marked as delivered yet.
-                Confirm receipt to begin the quality inspection process.
-              </p>
-              <button className="wh-si-btn-primary" onClick={handleConfirmReceipt}>
-                Confirm Receipt
-                <span className="wh-si-icon wh-si-icon-sm" style={{ marginLeft: "8px" }}>done_all</span>
-              </button>
-            </div>
-          )}
-        </div>
 
-        {/* Bottom Action Bar */}
-        {selectedPO && ["Delivered", "Processing", "Completed"].includes(selectedPO.status) && (
-          <div className="wh-si-bottom-bar">
-            <div className="wh-si-bottom-stats">
-              <div className="wh-si-stat-text">
-                Total Accepted:{" "}
-                <span className="wh-si-stat-value wh-si-stat-primary">{acceptedCount}</span>
-                {" "}/ {totalReceivedCount}
-              </div>
-              <div className="wh-si-stat-divider" />
-              <div className="wh-si-stat-text wh-si-stat-error">
-                Total Rejected:{" "}
-                <span className="wh-si-stat-value">{rejectedCount}</span>
-              </div>
+            {/* Status Indication Banner */}
+            <div style={{ padding: "12px 24px", borderBottom: "1px solid #e2e8f0", backgroundColor: "#fafafa" }}>
+              {selectedPO.status === "PartiallyDelivered" || currentInspectionStatus === "PartiallyAccepted" ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 16px", borderRadius: "10px", backgroundColor: "#fef3c7", border: "1px solid #fde68a", color: "#92400e", fontSize: "12px", fontWeight: "600" }}>
+                  <span className="wh-si-icon" style={{ color: "#d97706", fontSize: "18px" }}>warning</span>
+                  <span>
+                    <strong>Inspection Finalized:</strong> Partially Delivered &bull; Accepted: {acceptedCount} Units, Rejected: {rejectedCount} Units.
+                  </span>
+                </div>
+              ) : selectedPO.status === "Completed" || currentInspectionStatus === "Completed" ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 16px", borderRadius: "10px", backgroundColor: "#ecfdf5", border: "1px solid #a7f3d0", color: "#065f46", fontSize: "12px", fontWeight: "600" }}>
+                  <span className="wh-si-icon" style={{ color: "#059669", fontSize: "18px" }}>verified</span>
+                  <span>
+                    <strong>Inspection Finalized:</strong> Fully Accepted ({acceptedCount} Units) &amp; Completed.
+                  </span>
+                </div>
+              ) : selectedPO.status === "Delivered" || poReceipts.length > 0 ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 16px", borderRadius: "10px", backgroundColor: "#eff6ff", border: "1px solid #bfdbfe", color: "#1e40af", fontSize: "12px", fontWeight: "600" }}>
+                  <span className="wh-si-icon" style={{ color: "#2563eb", fontSize: "18px" }}>inventory</span>
+                  <span>
+                    <strong>Shipment Delivered:</strong> Materials received at warehouse dock. Ready for quality inspection.
+                  </span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 16px", borderRadius: "10px", backgroundColor: "#f8fafc", border: "1px solid #e2e8f0", color: "#475569", fontSize: "12px", fontWeight: "600" }}>
+                  <span className="wh-si-icon" style={{ color: "#64748b", fontSize: "18px" }}>schedule</span>
+                  <span>
+                    <strong>Pending Delivery:</strong> Awaiting supplier shipment delivery. Confirm receipt when delivered.
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="wh-si-bottom-btns">
-              <button className="wh-si-btn-secondary" onClick={handleSaveProgress}>Save Progress</button>
-              <button
-                className="wh-si-btn-danger"
-                onClick={() => setIsReturnModalOpen(true)}
-              >
-                Initiate Return ({rejectedCount})
-              </button>
-              <button className="wh-si-btn-primary" onClick={handleCompleteInspection}>
-                Complete Inspection
-                <span className="wh-si-icon wh-si-icon-sm">arrow_forward</span>
-              </button>
+
+            {/* Scrollable content */}
+            <div className="wh-si-workspace-body">
+
+              {/* Expected Materials Table */}
+              <div className="wh-si-section">
+                <h3 className="wh-si-section-title">Expected Materials</h3>
+                <div className="wh-si-table-wrap">
+                  <table className="wh-si-table">
+                    <thead>
+                      <tr className="wh-si-table-head-row">
+                        <th className="wh-si-th">Item / SKU</th>
+                        <th className="wh-si-th">Description</th>
+                        <th className="wh-si-th wh-si-th-right">Expected Qty</th>
+                        <th className="wh-si-th wh-si-th-right">Inspected</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedPO?.items?.map((mat, idx) => {
+                        const inspectedQty = poReceipts.reduce((sum: number, receipt: any) => {
+                          const item = receipt.items?.find((i: any) => i.materialId === mat.materialId);
+                          return sum + (item ? item.receivedQuantity : 0);
+                        }, 0) || 0;
+
+                        return (
+                          <tr key={mat.id} className={`wh-si-table-row ${idx < selectedPO.items.length - 1 ? "wh-si-table-row-border" : ""}`}>
+                            <td className="wh-si-td wh-si-td-mono">{mat.materialCode}</td>
+                            <td className="wh-si-td">{mat.materialName}</td>
+                            <td className="wh-si-td wh-si-td-mono wh-si-td-right">{mat.orderedQuantity} Units</td>
+                            <td className={`wh-si-td wh-si-td-mono wh-si-td-right ${inspectedQty > 0 ? "wh-si-inspected-active" : "wh-si-inspected-zero"}`}>
+                              {inspectedQty} / {mat.orderedQuantity}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Material Inspection Grid */}
+              {selectedPO && (["Delivered", "Processing", "Completed", "PartiallyDelivered", "Partially Received"].includes(selectedPO.status) || poReceipts.length > 0) ? (
+                <div className="wh-si-section">
+                  <div className="wh-si-roll-header">
+                    <h3 className="wh-si-section-title">
+                      Material Inspection:{" "}
+                      <span className="wh-si-roll-sku">{selectedPO?.items?.[0]?.materialCode || "Select Item"}</span>
+                    </h3>
+                  </div>
+
+                  <div className="wh-si-qc-grid-card">
+                    {/* Grid header */}
+                    <div className="wh-si-qc-grid-head">
+                      <div className="wh-si-col-label">Material Code</div>
+                      <div className="wh-si-col-label">Material Name</div>
+                      <div className="wh-si-col-label">Received Qty</div>
+                      <div className="wh-si-col-label">Accepted Qty</div>
+                      <div className="wh-si-col-label">Rejected Qty</div>
+                      <div className="wh-si-col-label">Notes</div>
+                      <div className="wh-si-col-label wh-si-col-label-right">Action</div>
+                    </div>
+
+                    {/* Grid rows */}
+                    {inspectionItems.map((item) => (
+                      <div
+                        key={item.materialId}
+                        className={`wh-si-qc-row
+                        ${item.status === "accepted" ? "wh-si-qc-row-accepted" : ""}
+                        ${item.status === "pending" || item.status === "partial" ? "wh-si-qc-row-active" : ""}
+                        ${item.status === "rejected" ? "wh-si-qc-row-rejected" : ""}
+                      `}
+                      >
+                        {/* Material Code */}
+                        <div className={`wh-si-td-mono
+                        ${item.status === "accepted" ? "wh-si-roll-id-accepted" : ""}
+                        ${item.status === "pending" || item.status === "partial" ? "wh-si-roll-id-active" : ""}
+                        ${item.status === "rejected" ? "wh-si-roll-id-muted" : ""}
+                      `}>
+                          {item.materialCode}
+                        </div>
+
+                        {/* Material Name */}
+                        <div className="wh-si-supplier-tag">{item.materialName}</div>
+
+                        {/* Received Qty */}
+                        <div>
+                          <input
+                            type="number"
+                            className={`wh-si-cell-input ${item.status === "pending" && !isInspectionFinalized ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
+                            value={item.receivedQuantity}
+                            disabled={item.status !== "pending" || isInspectionFinalized}
+                            onChange={(e) => updateItem(item.materialId, { receivedQuantity: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+
+                        {/* Accepted Qty */}
+                        <div>
+                          <input
+                            type="number"
+                            className={`wh-si-cell-input ${item.status === "pending" && !isInspectionFinalized ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
+                            value={item.acceptedQuantity}
+                            disabled={item.status !== "pending" || isInspectionFinalized}
+                            onChange={(e) => updateItem(item.materialId, { acceptedQuantity: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+
+                        {/* Rejected Qty */}
+                        <div>
+                          <input
+                            type="number"
+                            className={`wh-si-cell-input ${item.status === "pending" && !isInspectionFinalized ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
+                            value={item.rejectedQuantity}
+                            disabled={item.status !== "pending" || isInspectionFinalized}
+                            onChange={(e) => updateItem(item.materialId, { rejectedQuantity: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+
+                        {/* Notes */}
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="Add notes..."
+                            className={`wh-si-cell-input ${item.status === "pending" && !isInspectionFinalized ? "wh-si-cell-input-active" : "wh-si-cell-input-disabled"}`}
+                            value={item.notes}
+                            disabled={item.status !== "pending" || isInspectionFinalized}
+                            onChange={(e) => updateItem(item.materialId, { notes: e.target.value })}
+                            style={{ width: "100%", padding: "4px 8px" }}
+                          />
+                        </div>
+
+                        {/* Action */}
+                        <div className="wh-si-action-col">
+                          {item.status === "accepted" && (
+                            <span 
+                              className="wh-si-accepted-tag" 
+                              style={{ cursor: isInspectionFinalized ? "default" : "pointer" }} 
+                              onClick={() => {
+                                if (!isInspectionFinalized) markItemStatus(item.materialId, "pending");
+                              }}
+                              title={isInspectionFinalized ? "Inspection Completed" : "Click to edit"}
+                            >
+                              <span className="wh-si-icon wh-si-icon-xs">check_circle</span>
+                              ACCEPTED
+                            </span>
+                          )}
+                          {item.status === "rejected" && (
+                            <span 
+                              className="wh-si-rejected-tag" 
+                              style={{ cursor: isInspectionFinalized ? "default" : "pointer" }} 
+                              onClick={() => {
+                                if (!isInspectionFinalized) markItemStatus(item.materialId, "pending");
+                              }}
+                              title={isInspectionFinalized ? "Inspection Completed" : "Click to edit"}
+                            >
+                              <span className="wh-si-icon wh-si-icon-xs">cancel</span>
+                              REJECTED
+                            </span>
+                          )}
+                          {item.status === "partial" && (
+                            <span 
+                              className="wh-si-waiting-tag" 
+                              style={{ cursor: isInspectionFinalized ? "default" : "pointer" }} 
+                              onClick={() => {
+                                if (!isInspectionFinalized) markItemStatus(item.materialId, "pending");
+                              }}
+                              title={isInspectionFinalized ? "Inspection Completed" : "Click to edit"}
+                            >
+                              PARTIAL
+                            </span>
+                          )}
+                          {item.status === "pending" && !isInspectionFinalized && (
+                            <div className="wh-si-row-btns">
+                              <button
+                                className="wh-si-reject-btn"
+                                title="Reject All"
+                                onClick={() => {
+                                  updateItem(item.materialId, { acceptedQuantity: 0, rejectedQuantity: item.receivedQuantity });
+                                  markItemStatus(item.materialId, "rejected");
+                                }}
+                              >
+                                <span className="wh-si-icon wh-si-icon-sm">close</span>
+                              </button>
+                              <button
+                                className="wh-si-accept-btn"
+                                title="Confirm Quantities"
+                                onClick={() => {
+                                  if (item.acceptedQuantity + item.rejectedQuantity !== item.receivedQuantity) {
+                                    updateItem(item.materialId, { acceptedQuantity: item.receivedQuantity - item.rejectedQuantity });
+                                  }
+                                  markItemStatus(item.materialId, item.rejectedQuantity > 0 ? "partial" : "accepted");
+                                }}
+                              >
+                                <span className="wh-si-icon wh-si-icon-sm">check</span>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="wh-si-section" style={{ textAlign: "center", padding: "40px", backgroundColor: "#f9fafb", borderRadius: "8px", border: "1px dashed #ccc", marginTop: "16px" }}>
+                  <span className="wh-si-icon" style={{ fontSize: "48px", color: "#999", marginBottom: "16px" }}>inventory_2</span>
+                  <h3 style={{ marginBottom: "8px", color: "#333", fontSize: "18px", fontWeight: "600" }}>PO is Pending Receipt</h3>
+                  <p style={{ color: "#666", marginBottom: "24px", fontSize: "14px" }}>
+                    The materials for this Purchase Order have not been marked as delivered yet.
+                    Confirm receipt to begin the quality inspection process.
+                  </p>
+                  <button className="wh-si-btn-primary" onClick={handleConfirmReceipt}>
+                    Confirm Receipt
+                    <span className="wh-si-icon wh-si-icon-sm" style={{ marginLeft: "8px" }}>done_all</span>
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
+
+            {/* Bottom Action Bar */}
+            {selectedPO && (["Delivered", "Processing", "Completed", "PartiallyDelivered", "Partially Received"].includes(selectedPO.status) || poReceipts.length > 0) && (
+              <div className="wh-si-bottom-bar">
+                <div className="wh-si-bottom-stats">
+                  <div className="wh-si-stat-text">
+                    Total Accepted:{" "}
+                    <span className="wh-si-stat-value wh-si-stat-primary">{acceptedCount}</span>
+                    {" "}/ {totalReceivedCount}
+                  </div>
+                  <div className="wh-si-stat-divider" />
+                  <div className="wh-si-stat-text wh-si-stat-error">
+                    Total Rejected:{" "}
+                    <span className="wh-si-stat-value">{rejectedCount}</span>
+                  </div>
+                </div>
+                <div className="wh-si-bottom-btns">
+                  {!isInspectionFinalized && (
+                    <button className="wh-si-btn-secondary" onClick={handleSaveProgress}>Save Progress</button>
+                  )}
+                  <button
+                    className="wh-si-btn-danger"
+                    onClick={() => setIsReturnModalOpen(true)}
+                  >
+                    Initiate Return ({rejectedCount})
+                  </button>
+                  {!isInspectionFinalized && (
+                    <button className="wh-si-btn-primary" onClick={handleCompleteInspection}>
+                      Complete Inspection
+                      <span className="wh-si-icon wh-si-icon-sm">arrow_forward</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </section>
 

@@ -41,6 +41,7 @@ export interface ProductDto {
   imagePath?: string;
   isActive?: boolean;
   productCategoryId?: string;
+  productCategoryName?: string;
   productCategory?: ProductCategoryRef;
   materialRequirements?: ProductMaterialRequirementItem[];
   productionStages?: ProductProductionStageItem[];
@@ -76,95 +77,20 @@ export async function fetchProducts(params?: {
   updatedAt?: string;
   updatedBy?: string;
 }): Promise<ProductDto[]> {
-  // MOCK DATA: Bypassing the backend 500 error
-  return [
-    {
-      id: "d9b2d63d-a233-4123-8478-000000000001",
-      sku: "TSH-WHT-001",
-      name: "Premium White T-Shirt",
-      isActive: true,
-      productCategory: {
-        id: "c1",
-        name: "Apparel",
-      },
-      materialRequirements: [
-        {
-          id: "req-1",
-          materialTypeId: "m1",
-          productSize: 1, // S
-          quantity: 1.2,
-          materialType: { id: "m1", name: "Cotton Fabric", unit: "Meters" }
-        },
-        {
-          id: "req-2",
-          materialTypeId: "m1",
-          productSize: 2, // M
-          quantity: 1.5,
-          materialType: { id: "m1", name: "Cotton Fabric", unit: "Meters" }
-        },
-        {
-          id: "req-3",
-          materialTypeId: "m2",
-          productSize: 2, // M
-          quantity: 10,
-          materialType: { id: "m2", name: "White Thread", unit: "Spools" }
-        }
-      ],
-      productionStages: [
-        {
-          id: "ps-1",
-          productionStageId: "stg-1",
-          sequence: 1,
-          productionStage: { id: "stg-1", name: "Cutting" }
-        },
-        {
-          id: "ps-2",
-          productionStageId: "stg-2",
-          sequence: 2,
-          productionStage: { id: "stg-2", name: "Sewing" }
-        }
-      ]
-    },
-    {
-      id: "d9b2d63d-a233-4123-8478-000000000002",
-      sku: "HD-BLK-001",
-      name: "Heavyweight Black Hoodie",
-      isActive: true,
-      productCategory: {
-        id: "c2",
-        name: "Outerwear",
-      },
-      materialRequirements: [
-        {
-          id: "req-4",
-          materialTypeId: "m3",
-          productSize: 3, // L
-          quantity: 2.5,
-          materialType: { id: "m3", name: "Fleece Fabric", unit: "Meters" }
-        }
-      ],
-      productionStages: [
-        {
-          id: "ps-3",
-          productionStageId: "stg-1",
-          sequence: 1,
-          productionStage: { id: "stg-1", name: "Cutting" }
-        }
-      ]
-    },
-    {
-      id: "d9b2d63d-a233-4123-8478-000000000003",
-      sku: "CP-RED-001",
-      name: "Vintage Red Cap",
-      isActive: false, // Draft/Review
-      productCategory: {
-        id: "c3",
-        name: "Accessories",
-      },
-      materialRequirements: [],
-      productionStages: []
+  try {
+    const response = await fetch(`${API_BASE_URL}`, { cache: "no-store" });
+    if (response.ok) {
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        return data;
+      }
+    } else {
+      console.warn(`Product API returned status ${response.status}: ${response.statusText}`);
     }
-  ];
+  } catch (err) {
+    console.error("Error connecting to Product API:", err);
+  }
+  return [];
 }
 
 export async function fetchProductById(id: string): Promise<ProductDto> {

@@ -147,12 +147,13 @@ export default function AdminWarehouseDirectoryPage() {
   const allFloorsWithContext = useMemo(() => {
     const list: { id: string; name: string; code?: string; warehouseName: string; warehouseId: string }[] = [];
     warehouses.forEach((w) => {
+      const whName = w.name?.trim() || w.code?.trim() || "Warehouse";
       (w.warehouseFloors || []).forEach((f) => {
         list.push({
           id: f.id,
-          name: f.name,
+          name: f.name?.trim() || f.code?.trim() || "Floor Level",
           code: f.code,
-          warehouseName: w.name,
+          warehouseName: whName,
           warehouseId: w.id,
         });
       });
@@ -170,14 +171,16 @@ export default function AdminWarehouseDirectoryPage() {
       floorId: string;
     }[] = [];
     warehouses.forEach((w) => {
+      const whName = w.name?.trim() || w.code?.trim() || "Warehouse";
       (w.warehouseFloors || []).forEach((f) => {
+        const flrName = f.name?.trim() || f.code?.trim() || "Floor Level";
         (f.warehouseRooms || []).forEach((r) => {
           list.push({
             id: r.id,
-            name: r.name,
+            name: r.name?.trim() || r.code?.trim() || "Room",
             code: r.code,
-            floorName: f.name,
-            warehouseName: w.name,
+            floorName: flrName,
+            warehouseName: whName,
             floorId: f.id,
           });
         });
@@ -197,16 +200,19 @@ export default function AdminWarehouseDirectoryPage() {
       roomId: string;
     }[] = [];
     warehouses.forEach((w) => {
+      const whName = w.name?.trim() || w.code?.trim() || "Warehouse";
       (w.warehouseFloors || []).forEach((f) => {
+        const flrName = f.name?.trim() || f.code?.trim() || "Floor Level";
         (f.warehouseRooms || []).forEach((r) => {
+          const rmName = r.name?.trim() || r.code?.trim() || "Room";
           (r.warehouseRacks || []).forEach((rk) => {
             list.push({
               id: rk.id,
-              name: rk.name,
+              name: rk.name?.trim() || rk.code?.trim() || "Rack",
               code: rk.code,
-              roomName: r.name,
-              floorName: f.name,
-              warehouseName: w.name,
+              roomName: rmName,
+              floorName: flrName,
+              warehouseName: whName,
               roomId: r.id,
             });
           });
@@ -837,7 +843,7 @@ export default function AdminWarehouseDirectoryPage() {
                 <option value="ALL">All Warehouses ({warehouses.length})</option>
                 {warehouses.map((w) => (
                   <option key={w.id} value={w.id}>
-                    {w.name} ({w.code || "WAR"})
+                    {w.name?.trim() || w.code || "Warehouse"} ({w.code || "WAR"})
                   </option>
                 ))}
               </select>
@@ -948,7 +954,7 @@ export default function AdminWarehouseDirectoryPage() {
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                           <span className="font-extrabold text-slate-900 text-sm">
-                            {warehouse.name}
+                            {warehouse.name?.trim() || warehouse.code || "Main Warehouse"}
                           </span>
                           <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/60 rounded text-[10px] font-mono font-bold">
                             {warehouse.code || "WAR"}
@@ -956,7 +962,7 @@ export default function AdminWarehouseDirectoryPage() {
                         </div>
                         <span className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
                           <span className="material-symbols-outlined text-[13px] text-slate-400">pin_drop</span>
-                          {warehouse.location || "Location not specified"}
+                          {warehouse.location?.trim() || "Location not specified"}
                         </span>
                       </div>
                     </div>
@@ -964,7 +970,7 @@ export default function AdminWarehouseDirectoryPage() {
                     {/* Tag / Location */}
                     <div className="col-span-2">
                       <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-[11px] font-bold">
-                        {warehouse.location || "Main Facility"}
+                        {warehouse.location?.trim() || "Main Facility"}
                       </span>
                     </div>
 
@@ -989,7 +995,7 @@ export default function AdminWarehouseDirectoryPage() {
                         onClick={() =>
                           openEditModal("warehouse", {
                             id: warehouse.id,
-                            name: warehouse.name,
+                            name: warehouse.name || warehouse.code || "",
                             location: warehouse.location,
                             code: warehouse.code,
                           })
@@ -1005,7 +1011,7 @@ export default function AdminWarehouseDirectoryPage() {
                             isOpen: true,
                             type: "warehouse",
                             id: warehouse.id,
-                            name: warehouse.name,
+                            name: warehouse.name || warehouse.code || "Warehouse",
                           })
                         }
                         className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200/70 transition-colors shadow-2xs"
@@ -1046,14 +1052,14 @@ export default function AdminWarehouseDirectoryPage() {
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-2">
                                   <span className="font-bold text-slate-800 text-[13px]">
-                                    {floor.name}
+                                    {floor.name?.trim() || floor.code || "Floor Level"}
                                   </span>
                                   <span className="text-[10px] text-slate-500 font-mono bg-white border border-slate-200 px-1.5 py-0.2 rounded font-semibold">
                                     {floor.code || "FLR"}
                                   </span>
                                 </div>
                                 <span className="text-[10px] text-slate-400">
-                                  Floor level under {warehouse.name}
+                                  Floor level under {warehouse.name?.trim() || warehouse.code || "Warehouse"}
                                 </span>
                               </div>
                             </div>
@@ -1086,7 +1092,7 @@ export default function AdminWarehouseDirectoryPage() {
                                 onClick={() =>
                                   openEditModal("floor", {
                                     id: floor.id,
-                                    name: floor.name,
+                                    name: floor.name || floor.code || "",
                                     code: floor.code,
                                     parentId: warehouse.id,
                                   })
@@ -1102,8 +1108,8 @@ export default function AdminWarehouseDirectoryPage() {
                                     isOpen: true,
                                     type: "floor",
                                     id: floor.id,
-                                    name: floor.name,
-                                    parentName: warehouse.name,
+                                    name: floor.name || floor.code || "Floor",
+                                    parentName: warehouse.name || warehouse.code,
                                   })
                                 }
                                 className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200/60 transition-colors shadow-2xs"
@@ -1144,7 +1150,7 @@ export default function AdminWarehouseDirectoryPage() {
                                       <div className="flex flex-col">
                                         <div className="flex items-center gap-2">
                                           <span className="font-semibold text-slate-800 text-xs">
-                                            {room.name}
+                                            {room.name?.trim() || room.code || "Room Area"}
                                           </span>
                                           <span className="text-[10px] text-slate-400 font-mono bg-slate-50 border border-slate-200 px-1 rounded">
                                             {room.code || "Room"}
@@ -1181,7 +1187,7 @@ export default function AdminWarehouseDirectoryPage() {
                                         onClick={() =>
                                           openEditModal("room", {
                                             id: room.id,
-                                            name: room.name,
+                                            name: room.name || room.code || "",
                                             code: room.code,
                                             parentId: floor.id,
                                           })
@@ -1197,8 +1203,8 @@ export default function AdminWarehouseDirectoryPage() {
                                             isOpen: true,
                                             type: "room",
                                             id: room.id,
-                                            name: room.name,
-                                            parentName: floor.name,
+                                            name: room.name || room.code || "Room",
+                                            parentName: floor.name || floor.code,
                                           })
                                         }
                                         className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200/60 transition-colors"
@@ -1238,7 +1244,7 @@ export default function AdminWarehouseDirectoryPage() {
 
                                               <div className="flex items-center space-x-2">
                                                 <span className="font-semibold text-slate-800 text-xs">
-                                                  {rack.name}
+                                                  {rack.name?.trim() || rack.code || "Storage Rack"}
                                                 </span>
                                                 <span className="text-[10px] text-slate-400 font-mono bg-white border border-slate-200 px-1 rounded">
                                                   {rack.code || "RCK"}
@@ -1274,7 +1280,7 @@ export default function AdminWarehouseDirectoryPage() {
                                                 onClick={() =>
                                                   openEditModal("rack", {
                                                     id: rack.id,
-                                                    name: rack.name,
+                                                    name: rack.name || rack.code || "",
                                                     code: rack.code,
                                                     parentId: room.id,
                                                   })
@@ -1290,8 +1296,8 @@ export default function AdminWarehouseDirectoryPage() {
                                                     isOpen: true,
                                                     type: "rack",
                                                     id: rack.id,
-                                                    name: rack.name,
-                                                    parentName: room.name,
+                                                    name: rack.name || rack.code || "Rack",
+                                                    parentName: room.name || room.code,
                                                   })
                                                 }
                                                 className="w-6 h-6 flex items-center justify-center rounded bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 border border-slate-200/60 transition-colors"
@@ -1319,7 +1325,7 @@ export default function AdminWarehouseDirectoryPage() {
                                                     grid_view
                                                   </span>
                                                   <span className="font-medium text-slate-800 text-[11px]">
-                                                    {shelf.name}
+                                                    {shelf.name?.trim() || shelf.code || "Shelf Unit"}
                                                   </span>
                                                   <span className="text-[9px] text-slate-400 font-mono bg-slate-50 border border-slate-200 px-1 rounded">
                                                     {shelf.code || "SHF"}
@@ -1345,7 +1351,7 @@ export default function AdminWarehouseDirectoryPage() {
                                                     onClick={() =>
                                                       openEditModal("shelf", {
                                                         id: shelf.id,
-                                                        name: shelf.name,
+                                                        name: shelf.name || shelf.code || "",
                                                         code: shelf.code,
                                                         capacity: shelf.capacity,
                                                         parentId: rack.id,
@@ -1362,8 +1368,8 @@ export default function AdminWarehouseDirectoryPage() {
                                                         isOpen: true,
                                                         type: "shelf",
                                                         id: shelf.id,
-                                                        name: shelf.name,
-                                                        parentName: rack.name,
+                                                        name: shelf.name || shelf.code || "Shelf",
+                                                        parentName: rack.name || rack.code,
                                                       })
                                                     }
                                                     className="w-5 h-5 flex items-center justify-center rounded bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200/60 transition-colors"
@@ -1502,7 +1508,7 @@ export default function AdminWarehouseDirectoryPage() {
                     <option value="">-- Select Warehouse --</option>
                     {warehouses.map((w) => (
                       <option key={w.id} value={w.id}>
-                        {w.name} ({w.code || "WAR"}) - {w.location || "No Location"}
+                        {w.name?.trim() || w.code || "Warehouse"} ({w.code || "WAR"}) - {w.location?.trim() || "No Location"}
                       </option>
                     ))}
                   </select>

@@ -58,22 +58,58 @@ export default function WarehousePurchaseOrderPage() {
 
       const mappedOrders: PurchaseOrderItem[] = uniqueData.map((d: PurchaseOrderGetDto) => {
         let iStatusDisplay = "-";
-        
-        // Find receipt by matching purchaseOrderId if d.receipts is empty
-        const receipt = allReceipts.find((r: any) => r.purchaseOrderId === d.id) || d.receipts?.[0];
-        const receiptId = receipt?.id;
-        
-        if (receiptId) {
-          const inspection = inspections.find((i: any) => i.purchaseOrderReceiptId === receiptId);
-          if (inspection) {
-            const iStatus = String(inspection.inspectionStatus);
-            if (iStatus === "4" || iStatus === "1") iStatusDisplay = "Completed";
-            else if (iStatus === "2") iStatusDisplay = "Rejected";
-            else if (iStatus === "3") iStatusDisplay = "Partial";
-            else if (iStatus === "0") iStatusDisplay = "Pending";
-          } else {
+
+        // Find all receipts belonging to this PO
+        const matchingReceipts = allReceipts.filter((r: any) => r.purchaseOrderId === d.id);
+        const receiptIds = new Set(matchingReceipts.map((r: any) => r.id));
+        if (d.receipts && Array.isArray(d.receipts)) {
+          d.receipts.forEach((r: any) => {
+            if (r.id) receiptIds.add(r.id);
+          });
+        }
+
+        // Find matching inspection by receipt ID or purchaseOrderId
+        const inspection = inspections.find(
+          (i: any) =>
+            (i.purchaseOrderReceiptId && receiptIds.has(i.purchaseOrderReceiptId)) ||
+            (i.purchaseOrderId && i.purchaseOrderId === d.id)
+        );
+
+        let resolvedPoStatus = d.status || "Draft";
+
+        if (inspection) {
+          const raw = String(inspection.inspectionStatus || "").trim().toLowerCase();
+          const hasRejections =
+            Array.isArray(inspection.items) &&
+            inspection.items.some((it: any) => Number(it.rejectedQuantity) > 0);
+
+          if (
+            raw === "partiallyaccepted" ||
+            raw === "partially accepted" ||
+            raw === "3" ||
+            raw === "partial" ||
+            hasRejections
+          ) {
+            iStatusDisplay = "PartiallyAccepted";
+            if (resolvedPoStatus === "Completed" || resolvedPoStatus === "Delivered") {
+              resolvedPoStatus = "PartiallyDelivered";
+            }
+          } else if (raw === "4" || raw === "1" || raw === "completed" || raw === "accepted") {
+            iStatusDisplay = "Completed";
+          } else if (raw === "2" || raw === "rejected") {
+            iStatusDisplay = "Rejected";
+            if (resolvedPoStatus === "Completed" || resolvedPoStatus === "Delivered") {
+              resolvedPoStatus = "Cancelled";
+            }
+          } else if (raw === "inprogress" || raw === "in progress") {
+            iStatusDisplay = "In Progress";
+          } else if (raw === "0" || raw === "pending") {
             iStatusDisplay = "Pending";
+          } else {
+            iStatusDisplay = inspection.inspectionStatus;
           }
+        } else if (receiptIds.size > 0 || String(d.status).toLowerCase() === "delivered") {
+          iStatusDisplay = "Pending";
         }
 
         return {
@@ -81,10 +117,10 @@ export default function WarehousePurchaseOrderPage() {
           poId: d.orderNumber,
           dateCreated: adToBs(d.createdAt),
           supplier: d.supplierName || "Unknown",
-          totalAmount: (d.totalAmount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 }),
+          totalAmount: (d.totalAmount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 }),
           expectedDate: adToBs(d.expectedDeliveryDate || d.createdAt),
-          status: (d.status || "Draft") as any,
-          inspectionStatus: iStatusDisplay
+          status: resolvedPoStatus as any,
+          inspectionStatus: iStatusDisplay,
         };
       });
       setOrders(mappedOrders.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()));
@@ -380,13 +416,13 @@ export default function WarehousePurchaseOrderPage() {
                     <td>
                       <span
                         className={`wh-pom-status-chip ${
-                          ord.status === "Sent"
+                          ["sent", "processing"].includes(String(ord.status || "").toLowerCase())
                             ? "sent"
-                            : ord.status === "Draft"
+                            : String(ord.status || "").toLowerCase() === "draft"
                             ? "draft"
-                            : (ord.status === "Partially Received" || ord.status === "Delivered")
+                            : ["partially received", "partiallydelivered", "delivered"].includes(String(ord.status || "").toLowerCase())
                             ? "partial"
-                            : ord.status === "Completed"
+                            : String(ord.status || "").toLowerCase() === "completed"
                             ? "completed"
                             : "cancelled"
                         }`}
@@ -400,16 +436,19 @@ export default function WarehousePurchaseOrderPage() {
                       {ord.inspectionStatus && ord.inspectionStatus !== "N/A" && ord.inspectionStatus !== "-" ? (
                         <span
                           className={`wh-pom-status-chip ${
-                            ord.inspectionStatus === "Completed" ? "completed"
-                              : ord.inspectionStatus === "Partial" ? "partial"
-                              : ord.inspectionStatus === "Rejected" ? "cancelled"
+                            ord.inspectionStatus === "Completed"
+                              ? "completed"
+                              : ["Partial", "In Progress", "PartiallyAccepted", "Partially Accepted"].includes(ord.inspectionStatus)
+                              ? "partial"
+                              : ord.inspectionStatus === "Rejected"
+                              ? "cancelled"
                               : "draft"
                           }`}
                         >
                           {ord.inspectionStatus}
                         </span>
                       ) : (
-                        <span className="text-slate-400 font-medium">-</span>
+                        <span className="text-slate-400 font-mono text-xs">-</span>
                       )}
                     </td>
 

@@ -12,7 +12,7 @@ export function useCustomers() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE_URL}`);
+      const res = await fetch(`${API_BASE_URL}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch customers");
       const data = await res.json();
       setCustomers(data || []);
