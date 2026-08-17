@@ -25,9 +25,7 @@ namespace backend.Service.Order
             decimal? totalAmount = null,
             DateTime? dueDate = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? customerId = null
         )
         {
@@ -42,10 +40,10 @@ namespace backend.Service.Order
                 commandType: System.Data.CommandType.StoredProcedure
             );
 
-            var orders = (await multi.ReadAsync<OrderGetDto>()).ToList();
-            var items = (await multi.ReadAsync<backend.Dto.OrderItem.OrderItemGetDto>()).ToList();
-            var sizes = (await multi.ReadAsync<backend.Dto.OrderItemSize.OrderItemSizeGetDto>()).ToList();
-            var materials = (await multi.ReadAsync<backend.Dto.OrderItemMaterial.OrderItemMaterialGetDto>()).ToList();
+            var orders = !multi.IsConsumed ? (await multi.ReadAsync<OrderGetDto>()).ToList() : new List<OrderGetDto>();
+            var items = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.OrderItem.OrderItemGetDto>()).ToList() : new List<backend.Dto.OrderItem.OrderItemGetDto>();
+            var sizes = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.OrderItemSize.OrderItemSizeGetDto>()).ToList() : new List<backend.Dto.OrderItemSize.OrderItemSizeGetDto>();
+            var materials = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.OrderItemMaterial.OrderItemMaterialGetDto>()).ToList() : new List<backend.Dto.OrderItemMaterial.OrderItemMaterialGetDto>();
 
             foreach (var item in items)
             {
@@ -140,9 +138,7 @@ namespace backend.Service.Order
                     @TotalAmount = {orderDto.TotalAmount},
                     @DueDate = {orderDto.DueDate},
                     @CreatedAt = {orderDto.CreatedAt},
-                    @CreatedBy = {orderDto.CreatedBy},
                     @UpdatedAt = {now},
-                    @UpdatedBy = {now},
                     @CustomerId = {orderDto.CustomerId}
             ");
 
@@ -175,9 +171,7 @@ namespace backend.Service.Order
                             @TotalPrice = {item.TotalPrice},
                             @Discount = {item.Discount},
                             @CreatedAt = {item.CreatedAt},
-                            @CreatedBy = {item.CreatedBy},
                             @UpdatedAt = {item.UpdatedAt},
-                            @UpdatedBy = {item.UpdatedBy},
                             @ProductId = {item.ProductId},
                             @OrderId = {item.OrderId}
                     ");
@@ -204,9 +198,7 @@ namespace backend.Service.Order
                                     @Size = {size.Size},
                                     @Quantity = {size.Quantity},
                                     @CreatedAt = {size.CreatedAt},
-                                    @CreatedBy = {size.CreatedBy},
                                     @UpdatedAt = {size.UpdatedAt},
-                                    @UpdatedBy = {size.UpdatedBy},
                                     @OrderItemId = {size.OrderItemId}
                             ");
                         }
@@ -234,9 +226,7 @@ namespace backend.Service.Order
                                     @RequiredQuantity = {material.RequiredQuantity},
                                     @Unit = {material.Unit},
                                     @CreatedAt = {material.CreatedAt},
-                                    @CreatedBy = {material.CreatedBy},
                                     @UpdatedAt = {material.UpdatedAt},
-                                    @UpdatedBy = {material.UpdatedBy},
                                     @MaterialId = {material.MaterialId},
                                     @OrderItemId = {material.OrderItemId}
                             ");
@@ -258,9 +248,7 @@ namespace backend.Service.Order
                     @TotalAmount = {orderDto.TotalAmount},
                     @DueDate = {orderDto.DueDate},
                     @CreatedAt = {orderDto.CreatedAt},
-                    @CreatedBy = {orderDto.CreatedBy},
                     @UpdatedAt = {orderDto.UpdatedAt},
-                    @UpdatedBy = {orderDto.UpdatedBy},
                     @CustomerId = {orderDto.CustomerId}
             ");
 

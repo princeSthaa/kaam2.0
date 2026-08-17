@@ -33,9 +33,7 @@ namespace backend.Service.Transaction
             string? notes = null,
             string? status = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -52,9 +50,7 @@ namespace backend.Service.Transaction
                         @Notes = {notes},
                         @Status = {status},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -85,9 +81,7 @@ namespace backend.Service.Transaction
                     @Notes = {transactionDto.Notes},
                     @Status = {transactionDto.Status},
                     @CreatedAt = {transactionDto.CreatedAt},
-                    @CreatedBy = {transactionDto.CreatedBy},
                     @UpdatedAt = {transactionDto.UpdatedAt},
-                    @UpdatedBy = {transactionDto.UpdatedBy}
             ");
 
             return true;
@@ -109,9 +103,7 @@ namespace backend.Service.Transaction
                     @Notes = {transactionDto.Notes},
                     @Status = {transactionDto.Status},
                     @CreatedAt = {transactionDto.CreatedAt},
-                    @CreatedBy = {transactionDto.CreatedBy},
                     @UpdatedAt = {transactionDto.UpdatedAt},
-                    @UpdatedBy = {transactionDto.UpdatedBy}
             ");
 
             return true;

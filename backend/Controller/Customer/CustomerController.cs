@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.Customer;
-using backend.Model;
 using backend.Service.Customer;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,49 +8,27 @@ namespace backend.Controller.Customer
     [Route("api/customer")]
     public class CustomerController : ControllerBase
     {
-        private readonly ICustomerService _CustomerService;
+        private readonly ICustomerService _service;
 
-        public CustomerController(ICustomerService CustomerService)
+        public CustomerController(ICustomerService service)
         {
-            _CustomerService = CustomerService;
+            _service = service;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CustomerDto customerDto)
+        public async Task<IActionResult> Create([FromBody] CustomerDto dto)
         {
-            if (customerDto.CreatedAt == default)
-            {
-                customerDto.CreatedAt = DateTime.UtcNow;
-            }
-            if (customerDto.UpdatedAt == default)
-            {
-                customerDto.UpdatedAt = DateTime.UtcNow;
-            }
-            if (string.IsNullOrWhiteSpace(customerDto.Type))
-            {
-                customerDto.Type = "Retail";
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var created = await _CustomerService.CreateAsync(customerDto);
-
-            if (!created)
-            {
-                return BadRequest("Failed to create customer record.");
-            }
-
-            return Ok(customerDto);
+            return !ModelState.IsValid?
+                BadRequest(ModelState) :
+                await _service.CreateAsync(dto) ? 
+                    BadRequest("Failed to create customer record") : 
+                    Ok(dto);
         }
 
-        // <crudgen:actions>
         [HttpGet("{id}")] 
         public async Task<ActionResult<CustomerDto>> GetById(Guid id)
         {
-            var item = await _CustomerService.GetByIdAsync(id);
+            var item = await _service.GetByIdAsync(id);
 
             if (item == null)
             {
@@ -75,12 +49,10 @@ namespace backend.Controller.Customer
             [FromQuery] string? company = null,
             [FromQuery] string? panVat = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
-            var items = await _CustomerService.GetAllAsync(
+            var items = await _service.GetAllAsync(
                 id,
                 name,
                 email,
@@ -90,23 +62,21 @@ namespace backend.Controller.Customer
                 company,
                 panVat,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(Guid id, [FromBody] CustomerDto customerDto)
+        public async Task<IActionResult> Update(Guid id, [FromBody] CustomerDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var updated = await _CustomerService.UpdateAsync(id, customerDto);
+            var updated = await _service.UpdateAsync(id, dto);
 
             if (!updated)
             {
@@ -119,7 +89,7 @@ namespace backend.Controller.Customer
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleted = await _CustomerService.DeleteAsync(id);
+            var deleted = await _service.DeleteAsync(id);
 
             if (!deleted)
             {

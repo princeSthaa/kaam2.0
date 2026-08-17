@@ -15,9 +15,7 @@ namespace backend.Service.Warehouse
             string? name = null,
             string? location = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<WarehouseDto?> GetByIdAsync(Guid id);

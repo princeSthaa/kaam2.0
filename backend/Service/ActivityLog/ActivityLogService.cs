@@ -30,9 +30,7 @@ namespace backend.Service.ActivityLog
             string? entityId = null,
             string? entityType = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -46,9 +44,7 @@ namespace backend.Service.ActivityLog
                         @EntityId = {entityId},
                         @EntityType = {entityType},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -76,9 +72,7 @@ namespace backend.Service.ActivityLog
                     @EntityId = {activityLogDto.EntityId},
                     @EntityType = {activityLogDto.EntityType},
                     @CreatedAt = {activityLogDto.CreatedAt},
-                    @CreatedBy = {activityLogDto.CreatedBy},
                     @UpdatedAt = {activityLogDto.UpdatedAt},
-                    @UpdatedBy = {activityLogDto.UpdatedBy}
             ");
 
             return true;
@@ -97,9 +91,7 @@ namespace backend.Service.ActivityLog
                     @EntityId = {activityLogDto.EntityId},
                     @EntityType = {activityLogDto.EntityType},
                     @CreatedAt = {activityLogDto.CreatedAt},
-                    @CreatedBy = {activityLogDto.CreatedBy},
                     @UpdatedAt = {activityLogDto.UpdatedAt},
-                    @UpdatedBy = {activityLogDto.UpdatedBy}
             ");
 
             return true;

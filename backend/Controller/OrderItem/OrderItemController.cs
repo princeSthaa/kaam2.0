@@ -41,9 +41,7 @@ namespace backend.Controller.OrderItem
             [FromQuery] decimal? totalPrice = null,
             [FromQuery] decimal? discount = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? orderId = null
         )
         {
@@ -54,9 +52,7 @@ namespace backend.Controller.OrderItem
                 totalPrice,
                 discount,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 orderId
             );
 

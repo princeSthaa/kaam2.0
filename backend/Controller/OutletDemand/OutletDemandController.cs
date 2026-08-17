@@ -40,9 +40,7 @@ namespace backend.Controller.OutletDemand
             [FromQuery] string? status = null,
             [FromQuery] DateTime? dueDate = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? outletId = null
         )
         {
@@ -52,9 +50,7 @@ namespace backend.Controller.OutletDemand
                 status,
                 dueDate,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 outletId
             );
 

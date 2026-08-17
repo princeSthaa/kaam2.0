@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using backend.Model.Enums;
@@ -22,12 +20,12 @@ namespace backend.Model
 
         [MaxLength(50)]
         public InspectionStatus InspectionStatus { get; set; } = InspectionStatus.Pending;
+        [MaxLength(500)]
         public string Notes { get; set; } = string.Empty;
+        [MaxLength(100)]
         public string InspectorName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string UpdatedBy { get; set; } = string.Empty;
 
         public virtual ICollection<MaterialInspectionItem> Items { get; set; } = new List<MaterialInspectionItem>();
     }

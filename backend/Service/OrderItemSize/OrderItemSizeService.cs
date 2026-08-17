@@ -28,9 +28,7 @@ namespace backend.Service.OrderItemSize
             ProductSize? size = null,
             int? quantity = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? orderItemId = null
         )
         {
@@ -42,9 +40,7 @@ namespace backend.Service.OrderItemSize
                         @Size = {size},
                         @Quantity = {quantity},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @OrderItemId = {orderItemId}
                 ")
                 .ToListAsync();
@@ -70,9 +66,7 @@ namespace backend.Service.OrderItemSize
                     @Size = {orderItemSizeDto.Size},
                     @Quantity = {orderItemSizeDto.Quantity},
                     @CreatedAt = {orderItemSizeDto.CreatedAt},
-                    @CreatedBy = {orderItemSizeDto.CreatedBy},
                     @UpdatedAt = {orderItemSizeDto.UpdatedAt},
-                    @UpdatedBy = {orderItemSizeDto.UpdatedBy},
                     @OrderItemId = {orderItemSizeDto.OrderItemId}
             ");
 
@@ -89,9 +83,7 @@ namespace backend.Service.OrderItemSize
                     @Size = {orderItemSizeDto.Size},
                     @Quantity = {orderItemSizeDto.Quantity},
                     @CreatedAt = {orderItemSizeDto.CreatedAt},
-                    @CreatedBy = {orderItemSizeDto.CreatedBy},
                     @UpdatedAt = {orderItemSizeDto.UpdatedAt},
-                    @UpdatedBy = {orderItemSizeDto.UpdatedBy},
                     @OrderItemId = {orderItemSizeDto.OrderItemId}
             ");
 

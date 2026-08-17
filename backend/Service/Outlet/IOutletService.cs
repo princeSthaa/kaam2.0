@@ -15,9 +15,7 @@ namespace backend.Service.Outlet
             string? location = null,
             string? code = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<OutletDto?> GetByIdAsync(Guid id);

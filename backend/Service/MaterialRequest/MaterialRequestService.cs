@@ -35,8 +35,8 @@ namespace backend.Service.MaterialRequest
                 commandType: System.Data.CommandType.StoredProcedure
             );
 
-            var requests = (await multi.ReadAsync<MaterialRequestDto>()).ToList();
-            var items = (await multi.ReadAsync<MaterialRequestItemDto>()).ToList();
+            var requests = !multi.IsConsumed ? (await multi.ReadAsync<MaterialRequestDto>()).ToList() : new List<MaterialRequestDto>();
+            var items = !multi.IsConsumed ? (await multi.ReadAsync<MaterialRequestItemDto>()).ToList() : new List<MaterialRequestItemDto>();
 
             foreach (var r in requests)
             {
@@ -106,9 +106,7 @@ namespace backend.Service.MaterialRequest
                 Notes = dto.Notes ?? string.Empty,
                 RequestedBy = dto.RequestedBy ?? string.Empty,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = dto.RequestedBy ?? string.Empty,
                 UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = dto.RequestedBy ?? string.Empty,
                 Items = dto.Items.Select(i => new MaterialRequestItem
                 {
                     Id = Guid.NewGuid(),
@@ -309,9 +307,7 @@ namespace backend.Service.MaterialRequest
                 Notes = r.Notes,
                 RequestedBy = r.RequestedBy,
                 CreatedAt = r.CreatedAt,
-                CreatedBy = r.CreatedBy,
                 UpdatedAt = r.UpdatedAt,
-                UpdatedBy = r.UpdatedBy,
                 Supplier = r.Supplier == null ? null : new SupplierGetDto
                 {
                     Id = r.Supplier.Id,

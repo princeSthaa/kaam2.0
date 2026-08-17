@@ -45,9 +45,7 @@ namespace backend.Controller.Transaction
             [FromQuery] string? notes = null,
             [FromQuery] string? status = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _TransactionService.GetAllAsync(
@@ -61,9 +59,7 @@ namespace backend.Controller.Transaction
                 notes,
                 status,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

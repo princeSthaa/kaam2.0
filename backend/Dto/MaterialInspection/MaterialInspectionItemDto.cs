@@ -1,4 +1,3 @@
-using System;
 
 namespace backend.Dto.MaterialInspection
 {

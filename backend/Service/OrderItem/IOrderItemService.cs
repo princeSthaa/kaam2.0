@@ -16,9 +16,7 @@ namespace backend.Service.OrderItem
             decimal? totalPrice = null,
             decimal? discount = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? orderId = null
         );
 

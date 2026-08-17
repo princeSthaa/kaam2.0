@@ -40,9 +40,7 @@ namespace backend.Controller.Outlet
             [FromQuery] string? location = null,
             [FromQuery] string? code = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _OutletService.GetAllAsync(
@@ -51,9 +49,7 @@ namespace backend.Controller.Outlet
                 location,
                 code,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

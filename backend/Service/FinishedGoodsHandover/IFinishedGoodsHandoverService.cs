@@ -20,9 +20,7 @@ namespace backend.Service.FinishedGoodsHandover
             string? acceptedBy = null,
             string? status = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<FinishedGoodsHandoverDto?> GetByIdAsync(Guid id);

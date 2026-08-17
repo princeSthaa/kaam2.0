@@ -28,9 +28,7 @@ namespace backend.Service.OutletDemand
             string? status = null,
             DateTime? dueDate = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? outletId = null
         )
         {
@@ -43,9 +41,7 @@ namespace backend.Service.OutletDemand
                         @Status = {status},
                         @DueDate = {dueDate},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @OutletId = {outletId}
                 ")
                 .ToListAsync();
@@ -72,9 +68,7 @@ namespace backend.Service.OutletDemand
                     @Status = {outletDemandDto.Status},
                     @DueDate = {outletDemandDto.DueDate},
                     @CreatedAt = {outletDemandDto.CreatedAt},
-                    @CreatedBy = {outletDemandDto.CreatedBy},
                     @UpdatedAt = {outletDemandDto.UpdatedAt},
-                    @UpdatedBy = {outletDemandDto.UpdatedBy},
                     @OutletId = {outletDemandDto.OutletId}
             ");
 
@@ -92,9 +86,7 @@ namespace backend.Service.OutletDemand
                     @Status = {outletDemandDto.Status},
                     @DueDate = {outletDemandDto.DueDate},
                     @CreatedAt = {outletDemandDto.CreatedAt},
-                    @CreatedBy = {outletDemandDto.CreatedBy},
                     @UpdatedAt = {outletDemandDto.UpdatedAt},
-                    @UpdatedBy = {outletDemandDto.UpdatedBy},
                     @OutletId = {outletDemandDto.OutletId}
             ");
 

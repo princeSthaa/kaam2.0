@@ -33,8 +33,8 @@ namespace backend.Service.PurchaseOrderReceipt
                 commandType: CommandType.StoredProcedure
             );
 
-            var receipts = (await multi.ReadAsync<PurchaseOrderReceiptDto>()).ToList();
-            var items = (await multi.ReadAsync<PurchaseOrderReceiptItemDto>()).ToList();
+            var receipts = !multi.IsConsumed ? (await multi.ReadAsync<PurchaseOrderReceiptDto>()).ToList() : new List<PurchaseOrderReceiptDto>();
+            var items = !multi.IsConsumed ? (await multi.ReadAsync<PurchaseOrderReceiptItemDto>()).ToList() : new List<PurchaseOrderReceiptItemDto>();
 
             foreach (var r in receipts)
             {
@@ -151,8 +151,6 @@ namespace backend.Service.PurchaseOrderReceipt
 
                 var inspectionNotes = $"Auto-created inspection for Receipt {receiptNumber}";
 
-                var createdBy = (object?)dto.ReceivedBy ?? "System";
-
                 await _context.Database.ExecuteSqlInterpolatedAsync($@"
                     EXEC sp_InsertMaterialInspection
                         @Id = {inspectionId},
@@ -162,9 +160,7 @@ namespace backend.Service.PurchaseOrderReceipt
                         @Notes = {inspectionNotes},
                         @InspectorName = {""},
                         @CreatedAt = {now},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {now},
-                        @UpdatedBy = {createdBy}
+                        @UpdatedAt = {now}
                 ");
 
                 // Create Receipt Items + Inspection Items
@@ -201,9 +197,7 @@ namespace backend.Service.PurchaseOrderReceipt
                             @InspectionStatus = {(int)InspectionStatus.Pending},
                             @Notes = {""},
                             @CreatedAt = {now},
-                            @CreatedBy = {createdBy},
-                            @UpdatedAt = {now},
-                            @UpdatedBy = {createdBy}
+                            @UpdatedAt = {now}
                     ");
                 }
 
@@ -235,7 +229,6 @@ namespace backend.Service.PurchaseOrderReceipt
 
                 //  Determine final PO status
                 var newStatus = allDelivered ? OrderStatus.Delivered : anyReceived ? OrderStatus.PartiallyDelivered : OrderStatus.Pending;
-
                 // Update Purchase Order status ONCE
                 await _context.Database.ExecuteSqlInterpolatedAsync($@"
                     EXEC sp_UpdatePurchaseOrders

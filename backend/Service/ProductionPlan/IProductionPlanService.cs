@@ -34,9 +34,7 @@ namespace backend.Service.ProductionPlan
             decimal? progress = null,
             bool? blocked = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<ProductionPlanDto?> GetByIdAsync(Guid id);

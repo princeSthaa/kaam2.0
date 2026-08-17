@@ -39,10 +39,10 @@ namespace backend.Service.WarehouseFloor
 
             using var multi = await connection.QueryMultipleAsync("sp_GetWarehouseFloor", parameters, commandType: CommandType.StoredProcedure );
 
-            var floors = (await multi.ReadAsync<WarehouseFloorGetDto>()).ToList();
-            var rooms = (await multi.ReadAsync<WarehouseRoomDto>()).ToList();
-            var racks = (await multi.ReadAsync<WarehouseRackDto>()).ToList();
-            var shelves = (await multi.ReadAsync<WarehouseShelfDto>()).ToList();
+            var floors = !multi.IsConsumed ? (await multi.ReadAsync<WarehouseFloorGetDto>()).ToList() : new List<WarehouseFloorGetDto>();
+            var rooms = !multi.IsConsumed ? (await multi.ReadAsync<WarehouseRoomDto>()).ToList() : new List<WarehouseRoomDto>();
+            var racks = !multi.IsConsumed ? (await multi.ReadAsync<WarehouseRackDto>()).ToList() : new List<WarehouseRackDto>();
+            var shelves = !multi.IsConsumed ? (await multi.ReadAsync<WarehouseShelfDto>()).ToList() : new List<WarehouseShelfDto>();
 
             foreach (var rack in racks)
             {

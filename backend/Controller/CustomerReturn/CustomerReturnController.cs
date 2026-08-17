@@ -44,9 +44,7 @@ namespace backend.Controller.CustomerReturn
             [FromQuery] string? notes = null,
             [FromQuery] string? processedBy = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _CustomerReturnService.GetAllAsync(
@@ -59,9 +57,7 @@ namespace backend.Controller.CustomerReturn
                 notes,
                 processedBy,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

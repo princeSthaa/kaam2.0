@@ -24,9 +24,7 @@ namespace backend.Service.ProductionPlanStage
             DateTime? actualEndDate = null,
             string? remarks = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? productionPlanId = null
         );
 

@@ -18,14 +18,12 @@ namespace backend.Service.Product
             _context = context;
         }
 
-        public async Task<List<ProductDto>> GetAllAsync(
+        public async Task<List<ProductGetDto>> GetAllAsync(
             Guid? id = null,
             string? name = null,
             string? imagePath = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             var connection = _context.Database.GetDbConnection();
@@ -40,36 +38,14 @@ namespace backend.Service.Product
                 commandType: System.Data.CommandType.StoredProcedure
             );
 
-            var products = multi.Read<ProductDto>().ToList();
-            var materialReqs =
-                multi.Read<ProductMaterialRequirementDto, MaterialTypeDto, ProductMaterialRequirementDto>(
-                    (req, matType) =>
-                    {
-                        req.MaterialType = matType;
-                        return req;
-                    },
-                    splitOn: "MaterialTypeSplitId"
-                ).ToList();
-
-            var prodStages =
-                multi.Read<ProductProductionStageDto, ProductionStageDto, ProductProductionStageDto>(
-                    (stage, prodStage) =>
-                    {
-                        stage.ProductionStage = prodStage;
-                        return stage;
-                    },
-                    splitOn: "ProductionStageSplitId"
-                ).ToList();
+            var products = !multi.IsConsumed ? multi.Read<ProductGetDto>().ToList() : new List<ProductGetDto>();
+            var materialReqs = !multi.IsConsumed ? multi.Read<ProductMaterialRequirementGetDto>().ToList() : new List<ProductMaterialRequirementGetDto>();
 
             foreach (var p in products)
             {
                 p.MaterialRequirements = materialReqs
                     .Where(m => m.ProductId == p.Id)
                     .OrderBy(x => x.ProductSize)
-                    .ToList();
-                p.ProductionStages = prodStages
-                    .Where(s => s.ProductId == p.Id)
-                    .OrderBy(x => x.Sequence)
                     .ToList();
             }
 
@@ -82,7 +58,7 @@ namespace backend.Service.Product
             return products;
         }
 
-        public async Task<ProductDto?> GetByIdAsync(Guid id)
+        public async Task<ProductGetDto?> GetByIdAsync(Guid id)
         {
             var products = await GetAllAsync(id: id);
             return products.FirstOrDefault();

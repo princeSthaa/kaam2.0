@@ -40,10 +40,10 @@ namespace backend.Service.PurchaseOrder
                 commandType: CommandType.StoredProcedure
             );
 
-            var pos = (await multi.ReadAsync<PurchaseOrderGetDto>()).ToList();
-            var items = (await multi.ReadAsync<PurchaseOrderItemDto>()).ToList();
-            var receipts = (await multi.ReadAsync<PurchaseOrderReceiptDto>()).ToList();
-            var receiptItems = (await multi.ReadAsync<PurchaseOrderReceiptItemDto>()).ToList();
+            var pos = !multi.IsConsumed ? (await multi.ReadAsync<PurchaseOrderGetDto>()).ToList() : new List<PurchaseOrderGetDto>();
+            var items = !multi.IsConsumed ? (await multi.ReadAsync<PurchaseOrderItemDto>()).ToList() : new List<PurchaseOrderItemDto>();
+            var receipts = !multi.IsConsumed ? (await multi.ReadAsync<PurchaseOrderReceiptDto>()).ToList() : new List<PurchaseOrderReceiptDto>();
+            var receiptItems = !multi.IsConsumed ? (await multi.ReadAsync<PurchaseOrderReceiptItemDto>()).ToList() : new List<PurchaseOrderReceiptItemDto>();
 
             foreach (var r in receipts)
             {
@@ -96,7 +96,7 @@ namespace backend.Service.PurchaseOrder
             decimal totalAmount = 0;
             var itemDtos = new List<PurchaseOrderItemDto>();
 
-            if (dto.Items != null && dto.Items.Any())
+            if (dto.Items.Any())
             {
                 foreach (var itemDto in dto.Items)
                 {
@@ -170,9 +170,8 @@ namespace backend.Service.PurchaseOrder
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdatePurchaseOrders 
                     @Id = {id}, 
-                    @OrderNumber = {dto.OrderNumber ?? po.OrderNumber}, 
+                    @OrderNumber = {dto.OrderNumber}, 
                     @Status = {(int)po.Status}, 
-                    @TotalAmount = {po.TotalAmount}, 
                     @SupplierId = {(dto.SupplierId != Guid.Empty ? dto.SupplierId : po.SupplierId)}, 
                     @MaterialCategoryId = {(object?)dto.MaterialCategoryId ?? DBNull.Value}, 
                     @ShippingMethod = {(object?)dto.ShippingMethod ?? (object?)po.ShippingMethod ?? DBNull.Value}, 
@@ -216,13 +215,11 @@ namespace backend.Service.PurchaseOrder
                 new SqlParameter("@UpdatedAt", DateTime.UtcNow)
             );
 
-            var newTotal = po.TotalAmount + totalPrice;
             await _context.Database.ExecuteSqlRawAsync(
-                "EXEC sp_UpdatePurchaseOrders @Id, @OrderNumber, @Status, @TotalAmount, @SupplierId, @MaterialCategoryId, @ShippingMethod, @ShippingAddress, @PaymentTerms, @ExpectedDeliveryDate, @UpdatedAt",
+                "EXEC sp_UpdatePurchaseOrders @Id, @OrderNumber, @Status, @SupplierId, @MaterialCategoryId, @ShippingMethod, @ShippingAddress, @PaymentTerms, @ExpectedDeliveryDate, @UpdatedAt",
                 new SqlParameter("@Id", po.Id),
                 new SqlParameter("@OrderNumber", po.OrderNumber),
                 new SqlParameter("@Status", (int)po.Status),
-                new SqlParameter("@TotalAmount", newTotal),
                 new SqlParameter("@SupplierId", po.SupplierId),
                 new SqlParameter("@MaterialCategoryId", (object?)po.MaterialCategoryId ?? DBNull.Value),
                 new SqlParameter("@ShippingMethod", (object?)po.ShippingMethod ?? DBNull.Value),
@@ -251,7 +248,6 @@ namespace backend.Service.PurchaseOrder
         #region UpdateItemAsync
         public async Task<bool> UpdateItemAsync(Guid itemId, PurchaseOrderItemDto itemDto)
         {
-            var items = await GetItemsByPurchaseOrderIdAsync(Guid.Empty); // Wait, this doesn't work well without PoId.
             // Alternative: find the item first
             PurchaseOrderItemDto? item = null;
             var connection = _context.Database.GetDbConnection();
@@ -352,13 +348,11 @@ namespace backend.Service.PurchaseOrder
             var po = await GetByIdAsync(item.PurchaseOrderId);
             if (po != null)
             {
-                var newTotal = po.TotalAmount - item.TotalPrice;
                 await _context.Database.ExecuteSqlRawAsync(
-                    "EXEC sp_UpdatePurchaseOrders @Id, @OrderNumber, @Status, @TotalAmount, @SupplierId, @MaterialCategoryId, @ShippingMethod, @ShippingAddress, @PaymentTerms, @ExpectedDeliveryDate, @UpdatedAt",
+                    "EXEC sp_UpdatePurchaseOrders @Id, @OrderNumber, @Status, @SupplierId, @MaterialCategoryId, @ShippingMethod, @ShippingAddress, @PaymentTerms, @ExpectedDeliveryDate, @UpdatedAt",
                     new SqlParameter("@Id", po.Id),
                     new SqlParameter("@OrderNumber", po.OrderNumber),
                     new SqlParameter("@Status", (int)po.Status),
-                    new SqlParameter("@TotalAmount", newTotal),
                     new SqlParameter("@SupplierId", po.SupplierId),
                     new SqlParameter("@MaterialCategoryId", (object?)po.MaterialCategoryId ?? DBNull.Value),
                     new SqlParameter("@ShippingMethod", (object?)po.ShippingMethod ?? DBNull.Value),
@@ -422,21 +416,21 @@ namespace backend.Service.PurchaseOrder
             if (po == null || po.Status == OrderStatus.Cancelled)
                 return;
 
-            if (po.Items == null || !po.Items.Any())
+            if (!po.Items.Any())
                 return;
 
             // Calculate received quantity for every PO item
             var itemQuantities = po.Items.Select(poItem =>
             {
-                var receivedQuantity = po.Receipts?
-                    .SelectMany(r => r.Items ?? new List<PurchaseOrderReceiptItemDto>())
+                var receivedQuantity = po.Receipts
+                    .SelectMany(r => r.Items)
                     .Where(ri => ri.PurchaseOrderItemId == poItem.Id)
-                    .Sum(ri => ri.ReceivedQuantity) ?? 0m;
+                    .Sum(ri => ri.ReceivedQuantity);
 
                 return new
                 {
                     PurchaseOrderItemId = poItem.Id,
-                    OrderedQuantity = poItem.OrderedQuantity,
+                    poItem.OrderedQuantity,
                     ReceivedQuantity = receivedQuantity
                 };
             }).ToList();
@@ -473,7 +467,7 @@ namespace backend.Service.PurchaseOrder
                 }
 
                 // Check inspection status for every receipt
-                if (po.Receipts != null && po.Receipts.Any())
+                if (po.Receipts.Any())
                 {
                     foreach (var receipt in po.Receipts)
                     {
@@ -496,10 +490,16 @@ namespace backend.Service.PurchaseOrder
 
                         if (await reader.ReadAsync())
                         {
-                            var status = reader.GetString(reader.GetOrdinal("InspectionStatus"));
-                            if (status == "Completed" ||
-                                status == "Approved")
-                                hasCompletedInspection = true;
+                            var statusOrdinal = reader.GetOrdinal("InspectionStatus");
+                            if (!reader.IsDBNull(statusOrdinal))
+                            {
+                                var statusValue = reader.GetInt32(statusOrdinal);
+                                var status = (backend.Model.Enums.InspectionStatus)statusValue;
+                                if (status == backend.Model.Enums.InspectionStatus.Accepted ||
+                                    status == backend.Model.Enums.InspectionStatus.Rejected ||
+                                    status == backend.Model.Enums.InspectionStatus.PartiallyAccepted)
+                                    hasCompletedInspection = true;
+                            }
                         }
 
                         if (!hasCompletedInspection)
@@ -536,14 +536,12 @@ namespace backend.Service.PurchaseOrder
                     @"EXEC sp_UpdatePurchaseOrders  
                     @Id, 
                     @Status, 
-                    @TotalAmount, 
                     @ShippingAddress, 
                     @PaymentTerms, 
                     @ExpectedDeliveryDate, 
                     @UpdatedAt",
                     new SqlParameter("@Id", po.Id ),
                     new SqlParameter( "@Status", (int)newStatus ),
-                    new SqlParameter( "@TotalAmount", po.TotalAmount ),
                     new SqlParameter( "@ShippingAddress", (object?)po.ShippingAddress ?? DBNull.Value ),
                     new SqlParameter( "@PaymentTerms", (object?)po.PaymentTerms ?? DBNull.Value ),
                     new SqlParameter( "@ExpectedDeliveryDate", po.ExpectedDeliveryDate ),

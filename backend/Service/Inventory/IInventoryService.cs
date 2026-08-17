@@ -18,9 +18,7 @@ namespace backend.Service.Inventory
             string? location = null,
             string? status = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<InventoryDto?> GetByIdAsync(Guid id);

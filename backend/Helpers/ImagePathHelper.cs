@@ -80,6 +80,14 @@ namespace backend.Helpers
             }
         }
 
+        public static void ResolveProductGetImage(ProductGetDto? dto, HttpRequest? request)
+        {
+            if (dto != null && !string.IsNullOrWhiteSpace(dto.ImagePath))
+            {
+                dto.ImagePath = ToFullUrl(dto.ImagePath, request);
+            }
+        }
+
         public static void ResolveOrderProductImage(OrderProductGetDto? dto, HttpRequest? request)
         {
             if (dto != null && !string.IsNullOrWhiteSpace(dto.ImagePath))

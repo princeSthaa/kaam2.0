@@ -29,9 +29,7 @@ namespace backend.Service.WorkCenter
             string? status = null,
             string? productionLine = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -44,9 +42,7 @@ namespace backend.Service.WorkCenter
                         @Status = {status},
                         @ProductionLine = {productionLine},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -73,9 +69,7 @@ namespace backend.Service.WorkCenter
                     @Status = {workCenterDto.Status},
                     @ProductionLine = {workCenterDto.ProductionLine},
                     @CreatedAt = {workCenterDto.CreatedAt},
-                    @CreatedBy = {workCenterDto.CreatedBy},
                     @UpdatedAt = {workCenterDto.UpdatedAt},
-                    @UpdatedBy = {workCenterDto.UpdatedBy}
             ");
 
             return true;
@@ -93,9 +87,7 @@ namespace backend.Service.WorkCenter
                     @Status = {workCenterDto.Status},
                     @ProductionLine = {workCenterDto.ProductionLine},
                     @CreatedAt = {workCenterDto.CreatedAt},
-                    @CreatedBy = {workCenterDto.CreatedBy},
                     @UpdatedAt = {workCenterDto.UpdatedAt},
-                    @UpdatedBy = {workCenterDto.UpdatedBy}
             ");
 
             return true;

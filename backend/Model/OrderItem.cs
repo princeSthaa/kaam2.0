@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,9 +19,7 @@ namespace backend.Model
         [Column(TypeName = "decimal(18,2)")]
         public decimal Discount { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
         public Guid OrderId { get; set; }
         public virtual Order Order { get; set; } = null!;
         public virtual ICollection<OrderItemSize> OrderItemSizes { get; set; } = new List<OrderItemSize>();

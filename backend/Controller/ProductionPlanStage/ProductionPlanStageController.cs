@@ -49,9 +49,7 @@ namespace backend.Controller.ProductionPlanStage
             [FromQuery] DateTime? actualEndDate = null,
             [FromQuery] string? remarks = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? productionPlanId = null
         )
         {
@@ -69,9 +67,7 @@ namespace backend.Controller.ProductionPlanStage
                 actualEndDate,
                 remarks,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 productionPlanId
             );
 

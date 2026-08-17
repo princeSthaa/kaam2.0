@@ -32,9 +32,7 @@ namespace backend.Service.CustomerReturn
             string? notes = null,
             string? processedBy = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -50,9 +48,7 @@ namespace backend.Service.CustomerReturn
                         @Notes = {notes},
                         @ProcessedBy = {processedBy},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -82,9 +78,7 @@ namespace backend.Service.CustomerReturn
                     @Notes = {customerReturnDto.Notes},
                     @ProcessedBy = {customerReturnDto.ProcessedBy},
                     @CreatedAt = {customerReturnDto.CreatedAt},
-                    @CreatedBy = {customerReturnDto.CreatedBy},
                     @UpdatedAt = {customerReturnDto.UpdatedAt},
-                    @UpdatedBy = {customerReturnDto.UpdatedBy}
             ");
 
             return true;
@@ -105,9 +99,7 @@ namespace backend.Service.CustomerReturn
                     @Notes = {customerReturnDto.Notes},
                     @ProcessedBy = {customerReturnDto.ProcessedBy},
                     @CreatedAt = {customerReturnDto.CreatedAt},
-                    @CreatedBy = {customerReturnDto.CreatedBy},
                     @UpdatedAt = {customerReturnDto.UpdatedAt},
-                    @UpdatedBy = {customerReturnDto.UpdatedBy}
             ");
 
             return true;

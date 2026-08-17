@@ -33,9 +33,7 @@ namespace backend.Service.FinishedGoodsHandover
             string? acceptedBy = null,
             string? status = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -52,9 +50,7 @@ namespace backend.Service.FinishedGoodsHandover
                         @AcceptedBy = {acceptedBy},
                         @Status = {status},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -85,9 +81,7 @@ namespace backend.Service.FinishedGoodsHandover
                     @AcceptedBy = {finishedGoodsHandoverDto.AcceptedBy},
                     @Status = {finishedGoodsHandoverDto.Status},
                     @CreatedAt = {finishedGoodsHandoverDto.CreatedAt},
-                    @CreatedBy = {finishedGoodsHandoverDto.CreatedBy},
                     @UpdatedAt = {finishedGoodsHandoverDto.UpdatedAt},
-                    @UpdatedBy = {finishedGoodsHandoverDto.UpdatedBy}
             ");
 
             return true;
@@ -109,9 +103,7 @@ namespace backend.Service.FinishedGoodsHandover
                     @AcceptedBy = {finishedGoodsHandoverDto.AcceptedBy},
                     @Status = {finishedGoodsHandoverDto.Status},
                     @CreatedAt = {finishedGoodsHandoverDto.CreatedAt},
-                    @CreatedBy = {finishedGoodsHandoverDto.CreatedBy},
                     @UpdatedAt = {finishedGoodsHandoverDto.UpdatedAt},
-                    @UpdatedBy = {finishedGoodsHandoverDto.UpdatedBy}
             ");
 
             return true;

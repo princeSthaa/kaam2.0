@@ -27,9 +27,7 @@ namespace backend.Service.OrderItemMaterial
             decimal? requiredQuantity = null,
             string? unit = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? orderItemId = null
         )
         {
@@ -41,9 +39,7 @@ namespace backend.Service.OrderItemMaterial
                         @RequiredQuantity = {requiredQuantity},
                         @Unit = {unit},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @OrderItemId = {orderItemId}
                 ")
                 .ToListAsync();
@@ -69,9 +65,7 @@ namespace backend.Service.OrderItemMaterial
                     @RequiredQuantity = {orderItemMaterialDto.RequiredQuantity},
                     @Unit = {orderItemMaterialDto.Unit},
                     @CreatedAt = {orderItemMaterialDto.CreatedAt},
-                    @CreatedBy = {orderItemMaterialDto.CreatedBy},
                     @UpdatedAt = {orderItemMaterialDto.UpdatedAt},
-                    @UpdatedBy = {orderItemMaterialDto.UpdatedBy},
                     @MaterialId = {orderItemMaterialDto.MaterialId},
                     @OrderItemId = {orderItemMaterialDto.OrderItemId}
             ");
@@ -89,9 +83,7 @@ namespace backend.Service.OrderItemMaterial
                     @RequiredQuantity = {orderItemMaterialDto.RequiredQuantity},
                     @Unit = {orderItemMaterialDto.Unit},
                     @CreatedAt = {orderItemMaterialDto.CreatedAt},
-                    @CreatedBy = {orderItemMaterialDto.CreatedBy},
                     @UpdatedAt = {orderItemMaterialDto.UpdatedAt},
-                    @UpdatedBy = {orderItemMaterialDto.UpdatedBy},
                     @MaterialId = {orderItemMaterialDto.MaterialId},
                     @OrderItemId = {orderItemMaterialDto.OrderItemId}
             ");

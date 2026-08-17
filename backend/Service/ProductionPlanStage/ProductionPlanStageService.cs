@@ -29,9 +29,7 @@ namespace backend.Service.ProductionPlanStage
             DateTime? actualEndDate = null,
             string? remarks = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? productionPlanId = null
         )
         {
@@ -52,9 +50,7 @@ namespace backend.Service.ProductionPlanStage
                         @ActualEndDate = {actualEndDate},
                         @Remarks = {remarks},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @ProductionPlanId = {productionPlanId}
                 ")
                 .ToListAsync();
@@ -89,9 +85,7 @@ namespace backend.Service.ProductionPlanStage
                     @ActualEndDate = {productionPlanStageDto.ActualEndDate},
                     @Remarks = {productionPlanStageDto.Remarks},
                     @CreatedAt = {productionPlanStageDto.CreatedAt},
-                    @CreatedBy = {productionPlanStageDto.CreatedBy},
                     @UpdatedAt = {productionPlanStageDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanStageDto.UpdatedBy},
                     @WorkCenterId = {productionPlanStageDto.WorkCenterId},
                     @ProductionPlanId = {productionPlanStageDto.ProductionPlanId}
             ");
@@ -118,9 +112,7 @@ namespace backend.Service.ProductionPlanStage
                     @ActualEndDate = {productionPlanStageDto.ActualEndDate},
                     @Remarks = {productionPlanStageDto.Remarks},
                     @CreatedAt = {productionPlanStageDto.CreatedAt},
-                    @CreatedBy = {productionPlanStageDto.CreatedBy},
                     @UpdatedAt = {productionPlanStageDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanStageDto.UpdatedBy},
                     @WorkCenterId = {productionPlanStageDto.WorkCenterId},
                     @ProductionPlanId = {productionPlanStageDto.ProductionPlanId}
             ");

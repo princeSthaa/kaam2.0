@@ -77,9 +77,7 @@ namespace backend.Controller.ProductionPlan
             [FromQuery] decimal? progress = null,
             [FromQuery] bool? blocked = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _ProductionPlanService.GetAllAsync(
@@ -106,9 +104,7 @@ namespace backend.Controller.ProductionPlan
                 progress,
                 blocked,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

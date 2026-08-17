@@ -15,9 +15,7 @@ namespace backend.Service.OrderItemSize
             ProductSize? size = null,
             int? quantity = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? orderItemId = null
         );
 

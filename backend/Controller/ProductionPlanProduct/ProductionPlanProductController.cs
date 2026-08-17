@@ -53,9 +53,7 @@ namespace backend.Controller.ProductionPlanProduct
             [FromQuery] PlanPriority? priority = null,
             [FromQuery] string? productionNotes = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? productionPlanId = null
         )
         {
@@ -77,9 +75,7 @@ namespace backend.Controller.ProductionPlanProduct
                 priority,
                 productionNotes,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 productionPlanId
             );
 
