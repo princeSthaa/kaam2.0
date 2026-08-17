@@ -14,9 +14,7 @@ namespace backend.Service.OrderItemMaterial
             decimal? requiredQuantity = null,
             string? unit = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? orderItemId = null
         );
 

@@ -38,12 +38,12 @@ namespace backend.Model
         
         public DateTime ReturnDate { get; set; } = DateTime.UtcNow;
 
+        [MaxLength(500)]
         public string Reason { get; set; } = string.Empty;
+        [MaxLength(500)]
         public string Notes { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string UpdatedBy { get; set; } = string.Empty;
     }
 }

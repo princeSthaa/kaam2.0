@@ -22,9 +22,7 @@ namespace backend.Service.Warehouse
             string? name = null,
             string? location = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             var connection = _context.Database.GetDbConnection();
@@ -37,11 +35,11 @@ namespace backend.Service.Warehouse
                 commandType: System.Data.CommandType.StoredProcedure
             );
 
-            var warehouses = (await multi.ReadAsync<WarehouseDto>()).ToList();
-            var floors = (await multi.ReadAsync<backend.Dto.WarehouseFloor.WarehouseFloorDto>()).ToList();
-            var rooms = (await multi.ReadAsync<backend.Dto.WarehouseRoom.WarehouseRoomDto>()).ToList();
-            var racks = (await multi.ReadAsync<backend.Dto.WarehouseRack.WarehouseRackDto>()).ToList();
-            var shelves = (await multi.ReadAsync<backend.Dto.WarehouseShelf.WarehouseShelfDto>()).ToList();
+            var warehouses = !multi.IsConsumed ? (await multi.ReadAsync<WarehouseDto>()).ToList() : new List<WarehouseDto>();
+            var floors = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.WarehouseFloor.WarehouseFloorDto>()).ToList() : new List<backend.Dto.WarehouseFloor.WarehouseFloorDto>();
+            var rooms = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.WarehouseRoom.WarehouseRoomDto>()).ToList() : new List<backend.Dto.WarehouseRoom.WarehouseRoomDto>();
+            var racks = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.WarehouseRack.WarehouseRackDto>()).ToList() : new List<backend.Dto.WarehouseRack.WarehouseRackDto>();
+            var shelves = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.WarehouseShelf.WarehouseShelfDto>()).ToList() : new List<backend.Dto.WarehouseShelf.WarehouseShelfDto>();
 
             foreach (var rack in racks)
             {

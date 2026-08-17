@@ -17,9 +17,7 @@ namespace backend.Service.ActivityLog
             string? entityId = null,
             string? entityType = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<ActivityLogDto?> GetByIdAsync(Guid id);

@@ -41,9 +41,7 @@ namespace backend.Controller.WorkCenter
             [FromQuery] string? status = null,
             [FromQuery] string? productionLine = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _WorkCenterService.GetAllAsync(
@@ -53,9 +51,7 @@ namespace backend.Controller.WorkCenter
                 status,
                 productionLine,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

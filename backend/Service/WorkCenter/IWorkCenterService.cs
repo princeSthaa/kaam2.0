@@ -16,9 +16,7 @@ namespace backend.Service.WorkCenter
             string? status = null,
             string? productionLine = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<WorkCenterDto?> GetByIdAsync(Guid id);

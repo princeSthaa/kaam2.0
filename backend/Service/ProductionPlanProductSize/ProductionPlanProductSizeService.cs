@@ -28,9 +28,7 @@ namespace backend.Service.ProductionPlanProductSize
             ProductSize? size = null,
             int? quantity = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? productionPlanProductId = null
         )
         {
@@ -42,9 +40,7 @@ namespace backend.Service.ProductionPlanProductSize
                         @Size = {size},
                         @Quantity = {quantity},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @ProductionPlanProductId = {productionPlanProductId}
                 ")
                 .ToListAsync();
@@ -70,9 +66,7 @@ namespace backend.Service.ProductionPlanProductSize
                     @Size = {productionPlanProductSizeDto.Size},
                     @Quantity = {productionPlanProductSizeDto.Quantity},
                     @CreatedAt = {productionPlanProductSizeDto.CreatedAt},
-                    @CreatedBy = {productionPlanProductSizeDto.CreatedBy},
                     @UpdatedAt = {productionPlanProductSizeDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanProductSizeDto.UpdatedBy},
                     @ProductionPlanProductId = {productionPlanProductSizeDto.ProductionPlanProductId}
             ");
 
@@ -89,9 +83,7 @@ namespace backend.Service.ProductionPlanProductSize
                     @Size = {productionPlanProductSizeDto.Size},
                     @Quantity = {productionPlanProductSizeDto.Quantity},
                     @CreatedAt = {productionPlanProductSizeDto.CreatedAt},
-                    @CreatedBy = {productionPlanProductSizeDto.CreatedBy},
                     @UpdatedAt = {productionPlanProductSizeDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanProductSizeDto.UpdatedBy},
                     @ProductionPlanProductId = {productionPlanProductSizeDto.ProductionPlanProductId}
             ");
 

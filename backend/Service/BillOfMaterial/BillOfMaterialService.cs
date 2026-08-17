@@ -27,9 +27,7 @@ namespace backend.Service.BillOfMaterial
             decimal? qtyPerUnit = null,
             decimal? wastagePercent = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -40,9 +38,7 @@ namespace backend.Service.BillOfMaterial
                         @QtyPerUnit = {qtyPerUnit},
                         @WastagePercent = {wastagePercent},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -67,9 +63,7 @@ namespace backend.Service.BillOfMaterial
                     @QtyPerUnit = {billOfMaterialDto.QtyPerUnit},
                     @WastagePercent = {billOfMaterialDto.WastagePercent},
                     @CreatedAt = {billOfMaterialDto.CreatedAt},
-                    @CreatedBy = {billOfMaterialDto.CreatedBy},
                     @UpdatedAt = {billOfMaterialDto.UpdatedAt},
-                    @UpdatedBy = {billOfMaterialDto.UpdatedBy},
                     @ProductId = {billOfMaterialDto.ProductId},
                     @MaterialId = {billOfMaterialDto.MaterialId}
             ");
@@ -87,9 +81,7 @@ namespace backend.Service.BillOfMaterial
                     @QtyPerUnit = {billOfMaterialDto.QtyPerUnit},
                     @WastagePercent = {billOfMaterialDto.WastagePercent},
                     @CreatedAt = {billOfMaterialDto.CreatedAt},
-                    @CreatedBy = {billOfMaterialDto.CreatedBy},
                     @UpdatedAt = {billOfMaterialDto.UpdatedAt},
-                    @UpdatedBy = {billOfMaterialDto.UpdatedBy},
                     @ProductId = {billOfMaterialDto.ProductId},
                     @MaterialId = {billOfMaterialDto.MaterialId}
             ");

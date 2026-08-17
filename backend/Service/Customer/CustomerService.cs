@@ -1,14 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text.Json;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.Customer;
-using backend.Model;
 
 namespace backend.Service.Customer
 {
@@ -21,28 +13,24 @@ namespace backend.Service.Customer
             _context = context;
         }
 
-        public async Task<bool> CreateAsync(CustomerDto customerDto)
+        public async Task<bool> CreateAsync(CustomerDto dto)
         {
-            if (customerDto.Id == Guid.Empty)
-            {
-                customerDto.Id = Guid.NewGuid();
-            }
+            dto.Id = Guid.NewGuid();
+            var now = DateTime.UtcNow;
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertCustomer
 
-                    @Id = {customerDto.Id},
-                    @Name = {customerDto.Name},
-                    @Email = {customerDto.Email},
-                    @Phone = {customerDto.Phone},
-                    @Address = {customerDto.Address},
-                    @Type = {customerDto.Type},
-                    @Company = {customerDto.Company},
-                    @PanVat = {customerDto.PanVat},
-                    @CreatedAt = {customerDto.CreatedAt},
-                    @CreatedBy = {customerDto.CreatedBy},
-                    @UpdatedAt = {customerDto.UpdatedAt},
-                    @UpdatedBy = {customerDto.UpdatedBy}
+                    @Id = {dto.Id},
+                    @Name = {dto.Name},
+                    @Email = {dto.Email},
+                    @Phone = {dto.Phone},
+                    @Address = {dto.Address},
+                    @Type = {dto.Type},
+                    @Company = {dto.Company},
+                    @PanVat = {dto.PanVat},
+                    @CreatedAt = {now},
+                    @UpdatedAt = {now}
             ");
 
             return true;
@@ -59,15 +47,12 @@ namespace backend.Service.Customer
             string? company = null,
             string? panVat = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
                 .SqlQuery<CustomerDto>($@"
                     EXEC sp_GetCustomers
-
                         @Id = {id},
                         @Name = {name},
                         @Email = {email},
@@ -77,9 +62,7 @@ namespace backend.Service.Customer
                         @Company = {company},
                         @PanVat = {panVat},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
-                        @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
+                        @UpdatedAt = {updatedAt}
                 ")
                 .ToListAsync();
         }
@@ -102,12 +85,7 @@ namespace backend.Service.Customer
                     @Phone = {customerDto.Phone},
                     @Address = {customerDto.Address},
                     @Type = {customerDto.Type},
-                    @Company = {customerDto.Company},
-                    @PanVat = {customerDto.PanVat},
-                    @CreatedAt = {customerDto.CreatedAt},
-                    @CreatedBy = {customerDto.CreatedBy},
-                    @UpdatedAt = {customerDto.UpdatedAt},
-                    @UpdatedBy = {customerDto.UpdatedBy}
+                    @UpdatedAt = {DateTime.UtcNow},
             ");
 
             return true;

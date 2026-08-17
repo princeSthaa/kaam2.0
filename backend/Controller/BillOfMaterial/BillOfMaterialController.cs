@@ -39,9 +39,7 @@ namespace backend.Controller.BillOfMaterial
             [FromQuery] decimal? qtyPerUnit = null,
             [FromQuery] decimal? wastagePercent = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _BillOfMaterialService.GetAllAsync(
@@ -49,9 +47,7 @@ namespace backend.Controller.BillOfMaterial
                 qtyPerUnit,
                 wastagePercent,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

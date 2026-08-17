@@ -15,9 +15,7 @@ namespace backend.Service.OutletDemand
             string? status = null,
             DateTime? dueDate = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? outletId = null
         );
 

@@ -39,9 +39,7 @@ namespace backend.Controller.OrderItemMaterial
             [FromQuery] decimal? requiredQuantity = null,
             [FromQuery] string? unit = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? orderItemId = null
         )
         {
@@ -50,9 +48,7 @@ namespace backend.Controller.OrderItemMaterial
                 requiredQuantity,
                 unit,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 orderItemId
             );
 

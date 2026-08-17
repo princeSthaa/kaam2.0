@@ -36,9 +36,7 @@ namespace backend.Model
         public decimal Progress { get; set; }
         public bool Blocked { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
         
 
         [ForeignKey(nameof(OrderItem))]

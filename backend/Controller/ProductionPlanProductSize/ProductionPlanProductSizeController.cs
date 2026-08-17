@@ -40,9 +40,7 @@ namespace backend.Controller.ProductionPlanProductSize
             [FromQuery] ProductSize? size = null,
             [FromQuery] int? quantity = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? productionPlanProductId = null
         )
         {
@@ -51,9 +49,7 @@ namespace backend.Controller.ProductionPlanProductSize
                 size,
                 quantity,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 productionPlanProductId
             );
 

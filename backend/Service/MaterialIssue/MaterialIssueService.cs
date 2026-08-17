@@ -31,9 +31,7 @@ namespace backend.Service.MaterialIssue
             string? notes = null,
             string? status = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -48,9 +46,7 @@ namespace backend.Service.MaterialIssue
                         @Notes = {notes},
                         @Status = {status},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -79,9 +75,7 @@ namespace backend.Service.MaterialIssue
                     @Notes = {materialIssueDto.Notes},
                     @Status = {materialIssueDto.Status},
                     @CreatedAt = {materialIssueDto.CreatedAt},
-                    @CreatedBy = {materialIssueDto.CreatedBy},
                     @UpdatedAt = {materialIssueDto.UpdatedAt},
-                    @UpdatedBy = {materialIssueDto.UpdatedBy}
             ");
 
             return true;
@@ -101,9 +95,7 @@ namespace backend.Service.MaterialIssue
                     @Notes = {materialIssueDto.Notes},
                     @Status = {materialIssueDto.Status},
                     @CreatedAt = {materialIssueDto.CreatedAt},
-                    @CreatedBy = {materialIssueDto.CreatedBy},
                     @UpdatedAt = {materialIssueDto.UpdatedAt},
-                    @UpdatedBy = {materialIssueDto.UpdatedBy}
             ");
 
             return true;

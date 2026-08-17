@@ -22,7 +22,7 @@ namespace backend.Controller.Product
 
         #region GetById
         [HttpGet("{id}")] 
-        public async Task<ActionResult<ProductDto>> GetById(Guid id)
+        public async Task<ActionResult<ProductGetDto>> GetById(Guid id)
         {
             var item = await _ProductService.GetByIdAsync(id);
 
@@ -31,27 +31,25 @@ namespace backend.Controller.Product
                 return NotFound($"Product with ID {id} not found.");
             }
 
-            ImagePathHelper.ResolveProductImage(item, Request);
+            ImagePathHelper.ResolveProductGetImage(item, Request);
             return Ok(item);
         }
         #endregion
 
         #region GetAll
         [HttpGet]
-        public async Task<ActionResult<List<ProductDto>>> GetAll(
+        public async Task<ActionResult<List<ProductGetDto>>> GetAll(
             [FromQuery] Guid? id = null,
             [FromQuery] string? name = null,
             [FromQuery] string? imagePath = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
-            var items = await _ProductService.GetAllAsync(id, name, imagePath, createdAt, createdBy, updatedAt, updatedBy);
+            var items = await _ProductService.GetAllAsync(id, name, imagePath, createdAt, updatedAt);
             foreach (var item in items)
             {
-                ImagePathHelper.ResolveProductImage(item, Request);
+                ImagePathHelper.ResolveProductGetImage(item, Request);
             }
 
             return Ok(items);
@@ -95,11 +93,7 @@ namespace backend.Controller.Product
                 MaterialRequirements =
                     string.IsNullOrWhiteSpace(createDto.MaterialRequirements) ? 
                     new List<ProductMaterialRequirementDto>()
-                    : JsonSerializer.Deserialize<List<ProductMaterialRequirementDto>> (createDto.MaterialRequirements, options) ?? new List<ProductMaterialRequirementDto>(),
-
-                ProductionStages = string.IsNullOrWhiteSpace(createDto.ProductionStages) ?
-                new List<ProductProductionStageDto>()
-                : JsonSerializer.Deserialize<List<ProductProductionStageDto>> (createDto.ProductionStages, options) ?? new List<ProductProductionStageDto>()
+                    : JsonSerializer.Deserialize<List<ProductMaterialRequirementDto>> (createDto.MaterialRequirements, options) ?? new List<ProductMaterialRequirementDto>()
             };
         
             var created = await _ProductService.CreateAsync(productDto);
@@ -159,14 +153,25 @@ namespace backend.Controller.Product
                 relativeImagePath = updateDto.ImagePath;
             }
 
-            existing.Name = string.IsNullOrWhiteSpace(updateDto.Name) ? existing.Name : updateDto.Name;
-            if (!string.IsNullOrWhiteSpace(updateDto.SKU)) existing.SKU = updateDto.SKU;
-            if (updateDto.ProductCategoryId != Guid.Empty) existing.ProductCategoryId = updateDto.ProductCategoryId;
-            if (updateDto.IsActive) existing.isActive = updateDto.IsActive;
-            existing.ImagePath = relativeImagePath;
-            // existing.UpdatedAt = DateTime.UtcNow;
+            var productToUpdate = new ProductDto
+            {
+                Id = existing.Id,
+                SKU = !string.IsNullOrWhiteSpace(updateDto.SKU) ? updateDto.SKU : existing.SKU,
+                Name = !string.IsNullOrWhiteSpace(updateDto.Name) ? updateDto.Name : existing.Name,
+                ProductCategoryId = updateDto.ProductCategoryId != Guid.Empty ? updateDto.ProductCategoryId : existing.ProductCategoryId,
+                isActive = updateDto.IsActive,
+                ImagePath = relativeImagePath,
+                MaterialRequirements = existing.MaterialRequirements.Select(m => new ProductMaterialRequirementDto
+                {
+                    Id = m.Id,
+                    ProductId = m.ProductId,
+                    MaterialTypeId = m.MaterialTypeId,
+                    ProductSize = m.ProductSize,
+                    Quantity = m.Quantity
+                }).ToList()
+            };
 
-            var updated = await _ProductService.UpdateAsync(id, existing);
+            var updated = await _ProductService.UpdateAsync(id, productToUpdate);
 
             if (!updated)
             {

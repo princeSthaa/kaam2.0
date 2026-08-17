@@ -48,9 +48,7 @@ namespace backend.Service.ProductionPlan
             decimal? progress = null,
             bool? blocked = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             var connection = _context.Database.GetDbConnection();
@@ -64,10 +62,10 @@ namespace backend.Service.ProductionPlan
                 commandType: System.Data.CommandType.StoredProcedure
             );
 
-            var plans = (await multi.ReadAsync<ProductionPlanDto>()).ToList();
-            var products = (await multi.ReadAsync<backend.Dto.ProductionPlanProduct.ProductionPlanProductDto>()).ToList();
-            var sizes = (await multi.ReadAsync<backend.Dto.ProductionPlanProductSize.ProductionPlanProductSizeDto>()).ToList();
-            var stages = (await multi.ReadAsync<backend.Dto.ProductionPlanStage.ProductionPlanStageDto>()).ToList();
+            var plans = !multi.IsConsumed ? (await multi.ReadAsync<ProductionPlanDto>()).ToList() : new List<ProductionPlanDto>();
+            var products = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.ProductionPlanProduct.ProductionPlanProductDto>()).ToList() : new List<backend.Dto.ProductionPlanProduct.ProductionPlanProductDto>();
+            var sizes = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.ProductionPlanProductSize.ProductionPlanProductSizeDto>()).ToList() : new List<backend.Dto.ProductionPlanProductSize.ProductionPlanProductSizeDto>();
+            var stages = !multi.IsConsumed ? (await multi.ReadAsync<backend.Dto.ProductionPlanStage.ProductionPlanStageDto>()).ToList() : new List<backend.Dto.ProductionPlanStage.ProductionPlanStageDto>();
 
             foreach (var p in products)
             {
@@ -174,9 +172,7 @@ namespace backend.Service.ProductionPlan
                 Progress = productionPlanDto.Progress,
                 Blocked = productionPlanDto.Blocked,
                 CreatedAt = productionPlanDto.CreatedAt,
-                CreatedBy = productionPlanDto.CreatedBy,
-                UpdatedAt = productionPlanDto.UpdatedAt,
-                UpdatedBy = productionPlanDto.UpdatedBy
+                UpdatedAt = productionPlanDto.UpdatedAt
             };
 
             foreach (var productDto in productionPlanDto.ProductionPlanProducts)
@@ -234,9 +230,7 @@ namespace backend.Service.ProductionPlan
                     Priority = productDto.Priority,
                     ProductionNotes = productDto.ProductionNotes,
                     CreatedAt = productDto.CreatedAt,
-                    CreatedBy = productDto.CreatedBy,
-                    UpdatedAt = productDto.UpdatedAt,
-                    UpdatedBy = productDto.UpdatedBy
+                    UpdatedAt = productDto.UpdatedAt
                 };
 
                 foreach (var sizeDto in productDto.ProductionPlanProductSizes)
@@ -248,9 +242,7 @@ namespace backend.Service.ProductionPlan
                         Size = sizeDto.Size,
                         Quantity = sizeDto.Quantity,
                         CreatedAt = sizeDto.CreatedAt,
-                        CreatedBy = sizeDto.CreatedBy,
-                        UpdatedAt = sizeDto.UpdatedAt,
-                        UpdatedBy = sizeDto.UpdatedBy
+                        UpdatedAt = sizeDto.UpdatedAt
                     });
                 }
 
@@ -304,9 +296,6 @@ namespace backend.Service.ProductionPlan
                 }
 
                 sourceOrder.UpdatedAt = now;
-                sourceOrder.UpdatedBy = string.IsNullOrWhiteSpace(productionPlanDto.CreatedBy)
-                    ? "Production Planning"
-                    : productionPlanDto.CreatedBy;
             }
 
             _context.ProductionPlans.Add(plan);
@@ -344,9 +333,7 @@ namespace backend.Service.ProductionPlan
                     @Progress = {productionPlanDto.Progress},
                     @Blocked = {productionPlanDto.Blocked},
                     @CreatedAt = {productionPlanDto.CreatedAt},
-                    @CreatedBy = {productionPlanDto.CreatedBy},
-                    @UpdatedAt = {productionPlanDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanDto.UpdatedBy}
+                    @UpdatedAt = {productionPlanDto.UpdatedAt}
             ");
 
             return true;

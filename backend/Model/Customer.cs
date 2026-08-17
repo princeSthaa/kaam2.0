@@ -19,9 +19,7 @@ namespace backend.Model
         public string Company { get; set; } = string.Empty;
         public string PanVat { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
         // </crudgen:properties>
     }

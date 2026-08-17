@@ -32,11 +32,9 @@ namespace backend.Dto.Customer
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        public string CreatedBy { get; set; } = string.Empty;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        public string UpdatedBy { get; set; } = string.Empty;
 
         [NotMapped]
         public List<OrderDto> Orders { get; set; } = new List<OrderDto>();

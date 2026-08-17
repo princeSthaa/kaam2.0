@@ -14,9 +14,7 @@ namespace backend.Service.BillOfMaterial
             decimal? qtyPerUnit = null,
             decimal? wastagePercent = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         );
 
         Task<BillOfMaterialDto?> GetByIdAsync(Guid id);

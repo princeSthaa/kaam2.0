@@ -45,9 +45,7 @@ namespace backend.Controller.FinishedGoodsHandover
             [FromQuery] string? acceptedBy = null,
             [FromQuery] string? status = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _FinishedGoodsHandoverService.GetAllAsync(
@@ -61,9 +59,7 @@ namespace backend.Controller.FinishedGoodsHandover
                 acceptedBy,
                 status,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

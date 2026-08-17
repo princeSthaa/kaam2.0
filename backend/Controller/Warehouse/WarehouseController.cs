@@ -40,9 +40,7 @@ namespace backend.Controller.Warehouse
             [FromQuery] string? name = null,
             [FromQuery] string? location = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _WarehouseService.GetAllAsync(
@@ -51,9 +49,7 @@ namespace backend.Controller.Warehouse
                 name,
                 location,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

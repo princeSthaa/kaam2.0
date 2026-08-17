@@ -28,9 +28,7 @@ namespace backend.Model
         public PlanPriority Priority { get; set; }
         public string ProductionNotes { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
         [ForeignKey(nameof(OrderItem))]
         public Guid? OrderItemId { get; set; }
         public virtual OrderItem? OrderItem { get; set; }

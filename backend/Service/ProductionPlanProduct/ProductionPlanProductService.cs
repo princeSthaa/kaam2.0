@@ -41,9 +41,7 @@ namespace backend.Service.ProductionPlanProduct
             PlanPriority? priority = null,
             string? productionNotes = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? productionPlanId = null
         )
         {
@@ -68,9 +66,7 @@ namespace backend.Service.ProductionPlanProduct
                         @Priority = {priority},
                         @ProductionNotes = {productionNotes},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @ProductionPlanId = {productionPlanId}
                 ")
                 .ToListAsync();
@@ -109,9 +105,7 @@ namespace backend.Service.ProductionPlanProduct
                     @Priority = {productionPlanProductDto.Priority},
                     @ProductionNotes = {productionPlanProductDto.ProductionNotes},
                     @CreatedAt = {productionPlanProductDto.CreatedAt},
-                    @CreatedBy = {productionPlanProductDto.CreatedBy},
                     @UpdatedAt = {productionPlanProductDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanProductDto.UpdatedBy},
                     @ProductionPlanId = {productionPlanProductDto.ProductionPlanId}
             ");
 
@@ -141,9 +135,7 @@ namespace backend.Service.ProductionPlanProduct
                     @Priority = {productionPlanProductDto.Priority},
                     @ProductionNotes = {productionPlanProductDto.ProductionNotes},
                     @CreatedAt = {productionPlanProductDto.CreatedAt},
-                    @CreatedBy = {productionPlanProductDto.CreatedBy},
                     @UpdatedAt = {productionPlanProductDto.UpdatedAt},
-                    @UpdatedBy = {productionPlanProductDto.UpdatedBy},
                     @ProductionPlanId = {productionPlanProductDto.ProductionPlanId}
             ");
 

@@ -65,7 +65,6 @@ public class WmsInventoryService : IWmsInventoryService
             // Decrease staging inventory
             stagingInventory.Quantity -= quantity;
             stagingInventory.UpdatedAt = DateTime.UtcNow;
-            stagingInventory.UpdatedBy = handledBy;
 
             // Find existing inventory on target shelf
             var targetInventory = await _context.Inventories
@@ -77,7 +76,6 @@ public class WmsInventoryService : IWmsInventoryService
             {
                 targetInventory.Quantity += quantity;
                 targetInventory.UpdatedAt = DateTime.UtcNow;
-                targetInventory.UpdatedBy = handledBy;
             }
             else
             {
@@ -89,9 +87,7 @@ public class WmsInventoryService : IWmsInventoryService
                     Quantity = quantity,
                     Status = "Available",
                     CreatedAt = DateTime.UtcNow,
-                    CreatedBy = handledBy,
                     UpdatedAt = DateTime.UtcNow,
-                    UpdatedBy = handledBy
                 };
 
                 _context.Inventories.Add(targetInventory);
@@ -109,9 +105,7 @@ public class WmsInventoryService : IWmsInventoryService
                 Timestamp = DateTime.UtcNow,
                 HandledBy = handledBy,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = handledBy,
                 UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = handledBy
             };
 
             _context.InventoryMovements.Add(movement);
@@ -187,7 +181,6 @@ public class WmsInventoryService : IWmsInventoryService
             // Decrease source inventory
             sourceInventory.Quantity -= quantity;
             sourceInventory.UpdatedAt = DateTime.UtcNow;
-            sourceInventory.UpdatedBy = handledBy;
 
             // Find existing inventory on target shelf
             var targetInventory = await _context.Inventories
@@ -199,7 +192,6 @@ public class WmsInventoryService : IWmsInventoryService
             {
                 targetInventory.Quantity += quantity;
                 targetInventory.UpdatedAt = DateTime.UtcNow;
-                targetInventory.UpdatedBy = handledBy;
             }
             else
             {
@@ -211,9 +203,7 @@ public class WmsInventoryService : IWmsInventoryService
                     Quantity = quantity,
                     Status = "Available",
                     CreatedAt = DateTime.UtcNow,
-                    CreatedBy = handledBy,
                     UpdatedAt = DateTime.UtcNow,
-                    UpdatedBy = handledBy
                 };
 
                 _context.Inventories.Add(targetInventory);
@@ -231,9 +221,7 @@ public class WmsInventoryService : IWmsInventoryService
                 Timestamp = DateTime.UtcNow,
                 HandledBy = handledBy,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = handledBy,
                 UpdatedAt = DateTime.UtcNow,
-                UpdatedBy = handledBy
             };
 
             _context.InventoryMovements.Add(movement);

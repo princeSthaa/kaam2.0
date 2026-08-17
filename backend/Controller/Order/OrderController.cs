@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using backend.Dto.Order;
-using backend.Model;
 using backend.Model.Enums;
 using backend.Service.Order;
 using Microsoft.AspNetCore.Mvc;
@@ -13,18 +9,18 @@ namespace backend.Controller.Order
     [Route("api/order")]
     public class OrderController : ControllerBase
     {
-        private readonly IOrderService _OrderService;
+        private readonly IOrderService _service;
 
-        public OrderController(IOrderService OrderService)
+        public OrderController(IOrderService service)
         {
-            _OrderService = OrderService;
+            _service = service;
         }
 
         // <crudgen:actions>
         [HttpGet("{id}")] 
         public async Task<ActionResult<OrderGetDto>> GetById(Guid id)
         {
-            var item = await _OrderService.GetByIdAsync(id);
+            var item = await _service.GetByIdAsync(id);
 
             if (item == null)
             {
@@ -42,22 +38,18 @@ namespace backend.Controller.Order
             [FromQuery] decimal? totalAmount = null,
             [FromQuery] DateTime? dueDate = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
             [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null,
             [FromQuery] Guid? customerId = null
         )
         {
-            var items = await _OrderService.GetAllAsync(
+            var items = await _service.GetAllAsync(
                 id,
                 orderNumber,
                 status,
                 totalAmount,
                 dueDate,
                 createdAt,
-                createdBy,
                 updatedAt,
-                updatedBy,
                 customerId
             );
 
@@ -72,7 +64,7 @@ namespace backend.Controller.Order
                 return BadRequest(ModelState);
             }
 
-            var created = await _OrderService.CreateAsync(orderDto);
+            var created = await _service.CreateAsync(orderDto);
 
             if (!created)
             {
@@ -90,7 +82,7 @@ namespace backend.Controller.Order
                 return BadRequest(ModelState);
             }
 
-            var updated = await _OrderService.UpdateAsync(id, orderDto);
+            var updated = await _service.UpdateAsync(id, orderDto);
 
             if (!updated)
             {
@@ -103,7 +95,7 @@ namespace backend.Controller.Order
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deleted = await _OrderService.DeleteAsync(id);
+            var deleted = await _service.DeleteAsync(id);
 
             if (!deleted)
             {

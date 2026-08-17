@@ -31,9 +31,7 @@ namespace backend.Service.Inventory
             string? location = null,
             string? status = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             var query = _context.Inventories.AsQueryable();
@@ -46,9 +44,7 @@ namespace backend.Service.Inventory
             if (!string.IsNullOrEmpty(location)) query = query.Where(q => q.Location.Contains(location));
             if (!string.IsNullOrEmpty(status)) query = query.Where(q => q.Status == status);
             if (createdAt.HasValue) query = query.Where(q => q.CreatedAt.Date == createdAt.Value.Date);
-            if (!string.IsNullOrEmpty(createdBy)) query = query.Where(q => q.CreatedBy == createdBy);
             if (updatedAt.HasValue) query = query.Where(q => q.UpdatedAt.Date == updatedAt.Value.Date);
-            if (!string.IsNullOrEmpty(updatedBy)) query = query.Where(q => q.UpdatedBy == updatedBy);
 
             return await query.Select(i => new InventoryDto
             {
@@ -60,9 +56,7 @@ namespace backend.Service.Inventory
                 Location = i.Location,
                 Status = i.Status,
                 CreatedAt = i.CreatedAt,
-                CreatedBy = i.CreatedBy,
-                UpdatedAt = i.UpdatedAt,
-                UpdatedBy = i.UpdatedBy
+                UpdatedAt = i.UpdatedAt
             }).ToListAsync();
         }
 
@@ -89,9 +83,7 @@ namespace backend.Service.Inventory
                 Location = inventoryDto.Location ?? string.Empty,
                 Status = inventoryDto.Status ?? string.Empty,
                 CreatedAt = inventoryDto.CreatedAt == default ? DateTime.UtcNow : inventoryDto.CreatedAt,
-                CreatedBy = inventoryDto.CreatedBy ?? "System",
                 UpdatedAt = inventoryDto.UpdatedAt == default ? DateTime.UtcNow : inventoryDto.UpdatedAt,
-                UpdatedBy = inventoryDto.UpdatedBy ?? "System"
             };
 
             _context.Inventories.Add(inventory);
@@ -111,7 +103,6 @@ namespace backend.Service.Inventory
             inventory.Location = inventoryDto.Location ?? inventory.Location;
             inventory.Status = inventoryDto.Status ?? inventory.Status;
             inventory.UpdatedAt = DateTime.UtcNow;
-            inventory.UpdatedBy = inventoryDto.UpdatedBy ?? "System";
 
             await _context.SaveChangesAsync();
             return true;

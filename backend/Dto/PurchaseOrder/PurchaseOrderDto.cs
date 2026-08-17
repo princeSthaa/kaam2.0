@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using backend.Model.Enums;
 
 namespace backend.Dto.PurchaseOrder

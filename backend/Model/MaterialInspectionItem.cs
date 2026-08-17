@@ -33,9 +33,7 @@ namespace backend.Model
         public string Notes { get; set; } = string.Empty;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public string UpdatedBy { get; set; } = string.Empty;
 
         public Guid PurchaseOrderReceiptItemId { get; set; }
         public virtual PurchaseOrderReceiptItem PurchaseOrderReceiptItem { get; set; } = null!;

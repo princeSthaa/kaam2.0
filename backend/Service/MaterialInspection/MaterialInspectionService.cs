@@ -1,8 +1,4 @@
 using Dapper;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.MaterialInspection;
@@ -29,7 +25,7 @@ namespace backend.Service.MaterialInspection
         )
         {
             var connection = _context.Database.GetDbConnection();
-            var parameters = new Dapper.DynamicParameters();
+            var parameters = new DynamicParameters();
 
             using var multi = await connection.QueryMultipleAsync(
                 "sp_GetMaterialInspections",
@@ -37,8 +33,8 @@ namespace backend.Service.MaterialInspection
                 commandType: System.Data.CommandType.StoredProcedure
             );
 
-            var inspections = (await multi.ReadAsync<MaterialInspectionDto>()).ToList();
-            var items = (await multi.ReadAsync<MaterialInspectionItemDto>()).ToList();
+            var inspections = !multi.IsConsumed ? (await multi.ReadAsync<MaterialInspectionDto>()).ToList() : new List<MaterialInspectionDto>();
+            var items = !multi.IsConsumed ? (await multi.ReadAsync<MaterialInspectionItemDto>()).ToList() : new List<MaterialInspectionItemDto>();
 
             foreach (var insp in inspections)
             {
@@ -48,7 +44,7 @@ namespace backend.Service.MaterialInspection
             // Filtering done in memory
 
             if (purchaseOrderReceiptId.HasValue) inspections = inspections.Where(i => i.PurchaseOrderReceiptId == purchaseOrderReceiptId.Value).ToList();
-            if (!string.IsNullOrWhiteSpace(inspectionStatus)) inspections = inspections.Where(i => i.InspectionStatus == inspectionStatus).ToList();
+            if (!string.IsNullOrWhiteSpace(inspectionStatus)) inspections = inspections.Where(i => i.InspectionStatus.ToString() == inspectionStatus).ToList();
             return inspections;
         }
 
@@ -58,13 +54,13 @@ namespace backend.Service.MaterialInspection
                 .Include(i => i.Items)
                     .ThenInclude(item => item.Material)
                 .Include(i => i.PurchaseOrderReceipt)
-                    .ThenInclude(r => r.PurchaseOrder)
+                    .ThenInclude(r => r!.PurchaseOrder)
                 .Include(i => i.Supplier)
                 .Where(i => i.Id == id);
 
             var inspection = await query.FirstOrDefaultAsync();
             if (inspection == null) return null;
-
+            
             return new MaterialInspectionDto
             {
                 Id = inspection.Id,
@@ -75,20 +71,18 @@ namespace backend.Service.MaterialInspection
                 SupplierId = inspection.SupplierId,
                 SupplierCode = inspection.Supplier?.SupplierCode ?? string.Empty,
                 SupplierName = inspection.Supplier?.Name ?? string.Empty,
-                InspectionStatus = inspection.InspectionStatus.ToString(),
+                InspectionStatus = inspection.InspectionStatus,
                 InspectorName = inspection.InspectorName,
                 Notes = inspection.Notes,
                 CreatedAt = inspection.CreatedAt,
-                CreatedBy = inspection.CreatedBy,
                 UpdatedAt = inspection.UpdatedAt,
-                UpdatedBy = inspection.UpdatedBy,
                 Items = inspection.Items.Select(item => new MaterialInspectionItemDto
                 {
                     Id = item.Id,
                     MaterialInspectionId = item.MaterialInspectionId,
                     MaterialId = item.MaterialId,
-                    MaterialCode = item.Material?.MaterialCode ?? string.Empty,
-                    MaterialName = item.Material?.Name ?? string.Empty,
+                    MaterialCode = item.Material.MaterialCode,
+                    MaterialName = item.Material.Name,
                     ReceivedQuantity = item.ReceivedQuantity,
                     AcceptedQuantity = item.AcceptedQuantity,
                     RejectedQuantity = item.RejectedQuantity,
@@ -121,7 +115,10 @@ namespace backend.Service.MaterialInspection
                     throw new KeyNotFoundException($"Material inspection with ID {id} not found.");
                 }
 
-                if (inspection.InspectionStatus == InspectionStatus.Completed)
+                // Check if inspection is already in a final state (Accepted, Rejected, or PartiallyAccepted)
+                if (inspection.InspectionStatus == InspectionStatus.Accepted || 
+                    inspection.InspectionStatus == InspectionStatus.Rejected || 
+                    inspection.InspectionStatus == InspectionStatus.PartiallyAccepted)
                 {
                     throw new InvalidOperationException($"Material inspection {id} has already been completed.");
                 }
@@ -129,9 +126,8 @@ namespace backend.Service.MaterialInspection
                 if (dto.InspectorName != null) inspection.InspectorName = dto.InspectorName;
                 if (dto.Notes != null) inspection.Notes = dto.Notes;
                 inspection.UpdatedAt = DateTime.UtcNow;
-                inspection.UpdatedBy = "System";
 
-                if (dto.Items != null && dto.Items.Any())
+                if (dto.Items.Any())
                 {
                     foreach (var itemDto in dto.Items)
                     {
@@ -147,18 +143,42 @@ namespace backend.Service.MaterialInspection
 
                 // Check if ALL items are now completed (Accepted, Rejected, or PartiallyAccepted)
                 bool allCompleted = true;
+                bool allAccepted = true;
+                bool allRejected = true;
+                
                 foreach (var item in inspection.Items)
                 {
                     if (item.InspectionStatus == InspectionStatus.Pending)
                     {
                         allCompleted = false;
+                        allAccepted = false;
+                        allRejected = false;
                         break;
                     }
+                    
+                    if (item.InspectionStatus != InspectionStatus.Accepted)
+                        allAccepted = false;
+                    
+                    if (item.InspectionStatus != InspectionStatus.Rejected)
+                        allRejected = false;
                 }
 
+                // Automatically set inspection status based on item results
                 if (allCompleted && inspection.Items.Any())
                 {
-                    inspection.InspectionStatus = InspectionStatus.Completed;
+                    if (allAccepted)
+                    {
+                        inspection.InspectionStatus = InspectionStatus.Accepted;
+                    }
+                    else if (allRejected)
+                    {
+                        inspection.InspectionStatus = InspectionStatus.Rejected;
+                    }
+                    else
+                    {
+                        // Mix of accepted and rejected
+                        inspection.InspectionStatus = InspectionStatus.PartiallyAccepted;
+                    }
                 }
 
                 await _context.SaveChangesAsync();
@@ -217,7 +237,6 @@ namespace backend.Service.MaterialInspection
             item.InspectionStatus = itemStatus;
             item.Notes = dto.Notes ?? item.Notes;
             item.UpdatedAt = DateTime.UtcNow;
-            item.UpdatedBy = "System";
 
             if (acceptedQuantity > 0)
             {
@@ -234,16 +253,14 @@ namespace backend.Service.MaterialInspection
                         Id = Guid.NewGuid(),
                         MaterialId = material.Id,
                         WarehouseShelfId = null,
-                        SKU = material.MaterialCode ?? string.Empty,
-                        ItemName = material.Name ?? string.Empty,
+                        SKU = material.MaterialCode,
+                        ItemName = material.Name,
                         Type = "Material",
                         Quantity = acceptedQuantity,
                         Location = string.Empty, 
                         Status = "Staging", // Explicit staging status for null shelf
                         CreatedAt = DateTime.UtcNow,
-                        CreatedBy = "System",
                         UpdatedAt = DateTime.UtcNow,
-                        UpdatedBy = "System"
                     };
                     await _context.Inventories.AddAsync(inventory);
                 }
@@ -265,19 +282,26 @@ namespace backend.Service.MaterialInspection
                     Status = "Completed",
                     Notes = $"Accepted {acceptedQuantity} units after material inspection.",
                     CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System",
                     UpdatedAt = DateTime.UtcNow,
-                    UpdatedBy = "System"
                 };
                 await _context.Transactions.AddAsync(invTransaction);
             }
 
             if (rejectedQuantity > 0)
             {
+                var supplierIdForReturn = inspection.SupplierId;
+                if (!supplierIdForReturn.HasValue && inspection.PurchaseOrderReceipt?.PurchaseOrderId != null && inspection.PurchaseOrderReceipt.PurchaseOrderId != Guid.Empty)
+                {
+                    supplierIdForReturn = await _context.PurchaseOrders
+                        .Where(po => po.Id == inspection.PurchaseOrderReceipt.PurchaseOrderId)
+                        .Select(po => po.SupplierId)
+                        .FirstOrDefaultAsync();
+                }
+
                 var supplierReturn = new SupplierReturn
                 {
                     Id = Guid.NewGuid(),
-                    SupplierId = inspection.SupplierId ?? (await _context.PurchaseOrders.Where(po => po.Id == inspection.PurchaseOrderReceipt.PurchaseOrderId).Select(po => po.SupplierId).FirstOrDefaultAsync()),
+                    SupplierId = supplierIdForReturn ?? Guid.Empty,
                     PurchaseOrderReceiptId = inspection.PurchaseOrderReceiptId,
                     MaterialInspectionId = inspection.Id,
                     MaterialInspectionItemId = item.Id,
@@ -287,9 +311,7 @@ namespace backend.Service.MaterialInspection
                     ReturnDate = DateTime.UtcNow,
                     Notes = item.Notes,
                     CreatedAt = DateTime.UtcNow,
-                    CreatedBy = "System",
                     UpdatedAt = DateTime.UtcNow,
-                    UpdatedBy = "System"
                 };
 
                 await _context.SupplierReturns.AddAsync(supplierReturn);

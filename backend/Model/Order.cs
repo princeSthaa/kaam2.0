@@ -7,24 +7,21 @@ namespace backend.Model
     [Table("Orders")]
     public class Order
     {
-        // <crudgen:properties>
         [Key]
         public Guid Id { get; set; }
+        [MaxLength(20)]
         public string OrderNumber { get; set; } = string.Empty;
         public OrderStatus Status { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
         public DateTime DueDate { get; set; }
         public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; } = string.Empty;
         public Guid CustomerId { get; set; }
         public virtual Customer Customer { get; set; } = null!;
         public Guid? ProductionPlanId { get; set; }
         public virtual ProductionPlan? ProductionPlan { get; set; }
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-        // </crudgen:properties>
     }
 }
 

@@ -40,11 +40,9 @@ namespace backend.Dto.Outlet
         [Required(ErrorMessage = "CreatedAt is required.")]
         public DateTime CreatedAt { get; set; }
 
-        public string CreatedBy { get; set; } = string.Empty;
 
         public DateTime UpdatedAt { get; set; }
 
-        public string UpdatedBy { get; set; } = string.Empty;
 
         [NotMapped]
         public List<OutletDemandDto> OutletDemands { get; set; } = new List<OutletDemandDto>();

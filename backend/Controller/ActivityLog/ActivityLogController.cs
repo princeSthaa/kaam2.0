@@ -42,9 +42,7 @@ namespace backend.Controller.ActivityLog
             [FromQuery] string? entityId = null,
             [FromQuery] string? entityType = null,
             [FromQuery] DateTime? createdAt = null,
-            [FromQuery] string? createdBy = null,
-            [FromQuery] DateTime? updatedAt = null,
-            [FromQuery] string? updatedBy = null
+            [FromQuery] DateTime? updatedAt = null
         )
         {
             var items = await _ActivityLogService.GetAllAsync(
@@ -55,9 +53,7 @@ namespace backend.Controller.ActivityLog
                 entityId,
                 entityType,
                 createdAt,
-                createdBy,
-                updatedAt,
-                updatedBy
+                updatedAt
             );
 
             return Ok(items);

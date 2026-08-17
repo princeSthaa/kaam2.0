@@ -17,28 +17,17 @@ namespace backend.Dto.Product
         public string ProductCategoryName { get; set; } = string.Empty;
 
         public List<ProductMaterialRequirementGetDto> MaterialRequirements { get; set; } = new();
-
-        public List<ProductProductionStageGetDto> ProductionStages { get; set; } = new();
-        
     }
 
     public class ProductMaterialRequirementGetDto
     {
         public Guid Id { get; set; }
+        public Guid ProductId { get; set; }
         public Guid MaterialTypeId { get; set; }
         public string MaterialTypeName { get; set; } = string.Empty;
-        public string MaterialTypeCode { get; set; } = string.Empty;
+        public string MaterialCode { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
         public ProductSize ProductSize { get; set; }
-        public int Quantity { get; set; }
-
-    }
-
-    public class ProductProductionStageGetDto
-    {
-        public Guid Id { get; set; }
-        public Guid ProductionStageId { get; set; }
-        public string ProductionStageName { get; set; } = string.Empty;
-        public string ProductionStageCode { get; set; } = string.Empty;
-        public int Sequence { get; set; }
+        public decimal Quantity { get; set; }
     }
 }

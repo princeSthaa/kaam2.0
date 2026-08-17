@@ -28,9 +28,7 @@ namespace backend.Service.Outlet
             string? location = null,
             string? code = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
-            DateTime? updatedAt = null,
-            string? updatedBy = null
+            DateTime? updatedAt = null
         )
         {
             return await _context.Database
@@ -42,9 +40,7 @@ namespace backend.Service.Outlet
                         @Location = {location},
                         @Code = {code},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy}
                 ")
                 .ToListAsync();
         }
@@ -70,9 +66,7 @@ namespace backend.Service.Outlet
                     @Location = {outletDto.Location},
                     @Code = {outletDto.Code},
                     @CreatedAt = {outletDto.CreatedAt},
-                    @CreatedBy = {outletDto.CreatedBy},
                     @UpdatedAt = {outletDto.UpdatedAt},
-                    @UpdatedBy = {outletDto.UpdatedBy}
             ");
 
             return true;
@@ -89,9 +83,7 @@ namespace backend.Service.Outlet
                     @Location = {outletDto.Location},
                     @Code = {outletDto.Code},
                     @CreatedAt = {outletDto.CreatedAt},
-                    @CreatedBy = {outletDto.CreatedBy},
                     @UpdatedAt = {outletDto.UpdatedAt},
-                    @UpdatedBy = {outletDto.UpdatedBy}
             ");
 
             return true;

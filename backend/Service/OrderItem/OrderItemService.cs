@@ -29,9 +29,7 @@ namespace backend.Service.OrderItem
             decimal? totalPrice = null,
             decimal? discount = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? orderId = null
         )
         {
@@ -45,9 +43,7 @@ namespace backend.Service.OrderItem
                         @TotalPrice = {totalPrice},
                         @Discount = {discount},
                         @CreatedAt = {createdAt},
-                        @CreatedBy = {createdBy},
                         @UpdatedAt = {updatedAt},
-                        @UpdatedBy = {updatedBy},
                         @OrderId = {orderId}
                 ")
                 .ToListAsync();
@@ -75,9 +71,7 @@ namespace backend.Service.OrderItem
                     @TotalPrice = {orderItemDto.TotalPrice},
                     @Discount = {orderItemDto.Discount},
                     @CreatedAt = {orderItemDto.CreatedAt},
-                    @CreatedBy = {orderItemDto.CreatedBy},
                     @UpdatedAt = {orderItemDto.UpdatedAt},
-                    @UpdatedBy = {orderItemDto.UpdatedBy},
                     @ProductId = {orderItemDto.ProductId},
                     @OrderId = {orderItemDto.OrderId}
             ");
@@ -97,9 +91,7 @@ namespace backend.Service.OrderItem
                     @TotalPrice = {orderItemDto.TotalPrice},
                     @Discount = {orderItemDto.Discount},
                     @CreatedAt = {orderItemDto.CreatedAt},
-                    @CreatedBy = {orderItemDto.CreatedBy},
                     @UpdatedAt = {orderItemDto.UpdatedAt},
-                    @UpdatedBy = {orderItemDto.UpdatedBy},
                     @ProductId = {orderItemDto.ProductId},
                     @OrderId = {orderItemDto.OrderId}
             ");

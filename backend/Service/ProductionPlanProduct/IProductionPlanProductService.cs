@@ -28,9 +28,7 @@ namespace backend.Service.ProductionPlanProduct
             PlanPriority? priority = null,
             string? productionNotes = null,
             DateTime? createdAt = null,
-            string? createdBy = null,
             DateTime? updatedAt = null,
-            string? updatedBy = null,
             Guid? productionPlanId = null
         );
 
