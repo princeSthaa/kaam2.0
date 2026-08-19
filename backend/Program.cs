@@ -112,28 +112,20 @@ builder.WebHost.UseUrls($"http://localhost:{portToUse}");
 Console.WriteLine($"Starting server on port {portToUse}");
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    try
-    {
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        // SqlScriptRunner.Run(context);
-        // DatabaseSeeder.Seed(context);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Database initialization error: {ex.Message}");
-    }
-}
-
-// Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
+// using (var scope = app.Services.CreateScope())
 // {
-//     app.UseSwagger();
-//     app.UseSwaggerUI();
+//     try
+//     {
+//         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine($"Database initialization error: {ex.Message}");
+//     }
 // }
 
 // app.UseHttpsRedirection();
+
 app.UseCors("AllowNextJs");
 
 app.UseStaticFiles();
