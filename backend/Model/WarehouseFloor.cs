@@ -7,7 +7,9 @@ namespace backend.Model
     {
         [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
+        [MaxLength(30)]
         public string Name { get; set; } = string.Empty;
+        [MaxLength(15)]
         public string Code { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

@@ -33,6 +33,13 @@ using backend.Service.PurchaseOrderReceipt;
 using backend.Service.ProductDemand;
 using backend.Service.ProductIssue;
 using backend.Service.WarehouseFloor;
+using backend.Service.Department;
+using backend.Service.Employee;
+using backend.Service.Role;
+using backend.Service.Page;
+using backend.Service.Permission;
+using backend.Service.RolePageAccess;
+using backend.Service.RolePagePermission;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +106,13 @@ builder.Services.AddScoped<IWarehouseFloorService, WarehouseFloorService>();
 builder.Services.AddScoped<IWarehouseRoomService, WarehouseRoomService>();
 builder.Services.AddScoped<IWarehouseRackService, WarehouseRackService>();
 builder.Services.AddScoped<IWarehouseShelfService, WarehouseShelfService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IPageService, PageService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IRolePageAccessService, RolePageAccessService>();
+builder.Services.AddScoped<IRolePagePermissionService, RolePagePermissionService>();
 
 int GetAvailablePort()
 {

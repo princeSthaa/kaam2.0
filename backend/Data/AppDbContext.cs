@@ -53,6 +53,13 @@ namespace backend.Data
         public DbSet<PurchaseOrderReceiptItem> PurchaseOrderReceiptItems { get; set; } = null!;
         public DbSet<ProductDemand> ProductDemands { get; set; } = null!;
         public DbSet<ProductIssues> ProductIssues { get; set; } = null!;
+        public DbSet<Department> Departments { get; set; } = null!;
+        public DbSet<Employee> Employees { get; set; } = null!;
+        public DbSet<Page> Pages{ get; set; } = null!;
+        public DbSet<Permission> Permissions { get; set; } = null!;
+        public DbSet<Role> Roles { get; set; } = null!;
+        public DbSet<RolePageAccess> RolePageAccesses { get; set; } = null!;
+        public DbSet<RolePagePermission> RolePagePermissions { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -314,6 +321,20 @@ namespace backend.Data
             .WithMany(p => p.ProductMaterialRequirements)
             .HasForeignKey(e => e.MaterialTypeId)
             .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RolePageAccess>()
+                .HasIndex(x => new { x.RoleId, x.PageId })
+                .IsUnique();
+
+            modelBuilder.Entity<RolePagePermission>()
+                .HasIndex(x => new { x.RolePageAccessId, x.PermissionId })
+                .IsUnique();
+
+            modelBuilder.Entity<Page>()
+                .HasOne(e => e.ParentPage)
+                .WithMany(e => e.ChildPages)
+                .HasForeignKey(e => e.ParentPageId)
+                .OnDelete(DeleteBehavior.Restrict);
         
         }
     }
