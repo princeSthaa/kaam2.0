@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { NavList } from "../ui/NavList";
+import { useRbac } from "@/app/lib/useRbac";
 
 export type SidebarLink = {
   name: string;
@@ -20,6 +21,13 @@ type SidebarProps = {
 
 export function Sidebar({ section }: SidebarProps) {
   const pathname = usePathname() || "/";
+  const { canAccessRoute, isLoaded } = useRbac();
+
+  // Filter accessible sidebar links based on user role permissions
+  const authorizedLinks = section.links.filter((link) => {
+    if (!isLoaded) return true;
+    return canAccessRoute(link.url);
+  });
 
   return (
     <aside className="sidebar">
@@ -29,25 +37,33 @@ export function Sidebar({ section }: SidebarProps) {
         </span>
       </div>
       <nav className="sidebar-nav">
-        <NavList
-          items={section.links.map((link) => ({
-            href: link.url,
-            label: link.name,
-            icon: link.icon,
-          }))}
-          isActive={(href) => {
-            let activeHref = "";
-            let maxLen = 0;
-            for (const link of section.links) {
-              if (pathname.startsWith(link.url) && link.url.length > maxLen) {
-                maxLen = link.url.length;
-                activeHref = link.url;
+        {authorizedLinks.length === 0 ? (
+          <div className="px-4 py-3 text-xs text-slate-400 font-mono italic">
+            No authorized pages in this section.
+          </div>
+        ) : (
+          <NavList
+            items={authorizedLinks.map((link) => ({
+              href: link.url,
+              label: link.name,
+              icon: link.icon,
+            }))}
+            isActive={(href) => {
+              let activeHref = "";
+              let maxLen = 0;
+              for (const link of authorizedLinks) {
+                if (pathname.startsWith(link.url) && link.url.length > maxLen) {
+                  maxLen = link.url.length;
+                  activeHref = link.url;
+                }
               }
-            }
-            return href === activeHref;
-          }}
-        />
+              return href === activeHref;
+            }}
+          />
+        )}
       </nav>
     </aside>
   );
 }
+
+export default Sidebar;

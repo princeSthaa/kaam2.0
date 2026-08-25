@@ -4,7 +4,7 @@ export const adminNavigation: SidebarSection = {
     title: "Admin Menu",
     links: [
         { name: "Overview", url: "/admin", icon: "dashboard" },
-        { name: "Users", url: "/admin/usersandrbac", icon: "person" },
+        { name: "Employees", url: "/admin/usersandrbac", icon: "badge" },
         { name: "Master Data", url: "/admin/masterdata", icon: "library_add" },
         { name: "Product directory", url: "/admin/product", icon: "category" },
         { name: "Material directory", url: "/admin/material", icon: "precision_manufacturing" },
