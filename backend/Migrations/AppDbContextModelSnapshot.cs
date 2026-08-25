@@ -180,6 +180,80 @@ namespace backend.Migrations
                     b.ToTable("CustomerReturns");
                 });
 
+            modelBuilder.Entity("backend.Model.Department", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DepartmentCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Departments");
+                });
+
+            modelBuilder.Entity("backend.Model.Employee", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DepartmentId");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("EmployeeRoleId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("EmployeeRoleId");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("EmployeeRoleId");
+
+                    b.ToTable("Employees");
+                });
+
             modelBuilder.Entity("backend.Model.FinishedGoodsHandover", b =>
                 {
                     b.Property<Guid>("Id")
@@ -850,6 +924,81 @@ namespace backend.Migrations
                     b.ToTable("OutletDemands");
                 });
 
+            modelBuilder.Entity("backend.Model.Page", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid?>("ParentPageId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("ParentPageId");
+
+                    b.Property<string>("Route")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParentPageId");
+
+                    b.ToTable("Pages");
+                });
+
+            modelBuilder.Entity("backend.Model.Permission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Permissions");
+                });
+
             modelBuilder.Entity("backend.Model.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1515,6 +1664,93 @@ namespace backend.Migrations
                     b.ToTable("PurchaseOrderReceiptItems");
                 });
 
+            modelBuilder.Entity("backend.Model.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+                });
+
+            modelBuilder.Entity("backend.Model.RolePageAccess", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PageId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("PageId");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("RoleId");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PageId");
+
+                    b.HasIndex("RoleId", "PageId")
+                        .IsUnique();
+
+                    b.ToTable("RolePageAccesses");
+                });
+
+            modelBuilder.Entity("backend.Model.RolePagePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("PermissionId");
+
+                    b.Property<Guid>("RolePageAccessId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("RolePageAccessId");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PermissionId");
+
+                    b.HasIndex("RolePageAccessId", "PermissionId")
+                        .IsUnique();
+
+                    b.ToTable("RolePagePermissions");
+                });
+
             modelBuilder.Entity("backend.Model.Supplier", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1743,14 +1979,16 @@ namespace backend.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -1913,6 +2151,25 @@ namespace backend.Migrations
                     b.Navigation("Material");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("backend.Model.Employee", b =>
+                {
+                    b.HasOne("backend.Model.Department", "Department")
+                        .WithMany("Employees")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Model.Role", "EmployeeRole")
+                        .WithMany("Employees")
+                        .HasForeignKey("EmployeeRoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("EmployeeRole");
                 });
 
             modelBuilder.Entity("backend.Model.Inventory", b =>
@@ -2135,6 +2392,16 @@ namespace backend.Migrations
                     b.Navigation("Outlet");
                 });
 
+            modelBuilder.Entity("backend.Model.Page", b =>
+                {
+                    b.HasOne("backend.Model.Page", "ParentPage")
+                        .WithMany("ChildPages")
+                        .HasForeignKey("ParentPageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentPage");
+                });
+
             modelBuilder.Entity("backend.Model.Product", b =>
                 {
                     b.HasOne("backend.Model.ProductCategory", "ProductCategory")
@@ -2336,6 +2603,44 @@ namespace backend.Migrations
                     b.Navigation("PurchaseOrderReceipt");
                 });
 
+            modelBuilder.Entity("backend.Model.RolePageAccess", b =>
+                {
+                    b.HasOne("backend.Model.Page", "Page")
+                        .WithMany("RolePageAccesses")
+                        .HasForeignKey("PageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Model.Role", "Role")
+                        .WithMany("RolePageAccesses")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Page");
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("backend.Model.RolePagePermission", b =>
+                {
+                    b.HasOne("backend.Model.Permission", "Permission")
+                        .WithMany("RolePagePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Model.RolePageAccess", "RolePageAccess")
+                        .WithMany("RolePagePermissions")
+                        .HasForeignKey("RolePageAccessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("RolePageAccess");
+                });
+
             modelBuilder.Entity("backend.Model.SupplierMaterialCategory", b =>
                 {
                     b.HasOne("backend.Model.MaterialCategory", "MaterialCategory")
@@ -2447,6 +2752,11 @@ namespace backend.Migrations
                     b.Navigation("Orders");
                 });
 
+            modelBuilder.Entity("backend.Model.Department", b =>
+                {
+                    b.Navigation("Employees");
+                });
+
             modelBuilder.Entity("backend.Model.Material", b =>
                 {
                     b.Navigation("MaterialRequestItems");
@@ -2493,6 +2803,18 @@ namespace backend.Migrations
                     b.Navigation("OutletDemands");
                 });
 
+            modelBuilder.Entity("backend.Model.Page", b =>
+                {
+                    b.Navigation("ChildPages");
+
+                    b.Navigation("RolePageAccesses");
+                });
+
+            modelBuilder.Entity("backend.Model.Permission", b =>
+                {
+                    b.Navigation("RolePagePermissions");
+                });
+
             modelBuilder.Entity("backend.Model.Product", b =>
                 {
                     b.Navigation("MaterialRequirements");
@@ -2536,6 +2858,18 @@ namespace backend.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("MaterialInspection");
+                });
+
+            modelBuilder.Entity("backend.Model.Role", b =>
+                {
+                    b.Navigation("Employees");
+
+                    b.Navigation("RolePageAccesses");
+                });
+
+            modelBuilder.Entity("backend.Model.RolePageAccess", b =>
+                {
+                    b.Navigation("RolePagePermissions");
                 });
 
             modelBuilder.Entity("backend.Model.Supplier", b =>
