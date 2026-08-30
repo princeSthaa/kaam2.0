@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 
 namespace backend.Dto.Employee
 {
@@ -6,27 +5,23 @@ namespace backend.Dto.Employee
     {
         public Guid Id { get; set; }
 
-        [Required(ErrorMessage = "First name is required.")]
-        public string FirstName { get; set; } = string.Empty;
+        public string? FirstName { get; set; }
 
-        [Required(ErrorMessage = "Last name is required.")]
-        public string LastName { get; set; } = string.Empty;
+        public string? LastName { get; set; }
 
-        public string PhoneNumber { get; set; } = string.Empty;
+        public string? PhoneNumber { get; set; }
 
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Invalid email format.")]
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; }
 
-        [Required(ErrorMessage = "Role is required.")]
-        public Guid EmployeeRoleId { get; set; }
+        public string? Password { get; set; }
 
-        [Required(ErrorMessage = "Department is required.")]
-        public Guid DepartmentId { get; set; }
+        public Guid? EmployeeRoleId { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        public Guid? DepartmentId { get; set; }
 
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public bool? IsActive { get; set; } = true;
+
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

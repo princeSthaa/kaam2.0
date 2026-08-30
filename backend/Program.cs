@@ -11,7 +11,7 @@ using backend.Service.ProductionPlanProduct;
 using backend.Service.ProductionPlanProductSize;
 using backend.Service.ProductionPlanStage;
 using backend.Service.Material;
-using backend.Service.BillOfMaterial;
+using backend.Service.Authentication;
 using backend.Service.Warehouse;
 using backend.Service.WarehouseRoom;
 using backend.Service.WarehouseRack;
@@ -71,6 +71,45 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
+builder.Services.AddOpenIddict()
+    .AddCore(options =>
+    {
+        options.UseEntityFrameworkCore().UseDbContext<AppDbContext>();
+    })
+    .AddServer(options =>
+    {
+        options.SetAuthorizationEndpointUris("/connect/authorize");
+        options.SetTokenEndpointUris("/connect/token");
+
+        options.AllowAuthorizationCodeFlow();
+        options.AllowRefreshTokenFlow();
+
+        options.RequireProofKeyForCodeExchange();
+
+        options.RegisterScopes(
+            "openid",
+            "profile",
+            "email",
+            "api"
+        );
+
+        options.AddDevelopmentEncryptionCertificate();
+        options.AddDevelopmentSigningCertificate();
+
+        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(10));
+        options.SetRefreshTokenLifetime(TimeSpan.FromDays(7));
+
+        options.UseAspNetCore()
+            .EnableAuthorizationEndpointPassthrough()
+            .EnableTokenEndpointPassthrough();
+
+    })
+    .AddValidation(options =>
+    {
+        options.UseLocalServer();
+        options.UseAspNetCore();
+    });
+
 
 // Register Services
 builder.Services.AddScoped<ICustomerService, CustomerService>();
@@ -113,6 +152,7 @@ builder.Services.AddScoped<IPageService, PageService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IRolePageAccessService, RolePageAccessService>();
 builder.Services.AddScoped<IRolePagePermissionService, RolePagePermissionService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 int GetAvailablePort()
 {
@@ -162,6 +202,9 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(mediaDir),
     RequestPath = "/Media"
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

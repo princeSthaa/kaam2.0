@@ -29,11 +29,12 @@ namespace backend.Service.Employee
                     @LastName = {dto.LastName},
                     @PhoneNumber = {dto.PhoneNumber},
                     @Email = {dto.Email},
+                    @Password = {dto.Password},
                     @EmployeeRoleId = {dto.EmployeeRoleId},
                     @DepartmentId = {dto.DepartmentId},
                     @IsActive = {dto.IsActive},
-                    @CreatedAt = {now},
-                    @UpdatedAt = {now}
+                    @CreatedAt = {dto.CreatedAt},
+                    @UpdatedAt = {dto.UpdatedAt}
             ");
 
             return true;
@@ -44,6 +45,7 @@ namespace backend.Service.Employee
             string? firstName = null,
             string? lastName = null,
             string? email = null,
+            string? password = null,
             string? phoneNumber = null,
             Guid? employeeRoleId = null,
             Guid? departmentId = null,
@@ -59,6 +61,7 @@ namespace backend.Service.Employee
                         @FirstName = {firstName},
                         @LastName = {lastName},
                         @Email = {email},
+                        @Password = {password},
                         @PhoneNumber = {phoneNumber},
                         @EmployeeRoleId = {employeeRoleId},
                         @DepartmentId = {departmentId},
@@ -86,6 +89,7 @@ namespace backend.Service.Employee
                     @LastName = {dto.LastName},
                     @PhoneNumber = {dto.PhoneNumber},
                     @Email = {dto.Email},
+                    @Password = {dto.Password},
                     @EmployeeRoleId = {dto.EmployeeRoleId},
                     @DepartmentId = {dto.DepartmentId},
                     @IsActive = {dto.IsActive},

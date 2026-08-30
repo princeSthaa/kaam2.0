@@ -11,6 +11,7 @@ namespace backend.Service.Employee
             string? firstName = null,
             string? lastName = null,
             string? email = null,
+            string? password = null,
             string? phoneNumber = null,
             Guid? employeeRoleId = null,
             Guid? departmentId = null,

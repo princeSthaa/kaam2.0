@@ -23,7 +23,7 @@ using backend.Dto.OutletDemand;
 using backend.Dto.Transaction;
 using backend.Dto.ActivityLog;
 
-namespace backend.Dto.BillOfMaterial
+namespace backend.Dto.Login
 {
     public class BillOfMaterialDto
     {

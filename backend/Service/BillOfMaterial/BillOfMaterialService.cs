@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
-using backend.Dto.BillOfMaterial;
+using backend.Dto.Login;
 using backend.Model;
 
-namespace backend.Service.BillOfMaterial
+namespace backend.Service.Authentication
 {
     public class BillOfMaterialService : IBillOfMaterialService
     {
