@@ -15,11 +15,7 @@ namespace backend.Service.Employee
 
         public async Task<bool> CreateAsync(EmployeeDto dto)
         {
-            if (dto.Id == Guid.Empty)
-            {
-                dto.Id = Guid.NewGuid();
-            }
-
+            dto.Id = Guid.NewGuid();
             var now = DateTime.UtcNow;
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
@@ -29,6 +25,7 @@ namespace backend.Service.Employee
                     @LastName = {dto.LastName},
                     @PhoneNumber = {dto.PhoneNumber},
                     @Email = {dto.Email},
+                    @Password = {dto.Password},
                     @EmployeeRoleId = {dto.EmployeeRoleId},
                     @DepartmentId = {dto.DepartmentId},
                     @IsActive = {dto.IsActive},
@@ -44,6 +41,7 @@ namespace backend.Service.Employee
             string? firstName = null,
             string? lastName = null,
             string? email = null,
+            string? password = null,
             string? phoneNumber = null,
             Guid? employeeRoleId = null,
             Guid? departmentId = null,
@@ -59,6 +57,7 @@ namespace backend.Service.Employee
                         @FirstName = {firstName},
                         @LastName = {lastName},
                         @Email = {email},
+                        @Password = {password},
                         @PhoneNumber = {phoneNumber},
                         @EmployeeRoleId = {employeeRoleId},
                         @DepartmentId = {departmentId},
@@ -86,6 +85,7 @@ namespace backend.Service.Employee
                     @LastName = {dto.LastName},
                     @PhoneNumber = {dto.PhoneNumber},
                     @Email = {dto.Email},
+                    @Password = {dto.Password},
                     @EmployeeRoleId = {dto.EmployeeRoleId},
                     @DepartmentId = {dto.DepartmentId},
                     @IsActive = {dto.IsActive},

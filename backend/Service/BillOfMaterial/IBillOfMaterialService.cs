@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using backend.Dto.BillOfMaterial;
+using backend.Dto.Login;
 using backend.Model;
 
-namespace backend.Service.BillOfMaterial
+namespace backend.Service.Authentication
 {
     public interface IBillOfMaterialService
     {

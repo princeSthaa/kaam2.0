@@ -20,6 +20,8 @@ public class Employee
 
     public string Email { get; set; } = string.Empty;
 
+    public string Password { get; set; } = string.Empty;
+
     [Column(nameof(DepartmentId))]
     public Guid DepartmentId { get; set; }
     public virtual Department? Department { get; set; } = null!;

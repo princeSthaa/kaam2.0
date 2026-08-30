@@ -48,7 +48,7 @@ namespace backend.Service.Role
             parameters.Add("@CreatedAt", createdAt);
             parameters.Add("@UpdatedAt", updatedAt);
 
-            using var multi = await connection.QueryMultipleAsync(
+            await using var multi = await connection.QueryMultipleAsync(
                 "sp_GetRoles",
                 parameters,
                 commandType: CommandType.StoredProcedure
