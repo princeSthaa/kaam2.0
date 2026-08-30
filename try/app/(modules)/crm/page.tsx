@@ -240,12 +240,20 @@ export default function CrmIndexPage() {
                 <span className="material-symbols-outlined text-slate-700 text-lg">receipt_long</span>
                 <h3 className="font-bold text-slate-900 text-sm">Recent Customer Orders</h3>
               </div>
-              <Link
-                href="/crm/orders/new"
-                className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                + New Order
-              </Link>
+              <div className="flex items-center space-x-3">
+                <Link
+                  href="/crm/orders"
+                  className="text-xs font-semibold text-slate-700 hover:text-slate-900 underline"
+                >
+                  View All Orders &rarr;
+                </Link>
+                <Link
+                  href="/crm/orders/new"
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  + New Order
+                </Link>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -392,10 +400,17 @@ export default function CrmIndexPage() {
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <Link
+                href="/crm/orders"
+                className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
+              >
+                <span className="material-symbols-outlined text-sm text-blue-600">receipt_long</span>
+                <span>Recent Orders</span>
+              </Link>
+              <Link
                 href="/crm/customers"
                 className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
               >
-                <span className="material-symbols-outlined text-sm text-blue-600">filter_list</span>
+                <span className="material-symbols-outlined text-sm text-amber-600">filter_list</span>
                 <span>Filter Customers</span>
               </Link>
               <Link
@@ -412,7 +427,6 @@ export default function CrmIndexPage() {
                 <span className="material-symbols-outlined text-sm text-purple-600">person_add</span>
                 <span>New Customer</span>
               </Link>
-
             </div>
           </div>
         </div>
