@@ -1,16 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 import {
-  fetchEmployees,
+  // fetchEmployees,
   loginUser,
-  EmployeeDto,
-  AuthUser,
+  // EmployeeDto,
+  // AuthUser,
 } from "../(modules)/admin/api/constant";
 
 export default function LoginPage() {
-  const router = useRouter();
+  // const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +25,7 @@ export default function LoginPage() {
     const inputPassword = password.trim();
 
     if (!inputEmail || !inputPassword) {
-      setErrorMessage("Please enter both your work email and password.");
+      setErrorMessage( "Please enter both your work email and password." );
       return;
     }
 
@@ -34,133 +34,180 @@ export default function LoginPage() {
     setSuccessMessage(null);
 
     try {
-      // 1. Fetch live employees from api/employee
-      let employeeList: EmployeeDto[] = [];
-      try {
-        const data = await fetchEmployees();
-        if (Array.isArray(data) && data.length > 0) {
-          employeeList = data;
-        }
-      } catch (apiErr) {
-        console.warn("Could not fetch live employees from API:", apiErr);
-      }
-
-      // Fallback to session-cached employee records if API offline or empty
-      if (employeeList.length === 0 && typeof window !== "undefined") {
-        try {
-          const stored = sessionStorage.getItem("rbac_employees");
-          if (stored) {
-            employeeList = JSON.parse(stored);
-          }
-        } catch {}
-      }
-
-      // 2. Look for matching employee record
-      const query = inputEmail.toLowerCase();
-      const matchedEmployee = employeeList.find((emp) => {
-        const empEmail = (emp.email || "").trim().toLowerCase();
-        const empUsername = (emp.username || "").trim().toLowerCase();
-        const empPhone = (emp.phoneNumber || "").trim();
-        const fullName = (emp.fullName || `${emp.firstName} ${emp.lastName}`).trim().toLowerCase();
-
-        return (
-          empEmail === query ||
-          empUsername === query ||
-          empPhone === inputEmail ||
-          fullName === query
-        );
+      await loginUser({
+        email: inputEmail,
+        password: inputPassword,
       });
 
-      if (!matchedEmployee) {
-        // If not found in employee list, try auth/login direct endpoint fallback
-        try {
-          const authResponse = await loginUser({
-            email: inputEmail,
-            username: inputEmail,
-            password: inputPassword,
-          });
+      setSuccessMessage("Authentication successful.");
 
-          if (authResponse && authResponse.user) {
-            const authUser = authResponse.user;
-            if (typeof window !== "undefined") {
-              sessionStorage.setItem("auth_user", JSON.stringify(authUser));
-              sessionStorage.setItem("auth_token", authResponse.token || `token-${Date.now()}`);
-              if (rememberMe) localStorage.setItem("auth_user", JSON.stringify(authUser));
-            }
-            setSuccessMessage(`Welcome back, ${authUser.fullName || authUser.email}!`);
-            setTimeout(() => router.push("/admin/usersandrbac"), 600);
-            return;
-          }
-        } catch (authErr) {
-          // Both failed
-          throw new Error("No employee account found with this email or username.");
-        }
-        throw new Error("No employee account found with this email or username.");
+      const params = new URLSearchParams(
+        window.location.search
+      );
+
+      const returnUrl = params.get("returnUrl");
+
+      if (returnUrl) {
+        window.location.href = returnUrl;
+        return;
       }
 
-      // 3. Verify password from api/employee
-      if (matchedEmployee.password) {
-        if (matchedEmployee.password !== inputPassword) {
-          throw new Error("Invalid password for this account.");
-        }
-      }
-
-      // 4. Verify employee active status
-      if (matchedEmployee.isActive === false) {
-        throw new Error("This account is currently deactivated. Please contact your system administrator.");
-      }
-
-      // 5. Successful login
-      const displayName =
-        matchedEmployee.fullName ||
-        `${matchedEmployee.firstName} ${matchedEmployee.lastName}`.trim();
-
-      const loggedInUser: AuthUser = {
-        id: matchedEmployee.id,
-        fullName: displayName,
-        email: matchedEmployee.email || inputEmail,
-        roleName: matchedEmployee.roleName || "Administrator",
-        departmentName: matchedEmployee.departmentName || "Engineering",
-        phoneNumber: matchedEmployee.phoneNumber,
-      };
-
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("auth_user", JSON.stringify(loggedInUser));
-        sessionStorage.setItem("auth_token", `token-${matchedEmployee.id}-${Date.now()}`);
-        if (rememberMe) {
-          localStorage.setItem("auth_user", JSON.stringify(loggedInUser));
-        }
-      }
-
-      let targetUrl = "/admin/usersandrbac";
-      const isAdminRole = (matchedEmployee.roleName || "").toLowerCase().includes("admin");
-
-      if (!isAdminRole && typeof window !== "undefined") {
-        try {
-          const storedRules = sessionStorage.getItem("rbac_role_page_accesses");
-          if (storedRules) {
-            const parsedRules = JSON.parse(storedRules);
-            const userRole = (matchedEmployee.roleName || "").toLowerCase();
-            const firstRule = parsedRules.find(
-              (r: any) => (r.roleName || "").toLowerCase() === userRole && r.pageRoute
-            );
-            if (firstRule?.pageRoute) {
-              targetUrl = firstRule.pageRoute;
-            }
-          }
-        } catch {}
-      }
-
-      setSuccessMessage(`Welcome back, ${displayName}!`);
-      setTimeout(() => {
-        router.push(targetUrl);
-      }, 600);
+      window.location.href = "/admin/usersandrbac";
     } catch (err: any) {
-      setErrorMessage(err.message || "Sign in failed. Please check your credentials.");
+      setErrorMessage(
+        err.message || "Sign in failed."
+      );
     } finally {
       setIsLoading(false);
     }
   };
+
+  // const handleLogin = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   const inputEmail = email.trim();
+  //   const inputPassword = password.trim();
+
+  //   if (!inputEmail || !inputPassword) {
+  //     setErrorMessage("Please enter both your work email and password.");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   setErrorMessage(null);
+  //   setSuccessMessage(null);
+
+
+
+  //   // try {
+  //   //   // 1. Fetch live employees from api/employee
+  //   //   let employeeList: EmployeeDto[] = [];
+  //   //   try {
+  //   //     const data = await fetchEmployees();
+  //   //     if (Array.isArray(data) && data.length > 0) {
+  //   //       employeeList = data;
+  //   //     }
+  //   //   } catch (apiErr) {
+  //   //     console.warn("Could not fetch live employees from API:", apiErr);
+  //   //   }
+
+  //   //   // Fallback to session-cached employee records if API offline or empty
+  //   //   if (employeeList.length === 0 && typeof window !== "undefined") {
+  //   //     try {
+  //   //       const stored = sessionStorage.getItem("rbac_employees");
+  //   //       if (stored) {
+  //   //         employeeList = JSON.parse(stored);
+  //   //       }
+  //   //     } catch {}
+  //   //   }
+
+  //   //   // 2. Look for matching employee record
+  //   //   const query = inputEmail.toLowerCase();
+  //   //   const matchedEmployee = employeeList.find((emp) => {
+  //   //     const empEmail = (emp.email || "").trim().toLowerCase();
+  //   //     const empUsername = (emp.username || "").trim().toLowerCase();
+  //   //     const empPhone = (emp.phoneNumber || "").trim();
+  //   //     const fullName = (emp.fullName || `${emp.firstName} ${emp.lastName}`).trim().toLowerCase();
+
+  //   //     return (
+  //   //       empEmail === query ||
+  //   //       empUsername === query ||
+  //   //       empPhone === inputEmail ||
+  //   //       fullName === query
+  //   //     );
+  //   //   });
+
+  //   //   if (!matchedEmployee) {
+  //   //     // If not found in employee list, try auth/login direct endpoint fallback
+  //   //     try {
+  //   //       const authResponse = await loginUser({
+  //   //         email: inputEmail,
+  //   //         username: inputEmail,
+  //   //         password: inputPassword,
+  //   //       });
+
+  //   //       if (authResponse && authResponse.user) {
+  //   //         const authUser = authResponse.user;
+  //   //         if (typeof window !== "undefined") {
+  //   //           sessionStorage.setItem("auth_user", JSON.stringify(authUser));
+  //   //           sessionStorage.setItem("auth_token", authResponse.token || `token-${Date.now()}`);
+  //   //           if (rememberMe) localStorage.setItem("auth_user", JSON.stringify(authUser));
+  //   //         }
+  //   //         setSuccessMessage(`Welcome back, ${authUser.fullName || authUser.email}!`);
+  //   //         setTimeout(() => router.push("/admin/usersandrbac"), 600);
+  //   //         return;
+  //   //       }
+  //   //     } catch (authErr) {
+  //   //       // Both failed
+  //   //       throw new Error("No employee account found with this email or username.");
+  //   //     }
+  //   //     throw new Error("No employee account found with this email or username.");
+  //   //   }
+
+  //   //   // 3. Verify password from api/employee
+  //   //   if (matchedEmployee.password) {
+  //   //     if (matchedEmployee.password !== inputPassword) {
+  //   //       throw new Error("Invalid password for this account.");
+  //   //     }
+  //   //   }
+
+  //   //   // 4. Verify employee active status
+  //   //   if (matchedEmployee.isActive === false) {
+  //   //     throw new Error("This account is currently deactivated. Please contact your system administrator.");
+  //   //   }
+
+  //   //   // 5. Successful login
+  //   //   const displayName =
+  //   //     matchedEmployee.fullName ||
+  //   //     `${matchedEmployee.firstName} ${matchedEmployee.lastName}`.trim();
+
+  //   //   const loggedInUser: AuthUser = {
+  //   //     id: matchedEmployee.id,
+  //   //     fullName: displayName,
+  //   //     email: matchedEmployee.email || inputEmail,
+  //   //     roleName: matchedEmployee.roleName || "Administrator",
+  //   //     departmentName: matchedEmployee.departmentName || "Engineering",
+  //   //     phoneNumber: matchedEmployee.phoneNumber,
+  //   //   };
+
+  //   //   if (typeof window !== "undefined") {
+  //   //     sessionStorage.setItem("auth_user", JSON.stringify(loggedInUser));
+  //   //     sessionStorage.setItem("auth_token", `token-${matchedEmployee.id}-${Date.now()}`);
+  //   //     if (rememberMe) {
+  //   //       localStorage.setItem("auth_user", JSON.stringify(loggedInUser));
+  //   //     }
+  //   //   }
+
+  //   //   let targetUrl = "/admin/usersandrbac";
+  //   //   const isAdminRole = (matchedEmployee.roleName || "").toLowerCase().includes("admin");
+
+  //   //   if (!isAdminRole && typeof window !== "undefined") {
+  //   //     try {
+  //   //       const storedRules = sessionStorage.getItem("rbac_role_page_accesses");
+  //   //       if (storedRules) {
+  //   //         const parsedRules = JSON.parse(storedRules);
+  //   //         const userRole = (matchedEmployee.roleName || "").toLowerCase();
+  //   //         const firstRule = parsedRules.find(
+  //   //           (r: any) => (r.roleName || "").toLowerCase() === userRole && r.pageRoute
+  //   //         );
+  //   //         if (firstRule?.pageRoute) {
+  //   //           targetUrl = firstRule.pageRoute;
+  //   //         }
+  //   //       }
+  //   //     } catch {}
+  //   //   }
+
+  //   //   setSuccessMessage(`Welcome back, ${displayName}!`);
+  //   //   setTimeout(() => {
+  //   //     router.push(targetUrl);
+  //   //   }, 600);
+  //   // } catch (err: any) {
+  //   //   setErrorMessage(err.message || "Sign in failed. Please check your credentials.");
+  //   // } finally {
+  //   //   setIsLoading(false);
+  //   // }
+
+
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-50 text-slate-900 font-sans">

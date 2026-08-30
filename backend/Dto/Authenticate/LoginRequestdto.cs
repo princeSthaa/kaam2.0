@@ -1,4 +1,4 @@
-namespace backend.Dto.Authentication;
+namespace backend.Dto.Authenticate;
 
 public class LoginRequestDto
 {

@@ -15,11 +15,7 @@ namespace backend.Service.Employee
 
         public async Task<bool> CreateAsync(EmployeeDto dto)
         {
-            if (dto.Id == Guid.Empty)
-            {
-                dto.Id = Guid.NewGuid();
-            }
-
+            dto.Id = Guid.NewGuid();
             var now = DateTime.UtcNow;
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
@@ -33,8 +29,8 @@ namespace backend.Service.Employee
                     @EmployeeRoleId = {dto.EmployeeRoleId},
                     @DepartmentId = {dto.DepartmentId},
                     @IsActive = {dto.IsActive},
-                    @CreatedAt = {dto.CreatedAt},
-                    @UpdatedAt = {dto.UpdatedAt}
+                    @CreatedAt = {now},
+                    @UpdatedAt = {now}
             ");
 
             return true;

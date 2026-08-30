@@ -2,51 +2,33 @@ import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 export interface LoginDto {
   email?: string;
-  username?: string;
   password?: string;
 }
 
-export interface AuthUser {
-  id: string;
-  fullName: string;
-  email: string;
-  roleName: string;
-  departmentName?: string;
-  phoneNumber?: string;
-}
-
 export interface LoginResponseDto {
-  token?: string;
-  user?: AuthUser;
+  message: string;
 }
 
 export async function loginUser(payload: LoginDto): Promise<LoginResponseDto> {
-  try {
-    const response = await fetch(`${API_MAIN_URL}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+  const response = await fetch(`${API_MAIN_URL}/auth/login`, {
+    method: "POST",
 
-    if (!response.ok) {
-      // Fallback try /login
-      const fallbackResponse = await fetch(`${API_MAIN_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    headers: {
+      "Content-Type": "application/json",
+    },
 
-      if (fallbackResponse.ok) {
-        return await fallbackResponse.json();
-      }
+    credentials: "include",
 
-      const errorText = await response.text();
-      throw new Error(errorText || "Invalid username or password");
-    }
+    body: JSON.stringify(payload),
+  });
 
-    return await response.json();
-  } catch (err: any) {
-    console.warn("API login failed, checking offline session fallback:", err);
-    throw err;
+  if (!response.ok) {
+    const errorText = await response.text();
+
+    throw new Error(
+      errorText || "Invalid email or password"
+    );
   }
+
+  return await response.json();
 }

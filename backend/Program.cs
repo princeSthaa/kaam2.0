@@ -40,6 +40,9 @@ using backend.Service.Page;
 using backend.Service.Permission;
 using backend.Service.RolePageAccess;
 using backend.Service.RolePagePermission;
+using backend.Service.Authenticate;
+
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,8 +55,8 @@ builder.Services.AddCors(options =>
                 "http://127.0.0.1:3000", 
                 "http://localhost:3001", 
                 "http://127.0.0.1:3001", 
-                "https://wgfk2srw-5082.inc1.devtunnels.ms/", 
-                "https://wgfk2srw-5083.inc1.devtunnels.ms/") // Frontend origins
+                "https://wgfk2srw-5082.inc1.devtunnels.ms", 
+                "https://wgfk2srw-5083.inc1.devtunnels.ms") // Frontend origins
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials());
@@ -68,9 +71,23 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 
 // Configure EF Core SQL Server Database
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseOpenIddict();
+});
+
+builder.Services.AddAuthentication(options =>
+{
+   options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+   options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+})
+.AddCookie(options =>
+{
+    options.Cookie.Name = "Kaam.Auth";
+    options.LoginPath = "/api/auth/login";
+});
+
 builder.Services.AddOpenIddict()
     .AddCore(options =>
     {
@@ -101,7 +118,7 @@ builder.Services.AddOpenIddict()
 
         options.UseAspNetCore()
             .EnableAuthorizationEndpointPassthrough()
-            .EnableTokenEndpointPassthrough();
+            .DisableTransportSecurityRequirement();
 
     })
     .AddValidation(options =>
@@ -111,6 +128,8 @@ builder.Services.AddOpenIddict()
     });
 
 
+
+# region User Made Services
 // Register Services
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
@@ -152,7 +171,9 @@ builder.Services.AddScoped<IPageService, PageService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IRolePageAccessService, RolePageAccessService>();
 builder.Services.AddScoped<IRolePagePermissionService, RolePagePermissionService>();
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IAuthenticateService, AuthenticateService>();
+
+#endregion 
 
 int GetAvailablePort()
 {
@@ -166,17 +187,18 @@ builder.WebHost.UseUrls($"http://localhost:{portToUse}");
 Console.WriteLine($"Starting server on port {portToUse}");
 var app = builder.Build();
 
-// using (var scope = app.Services.CreateScope())
-// {
-//     try
-//     {
-//         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-//     }
-//     catch (Exception ex)
-//     {
-//         Console.WriteLine($"Database initialization error: {ex.Message}");
-//     }
-// }
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        // var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await OpenIddictSeeder.SeedAsync(scope.ServiceProvider);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Database initialization error: {ex.Message}");
+    }
+}
 
 // app.UseHttpsRedirection();
 

@@ -1,15 +1,15 @@
 using System.Security.Claims;
 using backend.Data;
-using backend.Dto.Authentication;
+using backend.Dto.Authenticate;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Service.Authentication;
+namespace backend.Service.Authenticate;
 
-public class AuthenticationService : IAuthenticationService
+public class AuthenticateService : IAuthenticateService
 {
     private readonly AppDbContext _context;
 
-    public AuthenticationService(AppDbContext context)
+    public AuthenticateService(AppDbContext context)
     {
         _context = context;
     }
@@ -22,12 +22,12 @@ public class AuthenticationService : IAuthenticationService
             return null;
         }
 
-        var employee = await _context.Database
+        var employee = (await _context.Database
             .SqlQuery<EmployeeAuthenticationDto>($@"
                     EXEC sp_GetEmployees
                         @Email = {dto.Email}
                 ")
-            .SingleOrDefaultAsync();
+            .ToListAsync()).FirstOrDefault();
 
         if (employee == null)
             return null;
@@ -35,7 +35,7 @@ public class AuthenticationService : IAuthenticationService
         if (!employee.IsActive)
             return null;
 
-        if (employee.PasswordHash != dto.Password)
+        if (employee.Password != dto.Password)
             return null;
 
         var claims = new List<Claim>
