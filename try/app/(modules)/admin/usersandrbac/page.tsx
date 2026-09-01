@@ -31,6 +31,8 @@ import { CreatePermissionModal } from "../components/modals/createpermissionmoda
 import { CreatePageModal } from "../components/modals/createpagemodal";
 import { CreateRolePageAccessModal } from "../components/modals/createrolepageaccessmodal";
 import { CreateRolePagePermissionModal } from "../components/modals/createrolepagepermissionmodal";
+import { RolePermissionsMatrix } from "../components/RolePermissionsMatrix";
+import { usePathname } from "next/navigation";
 
 const INITIAL_EMPLOYEES: EmployeeDto[] = [
   {
@@ -348,15 +350,39 @@ export default function EmployeesAndRbacPage() {
     INITIAL_ROLE_PAGE_PERMISSIONS
   );
   const [loading, setLoading] = useState(true);
+  const pathname = usePathname();
   const [activeTab, setActiveTab] = useState<
     | "employees"
     | "role"
     | "department"
     | "permissions"
     | "pages"
+    | "rolepermissions"
     | "rolepageaccess"
     | "rolepagepermission"
   >("employees");
+
+  useEffect(() => {
+    if (!pathname) return;
+    if (
+      pathname.includes("page-access") ||
+      pathname.includes("page-permissions") ||
+      pathname.includes("role-permissions") ||
+      pathname.includes("access-control")
+    ) {
+      setActiveTab("rolepermissions");
+    } else if (pathname.includes("roles")) {
+      setActiveTab("role");
+    } else if (pathname.includes("departments")) {
+      setActiveTab("department");
+    } else if (pathname.includes("permissions")) {
+      setActiveTab("permissions");
+    } else if (pathname.includes("pages")) {
+      setActiveTab("pages");
+    } else if (pathname.includes("employees")) {
+      setActiveTab("employees");
+    }
+  }, [pathname]);
 
   // Search Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -856,14 +882,18 @@ export default function EmployeesAndRbacPage() {
     showToast("Employee directory exported to CSV.");
   };
 
-  // Distinct roles
+  // Distinct roles (excluding Super Admin)
   const distinctRoles = useMemo(() => {
     const set = new Set<string>();
     roles.forEach((r) => {
-      if (r.roleName) set.add(r.roleName);
+      if (r.roleName && !r.isSuperAdmin && r.roleName.toLowerCase() !== "super admin") {
+        set.add(r.roleName);
+      }
     });
     employees.forEach((e) => {
-      if (e.roleName) set.add(e.roleName);
+      if (e.roleName && e.roleName.toLowerCase() !== "super admin") {
+        set.add(e.roleName);
+      }
     });
     return Array.from(set);
   }, [roles, employees]);
@@ -1003,9 +1033,7 @@ export default function EmployeesAndRbacPage() {
                   ? "Permissions Configuration"
                   : activeTab === "pages"
                   ? "Pages Configuration"
-                  : activeTab === "rolepageaccess"
-                  ? "Role-Page Access Mapping"
-                  : "Role-Page Access Matrix"}
+                  : "Role Permissions Matrix"}
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
@@ -1019,9 +1047,7 @@ export default function EmployeesAndRbacPage() {
                 ? "Permission Management"
                 : activeTab === "pages"
                 ? "Page Management"
-                : activeTab === "rolepageaccess"
-                ? "Role-Page Access"
-                : "Role-Page Permissions"}
+                : "Role Permissions Matrix"}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               {activeTab === "employees"
@@ -1034,9 +1060,7 @@ export default function EmployeesAndRbacPage() {
                 ? "Define and manage access permissions, action verbs, and system privileges."
                 : activeTab === "pages"
                 ? "Configure system navigation routes, page metadata, icons, and hierarchy."
-                : activeTab === "rolepageaccess"
-                ? "Assign accessible pages and navigation routes to specific system roles."
-                : "Map fine-grained permissions to role-page access definitions."}
+                : "Hierarchical matrix to assign pages and CRUD permissions (Read, Modify, Add, Delete) to roles."}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0 flex-wrap">
@@ -1124,31 +1148,7 @@ export default function EmployeesAndRbacPage() {
               </button>
             )}
 
-            {activeTab === "rolepageaccess" && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingRpa(null);
-                  setIsRpaModalOpen(true);
-                }}
-                className="bg-slate-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl hover:bg-slate-800 transition-all shadow-md flex items-center gap-2 active:scale-95"
-              >
-                <span className="material-symbols-outlined text-base">lock_open</span> Assign Page to Role
-              </button>
-            )}
 
-            {activeTab === "rolepagepermission" && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingRpp(null);
-                  setIsRppModalOpen(true);
-                }}
-                className="bg-slate-900 text-white font-bold text-xs py-2.5 px-4 rounded-xl hover:bg-slate-800 transition-all shadow-md flex items-center gap-2 active:scale-95"
-              >
-                <span className="material-symbols-outlined text-base">security_update_good</span> Add Mapping
-              </button>
-            )}
           </div>
         </div>
 
@@ -1273,32 +1273,18 @@ export default function EmployeesAndRbacPage() {
               Pages
             </button>
 
-            {/* Role-Page Access Tab */}
+            {/* Role Permissions Matrix Tab */}
             <button
               type="button"
-              onClick={() => setActiveTab("rolepageaccess")}
+              onClick={() => setActiveTab("rolepermissions")}
               className={`pb-3 font-mono text-xs font-bold transition-all border-b-2 flex items-center gap-2 shrink-0 ${
-                activeTab === "rolepageaccess"
-                  ? "border-slate-900 text-slate-900"
-                  : "border-transparent text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              <span className="material-symbols-outlined text-base">lock_open</span>
-              Role-Page Access
-            </button>
-
-            {/* Role-Page Permissions Tab */}
-            <button
-              type="button"
-              onClick={() => setActiveTab("rolepagepermission")}
-              className={`pb-3 font-mono text-xs font-bold transition-all border-b-2 flex items-center gap-2 shrink-0 ${
-                activeTab === "rolepagepermission"
+                activeTab === "rolepermissions"
                   ? "border-slate-900 text-slate-900"
                   : "border-transparent text-slate-500 hover:text-slate-900"
               }`}
             >
               <span className="material-symbols-outlined text-base">admin_panel_settings</span>
-              Role-Page Permissions
+              Role Permissions
             </button>
           </div>
 
@@ -2148,332 +2134,19 @@ export default function EmployeesAndRbacPage() {
             </div>
           )}
 
-          {activeTab === "rolepageaccess" && (
-            /* Role-Page Access Tab Content */
-            <div className="p-0 flex-1">
-              {/* Role Page Access Table Toolbar */}
-              <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/40">
-                <div className="relative w-full sm:w-80">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                    search
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search by role name, page or route..."
-                    value={rpaSearchTerm}
-                    onChange={(e) => setRpaSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={loadRolePageAccesses}
-                    title="Refresh mappings"
-                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base">refresh</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingRpa(null);
-                      setIsRpaModalOpen(true);
-                    }}
-                    className="px-3.5 py-1.5 bg-slate-900 text-white font-bold text-xs rounded-lg hover:bg-slate-800 transition-all shadow flex items-center gap-1.5 active:scale-95"
-                  >
-                    <span className="material-symbols-outlined text-base">add</span>
-                    <span>Assign Page to Role</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Role Page Access Data Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                      <th className="px-6 py-3 font-bold">Assigned Role</th>
-                      <th className="px-6 py-3 font-bold">Accessible Page</th>
-                      <th className="px-6 py-3 font-bold">Route Path</th>
-                      <th className="px-6 py-3 font-bold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {filteredRolePageAccesses.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="py-12 text-center text-slate-400 font-mono">
-                          <span className="material-symbols-outlined text-3xl mb-1 text-slate-300 block">lock_open</span>
-                          No role-page access mappings found.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredRolePageAccesses.map((rpa) => {
-                        const matchedRole = roles.find((r) => r.id === rpa.roleId);
-                        const matchedPage = pages.find((p) => p.id === rpa.pageId);
-
-                        const roleName = rpa.roleName || matchedRole?.roleName || "Role";
-                        const pageName = rpa.pageName || matchedPage?.name || "Page";
-                        const pageRoute = rpa.pageRoute || matchedPage?.route || "/";
-                        const pageIcon = rpa.pageIcon || matchedPage?.icon || "web";
-
-                        return (
-                          <tr key={rpa.id} className="hover:bg-slate-50/80 transition-colors">
-                            {/* Assigned Role */}
-                            <td className="px-6 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-900 flex items-center justify-center font-bold shrink-0">
-                                  <span className="material-symbols-outlined text-base">security</span>
-                                </div>
-                                <span className="font-bold text-slate-900 text-sm leading-snug">
-                                  {roleName}
-                                </span>
-                              </div>
-                            </td>
-
-                            {/* Accessible Page */}
-                            <td className="px-6 py-3.5">
-                              <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-base text-slate-500">
-                                  {normalizeIcon(pageIcon)}
-                                </span>
-                                <span className="font-bold text-slate-800 text-xs">{pageName}</span>
-                              </div>
-                            </td>
-
-                            {/* Route Path */}
-                            <td className="px-6 py-3.5 font-mono">
-                              <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-semibold text-[11px] border border-slate-200">
-                                {pageRoute}
-                              </span>
-                            </td>
-
-                            {/* Actions */}
-                            <td className="px-6 py-3.5 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingRpa(rpa);
-                                    setIsRpaModalOpen(true);
-                                  }}
-                                  className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Edit Access"
-                                >
-                                  <span className="material-symbols-outlined text-base">edit</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteRpa(rpa.id)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                  title="Delete Access"
-                                >
-                                  <span className="material-symbols-outlined text-base">delete</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Table Footer */}
-              <div className="p-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/60 font-mono text-xs text-slate-500">
-                <span>
-                  Showing {filteredRolePageAccesses.length} of {rolePageAccesses.length} mappings
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    disabled
-                    className="p-1.5 rounded border border-slate-200 text-slate-300 disabled:opacity-40"
-                  >
-                    <span className="material-symbols-outlined text-base">chevron_left</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="p-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base">chevron_right</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+          {/* UNIFIED ROLE PERMISSIONS MATRIX */}
+          {activeTab === "rolepermissions" && (
+            <RolePermissionsMatrix
+              roles={roles}
+              pages={pages}
+              permissions={permissions}
+              onPermissionsChanged={() => {
+                loadRolePageAccesses();
+                loadRolePagePermissions();
+              }}
+            />
           )}
-
-          {activeTab === "rolepagepermission" && (
-            /* Role Page Permissions Tab Content */
-            <div className="p-0 flex-1">
-              {/* Role Page Permission Table Toolbar */}
-              <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/40">
-                <div className="relative w-full sm:w-80">
-                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                    search
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search by access ID, page or permission..."
-                    value={rppSearchTerm}
-                    onChange={(e) => setRppSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-lg font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 transition-colors shadow-sm"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={loadRolePagePermissions}
-                    title="Refresh mappings"
-                    className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base">refresh</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingRpp(null);
-                      setIsRppModalOpen(true);
-                    }}
-                    className="px-3.5 py-1.5 bg-slate-900 text-white font-bold text-xs rounded-lg hover:bg-slate-800 transition-all shadow flex items-center gap-1.5 active:scale-95"
-                  >
-                    <span className="material-symbols-outlined text-base">add</span>
-                    <span>New Mapping</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Role Page Permissions Data Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-100/70 border-b border-slate-200 font-mono text-[10px] text-slate-500 uppercase tracking-wider">
-                      <th className="px-6 py-3 font-bold">Access Target (Role &bull; Page)</th>
-                      <th className="px-6 py-3 font-bold">Granted Permission</th>
-                      <th className="px-6 py-3 font-bold">Action Type</th>
-                      <th className="px-6 py-3 font-bold text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200">
-                    {filteredRolePagePermissions.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="py-12 text-center text-slate-400 font-mono">
-                          <span className="material-symbols-outlined text-3xl mb-1 text-slate-300 block">admin_panel_settings</span>
-                          No role-page permission mappings found.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredRolePagePermissions.map((rpp) => {
-                        const perm = permissions.find((p) => p.id === rpp.permissionId);
-                        const permName = rpp.permissionName || perm?.name || "Permission";
-                        const permAction = rpp.permissionAction || perm?.action || "GET";
-                        const badgeColor = getActionBadgeColor(permAction);
-
-                        const matchedRpa = rolePageAccesses.find((a) => a.id === rpp.rolePageAccessId);
-                        const matchedPage = pages.find((p) => p.id === rpp.rolePageAccessId || p.id === matchedRpa?.pageId);
-                        const matchedRole = roles.find((r) => r.id === rpp.rolePageAccessId || r.id === matchedRpa?.roleId);
-
-                        const roleTitle = matchedRpa?.roleName || matchedRole?.roleName || "System Role";
-                        const pageTitle = rpp.pageName || matchedRpa?.pageName || matchedPage?.name || "CustomerFilter";
-                        const pageRoute = rpp.pageRoute || matchedRpa?.pageRoute || matchedPage?.route || "/crm/customers";
-
-                        return (
-                          <tr key={rpp.id} className="hover:bg-slate-50/80 transition-colors">
-                            {/* Access Target */}
-                            <td className="px-6 py-3.5">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-900 flex items-center justify-center font-bold shrink-0">
-                                  <span className="material-symbols-outlined text-base">admin_panel_settings</span>
-                                </div>
-                                <div>
-                                  <div className="font-bold text-slate-900 text-sm leading-snug flex items-center gap-1.5">
-                                    <span>{roleTitle}</span>
-                                    <span className="text-slate-400">&bull;</span>
-                                    <span className="text-purple-950 font-semibold">{pageTitle}</span>
-                                  </div>
-                                  <div className="text-slate-500 font-mono text-[11px]">
-                                    {pageRoute}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Granted Permission */}
-                            <td className="px-6 py-3.5">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-800 font-mono font-bold text-[11px]">
-                                <span className="material-symbols-outlined text-xs text-slate-500">key</span>
-                                {permName}
-                              </span>
-                            </td>
-
-                            {/* Action Type Badge */}
-                            <td className="px-6 py-3.5 font-mono">
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${badgeColor}`}
-                              >
-                                {permAction.toUpperCase()}
-                              </span>
-                            </td>
-
-                            {/* Actions */}
-                            <td className="px-6 py-3.5 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setEditingRpp(rpp);
-                                    setIsRppModalOpen(true);
-                                  }}
-                                  className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Edit Mapping"
-                                >
-                                  <span className="material-symbols-outlined text-base">edit</span>
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteRpp(rpp.id)}
-                                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                                  title="Delete Mapping"
-                                >
-                                  <span className="material-symbols-outlined text-base">delete</span>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Table Footer */}
-              <div className="p-4 border-t border-slate-200 flex justify-between items-center bg-slate-50/60 font-mono text-xs text-slate-500">
-                <span>
-                  Showing {filteredRolePagePermissions.length} of {rolePagePermissions.length} mappings
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    disabled
-                    className="p-1.5 rounded border border-slate-200 text-slate-300 disabled:opacity-40"
-                  >
-                    <span className="material-symbols-outlined text-base">chevron_left</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="p-1.5 rounded border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-base">chevron_right</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+</div>
 
         {/* Permissions Blueprint Card */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

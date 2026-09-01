@@ -25,7 +25,7 @@ export default function SupplierReceivingInspectionPage() {
 
   const loadMaterials = async () => {
     try {
-      const res = await fetch("http://localhost:5083/api/material");
+      const res = await fetch("/api/bff/material");
       if (res.ok) {
         const data = await res.json();
         setMaterials(Array.isArray(data) ? data : []);
@@ -62,7 +62,7 @@ export default function SupplierReceivingInspectionPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5083/api/warehouse/receive-inspect", {
+      const res = await fetch("/api/bff/warehouse/receive-inspect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

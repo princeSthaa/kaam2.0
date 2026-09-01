@@ -107,9 +107,9 @@ export function ProductionPlanDetailsPage() {
     setError(null);
     const hydratePlan = async (data: any) => {
       const [products, stages, sizes] = await Promise.all([
-        fetch("http://localhost:5083/api/production-plan-product").then(res => res.ok ? res.json() : []),
-        fetch("http://localhost:5083/api/production-plan-stage").then(res => res.ok ? res.json() : []),
-        fetch("http://localhost:5083/api/production-plan-product-size").then(res => res.ok ? res.json() : []),
+        fetch("/api/bff/production-plan-product").then(res => res.ok ? res.json() : []),
+        fetch("/api/bff/production-plan-stage").then(res => res.ok ? res.json() : []),
+        fetch("/api/bff/production-plan-product-size").then(res => res.ok ? res.json() : []),
       ]);
       const productRows = products
         .filter((product: any) => String(product.productionPlanId) === String(data.id))
@@ -124,7 +124,7 @@ export function ProductionPlanDetailsPage() {
       };
     };
 
-    fetch(`http://localhost:5083/api/production-plans/by-plan-id/${encodeURIComponent(planId)}`)
+    fetch(`/api/bff/production-plans/by-plan-id/${encodeURIComponent(planId)}`)
       .then((res) => {
         if (!res.ok) throw new Error("Plan not found");
         return res.json();
@@ -135,7 +135,7 @@ export function ProductionPlanDetailsPage() {
       })
       .catch((err) => {
         // Fallback: fetch all plans and filter
-        fetch("http://localhost:5083/api/production-plans")
+        fetch("/api/bff/production-plans")
           .then((res) => (res.ok ? res.json() : []))
           .then(async (plans: any[]) => {
             const found = plans.find(

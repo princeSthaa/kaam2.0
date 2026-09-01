@@ -7,24 +7,24 @@ public class OpenIddictSeeder
 {
     public static async Task SeedAsync(IServiceProvider service)
     {
-        var applicationManager =
-            service.GetRequiredService<IOpenIddictApplicationManager>();
+        var applicationManager = service.GetRequiredService<IOpenIddictApplicationManager>();
 
-        if (await applicationManager.FindByClientIdAsync("kaam-next.js") == null)
+       if (await applicationManager.FindByClientIdAsync("kaam-next.js") == null)
         {
-            await applicationManager.CreateAsync(
-                new OpenIddictApplicationDescriptor
+            await applicationManager.CreateAsync( new OpenIddictApplicationDescriptor
                 {
                     ClientId = "kaam-next.js",
+                    ClientSecret = "secret",
+
                     DisplayName = "Kaam Next.js",
-                    ClientType = ClientTypes.Public,
+                    ClientType = ClientTypes.Confidential,
                     ConsentType = ConsentTypes.Implicit,
 
                     RedirectUris =
                     {
-                        new Uri("https://oauth.pstmn.io/v1/browser-callback")
+                        new Uri("http://localhost:3000/api/auth/callback")
                     },
-
+                    
                     Permissions =
                     {
                         Permissions.Endpoints.Authorization,
@@ -39,6 +39,11 @@ public class OpenIddictSeeder
                         Permissions.Prefixes.Scope + "profile",
                         Permissions.Prefixes.Scope + "email",
                         Permissions.Prefixes.Scope + "api"
+                    },
+
+                    Requirements =
+                    {
+                        Requirements.Features.ProofKeyForCodeExchange
                     }
                 });
         }

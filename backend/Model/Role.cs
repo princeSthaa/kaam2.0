@@ -12,6 +12,15 @@ public class Role
     [MaxLength(100)]
     public string Description { get; set; } = string.Empty;
 
+    public Guid? ModulePageId { get; set; }
+    public virtual Page? ModulePage { get; set; }
+
+    public bool IsModuleAdmin { get; set; }
+
+    public bool IsSuperAdmin { get; set; }
+
+    public bool IsSystem { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime UpdatedAt { get; set; }

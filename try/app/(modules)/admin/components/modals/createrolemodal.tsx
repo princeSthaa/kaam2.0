@@ -1,31 +1,44 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createRole, updateRole, RoleDto } from "../../api/constant";
+import { createRole, updateRole, RoleDto, PageDto } from "../../api/constant";
+import { useRbac } from "@/app/lib/useRbac";
 
 interface CreateRoleModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: (role: RoleDto) => void;
   initialData?: RoleDto | null;
+  pages?: PageDto[];
 }
 
-export function CreateRoleModal({ isOpen, onClose, onSaved, initialData }: CreateRoleModalProps) {
+export function CreateRoleModal({ isOpen, onClose, onSaved, initialData, pages = [] }: CreateRoleModalProps) {
+  const { currentUser } = useRbac();
   const [roleName, setRoleName] = useState("");
   const [description, setDescription] = useState("");
+  const [modulePageId, setModulePageId] = useState("");
+  const [isModuleAdmin, setIsModuleAdmin] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const isEdit = !!initialData?.id;
+  const modulePages = pages.filter((page) => {
+    const route = page.route?.replace(/\/$/, "") || "";
+    return route !== "/" && route !== "/admin" && route.split("/").filter(Boolean).length === 1;
+  });
 
   useEffect(() => {
     if (!isOpen) return;
     if (initialData) {
       setRoleName(initialData.roleName || initialData.name || "");
       setDescription(initialData.description || "");
+      setModulePageId(initialData.modulePageId || currentUser?.modulePageId || "");
+      setIsModuleAdmin(initialData.isModuleAdmin ?? false);
     } else {
       setRoleName("");
       setDescription("");
+      setModulePageId(currentUser?.modulePageId || modulePages[0]?.id || "");
+      setIsModuleAdmin(false);
     }
     setErrorMsg(null);
   }, [isOpen, initialData]);
@@ -45,6 +58,8 @@ export function CreateRoleModal({ isOpen, onClose, onSaved, initialData }: Creat
     if (isSubmitting) return;
     setRoleName("");
     setDescription("");
+    setModulePageId("");
+    setIsModuleAdmin(false);
     setErrorMsg(null);
     onClose();
   };
@@ -53,6 +68,10 @@ export function CreateRoleModal({ isOpen, onClose, onSaved, initialData }: Creat
     e.preventDefault();
     if (!roleName.trim()) {
       setErrorMsg("Role Name is required.");
+      return;
+    }
+    if (!modulePageId) {
+      setErrorMsg("A module is required for this role.");
       return;
     }
 
@@ -64,12 +83,16 @@ export function CreateRoleModal({ isOpen, onClose, onSaved, initialData }: Creat
         await updateRole(initialData.id, {
           roleName: roleName.trim(),
           description: description.trim(),
+          modulePageId,
+          isModuleAdmin: currentUser?.isSuperAdmin ? isModuleAdmin : false,
         });
         if (onSaved) {
           onSaved({
             ...initialData,
             roleName: roleName.trim(),
             description: description.trim(),
+            modulePageId,
+            isModuleAdmin: currentUser?.isSuperAdmin ? isModuleAdmin : false,
             updatedAt: new Date().toISOString(),
           });
         }
@@ -77,6 +100,8 @@ export function CreateRoleModal({ isOpen, onClose, onSaved, initialData }: Creat
         const created = await createRole({
           roleName: roleName.trim(),
           description: description.trim(),
+          modulePageId,
+          isModuleAdmin: currentUser?.isSuperAdmin ? isModuleAdmin : false,
         });
         if (onSaved) {
           onSaved(created);
@@ -85,22 +110,7 @@ export function CreateRoleModal({ isOpen, onClose, onSaved, initialData }: Creat
       handleClose();
     } catch (err: any) {
       console.error("Save role failed:", err);
-      // Fallback for offline API environments
-      const fallbackRole: RoleDto = {
-        id: initialData?.id || `role-${Date.now()}`,
-        roleName: roleName.trim(),
-        description: description.trim(),
-        createdAt: initialData?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      if (err.message && !err.message.includes("Failed to fetch")) {
-        setErrorMsg(err.message);
-      } else {
-        if (onSaved) {
-          onSaved(fallbackRole);
-        }
-        handleClose();
-      }
+      setErrorMsg(err instanceof Error ? err.message : "Could not save the role.");
     } finally {
       setIsSubmitting(false);
     }
@@ -181,6 +191,34 @@ export function CreateRoleModal({ isOpen, onClose, onSaved, initialData }: Creat
               />
             </div>
           </div>
+
+          <div className="space-y-1.5">
+            <label className="font-bold text-slate-700 text-[11px] uppercase tracking-wider font-mono">
+              Module <span className="text-rose-500">*</span>
+            </label>
+            {currentUser?.isSuperAdmin ? (
+              <select
+                required
+                value={modulePageId}
+                onChange={(event) => setModulePageId(event.target.value)}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-bold focus:ring-2 focus:ring-slate-900 focus:outline-none"
+              >
+                <option value="">Select module</option>
+                {modulePages.map((page) => <option key={page.id} value={page.id}>{page.name}</option>)}
+              </select>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-bold text-slate-700">
+                {currentUser?.moduleName || "Assigned module"}
+              </div>
+            )}
+          </div>
+
+          {currentUser?.isSuperAdmin && (
+            <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 font-bold text-slate-700">
+              <input type="checkbox" checked={isModuleAdmin} onChange={(event) => setIsModuleAdmin(event.target.checked)} />
+              Module administrator
+            </label>
+          )}
 
           {/* Modal Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">

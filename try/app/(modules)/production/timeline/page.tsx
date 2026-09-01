@@ -52,8 +52,8 @@ export default function ProductionOverviewPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:5083/api/production-plans").then(r => r.json()),
-      fetch("http://localhost:5083/api/workcenters").then(r => r.json())
+      fetch("/api/bff/production-plans").then(r => r.json()),
+      fetch("/api/bff/work-center").then(r => r.json())
     ]).then(([plansData, wcData]) => {
       const active = plansData.filter((p: any) => {
         const s = (p.status || p.Status || '').toLowerCase();

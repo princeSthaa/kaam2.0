@@ -25,7 +25,7 @@ export function Sidebar({ section }: SidebarProps) {
 
   // Filter accessible sidebar links based on user role permissions
   const authorizedLinks = section.links.filter((link) => {
-    if (!isLoaded) return true;
+    if (!isLoaded) return false;
     return canAccessRoute(link.url);
   });
 

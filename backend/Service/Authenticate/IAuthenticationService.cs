@@ -6,4 +6,5 @@ namespace backend.Service.Authenticate;
 public interface IAuthenticateService
 {
     Task<ClaimsPrincipal?> AuthenticateAsync(LoginRequestDto dto);
+    Task<bool> ChangePasswordAsync(Guid employeeId, string currentPassword, string newPassword);
 }

@@ -7,11 +7,11 @@ namespace backend.Dto.Page
         public Guid Id { get; set; }
 
         [Required(ErrorMessage = "Name is required.")]
-        [MaxLength(40)]
+        [MaxLength(120)]
         public string Name { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Route is required.")]
-        [MaxLength(40)]
+        [MaxLength(256)]
         public string Route { get; set; } = string.Empty;
 
         public string? Icon { get; set; }

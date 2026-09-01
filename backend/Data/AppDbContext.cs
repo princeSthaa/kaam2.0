@@ -330,6 +330,12 @@ namespace backend.Data
                 .HasIndex(x => new { x.RolePageAccessId, x.PermissionId })
                 .IsUnique();
 
+            modelBuilder.Entity<Role>()
+                .HasOne(role => role.ModulePage)
+                .WithMany()
+                .HasForeignKey(role => role.ModulePageId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Page>()
                 .HasOne(e => e.ParentPage)
                 .WithMany(e => e.ChildPages)

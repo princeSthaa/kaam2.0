@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import Script from "next/script";
 import Link from "next/link";
+import { PermissionGuard } from "@/app/components/auth/PermissionGuard";
 import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 
 import { STAGE_COLORS, STAGE_LIGHT_COLORS as STAGE_LIGHT } from "../constants/production.constants";
@@ -397,7 +398,7 @@ export default function ProductionOverviewPage() {
 
     setSavingNoteId(planNo);
     try {
-      await fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(rawPlanDbId)}`, {
+      await fetch(`/api/bff/production-plans/${encodeURIComponent(rawPlanDbId)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productionNotes: noteText, updatedAt: new Date().toISOString() })
@@ -439,15 +440,19 @@ export default function ProductionOverviewPage() {
               <span>Sync Floor Data</span>
             </button>
 
-            <Link href="/production" className="prd-action-btn-light">
-              <span className="material-symbols-outlined text-[16px]">dashboard</span>
-              <span>Overview</span>
-            </Link>
+            <PermissionGuard route="/production" action="GET">
+              <Link href="/production" className="prd-action-btn-light">
+                <span className="material-symbols-outlined text-[16px]">dashboard</span>
+                <span>Overview</span>
+              </Link>
+            </PermissionGuard>
 
-            <Link href="/production/demands" className="prd-action-btn-primary">
-              <span className="material-symbols-outlined text-[16px]">add_circle</span>
-              <span>New Plan</span>
-            </Link>
+            <PermissionGuard route="/production/demands" action="GET">
+              <Link href="/production/demands" className="prd-action-btn-primary">
+                <span className="material-symbols-outlined text-[16px]">add_circle</span>
+                <span>New Plan</span>
+              </Link>
+            </PermissionGuard>
           </div>
         </div>
 

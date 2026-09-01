@@ -205,7 +205,7 @@ export default function InProgressPage() {
           resolvedStatus = "Completed";
           resolvedProgress = 100;
           // Persist the auto-completion to backend
-          fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(planDbId)}`, {
+          fetch(`/api/bff/production-plans/${encodeURIComponent(planDbId)}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...plan, status: 5, progress: 100, updatedAt: new Date().toISOString() })
@@ -271,7 +271,7 @@ export default function InProgressPage() {
         updatedAt: new Date().toISOString()
       };
 
-      fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(updatedPlan.planDbId)}`, {
+      fetch(`/api/bff/production-plans/${encodeURIComponent(updatedPlan.planDbId)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

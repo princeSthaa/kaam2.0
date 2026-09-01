@@ -750,9 +750,9 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
                         <button type="button" className="btn btn-light w-100" onClick={() => setSelectedItem(c)}>
                           View More
                         </button>
-                        <a className="btn btn-primary w-100" href={`/production/openorders?customerId=${c.id}`}>
+                        <ActionButton className="w-100" variant="primary" href={`/production/openorders?customerId=${c.id}`}>
                           View Orders
-                        </a>
+                        </ActionButton>
                       </div>
                     </div>
                   </article>
@@ -794,9 +794,9 @@ export function ProductionCatalogPage({ kind }: { kind: CatalogKind }) {
                         <button type="button" className="btn btn-light w-100" onClick={() => setSelectedItem(o)}>
                           View More
                         </button>
-                        <a className="btn btn-primary w-100" href={`/production/demands/outlet?outletId=${o.id}`}>
+                        <ActionButton className="w-100" variant="primary" href={`/production/demands/outlet?outletId=${o.id}`}>
                           Create Plan
-                        </a>
+                        </ActionButton>
                       </div>
                     </div>
                   </article>

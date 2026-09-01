@@ -18,7 +18,7 @@ export default function ProductionDraftsPage() {
 
   const fetchDrafts = () => {
     setLoading(true);
-    fetch("http://localhost:5083/api/production-plans")
+    fetch("/api/bff/production-plans")
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         if (Array.isArray(data)) {
@@ -110,7 +110,7 @@ export default function ProductionDraftsPage() {
 
     for (const id of idsToDelete) {
       try {
-        const res = await fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(id)}`, { method: "DELETE" });
+        const res = await fetch(`/api/bff/production-plans/${encodeURIComponent(id)}`, { method: "DELETE" });
         if (res.ok) successCount++;
       } catch (e) {
         console.error("Delete failed for plan:", id, e);
@@ -126,7 +126,7 @@ export default function ProductionDraftsPage() {
     if (!window.confirm(`Are you sure you want to delete draft plan ${id}?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res = await fetch(`/api/bff/production-plans/${encodeURIComponent(id)}`, { method: "DELETE" });
       if (res.ok) {
         setPlans((prev) => prev.filter((p) => String(p.planNo || p.planId || p.id) !== String(id)));
         showNotify(`Draft plan ${id} deleted successfully.`);
@@ -153,7 +153,7 @@ export default function ProductionDraftsPage() {
     if (!window.confirm(`Activate draft plan ${id} into active production workflow?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(id)}/activate`, {
+      const res = await fetch(`/api/bff/production-plans/${encodeURIComponent(id)}/activate`, {
         method: "POST",
       });
 
@@ -162,7 +162,7 @@ export default function ProductionDraftsPage() {
         showNotify(`Draft plan ${id} has been activated successfully!`);
       } else {
         // Fallback update call if endpoint not present
-        const updateRes = await fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(id)}`, {
+        const updateRes = await fetch(`/api/bff/production-plans/${encodeURIComponent(id)}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: 1 }),

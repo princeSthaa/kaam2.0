@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconButton } from "../ui/IconButton";
@@ -34,23 +34,11 @@ export function AppHeader() {
   const pathname = usePathname() || "/";
   const { currentUser, isAdmin, canAccessModule, isLoaded } = useRbac();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState<string | null>(null);
   const profileRef = useRef<HTMLDivElement>(null);
-
-  // Hide the global top navigation bar on login / auth pages
-  if (pathname === "/login" || pathname === "/admin/login" || pathname.startsWith("/login")) {
-    return null;
-  }
-
-  // Filter accessible top navigation links based on user role
-  const visibleTopLinks = topLinks.filter((link) => {
-    if (!isLoaded) return true;
-    return canAccessModule(link.href);
-  });
-
-  const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
-  };
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -71,15 +59,51 @@ export function AppHeader() {
     };
   }, []);
 
-  const handleLogout = () => {
+  // Hide the global top navigation bar on login / auth pages
+  if (pathname === "/login" || pathname === "/admin/login" || pathname.startsWith("/login")) {
+    return null;
+  }
+
+  // Filter accessible top navigation links based on user role
+  const visibleTopLinks = topLinks.filter((link) => {
+    if (!isLoaded) return false;
+    return canAccessModule(link.href);
+  });
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("auth_user");
-      sessionStorage.removeItem("auth_token");
+      sessionStorage.clear();
       localStorage.removeItem("auth_user");
-      localStorage.removeItem("auth_token");
     }
     setIsProfileOpen(false);
-    router.push("/login");
+    window.location.href = "/login";
+  };
+
+  const handlePasswordChange = async (event: FormEvent) => {
+    event.preventDefault();
+    setPasswordMessage(null);
+    const response = await fetch("/api/bff/auth/change-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    if (!response.ok) {
+      const body = await response.text();
+      setPasswordMessage(body || "Password change failed.");
+      return;
+    }
+    setCurrentPassword("");
+    setNewPassword("");
+    setShowPasswordForm(false);
+    setPasswordMessage("Password changed successfully.");
   };
 
   const displayName = currentUser?.fullName || currentUser?.email || "User Profile";
@@ -193,13 +217,29 @@ export function AppHeader() {
                       {isAdmin ? "Super Admin (Full Access)" : "Role-Based Access"}
                     </span>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordForm((value) => !value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    Change my password
+                  </button>
+                  {showPasswordForm && (
+                    <form onSubmit={handlePasswordChange} className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <input type="password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Current password" autoComplete="current-password" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" />
+                      <input type="password" required minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="New password" autoComplete="new-password" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" />
+                      <button type="submit" className="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white">Update password</button>
+                    </form>
+                  )}
+                  {passwordMessage && <p className="text-[10px] text-slate-600">{passwordMessage}</p>}
                 </div>
 
                 {/* Quick Actions */}
                 <div className="p-2 bg-slate-50/60 border-t border-slate-200 space-y-1">
                   {isAdmin && (
                     <Link
-                      href="/admin/usersandrbac"
+                      href="/admin/usersandrbac/employees"
                       onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-800 hover:bg-slate-200/60 rounded-xl transition-colors"
                     >

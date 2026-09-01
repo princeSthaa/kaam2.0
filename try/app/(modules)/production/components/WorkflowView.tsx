@@ -111,7 +111,7 @@ export default function WorkflowView({ product, onUpdateProduct }: any) {
       try {
         let saveRes: Response;
         if (realStageId) {
-          saveRes = await fetch(`http://localhost:5083/api/production-plan-stage/${encodeURIComponent(realStageId)}`, {
+          saveRes = await fetch(`/api/bff/production-plan-stage/${encodeURIComponent(realStageId)}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(stagePayload)
@@ -120,7 +120,7 @@ export default function WorkflowView({ product, onUpdateProduct }: any) {
           if (!saveRes.ok) {
             console.warn("PUT failed, falling back to POST. Status:", saveRes.status);
             delete stagePayload.id;
-            saveRes = await fetch(`http://localhost:5083/api/production-plan-stage`, {
+            saveRes = await fetch(`/api/bff/production-plan-stage`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(stagePayload)
@@ -128,7 +128,7 @@ export default function WorkflowView({ product, onUpdateProduct }: any) {
           }
         } else {
           delete stagePayload.id;
-          saveRes = await fetch(`http://localhost:5083/api/production-plan-stage`, {
+          saveRes = await fetch(`/api/bff/production-plan-stage`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(stagePayload)

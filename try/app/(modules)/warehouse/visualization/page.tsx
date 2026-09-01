@@ -37,7 +37,7 @@ export default function WarehouseVisualizationPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:5083/api/warehouse/visualization", { cache: "no-store" });
+      const res = await fetch("/api/bff/warehouse/visualization", { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
         setVisualData(data);

@@ -1,12 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-// import { useRouter } from "next/navigation";
 import {
-  // fetchEmployees,
   loginUser,
-  // EmployeeDto,
-  // AuthUser,
 } from "../(modules)/admin/api/constant";
 
 export default function LoginPage() {
@@ -52,10 +48,12 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = "/admin/usersandrbac";
-    } catch (err: any) {
+      // A password login only creates the backend authentication cookie.
+      // Restart the OAuth flow so the callback can create kaam_session.
+      window.location.href = "/api/auth/start";
+    } catch (err: unknown) {
       setErrorMessage(
-        err.message || "Sign in failed."
+        err instanceof Error ? err.message : "Sign in failed."
       );
     } finally {
       setIsLoading(false);

@@ -27,7 +27,7 @@ export default function SupplierPurchaseDemandPage() {
 
   const loadMaterials = async () => {
     try {
-      const res = await fetch("http://localhost:5083/api/material");
+      const res = await fetch("/api/bff/material");
       if (res.ok) {
         const data = await res.json();
         setMaterials(Array.isArray(data) ? data : []);
@@ -63,7 +63,7 @@ export default function SupplierPurchaseDemandPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5083/api/material/request-supplier", {
+      const res = await fetch("/api/bff/material/request-supplier", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

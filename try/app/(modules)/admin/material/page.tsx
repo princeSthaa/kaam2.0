@@ -8,7 +8,7 @@ import { ManageProductionStagesModal } from "../components/modals/manageproducti
 import { ManageMaterialCategoryModal } from "../components/modals/managematerialcategorymodal";
 import { ManageMaterialTypeModal } from "../components/modals/managematerialtypemodal";
 import { fetchMaterials, deleteMaterial as apiDeleteMaterial, MaterialGetDto } from "../api/constant";
-import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { BACKEND_ORIGIN } from "@/app/(modules)/api/constant";
 
 export interface MaterialDirectoryItem {
   id: string;
@@ -100,7 +100,7 @@ export default function MaterialDirectoryPage() {
           if (m.imagePath) {
             imgUrl = m.imagePath.startsWith("http")
               ? m.imagePath
-              : `${API_MAIN_URL.replace("/api", "")}${m.imagePath}`;
+              : `${BACKEND_ORIGIN}${m.imagePath}`;
           }
 
           return {

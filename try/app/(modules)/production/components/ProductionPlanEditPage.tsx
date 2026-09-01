@@ -5,14 +5,15 @@ import { useSearchParams, useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
 import { NepaliDatePicker } from "@/app/components/ui/NepaliDatePicker";
+import { BACKEND_ORIGIN } from "@/app/(modules)/api/constant";
 
 /* ─── Mock Data ─────────────────────────────────────────────────── */
 const mockFabrics = [
-  { id: "11111111-1111-1111-1111-111111111111", code: "FAB-001", name: "100% Combed Cotton (Navy Blue)", category: "Cotton", swatchColor: "#1e3a8a", imagePath: "http://localhost:5083/images/fabrics/FAB-001.jpg" },
-  { id: "22222222-2222-2222-2222-222222222222", code: "FAB-002", name: "Dyed Cotton Pique (Maroon)", category: "Pique", swatchColor: "#831843", imagePath: "http://localhost:5083/images/fabrics/FAB-002.png" },
-  { id: "33333333-3333-3333-3333-333333333333", code: "FAB-003", name: "Heavy Twill Trouser Fabric", category: "Cotton", swatchColor: "#334155", imagePath: "http://localhost:5083/images/fabrics/FAB-003.png" },
-  { id: "44444444-4444-4444-4444-444444444444", code: "FAB-004", name: "Premium Fleece Fabric (Grey Melange)", category: "Fleece", swatchColor: "#64748b", imagePath: "http://localhost:5083/images/fabrics/FAB-004.png" },
-  { id: "55555555-5555-5555-5555-555555555555", code: "FAB-005", name: "Traditional Kurta Fabric", category: "Cotton", swatchColor: "#047857", imagePath: "http://localhost:5083/images/fabrics/FAB-005.png" }
+  { id: "11111111-1111-1111-1111-111111111111", code: "FAB-001", name: "100% Combed Cotton (Navy Blue)", category: "Cotton", swatchColor: "#1e3a8a", imagePath: `${BACKEND_ORIGIN}/images/fabrics/FAB-001.jpg` },
+  { id: "22222222-2222-2222-2222-222222222222", code: "FAB-002", name: "Dyed Cotton Pique (Maroon)", category: "Pique", swatchColor: "#831843", imagePath: `${BACKEND_ORIGIN}/images/fabrics/FAB-002.png` },
+  { id: "33333333-3333-3333-3333-333333333333", code: "FAB-003", name: "Heavy Twill Trouser Fabric", category: "Cotton", swatchColor: "#334155", imagePath: `${BACKEND_ORIGIN}/images/fabrics/FAB-003.png` },
+  { id: "44444444-4444-4444-4444-444444444444", code: "FAB-004", name: "Premium Fleece Fabric (Grey Melange)", category: "Fleece", swatchColor: "#64748b", imagePath: `${BACKEND_ORIGIN}/images/fabrics/FAB-004.png` },
+  { id: "55555555-5555-5555-5555-555555555555", code: "FAB-005", name: "Traditional Kurta Fabric", category: "Cotton", swatchColor: "#047857", imagePath: `${BACKEND_ORIGIN}/images/fabrics/FAB-005.png` }
 ];
 
 const mockMaterials: any[] = [
@@ -314,11 +315,11 @@ export function ProductionPlanEditPage() {
     setIsLoading(true);
 
     Promise.all([
-      fetch("http://localhost:5083/api/production-plans").then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch("http://localhost:5083/api/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch("http://localhost:5083/api/production-plan-product-size").then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch("http://localhost:5083/api/production-plan-stage").then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch("http://localhost:5083/api/customers").then(r => r.ok ? r.json() : []).catch(() => [])
+      fetch("/api/bff/production-plans").then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/bff/production-plan-product").then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/bff/production-plan-product-size").then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/bff/production-plan-stage").then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch("/api/bff/customer").then(r => r.ok ? r.json() : []).catch(() => [])
     ]).then(([plans, allProducts, allSizes, allStages, custs]) => {
       const plan = (plans || []).find((p: any) =>
         String(p.planId) === planId || String(p.planNo) === planId || String(p.id) === planId
@@ -622,7 +623,7 @@ export function ProductionPlanEditPage() {
     };
 
     try {
-      const res = await fetch(`http://localhost:5083/api/production-plans/${encodeURIComponent(dbId)}`, {
+      const res = await fetch(`/api/bff/production-plans/${encodeURIComponent(dbId)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedPlan)
@@ -991,7 +992,7 @@ export function ProductionPlanEditPage() {
                                     src={fabInfo.imagePath}
                                     alt={fabInfo.name}
                                     style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover", border: "1.5px solid #cbd5e1", flexShrink: 0 }}
-                                    onError={(e) => { (e.target as HTMLImageElement).src = "http://localhost:5083/images/fabrics/FAB-001.jpg"; }}
+                                    onError={(e) => { (e.target as HTMLImageElement).src = `${BACKEND_ORIGIN}/images/fabrics/FAB-001.jpg`; }}
                                   />
                                   <div style={S.swatch(v.swatchColor || fabInfo.swatchColor, (v.swatchColor || fabInfo.swatchColor) === "#e2e8f0")} />
                                   <div>

@@ -38,11 +38,6 @@ export async function fetchPages(): Promise<PageDto[]> {
     const response = await fetch(API_BASE_URL, { cache: "no-store" });
 
     if (!response.ok) {
-      // Fallback try /pages plural
-      const fallbackResponse = await fetch(`${API_MAIN_URL}/pages`, { cache: "no-store" });
-      if (fallbackResponse.ok) {
-        return await fallbackResponse.json();
-      }
       throw new Error(`Failed to fetch pages: ${response.statusText}`);
     }
 

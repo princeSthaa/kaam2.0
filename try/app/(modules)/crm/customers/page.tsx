@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCustomers } from "../hooks";
 import { CustomerRow } from "../components/CustomerRow";
 import { EditCustomerModal } from "../components/EditCustomerModal";
+import { PermissionGuard } from "@/app/components/auth/PermissionGuard";
 import { deleteCustomer } from "../api/constant";
 import { Customer } from "../dto/customer.dto";
 
@@ -166,13 +167,15 @@ export default function CrmCustomerFilterPage() {
             </span>
             <span>Refresh</span>
           </button>
-          <Link
-            href="/crm/customers/new"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95"
-          >
-            <span className="material-symbols-outlined text-sm font-bold">add</span>
-            <span>Add Customer</span>
-          </Link>
+          <PermissionGuard route="/crm/customers/new" action="GET">
+            <Link
+              href="/crm/customers/new"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95"
+            >
+              <span className="material-symbols-outlined text-sm font-bold">add</span>
+              <span>Add Customer</span>
+            </Link>
+          </PermissionGuard>
         </div>
       </div>
 

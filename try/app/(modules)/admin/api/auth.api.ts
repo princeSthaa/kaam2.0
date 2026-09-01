@@ -1,4 +1,4 @@
-import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { AUTH_SERVER } from "@/app/(modules)/api/constant";
 
 export interface LoginDto {
   email?: string;
@@ -10,7 +10,7 @@ export interface LoginResponseDto {
 }
 
 export async function loginUser(payload: LoginDto): Promise<LoginResponseDto> {
-  const response = await fetch(`${API_MAIN_URL}/auth/login`, {
+  const response = await fetch(`${AUTH_SERVER}/api/auth/login`, {
     method: "POST",
 
     headers: {

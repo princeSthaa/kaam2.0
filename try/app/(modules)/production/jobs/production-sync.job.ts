@@ -9,7 +9,7 @@ export async function syncProductionDraftsJob(): Promise<{ syncedCount: number }
     const parsed = JSON.parse(stored);
     if (parsed && parsed.planNo) {
       // Background sync payload to server
-      const res = await fetch("http://localhost:5083/api/production-plans", {
+      const res = await fetch("/api/bff/production-plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed),

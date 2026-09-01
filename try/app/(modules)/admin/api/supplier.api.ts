@@ -1,4 +1,4 @@
-// const API_BASE_URL = "http://localhost:5083/api/supplier";
+// const API_BASE_URL = "/api/bff/supplier";
 
 import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 

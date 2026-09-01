@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Customer } from "../dto/customer.dto";
+import { PermissionGuard } from "@/app/components/auth/PermissionGuard";
 
 export interface CustomerRowProps {
   customer: Customer;
@@ -89,27 +90,31 @@ export function CustomerRow({ customer, onEdit, onDelete }: CustomerRowProps) {
       {/* Actions */}
       <td className="py-3.5 px-4 text-end">
         <div className="flex items-center justify-end gap-1.5">
-          {onEdit && (
-            <button
-              type="button"
-              onClick={() => onEdit(customer)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 border border-slate-200 hover:border-blue-200 rounded-lg text-xs font-bold transition-all shadow-2xs active:scale-95"
-              title="Edit Customer"
-            >
-              <span className="material-symbols-outlined text-sm">edit</span>
-              <span>Edit</span>
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete(customer)}
-              className="w-8 h-8 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center transition-colors"
-              title="Delete Customer"
-            >
-              <span className="material-symbols-outlined text-sm">delete</span>
-            </button>
-          )}
+          <PermissionGuard route="/crm/customers" action="PUT">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(customer)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 border border-slate-200 hover:border-blue-200 rounded-lg text-xs font-bold transition-all shadow-2xs active:scale-95"
+                title="Edit Customer"
+              >
+                <span className="material-symbols-outlined text-sm">edit</span>
+                <span>Edit</span>
+              </button>
+            )}
+          </PermissionGuard>
+          <PermissionGuard route="/crm/customers" action="DELETE">
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(customer)}
+                className="w-8 h-8 rounded-lg hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center transition-colors"
+                title="Delete Customer"
+              >
+                <span className="material-symbols-outlined text-sm">delete</span>
+              </button>
+            )}
+          </PermissionGuard>
         </div>
       </td>
     </tr>

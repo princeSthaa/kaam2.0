@@ -119,7 +119,7 @@ export function ProductionPlanCreateDetailsPage() {
   const [backendWorkCenters, setBackendWorkCenters] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:5083/api/work-center")
+    fetch("/api/bff/work-center")
       .then(res => res.ok ? res.json() : [])
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -620,7 +620,7 @@ export function ProductionPlanCreateDetailsPage() {
     };
 
     try {
-      const response = await fetch("http://localhost:5083/api/production-plans", {
+      const response = await fetch("/api/bff/production-plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newPlan)

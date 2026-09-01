@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { MaterialIcon } from "@/app/components/ui/MaterialIcon";
+import { PermissionGuard } from "@/app/components/auth/PermissionGuard";
 import { fetchProductionPlans } from "../api/constant";
 import { ProductionPlan } from "../dto/production.dto";
 
@@ -199,14 +200,29 @@ export default function ProductionCreatePage() {
                 </div>
               </div>
 
-              <Link
-                href={choice.href}
-                className="btn w-100 py-2.5 fw-bold text-white rounded-3 shadow-2xs d-inline-flex align-items-center justify-center gap-2 cursor-pointer transition-all"
-                style={{ backgroundColor: choice.accentColor, border: "none" }}
+              <PermissionGuard
+                route={choice.href}
+                action="GET"
+                fallback={
+                  <button
+                    type="button"
+                    disabled
+                    className="btn w-100 py-2.5 fw-bold text-slate-400 bg-slate-100 rounded-3 d-inline-flex align-items-center justify-center gap-2 cursor-not-allowed border border-slate-200"
+                  >
+                    <span>No Permission</span>
+                    <MaterialIcon name="lock" style={{ fontSize: "18px" }} />
+                  </button>
+                }
               >
-                <span>{choice.cta}</span>
-                <MaterialIcon name="arrow_forward" style={{ fontSize: "18px" }} />
-              </Link>
+                <Link
+                  href={choice.href}
+                  className="btn w-100 py-2.5 fw-bold text-white rounded-3 shadow-2xs d-inline-flex align-items-center justify-center gap-2 cursor-pointer transition-all"
+                  style={{ backgroundColor: choice.accentColor, border: "none" }}
+                >
+                  <span>{choice.cta}</span>
+                  <MaterialIcon name="arrow_forward" style={{ fontSize: "18px" }} />
+                </Link>
+              </PermissionGuard>
             </div>
           </div>
         ))}

@@ -41,8 +41,12 @@ using backend.Service.Permission;
 using backend.Service.RolePageAccess;
 using backend.Service.RolePagePermission;
 using backend.Service.Authenticate;
+using backend.Service.Rbac;
+using backend.Security.Rbac;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using OpenIddict.Validation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,6 +90,14 @@ builder.Services.AddAuthentication(options =>
 {
     options.Cookie.Name = "Kaam.Auth";
     options.LoginPath = "/api/auth/login";
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder(
+            OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
 builder.Services.AddOpenIddict()
@@ -172,6 +184,7 @@ builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IRolePageAccessService, RolePageAccessService>();
 builder.Services.AddScoped<IRolePagePermissionService, RolePagePermissionService>();
 builder.Services.AddScoped<IAuthenticateService, AuthenticateService>();
+builder.Services.AddScoped<IRbacService, RbacService>();
 
 #endregion 
 
@@ -191,7 +204,7 @@ using (var scope = app.Services.CreateScope())
 {
     try
     {
-        // var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await RbacSeeder.SeedAsync(scope.ServiceProvider);
         await OpenIddictSeeder.SeedAsync(scope.ServiceProvider);
     }
     catch (Exception ex)
