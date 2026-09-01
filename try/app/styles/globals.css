@@ -20,6 +20,10 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
+:root {
+  --sidebar-width: 250px;
+}
+
 .page-container.with-sidebar {
   padding: 0 !important;
 }
@@ -27,14 +31,15 @@ body {
 .layout-wrapper {
   display: flex;
   min-height: calc(100vh - 72px);
-  padding-left: 290px;
+  padding-left: calc(var(--sidebar-width) + 30px);
+  transition: padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar {
-  width: 250px;
+  width: var(--sidebar-width);
   background-color: #ffffff;
   border-right: 1px solid #e5e7eb;
-  padding: 20px 0;
+  padding: 16px 0;
   position: fixed;
   top: 72px;
   left: 0;
@@ -45,13 +50,23 @@ body {
   flex-direction: column;
   flex-shrink: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   max-height: calc(100vh - 72px);
-  border-top-right-radius: 20px;
-  border-bottom-right-radius: 20px;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar.is-collapsed {
+  overflow: visible !important;
+}
+
+.sidebar.is-collapsed .sidebar-nav {
+  overflow: visible !important;
 }
 
 .sidebar::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .sidebar::-webkit-scrollbar-track {
@@ -71,20 +86,22 @@ body {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 0 15px;
+  gap: 4px;
+  padding: 0 10px;
 }
 
 .sidebar-nav a {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 15px;
+  padding: 9px 12px;
   color: #4b5563;
   text-decoration: none;
-  border-radius: 6px;
+  border-radius: 10px;
   font-weight: 500;
+  font-size: 0.8125rem;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .sidebar-nav a:hover {
@@ -95,6 +112,7 @@ body {
 .sidebar-nav a.active {
   background-color: #eff6ff;
   color: #2563eb;
+  font-weight: 600;
 }
 
 .sidebar-nav .material-symbols-outlined {
@@ -202,21 +220,27 @@ div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
   }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .layout-wrapper {
-    padding-left: 0;
+    padding-left: 0 !important;
+    display: block;
   }
 
   .sidebar {
-    position: static;
-    width: auto;
-    max-height: none;
-    margin: 12px;
-    border-radius: 12px;
+    position: fixed;
+    top: 72px;
+    left: 0;
+    bottom: 0;
+    margin: 0;
+    max-height: calc(100vh - 72px);
+    border-radius: 0 20px 20px 0;
+    z-index: 105;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   }
 
-  .layout-wrapper {
-    display: block;
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
 }
 
@@ -714,4 +738,70 @@ div[style*="overflow-y: auto"]::-webkit-scrollbar-thumb {
     'wght' 400,
     'GRAD' 0,
     'opsz' 24;
+}
+
+/* ==========================================================================
+   Global Print Styles
+   ========================================================================== */
+@media print {
+  /* Hide navigation, sidebar, toasts, and buttons during print */
+  .topbar,
+  header,
+  .sidebar,
+  aside,
+  .mobile-dropdown-nav,
+  .no-print,
+  button,
+  .status-actions {
+    display: none !important;
+  }
+
+  /* Reset body and layout styling for paper / PDF printing */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .layout-wrapper {
+    display: block !important;
+    padding-left: 0 !important;
+    min-height: auto !important;
+  }
+
+  .main-content {
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* When printing from modal, remove backdrop and position cleanly */
+  .fixed.inset-0 {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    z-index: auto !important;
+  }
+
+  #printable-invoice {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Ensure colors and borders are preserved */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }

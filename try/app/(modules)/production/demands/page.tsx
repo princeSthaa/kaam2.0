@@ -52,7 +52,7 @@ export default function ProductionCreatePage() {
       badgeStyle: { backgroundColor: "#ecfdf5", color: "#047857", border: "1px solid #a7f3d0" },
       title: "Outlet Replenishment Demand",
       subtitle: "Internal Brand Outlets & Store Stocking",
-      text: "Plan garment production to fulfill outlet store inventory requests and seasonal restocks.",
+      text: "Plan production to fulfill outlet store inventory requests and seasonal restocks.",
       points: [
         "Select target outlet & location manager",
         "View outlet store stock depletion levels",

@@ -4,17 +4,16 @@ import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconButton } from "../ui/IconButton";
-import { NavList } from "../ui/NavList";
 import { useRbac } from "@/app/lib/useRbac";
 
 export const topLinks = [
-  { label: "Dashboard", href: "/" },
-  { label: "CRM", href: "/crm" },
-  { label: "Production", href: "/production" },
-  { label: "Warehouse", href: "/warehouse" },
-  { label: "Factory", href: "/factory" },
-  { label: "Inventory", href: "/inventory" },
-  { label: "Admin", href: "/admin" },
+  { label: "Dashboard", href: "/", icon: "dashboard" },
+  { label: "CRM", href: "/crm", icon: "group" },
+  { label: "Production", href: "/production", icon: "precision_manufacturing" },
+  { label: "Warehouse", href: "/warehouse", icon: "warehouse" },
+  { label: "Factory", href: "/factory", icon: "factory" },
+  { label: "Inventory", href: "/inventory", icon: "inventory_2" },
+  { label: "Admin", href: "/admin", icon: "admin_panel_settings" },
 ];
 
 function getInitials(name?: string, email?: string) {
@@ -34,33 +33,30 @@ export function AppHeader() {
   const pathname = usePathname() || "/";
   const { currentUser, isAdmin, canAccessModule, isLoaded } = useRbac();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
 
-  // Hide the global top navigation bar on login / auth pages
-  if (pathname === "/login" || pathname === "/admin/login" || pathname.startsWith("/login")) {
-    return null;
-  }
+  // Close mobile nav on route change
+  useEffect(() => {
+    setIsMobileNavOpen(false);
+  }, [pathname]);
 
-  // Filter accessible top navigation links based on user role
-  const visibleTopLinks = topLinks.filter((link) => {
-    if (!isLoaded) return true;
-    return canAccessModule(link.href);
-  });
-
-  const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
-  };
-
-  // Close profile dropdown when clicking outside
+  // Close profile dropdown or mobile menu on Escape / click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
         setIsProfileOpen(false);
       }
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setIsMobileNavOpen(false);
+      }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsProfileOpen(false);
+      if (e.key === "Escape") {
+        setIsProfileOpen(false);
+        setIsMobileNavOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -71,6 +67,23 @@ export function AppHeader() {
     };
   }, []);
 
+  // Hide the global top navigation bar on login / auth pages
+  if (pathname === "/login" || pathname === "/admin/login" || pathname.startsWith("/login")) {
+    return null;
+  }
+
+  // Filter accessible top navigation links based on user role (show all if admin or guest/not logged in)
+  const visibleTopLinks = topLinks.filter((link) => {
+    if (isAdmin || !currentUser) return true;
+    if (!isLoaded) return true;
+    return canAccessModule(link.href);
+  });
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
+
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("auth_user");
@@ -79,6 +92,7 @@ export function AppHeader() {
       localStorage.removeItem("auth_token");
     }
     setIsProfileOpen(false);
+    setIsMobileNavOpen(false);
     router.push("/login");
   };
 
@@ -86,14 +100,42 @@ export function AppHeader() {
   const userInitials = getInitials(currentUser?.fullName, currentUser?.email);
 
   return (
-    <header className="topbar relative">
-      <div className="topbar-left">
-        <Link href="/" className="brand">kaam</Link>
-        <nav className="top-nav">
-          <NavList
-            items={visibleTopLinks}
-            isActive={isActive}
-          />
+    <header className="topbar relative" ref={headerRef}>
+      <div className="topbar-left flex items-center gap-4 md:gap-6">
+        {/* Hamburger button: ONLY shown on mobile (< 768px) */}
+        <button
+          type="button"
+          onClick={() => setIsMobileNavOpen((prev) => !prev)}
+          aria-label={isMobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+          className="mobile-hamburger-btn items-center justify-center p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-900"
+        >
+          <span className="material-symbols-outlined text-2xl">
+            {isMobileNavOpen ? "close" : "menu"}
+          </span>
+        </button>
+
+        <Link href="/" className="brand flex items-center gap-2">
+          <span>kaam</span>
+        </Link>
+
+        {/* Desktop Navbar: ALWAYS visible on laptop/PC screens (>= 768px), hidden on mobile (< 768px) */}
+        <nav className="desktop-navbar">
+          {visibleTopLinks.map((link) => {
+            const active = isActive(link.href);
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all shrink-0 ${
+                  active
+                    ? "bg-blue-50 text-blue-600 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
@@ -152,7 +194,6 @@ export function AppHeader() {
 
                 {/* Profile Details List */}
                 <div className="p-4 space-y-2.5 text-xs font-sans">
-                  {/* Email */}
                   {currentUser.email && (
                     <div className="flex items-center gap-2.5 text-slate-600">
                       <span className="material-symbols-outlined text-slate-400 text-base shrink-0">
@@ -162,7 +203,6 @@ export function AppHeader() {
                     </div>
                   )}
 
-                  {/* Department */}
                   {currentUser.departmentName && (
                     <div className="flex items-center gap-2.5 text-slate-600">
                       <span className="material-symbols-outlined text-slate-400 text-base shrink-0">
@@ -174,7 +214,6 @@ export function AppHeader() {
                     </div>
                   )}
 
-                  {/* Phone */}
                   {currentUser.phoneNumber && (
                     <div className="flex items-center gap-2.5 text-slate-600">
                       <span className="material-symbols-outlined text-slate-400 text-base shrink-0">
@@ -186,7 +225,6 @@ export function AppHeader() {
                     </div>
                   )}
 
-                  {/* Role Privileges */}
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono text-slate-500">
                     <span>Privilege Level:</span>
                     <span className="font-bold text-slate-800">
@@ -245,6 +283,46 @@ export function AppHeader() {
           </Link>
         )}
       </div>
+
+      {/* Mobile / Minimized Collapsible Dropdown Navigation (Expands Below Topbar on < 768px) */}
+      {isMobileNavOpen && (
+        <div className="mobile-dropdown-nav absolute top-full left-0 right-0 w-full bg-white border-b border-slate-200 shadow-xl z-50 animate-fadeIn">
+          <div className="max-w-7xl mx-auto px-4 py-3 space-y-1">
+            <div className="px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+              Navigation
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+              {visibleTopLinks.map((link) => {
+                const active = isActive(link.href);
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setIsMobileNavOpen(false)}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      active
+                        ? "bg-blue-50 text-blue-600 font-bold"
+                        : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                    }`}
+                  >
+                    <span
+                      className={`material-symbols-outlined text-xl shrink-0 ${
+                        active ? "text-blue-600" : "text-slate-400"
+                      }`}
+                    >
+                      {link.icon || "link"}
+                    </span>
+                    <span className="flex-1 truncate">{link.label}</span>
+                    {active && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -13,6 +13,12 @@ export interface MaterialCategoryRef {
 }
 
 export interface MaterialGetDto {
+  mandatoryTests: never[];
+  qualityStandard: string;
+  composition: any;
+  colorCode: any;
+  widthInches: any;
+  weightGsm: any;
   id: string;
   materialCode?: string;
   name: string;
