@@ -43,7 +43,7 @@ export function ManageProductCategoryModal({ isOpen, onClose }: ManageProductCat
         setCategories(data);
       }
     } catch (err) {
-      console.warn("API GET http://localhost:5083/api/product-category failed, using fallback data:", err);
+      console.warn("API GET /api/bff/product-category failed, using fallback data:", err);
     } finally {
       setLoading(false);
     }

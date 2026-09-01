@@ -1,4 +1,4 @@
-import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { API_MAIN_URL, BACKEND_ORIGIN } from "@/app/(modules)/api/constant";
 import { mockProducts, mockFabrics } from "./crm.mock";
 
 const dispatchMockFallback = () => {
@@ -7,7 +7,7 @@ const dispatchMockFallback = () => {
   }
 };
 
-// const API_BASE_URL = 'http://localhost:5083/api';
+// const API_BASE_URL = '/api/bff';
 
 const API_BASE_URL = `${API_MAIN_URL}/product`;
 
@@ -25,7 +25,7 @@ export type Fabric = {
   imagePath: string;
 };
 
-const MEDIA_BASE_URL = API_MAIN_URL.replace(/\/api\/?$/, "");
+const MEDIA_BASE_URL = BACKEND_ORIGIN;
 
 export function resolveMediaUrl(path?: string, defaultType: "product" | "fabric" = "product"): string {
   if (!path || path === "default.png" || path === "fabric.png" || path.includes("place-holder") || path.includes("denim")) {

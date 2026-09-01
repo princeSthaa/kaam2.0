@@ -1,2 +1,13 @@
-// export const API_MAIN_URL = "https://wgfk2srw-5083.inc1.devtunnels.ms/api";
-export const API_MAIN_URL = "http://localhost:5083/api";
+export const API_MAIN_URL = "/api/bff";
+
+const configuredBackendOrigin =
+  process.env.NEXT_PUBLIC_KAAM_BACKEND_ORIGIN?.trim();
+
+if (!configuredBackendOrigin) {
+  throw new Error(
+    "Missing required public environment variable: NEXT_PUBLIC_KAAM_BACKEND_ORIGIN"
+  );
+}
+
+export const BACKEND_ORIGIN = configuredBackendOrigin.replace(/\/+$/, "");
+export const AUTH_SERVER = BACKEND_ORIGIN;

@@ -8,7 +8,7 @@ const dispatchMockFallback = () => {
   }
 };
 
-// const API_BASE_URL = 'http://localhost:5083/api';  
+// const API_BASE_URL = '/api/bff';  
 
 const API_BASE_URL = `${API_MAIN_URL}/customer`;
 

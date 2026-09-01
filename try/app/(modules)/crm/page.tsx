@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ActionButton } from "@/app/components/ui/ActionButton";
 import { PageHeader } from "@/app/components/ui/PageHeader";
+import { PermissionGuard } from "@/app/components/auth/PermissionGuard";
 import { fetchCustomers } from "./api/customer.api";
 import { fetchOrders } from "./api/order.api";
 import { Customer } from "./dto/customer.dto";
@@ -136,12 +137,16 @@ export default function CrmIndexPage() {
         subtitle="Track customer activity, monitor order pipelines, and review recent audit logs."
         actions={
           <div className="flex items-center space-x-3">
-            <ActionButton href="/crm/customers/new" variant="secondary">
-              + Add Customer
-            </ActionButton>
-            <ActionButton href="/crm/orders/new" variant="primary">
-              + Create Order
-            </ActionButton>
+            <PermissionGuard route="/crm/customers/new" action="GET">
+              <ActionButton href="/crm/customers/new" variant="secondary">
+                + Add Customer
+              </ActionButton>
+            </PermissionGuard>
+            <PermissionGuard route="/crm/orders/new" action="GET">
+              <ActionButton href="/crm/orders/new" variant="primary">
+                + Create Order
+              </ActionButton>
+            </PermissionGuard>
           </div>
         }
       />
@@ -240,6 +245,7 @@ export default function CrmIndexPage() {
                 <span className="material-symbols-outlined text-slate-700 text-lg">receipt_long</span>
                 <h3 className="font-bold text-slate-900 text-sm">Recent Customer Orders</h3>
               </div>
+<<<<<<< HEAD
               <div className="flex items-center space-x-3">
                 <Link
                   href="/crm/orders"
@@ -247,13 +253,20 @@ export default function CrmIndexPage() {
                 >
                   View All Orders &rarr;
                 </Link>
+=======
+              <PermissionGuard route="/crm/orders/new" action="GET">
+>>>>>>> 9fa217c0547fabab9b45165af836b1805beb744c
                 <Link
                   href="/crm/orders/new"
                   className="text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors"
                 >
                   + New Order
                 </Link>
+<<<<<<< HEAD
               </div>
+=======
+              </PermissionGuard>
+>>>>>>> 9fa217c0547fabab9b45165af836b1805beb744c
             </div>
 
             <div className="overflow-x-auto">
@@ -399,6 +412,7 @@ export default function CrmIndexPage() {
               <span>CRM Module Shortcuts</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
+<<<<<<< HEAD
               <Link
                 href="/crm/orders"
                 className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
@@ -427,6 +441,35 @@ export default function CrmIndexPage() {
                 <span className="material-symbols-outlined text-sm text-purple-600">person_add</span>
                 <span>New Customer</span>
               </Link>
+=======
+              <PermissionGuard route="/crm/customers" action="GET">
+                <Link
+                  href="/crm/customers"
+                  className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
+                >
+                  <span className="material-symbols-outlined text-sm text-blue-600">filter_list</span>
+                  <span>Filter Customers</span>
+                </Link>
+              </PermissionGuard>
+              <PermissionGuard route="/crm/orders/new" action="GET">
+                <Link
+                  href="/crm/orders/new"
+                  className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
+                >
+                  <span className="material-symbols-outlined text-sm text-emerald-600">add_circle</span>
+                  <span>Create Order</span>
+                </Link>
+              </PermissionGuard>
+              <PermissionGuard route="/crm/customers/new" action="GET">
+                <Link
+                  href="/crm/customers/new"
+                  className="p-2.5 bg-slate-50 hover:bg-slate-100/80 rounded-lg border border-slate-200 transition-colors flex items-center space-x-2 font-semibold text-slate-800"
+                >
+                  <span className="material-symbols-outlined text-sm text-purple-600">person_add</span>
+                  <span>New Customer</span>
+                </Link>
+              </PermissionGuard>
+>>>>>>> 9fa217c0547fabab9b45165af836b1805beb744c
             </div>
           </div>
         </div>

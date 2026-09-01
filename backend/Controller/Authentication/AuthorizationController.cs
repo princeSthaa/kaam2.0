@@ -13,6 +13,9 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 using Microsoft.AspNetCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
+using backend.Security.Rbac;
+using backend.Service.Rbac;
 
 
 namespace backend.Controller.Authentication;
@@ -22,13 +25,16 @@ namespace backend.Controller.Authentication;
 public class AuthorizationController : ControllerBase
 {
     private readonly IAuthenticateService _service;
-    public AuthorizationController(IAuthenticateService service)
+    private readonly IRbacService _rbac;
+    public AuthorizationController(IAuthenticateService service, IRbacService rbac)
     {
         _service = service;
+        _rbac = rbac;
     }
 
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
+    [AllowAnonymous]
     public async Task<IActionResult> Authorize()
     {   
         var request = HttpContext.GetOpenIddictServerRequest();
@@ -76,6 +82,14 @@ public class AuthorizationController : ControllerBase
         if (!string.IsNullOrEmpty(email))
             identity.SetClaim(Claims.Email, email);
 
+        var role = principle?.FindFirst(ClaimTypes.Role)?.Value;
+        if (!string.IsNullOrEmpty(role)) identity.SetClaim(Claims.Role, role);
+        foreach (var claimName in new[] { "role_id", "is_super_admin" })
+        {
+            var value = principle?.FindFirst(claimName)?.Value;
+            if (!string.IsNullOrEmpty(value)) identity.SetClaim(claimName, value);
+        }
+
         var openIddictPrincipal = new ClaimsPrincipal(identity);
         // Tell OpenIddict which scopes are allowed.
         openIddictPrincipal.SetScopes(
@@ -84,8 +98,6 @@ public class AuthorizationController : ControllerBase
         // Tell OpenIddict which resources the access token is intended for.
         openIddictPrincipal.SetResources("api");
 
-
-
         return SignIn(
             openIddictPrincipal,
             OpenIddictServerAspNetCoreDefaults.AuthenticationScheme
@@ -93,7 +105,7 @@ public class AuthorizationController : ControllerBase
     }
 
 
-    //Temp login check
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequestDto dto)
     {
@@ -114,15 +126,34 @@ public class AuthorizationController : ControllerBase
         });
     }
 
-    [Authorize]
-    [HttpGet("me")]
-    public IActionResult Me()
+    [AllowAnonymous]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout()
     {
-        return Ok(new {
-            UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value,
-            Name = User.FindFirst(ClaimTypes.Name)?.Value,
-            Email = User.FindFirst(ClaimTypes.Email)?.Value
-        });
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return Ok(new { Message = "Signed out" });
+    }
+
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+    [HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        var employeeId = RbacUser.GetEmployeeId(User);
+        if (employeeId is null) return Unauthorized();
+        var profile = await _rbac.GetProfileAsync(employeeId.Value);
+        return profile is null ? Unauthorized() : Ok(profile);
+    }
+
+    [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var employeeId = RbacUser.GetEmployeeId(User);
+        if (employeeId is null) return Unauthorized();
+        return await _service.ChangePasswordAsync(employeeId.Value, dto.CurrentPassword, dto.NewPassword)
+            ? NoContent()
+            : BadRequest(new { message = "The current password is incorrect." });
     }
     
     

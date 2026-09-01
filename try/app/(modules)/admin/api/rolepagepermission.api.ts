@@ -30,11 +30,6 @@ export async function fetchRolePagePermissions(): Promise<RolePagePermissionDto[
     const response = await fetch(API_BASE_URL, { cache: "no-store" });
 
     if (!response.ok) {
-      // Fallback try /rolepagepermission or plural
-      const fallbackResponse = await fetch(`${API_MAIN_URL}/rolepagepermissions`, { cache: "no-store" });
-      if (fallbackResponse.ok) {
-        return await fallbackResponse.json();
-      }
       throw new Error(`Failed to fetch role page permissions: ${response.statusText}`);
     }
 

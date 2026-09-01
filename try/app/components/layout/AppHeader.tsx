@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { IconButton } from "../ui/IconButton";
@@ -33,14 +33,23 @@ export function AppHeader() {
   const pathname = usePathname() || "/";
   const { currentUser, isAdmin, canAccessModule, isLoaded } = useRbac();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const headerRef = useRef<HTMLElement>(null);
 
-  // Close mobile nav on route change
-  useEffect(() => {
-    setIsMobileNavOpen(false);
-  }, [pathname]);
+  // Hide the global top navigation bar on login / auth pages
+  if (pathname === "/login" || pathname === "/admin/login" || pathname.startsWith("/login")) {
+    return null;
+  }
+
+  // Filter accessible top navigation links based on user role
+  const visibleTopLinks = topLinks.filter((link) => {
+    if (!isLoaded) return true;
+    return canAccessModule(link.href);
+  });
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
 
   // Close profile dropdown or mobile menu on Escape / click outside
   useEffect(() => {
@@ -84,15 +93,31 @@ export function AppHeader() {
     return pathname.startsWith(href);
   };
 
-  const handleLogout = () => {
+  // Hide the global top navigation bar on login / auth pages
+  if (pathname === "/login" || pathname === "/admin/login" || pathname.startsWith("/login")) {
+    return null;
+  }
+
+  // Filter accessible top navigation links based on user role
+  const visibleTopLinks = topLinks.filter((link) => {
+    if (!isLoaded) return false;
+    return canAccessModule(link.href);
+  });
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname.startsWith(href);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch { }
     if (typeof window !== "undefined") {
-      sessionStorage.removeItem("auth_user");
-      sessionStorage.removeItem("auth_token");
+      sessionStorage.clear();
       localStorage.removeItem("auth_user");
-      localStorage.removeItem("auth_token");
     }
     setIsProfileOpen(false);
-    setIsMobileNavOpen(false);
     router.push("/login");
   };
 
@@ -126,11 +151,10 @@ export function AppHeader() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all shrink-0 ${
-                  active
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all shrink-0 ${active
                     ? "bg-blue-50 text-blue-600 shadow-sm"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
+                  }`}
               >
                 {link.label}
               </Link>
@@ -231,13 +255,29 @@ export function AppHeader() {
                       {isAdmin ? "Super Admin (Full Access)" : "Role-Based Access"}
                     </span>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordForm((value) => !value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-[11px] font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    Change my password
+                  </button>
+                  {showPasswordForm && (
+                    <form onSubmit={handlePasswordChange} className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <input type="password" required value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="Current password" autoComplete="current-password" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" />
+                      <input type="password" required minLength={4} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="New password" autoComplete="new-password" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs" />
+                      <button type="submit" className="w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-bold text-white">Update password</button>
+                    </form>
+                  )}
+                  {passwordMessage && <p className="text-[10px] text-slate-600">{passwordMessage}</p>}
                 </div>
 
                 {/* Quick Actions */}
                 <div className="p-2 bg-slate-50/60 border-t border-slate-200 space-y-1">
                   {isAdmin && (
                     <Link
-                      href="/admin/usersandrbac"
+                      href="/admin/usersandrbac/employees"
                       onClick={() => setIsProfileOpen(false)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-800 hover:bg-slate-200/60 rounded-xl transition-colors"
                     >
@@ -299,16 +339,14 @@ export function AppHeader() {
                     key={link.href}
                     href={link.href}
                     onClick={() => setIsMobileNavOpen(false)}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                      active
+                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${active
                         ? "bg-blue-50 text-blue-600 font-bold"
                         : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`material-symbols-outlined text-xl shrink-0 ${
-                        active ? "text-blue-600" : "text-slate-400"
-                      }`}
+                      className={`material-symbols-outlined text-xl shrink-0 ${active ? "text-blue-600" : "text-slate-400"
+                        }`}
                     >
                       {link.icon || "link"}
                     </span>

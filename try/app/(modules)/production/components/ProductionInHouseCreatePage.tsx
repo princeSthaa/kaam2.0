@@ -493,7 +493,7 @@ export function ProductionInHouseCreatePage() {
     if (!selectedProducts.length) return;
     const draft = buildPayload("Draft");
     if (typeof window !== "undefined") {
-      fetch("http://localhost:5083/api/production-plans", {
+      fetch("/api/bff/production-plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draft)
@@ -517,7 +517,7 @@ export function ProductionInHouseCreatePage() {
     const plan = buildPayload("Active");
 
     if (typeof window !== "undefined") {
-      fetch("http://localhost:5083/api/production-plans", {
+      fetch("/api/bff/production-plans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(plan)

@@ -34,12 +34,17 @@ export function CreateEmployeeModal({
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
   const [departmentId, setDepartmentId] = useState("");
   const [employeeRoleId, setEmployeeRoleId] = useState("");
   const [isActive, setIsActive] = useState(true);
 
   const [departments, setDepartments] = useState<DepartmentDto[]>(existingDepartments || []);
-  const [roles, setRoles] = useState<RoleDto[]>(existingRoles || []);
+  const [roles, setRoles] = useState<RoleDto[]>(
+    (existingRoles || []).filter(
+      (r) => !r.isSuperAdmin && (r.name || r.roleName) !== "Super Admin"
+    )
+  );
   const [loadingOptions, setLoadingOptions] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +61,7 @@ export function CreateEmployeeModal({
       setLastName(initialData.lastName || "");
       setEmail(initialData.email || "");
       setPhoneNumber(initialData.phoneNumber || "");
+      setPassword("");
       setDepartmentId(initialData.departmentId || "");
       setEmployeeRoleId(initialData.employeeRoleId || "");
       setIsActive(initialData.isActive ?? true);
@@ -64,21 +70,12 @@ export function CreateEmployeeModal({
       setLastName("");
       setEmail("");
       setPhoneNumber("");
-      setDepartmentId(existingDepartments?.[0]?.id || "");
-      setEmployeeRoleId(existingRoles?.[0]?.id || "");
+      setPassword("");
+      setDepartmentId(departments[0]?.id || "");
+      setEmployeeRoleId(roles[0]?.id || "");
       setIsActive(true);
     }
     setErrorMsg(null);
-
-    // Sync / fetch departments & roles from API when modal opens
-    if (existingDepartments && existingDepartments.length > 0) {
-      setDepartments(existingDepartments);
-      if (!initialData && !departmentId) setDepartmentId(existingDepartments[0].id);
-    }
-    if (existingRoles && existingRoles.length > 0) {
-      setRoles(existingRoles);
-      if (!initialData && !employeeRoleId) setEmployeeRoleId(existingRoles[0].id);
-    }
 
     setLoadingOptions(true);
     Promise.all([fetchDepartments(), fetchRoles()])
@@ -88,8 +85,11 @@ export function CreateEmployeeModal({
           if (!initialData && !departmentId) setDepartmentId(deptData[0].id);
         }
         if (Array.isArray(roleData) && roleData.length > 0) {
-          setRoles(roleData);
-          if (!initialData && !employeeRoleId) setEmployeeRoleId(roleData[0].id);
+          const filtered = roleData.filter(
+            (r) => !r.isSuperAdmin && (r.name || r.roleName) !== "Super Admin"
+          );
+          setRoles(filtered);
+          if (!initialData && !employeeRoleId && filtered.length > 0) setEmployeeRoleId(filtered[0].id);
         }
       })
       .catch((err) => {
@@ -116,6 +116,7 @@ export function CreateEmployeeModal({
     setLastName("");
     setEmail("");
     setPhoneNumber("");
+    setPassword("");
     setDepartmentId(departments[0]?.id || "");
     setEmployeeRoleId(roles[0]?.id || "");
     setIsActive(true);
@@ -134,6 +135,10 @@ export function CreateEmployeeModal({
       setErrorMsg("First Name and Last Name are required.");
       return;
     }
+    if (!isEdit && password.length < 4) {
+      setErrorMsg("An initial password of at least 4 characters is required.");
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMsg(null);
@@ -150,6 +155,7 @@ export function CreateEmployeeModal({
           phoneNumber: phoneNumber.trim() || undefined,
           departmentId: departmentId || undefined,
           employeeRoleId: employeeRoleId || undefined,
+          password: password || undefined,
           isActive,
         });
 
@@ -164,6 +170,7 @@ export function CreateEmployeeModal({
           departmentName: selectedDept?.name || initialData.departmentName || "Engineering",
           departmentCode: selectedDept?.departmentCode || selectedDept?.code || initialData.departmentCode || "ENG",
           employeeRoleId: employeeRoleId || undefined,
+          password,
           roleName: selectedRole?.roleName || initialData.roleName || "Staff",
           isActive,
           updatedAt: new Date().toISOString(),
@@ -203,35 +210,7 @@ export function CreateEmployeeModal({
       onClose();
     } catch (err: any) {
       console.error("Save employee failed:", err);
-      // Fallback if local/mock environment
-      const fallbackEmployee: EmployeeDto = {
-        id: initialData?.id || `emp-${Date.now()}`,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        fullName: `${firstName.trim()} ${lastName.trim()}`,
-        phoneNumber: phoneNumber.trim() || "N/A",
-        email: email.trim() || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@kaam.io`,
-        departmentId: departmentId || (departments[0]?.id ?? ""),
-        departmentName: selectedDept?.name || "Engineering",
-        departmentCode: selectedDept?.departmentCode || selectedDept?.code || "ENG",
-        employeeRoleId: employeeRoleId || (roles[0]?.id ?? ""),
-        roleName: selectedRole?.roleName || "Staff",
-        isActive,
-        createdAt: initialData?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      if (err.message && !err.message.includes("Failed to fetch")) {
-        setErrorMsg(err.message);
-      } else {
-        if (onSaved) {
-          onSaved(fallbackEmployee);
-        } else if (onCreated) {
-          onCreated(fallbackEmployee);
-        }
-        resetForm();
-        onClose();
-      }
+      setErrorMsg(err instanceof Error ? err.message : "Could not save the employee.");
     } finally {
       setIsSubmitting(false);
     }
@@ -347,6 +326,23 @@ export function CreateEmployeeModal({
           </div>
 
           {/* Department & Role (Loaded from API) */}
+          {!isEdit && (
+            <div className="space-y-1.5">
+              <label className="font-bold text-slate-700 text-[11px] uppercase tracking-wider font-mono">
+                Initial Password <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="password"
+                required
+                minLength={4}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                autoComplete="new-password"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 font-medium focus:ring-2 focus:ring-slate-900 focus:bg-white focus:outline-none transition-all"
+              />
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">

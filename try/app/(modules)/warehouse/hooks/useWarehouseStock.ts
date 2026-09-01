@@ -11,7 +11,7 @@ export function useWarehouseStock() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5083/api/material");
+      const res = await fetch("/api/bff/material");
       if (!res.ok) throw new Error("Failed to fetch warehouse stock");
       const data = await res.json();
       setStockList(data || []);

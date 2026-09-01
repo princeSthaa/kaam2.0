@@ -1,6 +1,10 @@
 using backend.Dto.Employee;
 using backend.Service.Employee;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Validation.AspNetCore;
+using backend.Security.Rbac;
+using backend.Service.Rbac;
 
 namespace backend.Controller.Employee
 {
@@ -9,10 +13,12 @@ namespace backend.Controller.Employee
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _service;
+        private readonly IRbacService _rbac;
 
-        public EmployeeController(IEmployeeService service)
+        public EmployeeController(IEmployeeService service, IRbacService rbac)
         {
             _service = service;
+            _rbac = rbac;
         }
 
         [HttpPost]
@@ -22,6 +28,10 @@ namespace backend.Controller.Employee
             {
                 return BadRequest(ModelState);
             }
+
+            var employeeId = RbacUser.GetEmployeeId(User);
+            if (employeeId is null || dto.EmployeeRoleId is null ||
+                !await _rbac.CanAssignRoleAsync(employeeId.Value, dto.EmployeeRoleId.Value)) return Forbid();
 
             var created = await _service.CreateAsync(dto);
             if (!created)
@@ -41,11 +51,15 @@ namespace backend.Controller.Employee
             {
                 return NotFound($"Employee with ID {id} not found.");
             }
-
+            var employeeId = RbacUser.GetEmployeeId(User);
+            if (employeeId is null) return Unauthorized();
+            var visible = await _rbac.GetVisibleRoleIdsAsync(employeeId.Value);
+            if (item.EmployeeRoleId is not Guid roleId || !visible.Contains(roleId)) return Forbid();
             return Ok(item);
         }
-
-        [HttpGet]
+        
+        [Authorize(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+        [HttpGet]   
         public async Task<ActionResult<List<EmployeeGetDto>>> GetAll(
             [FromQuery] Guid? id = null,
             [FromQuery] string? firstName = null,
@@ -74,7 +88,10 @@ namespace backend.Controller.Employee
                 updatedAt
             );
 
-            return Ok(items);
+            var callerId = RbacUser.GetEmployeeId(User);
+            if (callerId is null) return Unauthorized();
+            var visible = await _rbac.GetVisibleRoleIdsAsync(callerId.Value);
+            return Ok(items.Where(x => x.EmployeeRoleId is Guid roleId && visible.Contains(roleId)));
         }
 
         [HttpPut("{id}")]
@@ -84,6 +101,11 @@ namespace backend.Controller.Employee
             {
                 return BadRequest(ModelState);
             }
+
+            var employeeId = RbacUser.GetEmployeeId(User);
+            if (employeeId is null || dto.EmployeeRoleId is null ||
+                !await _rbac.CanManageEmployeeAsync(employeeId.Value, id) ||
+                !await _rbac.CanAssignRoleAsync(employeeId.Value, dto.EmployeeRoleId.Value)) return Forbid();
 
             var updated = await _service.UpdateAsync(id, dto);
 
@@ -98,6 +120,8 @@ namespace backend.Controller.Employee
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
+            var employeeId = RbacUser.GetEmployeeId(User);
+            if (employeeId is null || !await _rbac.CanManageEmployeeAsync(employeeId.Value, id)) return Forbid();
             var deleted = await _service.DeleteAsync(id);
 
             if (!deleted)

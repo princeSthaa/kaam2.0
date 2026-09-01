@@ -1,8 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+<<<<<<< HEAD
 import { fetchOrders } from "../api/order.api";
 import { Order } from "../dto/order.dto";
+=======
+import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+const API_BASE_URL = `${API_MAIN_URL}/order`;
+>>>>>>> 9fa217c0547fabab9b45165af836b1805beb744c
 
 export function useOrders(customerId?: string) {
   const [orders, setOrders] = useState<Order[]>([]);

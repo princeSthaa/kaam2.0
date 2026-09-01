@@ -8,7 +8,7 @@ const dispatchMockFallback = () => {
   }
 };
 
-// const API_BASE_URL = 'http://localhost:5083/api';
+// const API_BASE_URL = '/api/bff';
 
 const API_BASE_URL = API_MAIN_URL;
 
@@ -36,23 +36,25 @@ const mapStatus = (status: any): string => {
  */
 export async function fetchProductionPlans(params?: Record<string, string>): Promise<ProductionPlan[]> {
   try {
-    const url = new URL(`${API_BASE_URL}/production-plans`);
+    const searchParams = new URLSearchParams();
     if (params) {
       Object.keys(params).forEach(key => {
         if (params[key]) {
-          url.searchParams.append(key, params[key]);
+          searchParams.append(key, params[key]);
         }
       });
     }
+    const query = searchParams.toString();
+    const url = `${API_BASE_URL}/production-plans${query ? `?${query}` : ""}`;
     // const res = await fetch(url.toString(), { cache: 'no-store' });
     // if (!res.ok) throw new Error("Failed to fetch production plans");
-    const res = await fetch(url.toString(), { cache: "no-store" });
+    const res = await fetch(url, { cache: "no-store" });
 
     if (!res.ok) {
       const errorText = await res.text();
 
       console.error("Production Plans API Error:", {
-        url: url.toString(),
+        url,
         status: res.status,
         statusText: res.statusText,
         response: errorText,

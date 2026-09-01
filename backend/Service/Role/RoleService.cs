@@ -22,14 +22,19 @@ namespace backend.Service.Role
             dto.Id = Guid.NewGuid();
             var now = DateTime.UtcNow;
 
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_InsertRole
-                    @Id = {dto.Id},
-                    @RoleName = {dto.RoleName},
-                    @Description = {dto.Description},
-                    @CreatedAt = {now},
-                    @UpdatedAt = {now}
-            ");
+            _context.Roles.Add(new backend.Model.Role
+            {
+                Id = dto.Id,
+                RoleName = dto.RoleName,
+                Description = dto.Description,
+                ModulePageId = dto.ModulePageId,
+                IsModuleAdmin = dto.IsModuleAdmin,
+                IsSuperAdmin = dto.IsSuperAdmin,
+                IsSystem = dto.IsSystem,
+                CreatedAt = now,
+                UpdatedAt = now
+            });
+            await _context.SaveChangesAsync();
 
             return true;
         }
@@ -68,6 +73,20 @@ namespace backend.Service.Role
                 r.PageAccesses = pageAccesses.Where(pa => pa.RoleId == r.Id).ToList();
             }
 
+            var roleIds = roles.Select(x => x.Id).ToArray();
+            var metadata = await _context.Roles.AsNoTracking().Include(x => x.ModulePage)
+                .Where(x => roleIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id);
+            foreach (var role in roles.Where(x => metadata.ContainsKey(x.Id)))
+            {
+                var source = metadata[role.Id];
+                role.ModulePageId = source.ModulePageId;
+                role.ModuleName = source.ModulePage?.Name;
+                role.ModuleRoute = source.ModulePage?.Route;
+                role.IsModuleAdmin = source.IsModuleAdmin;
+                role.IsSuperAdmin = source.IsSuperAdmin;
+                role.IsSystem = source.IsSystem;
+            }
+
             return roles;
         }
 
@@ -79,16 +98,16 @@ namespace backend.Service.Role
 
         public async Task<bool> UpdateAsync(Guid id, RoleDto dto)
         {
-            var now = DateTime.UtcNow;
-
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                EXEC sp_UpdateRole
-                    @Id = {id},
-                    @RoleName = {dto.RoleName},
-                    @Description = {dto.Description},
-                    @UpdatedAt = {now}
-            ");
-
+            var role = await _context.Roles.FirstOrDefaultAsync(x => x.Id == id);
+            if (role is null) return false;
+            role.RoleName = dto.RoleName;
+            role.Description = dto.Description;
+            role.ModulePageId = dto.ModulePageId;
+            role.IsModuleAdmin = dto.IsModuleAdmin;
+            role.IsSuperAdmin = dto.IsSuperAdmin;
+            role.IsSystem = dto.IsSystem;
+            role.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
             return true;
         }
 

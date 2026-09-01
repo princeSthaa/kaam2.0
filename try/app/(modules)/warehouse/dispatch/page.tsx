@@ -33,7 +33,7 @@ export default function FinishedGoodsAndSalesDispatchPage() {
 
   const loadProducts = async () => {
     try {
-      const res = await fetch("http://localhost:5083/api/product");
+      const res = await fetch("/api/bff/product");
       if (res.ok) {
         const data = await res.json();
         setProducts(Array.isArray(data) ? data : []);
@@ -64,7 +64,7 @@ export default function FinishedGoodsAndSalesDispatchPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5083/api/warehouse/accept-finished-goods", {
+      const res = await fetch("/api/bff/warehouse/accept-finished-goods", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -124,7 +124,7 @@ export default function FinishedGoodsAndSalesDispatchPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5083/api/warehouse/initiate-sale", {
+      const res = await fetch("/api/bff/warehouse/initiate-sale", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

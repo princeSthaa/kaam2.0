@@ -44,7 +44,7 @@ export default function CustomerDamageReturnPage() {
     try {
       let successMsg = "Customer return processed and inventory updated successfully.";
       try {
-        const res = await fetch(`${API_MAIN_URL || "http://localhost:5083/api"}/warehouse/customer-return`, {
+        const res = await fetch(`${API_MAIN_URL || "/api/bff"}/warehouse/customer-return`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

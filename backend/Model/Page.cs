@@ -7,10 +7,10 @@ public class Page
 {
     public Guid Id { get; set; }
 
-    [MaxLength(40)]
+    [MaxLength(120)]
     public string Name { get; set; } = string.Empty;
     
-    [MaxLength(40)]
+    [MaxLength(256)]
     public string Route { get; set; } = string.Empty;
     
     [MaxLength(40)]

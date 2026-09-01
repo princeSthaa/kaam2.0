@@ -103,7 +103,7 @@ export function ProductionInProgressVisualizationPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-      fetch("http://localhost:5083/api/production-plans")
+      fetch("/api/bff/production-plans")
         .then((res) => res.json())
         .then((data: any[]) => {
           const mapped = data.filter(p => {

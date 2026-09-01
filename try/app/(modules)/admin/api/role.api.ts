@@ -7,6 +7,12 @@ export interface RoleDto {
   roleName: string;
   name?: string;
   description?: string;
+  modulePageId?: string | null;
+  moduleName?: string | null;
+  moduleRoute?: string | null;
+  isModuleAdmin?: boolean;
+  isSuperAdmin?: boolean;
+  isSystem?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -14,11 +20,15 @@ export interface RoleDto {
 export interface RoleCreateDto {
   roleName: string;
   description?: string;
+  modulePageId?: string | null;
+  isModuleAdmin?: boolean;
 }
 
 export interface RoleUpdateDto {
   roleName: string;
   description?: string;
+  modulePageId?: string | null;
+  isModuleAdmin?: boolean;
 }
 
 export async function fetchRoles(): Promise<RoleDto[]> {
@@ -63,6 +73,8 @@ export async function createRole(payload: RoleCreateDto): Promise<RoleDto> {
     body: JSON.stringify({
       roleName: payload.roleName.trim(),
       description: payload.description ? payload.description.trim() : "",
+      modulePageId: payload.modulePageId,
+      isModuleAdmin: payload.isModuleAdmin ?? false,
     }),
   });
 
@@ -86,6 +98,8 @@ export async function updateRole(id: string, payload: RoleUpdateDto): Promise<Ro
     body: JSON.stringify({
       roleName: payload.roleName.trim(),
       description: payload.description ? payload.description.trim() : "",
+      modulePageId: payload.modulePageId,
+      isModuleAdmin: payload.isModuleAdmin ?? false,
     }),
   });
 

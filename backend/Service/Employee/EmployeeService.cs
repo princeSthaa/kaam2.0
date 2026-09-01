@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
 using backend.Dto.Employee;
+using Microsoft.AspNetCore.Identity;
 
 namespace backend.Service.Employee
 {
     public class EmployeeService : IEmployeeService
     {
         private readonly AppDbContext _context;
+        private readonly PasswordHasher<backend.Model.Employee> _passwordHasher = new();
 
         public EmployeeService(AppDbContext context)
         {
@@ -15,8 +17,10 @@ namespace backend.Service.Employee
 
         public async Task<bool> CreateAsync(EmployeeDto dto)
         {
+            if (string.IsNullOrWhiteSpace(dto.Password)) return false;
             dto.Id = Guid.NewGuid();
             var now = DateTime.UtcNow;
+            dto.Password = _passwordHasher.HashPassword(new backend.Model.Employee { Id = dto.Id }, dto.Password);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_InsertEmployee
@@ -77,6 +81,12 @@ namespace backend.Service.Employee
         public async Task<bool> UpdateAsync(Guid id, EmployeeDto dto)
         {
             var now = DateTime.UtcNow;
+            var currentPassword = await _context.Employees.AsNoTracking()
+                .Where(x => x.Id == id).Select(x => x.Password).FirstOrDefaultAsync();
+            if (currentPassword is null) return false;
+            dto.Password = string.IsNullOrWhiteSpace(dto.Password)
+                ? currentPassword
+                : _passwordHasher.HashPassword(new backend.Model.Employee { Id = id }, dto.Password);
 
             await _context.Database.ExecuteSqlInterpolatedAsync($@"
                 EXEC sp_UpdateEmployee

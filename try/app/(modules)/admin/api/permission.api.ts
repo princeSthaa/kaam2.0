@@ -28,11 +28,6 @@ export async function fetchPermissions(): Promise<PermissionDto[]> {
     const response = await fetch(API_BASE_URL, { cache: "no-store" });
 
     if (!response.ok) {
-      // Fallback try /permissions plural
-      const fallbackResponse = await fetch(`${API_MAIN_URL}/permissions`, { cache: "no-store" });
-      if (fallbackResponse.ok) {
-        return await fallbackResponse.json();
-      }
       throw new Error(`Failed to fetch permissions: ${response.statusText}`);
     }
 

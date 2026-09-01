@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import { PermissionGuard } from "@/app/components/auth/PermissionGuard";
 import { API_MAIN_URL } from "@/app/(modules)/api/constant";
 import {
   BarChart,
@@ -298,21 +299,25 @@ export default function ProductionOverviewDashboardPage() {
             <span>Refresh</span>
           </button>
 
-          <Link
-            href="/production/plans"
-            className="prd-dash-btn prd-dash-btn-light"
-          >
-            <span className="prd-dashboard-icon" style={{ fontSize: 16 }}>list_alt</span>
-            <span>View Plans</span>
-          </Link>
+          <PermissionGuard route="/production/plans" action="GET">
+            <Link
+              href="/production/plans"
+              className="prd-dash-btn prd-dash-btn-light"
+            >
+              <span className="prd-dashboard-icon" style={{ fontSize: 16 }}>list_alt</span>
+              <span>View Plans</span>
+            </Link>
+          </PermissionGuard>
 
-          <Link
-            href="/production/demands"
-            className="prd-dash-btn prd-dash-btn-primary"
-          >
-            <span className="prd-dashboard-icon" style={{ fontSize: 16 }}>add_circle</span>
-            <span>New Plan</span>
-          </Link>
+          <PermissionGuard route="/production/demands" action="GET">
+            <Link
+              href="/production/demands"
+              className="prd-dash-btn prd-dash-btn-primary"
+            >
+              <span className="prd-dashboard-icon" style={{ fontSize: 16 }}>add_circle</span>
+              <span>New Plan</span>
+            </Link>
+          </PermissionGuard>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./styles/globals.css";
 import { GlobalHeadLinks } from "./components/layout/GlobalHeadLinks";
 import { AppHeader } from "./components/layout/AppHeader";
+import { RbacProvider } from "./lib/auth/RbacContext";
 
 export const metadata: Metadata = {
   title: "kaam",
@@ -23,10 +24,12 @@ export default function RootLayout({
         />
       </head>
       <body className="app-body">
-        <div className="app-shell">
-          <AppHeader />
-          {children}
-        </div>
+        <RbacProvider>
+          <div className="app-shell">
+            <AppHeader />
+            {children}
+          </div>
+        </RbacProvider>
       </body>
     </html>
   );

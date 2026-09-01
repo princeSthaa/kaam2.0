@@ -29,11 +29,6 @@ export async function fetchRolePageAccesses(): Promise<RolePageAccessDto[]> {
     const response = await fetch(API_BASE_URL, { cache: "no-store" });
 
     if (!response.ok) {
-      // Fallback try /rolepageaccess or plural
-      const fallbackResponse = await fetch(`${API_MAIN_URL}/rolepageaccesses`, { cache: "no-store" });
-      if (fallbackResponse.ok) {
-        return await fallbackResponse.json();
-      }
       throw new Error(`Failed to fetch role page access: ${response.statusText}`);
     }
 
@@ -128,4 +123,48 @@ export async function deleteRolePageAccess(id: string): Promise<void> {
     const errorText = await response.text();
     throw new Error(`Failed to delete role page access ${id}: ${errorText || response.statusText}`);
   }
+}
+
+export interface RolePageMatrixItem {
+  roleId: string;
+  roleName: string;
+  rolePageAccessId?: string;
+  pageId: string;
+  pageName: string;
+  pageRoute: string;
+  parentPageId?: string;
+  parentPageName?: string;
+  displayOrder: number;
+  icon?: string;
+  actions?: string; // Comma-separated: "GET,POST,PUT,DELETE"
+}
+
+export interface PagePermissionAssignment {
+  pageId: string;
+  actions: string[];
+}
+
+export async function fetchRolePageMatrix(roleId: string): Promise<RolePageMatrixItem[]> {
+  const response = await fetch(`${API_BASE_URL}/matrix/${roleId}`, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch role page matrix: ${response.statusText}`);
+  }
+  return await response.json();
+}
+
+export async function saveRolePageMatrix(
+  roleId: string,
+  assignments: PagePermissionAssignment[]
+): Promise<RolePageMatrixItem[]> {
+  const response = await fetch(`${API_BASE_URL}/matrix`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ roleId, assignments }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to save role page matrix: ${errorText || response.statusText}`);
+  }
+  return await response.json();
 }

@@ -42,7 +42,7 @@ export function CategoryMultiSelect({
   }, []);
 
   useEffect(() => {
-    fetch("http://localhost:5083/api/material-type")
+    fetch("/api/bff/material-type")
       .then((res) => res.json())
       .then((data: any[]) => {
         if (Array.isArray(data)) {

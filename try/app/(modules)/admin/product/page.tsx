@@ -9,7 +9,7 @@ import { ManageProductionStagesModal } from "../components/modals/manageproducti
 import { ManageProductCategoryModal } from "../components/modals/manageproductcategorymodal";
 import { fetchProducts, deleteProduct as apiDeleteProduct, ProductDto } from "../api/constant";
 import { fetchProductCategories, ProductCategoryDto } from "../api/constant";
-import { API_MAIN_URL } from "@/app/(modules)/api/constant";
+import { BACKEND_ORIGIN } from "@/app/(modules)/api/constant";
 
 export interface ProductDirectoryItem {
   id: string;
@@ -139,7 +139,7 @@ export default function ProductDirectoryPage() {
           if (p.imagePath) {
             imgUrl = p.imagePath.startsWith("http")
               ? p.imagePath
-              : `${API_MAIN_URL.replace("/api", "")}${p.imagePath}`;
+              : `${BACKEND_ORIGIN}${p.imagePath}`;
           }
 
           return {
